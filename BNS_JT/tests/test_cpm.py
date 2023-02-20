@@ -9,23 +9,58 @@ np.set_printoptions(precision=3)
 
 class Test1(unittest.TestCase):
 
-    #@classmethod
-    #def setUpClass(cls):
-
-        #cls.dmg_by_agent = get_dmg_by_agent()
-        #cls.thresholds_by_agent = get_thresholds_by_agent()
-
-    def test_init(self):
+    @classmethod
+    def setUpClass(cls):
 
         variables = [1, 2, 3]
         numChild = 1
         C = np.array([[2, 2, 3], [2, 1, 2], [1, 1, 1]])
         p = [1, 1, 1]
 
-        S_givenX1andX2 = Cpm(**{'variables': variables,
-                                'numChild': numChild,
-                                'C': C,
-                                'p': p})
+        cls.kwargs = {'variables': variables,
+                      'numChild': numChild,
+                      'C': C,
+                      'p': p}
+
+    def test_init(self):
+
+        _ = Cpm(**self.kwargs)
+
+    def test_variables1(self):
+
+        f_variables = [1, 2]
+        with self.assertRaises(AssertionError):
+            _ = Cpm(**{'variables': f_variables,
+                       'numChild': self.kwargs['numChild'],
+                       'C': self.kwargs['C'],
+                       'p': self.kwargs['p']})
+
+    def test_variables2(self):
+
+        f_variables = [1, 2, 3, 4]
+        with self.assertRaises(AssertionError):
+            _ = Cpm(**{'variables': f_variables,
+                       'numChild': self.kwargs['numChild'],
+                       'C': self.kwargs['C'],
+                       'p': self.kwargs['p']})
+
+    def test_variables3(self):
+
+        f_variables = ['x', 2, 3]
+        with self.assertRaises(AssertionError):
+            _ = Cpm(**{'variables': f_variables,
+                       'numChild': self.kwargs['numChild'],
+                       'C': self.kwargs['C'],
+                       'p': self.kwargs['p']})
+
+    def test_numChild(self):
+
+        f_numChild = 3
+        with self.assertRaises(AssertionError):
+            _ = Cpm(**{'variables': self.kwargs['variables'],
+                       'numChild': f_numChild,
+                       'C': self.kwargs['C'],
+                       'p': self.kwargs['p']})
 
 
 
