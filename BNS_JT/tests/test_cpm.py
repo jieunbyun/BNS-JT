@@ -66,7 +66,6 @@ class Test_Cpm(unittest.TestCase):
                        'C': self.kwargs['C'],
                        'p': self.kwargs['p']})
 
-
 class Test_Sum(unittest.TestCase):
 
     @classmethod
