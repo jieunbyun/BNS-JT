@@ -1,30 +1,40 @@
 import numpy as np
 
+# save away Python sum
+_sum_ = sum
+
+
 class Cpm(object):
     '''
     class to define conditional probability matrix (cf., CPT)
+
+        Parameters:
+        variables: array_like
+            index for variables
+        numChild: int
+            number of child nodes
+        C: array_like
+            event matrix
+        p: array_like
+            probability vector
+        q: array_like
+            sampling weight vector for continuous r.v.
+        sampleIndex: array_like
+            index for sample
+
         Cpm(varibles, numChild, C, p)
-        variables:
-        numChild:
-        C:
-        p:
-        q:
-        sampleIndex:
     '''
     def __init__(self, **kwargs):
 
         self.variables = kwargs['variables']
         self.numChild = kwargs['numChild']
-        # event matrix
         self.C = kwargs['C']
-        # probability vector
         if isinstance(kwargs['p'], list):
             self.p = np.array(kwargs['p'])
         else:
             self.p = kwargs['p']
-        # sampling weight vector
         self.q = None
-        self.sampleIndex  = None #% sample index (numbering) vector
+        self.sampleIndex  = None ## sample index (numbering) vector
 
         assert len(self.variables), 'variables must be a numeric vector'
         assert all(isinstance(x, (int, np.int32, np.int64)) for x in self.variables), 'variables must be a numeric vector'
@@ -56,6 +66,121 @@ class Cpm(object):
             errFlag = 1
             errMess = 'Sample index array must have the same length with the number of rows in C'
         '''
+
+
+"""
+def isCompatible(C, variables, checkVars, checkStates, vInfo):
+    '''
+    C:
+    variables:
+    checkVars:
+    checkStates:
+    vInfo:
+    '''
+
+    [~, idxInCheckVars] = ismember(checkVars, variables);
+    checkVars(~idxInCheckVars) = [];
+    checkStates(~idxInCheckVars) = [];
+    idxInCheckVars(~idxInCheckVars) = [];
+
+    C1_common = [];
+    for vv = 1:length(checkVars)
+       C1_common = [C1_common C(:,idxInCheckVars(vv))];
+
+
+    compatFlag = true( size(C,1),1 );
+    for vv = 1:length(checkVars)
+        checkVar_v = checkVars(vv);
+        checkState_v = checkStates(vv);
+
+        B_v = vInfo(checkVar_v).B;
+        C1_v = C1_common(:,vv);
+
+        compatCheck_v = B_v(C1_v(compatFlag),:) .* B_v( checkState_v,: );
+        compatFlag(compatFlag) = ( sum(compatCheck_v,2)>0 );
+
+    return CompatFlag
+"""
+
+
+"""
+def get_varsRemain(M, sumVars, sumFlag):
+
+    print(M.variables)
+    tf = np.isin(M.variables[:M.numChild], sumVars)
+    if sumFlag:
+        varsRemain = M.variables[:M.numChild][~tf]
+        varsRemainIdx, _ = np.where(~tf)
+    else:
+        varsRemain = M.variables[tf]
+
+    return varsRemain
+
+def sum(M, sumVars, sumFlag=1):
+    '''
+    Sum over CPMs.
+
+    Parameters:
+    M: instance of Cpm
+    sumVars:
+    sumFlag: int
+        1 (default) - sum out sumVars, 0 - leave only sumVars
+    '''
+    assert isinstance(M, Cpm), 'M must be a single CPM'
+
+    if sumFlag and any(set(M.variables[M.numChild:]).intersection(sumVars)):
+        print('Parent nodes are NOT summed up')
+
+    varsRemain, varsRemainIdx = compute_varsRemain(M, sumVars, sumFlag)
+    numChild = length( varsRemain )
+
+    if ~isempty( M.variables(M.numChild+1:]  )
+        varsRemain = [varsRemain M.variables(M.numChild+1:] ]
+        varsRemainIdx = [varsRemainIdx (M.numChild+1):length(M.variables)]
+    end
+
+    Mloop = Cpm( M.variables( varsRemainIdx ), length( varsRemainIdx ), M.C(:,varsRemainIdx), M.p, M.q, M.sampleIndex )
+    if isempty(Mloop.C)
+        Msum = Cpm(varsRemain, numChild, zeros(1,0), sum(M.p), [], [] ) 
+    else
+        Csum = [] psum = [] qsum = [] sampleIndSum = []
+        while ~isempty(Mloop.C)
+                
+            Mcompare = getCpmSubset( Mloop, 1 )
+            compatFlag = isComplatibleCpm( Mloop, Mcompare )
+         
+            Csum = [Csum Mloop.C(1,:)]
+            
+            if ~isempty(Mloop.p)
+                psum = [psum sum(Mloop.p(compatFlag))]
+            end
+            
+            if ~isempty(Mloop.q)
+                if ~all( Mloop.q( compatFlag ) == Mloop.q(1) )
+                    error( 'Compatible samples cannot have different weights' )
+                else
+                    qsum = [qsum Mloop.q(1)]
+                end
+            end
+                
+            if ~isempty( Mloop.sampleIndex )
+                sampleIndSum = [sampleIndSum Mloop.sampleIndex(1)]
+            end
+            
+            Mloop = getCpmSubset( Mloop, find( compatFlag ), 0 )
+
+        end
+        
+        Msum = Cpm( varsRemain, numChild, Csum, psum, qsum, sampleIndSum )
+    end
+"""
+
+    
+
+
+
+
+
 """
 def product(M1, M2, vInfo):
     '''
@@ -140,7 +265,7 @@ def product(M1, M2, vInfo):
 
         newVarsChild = [M1.variables(1:M1.numChild) M2.variables(1:M2.numChild)]
         newVarsChild = sort(newVarsChild)
-        newVarsParent = [M1.variables(M1.numChild+1:end) M2.variables(M2.numChild+1:end)]
+        newVarsParent = [M1.variables(M1.numChild+1:]  M2.variables(M2.numChild+1:] ]
         newVarsParent = setdiff(newVarsParent,newVarsChild)
         newVars = [newVarsChild newVarsParent]
 
