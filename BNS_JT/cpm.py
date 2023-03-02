@@ -1,4 +1,5 @@
 import numpy as np
+import textwrap
 
 # save away Python sum
 _sum_ = sum
@@ -30,7 +31,7 @@ class Cpm(object):
         self.numChild = kwargs['numChild']
         self.C = kwargs['C']
         if isinstance(kwargs['p'], list):
-            self.p = np.array(kwargs['p'])
+            self.p = np.array(kwargs['p'])[:, np.newaxis]
         else:
             self.p = kwargs['p']
         self.q = None
@@ -40,21 +41,22 @@ class Cpm(object):
         assert all(isinstance(x, (int, np.int32, np.int64)) for x in self.variables), 'variables must be a numeric vector'
 
         assert isinstance(self.numChild, (int, np.int32, np.int64)), 'numChild must be a numeric scalar'
-        assert self.numChild < len(self.variables), 'numChild must be greater than the number of variables'
-        '''
-        elseif (~isempty(M.numChild)&&~isempty(M.variables)) && (M.numChild>length(M.variables))
-            errFlag = 1
-            errMess =        '''
+        assert self.numChild <= len(self.variables), 'numChild must be less than or equal to the number of variables'
 
         assert isinstance(self.C, np.ndarray), 'Event matrix C must be a numeric matrix'
         assert self.C.dtype in (np.dtype('int64'), np.dtype('int32')), 'Event matrix C must be a numeric matrix'
-
-        assert self.C.shape[1] == len(self.variables), 'C must have the same number of columns with that of variables'
+        if self.C.ndim == 1:
+            self.C.shape = (len(self.C), 1)
+        else:
+            assert self.C.shape[1] == len(self.variables), 'C must have the same number of columns with that of variables'
 
         assert len(self.p), 'p must be a numeric vector'
         all(isinstance(y, (float, np.float32, np.float64, int, np.int32, np.int64)) for y in self.p), 'p must be a numeric vector'
 
+        if self.p.ndim == 1:
+            self.p.shape = (len(self.p), 1)
         assert len(self.p) == self.C.shape[0], 'p must have the same length with the number of rows in C'
+
         '''
         elseif ~isempty(M.q) && ~isnumeric(M.q)
             errFlag = 1
@@ -67,40 +69,51 @@ class Cpm(object):
             errMess = 'Sample index array must have the same length with the number of rows in C'
         '''
 
+    def __repr__(self):
+        return textwrap.dedent(f'''\
+{self.__class__.__name__}(variables={self.variables}, numChild={self.numChild}, C={self.C}, p={self.p}''')
 
-"""
+
+
+def ismember(A, B):
+    '''
+    FIXIT: shuld we return False
+    '''
+    return [np.where(np.array(B) == x)[0].min() if x in B else False for x in A]
+
+
+def get_value_given_condn(A, condn):
+    assert len(A) == len(condn), f'len of {A} is not equal to len of {condn}'
+    return [x for (i, x) in zip(condn, A) if i is not False]
+
 def isCompatible(C, variables, checkVars, checkStates, vInfo):
     '''
-    C:
-    variables:
-    checkVars:
-    checkStates:
-    vInfo:
+    C: np.ndarray
+    variables: array_like
+    checkVars: array_like
+    checkStates: array_like
+    vInfo: can be dict or list, collection of instance of Variable
     '''
 
-    [~, idxInCheckVars] = ismember(checkVars, variables);
-    checkVars(~idxInCheckVars) = [];
-    checkStates(~idxInCheckVars) = [];
-    idxInCheckVars(~idxInCheckVars) = [];
+    idxInCheckVars = ismember(checkVars, variables)
+    checkVars = get_value_given_condn(checkVars, idxInCheckVars)
+    checkStates = get_value_given_condn(checkStates, idxInCheckVars)
+    idxInCheckVars = get_value_given_condn(idxInCheckVars, idxInCheckVars)
 
-    C1_common = [];
-    for vv = 1:length(checkVars)
-       C1_common = [C1_common C(:,idxInCheckVars(vv))];
+    C1_common = C[:, idxInCheckVars]
+    compatFlag = np.ones(shape=(C.shape[0], 1), dtype=bool)
+    for i, (checkVar, checkState) in enumerate(zip(checkVars, checkStates)):
 
+        B = vInfo[checkVar].B
+        C1 = C1_common[:, i][np.newaxis, :]
 
-    compatFlag = true( size(C,1),1 );
-    for vv = 1:length(checkVars)
-        checkVar_v = checkVars(vv);
-        checkState_v = checkStates(vv);
+        x1 = [B[k-1, :] for k in C1][0]
+        x2 = B[checkState-1, :]
+        compatCheck = (np.sum(x1 * x2, axis=1) > 0)[:, np.newaxis]
+        compatFlag = np.logical_and(compatFlag, compatCheck)
 
-        B_v = vInfo(checkVar_v).B;
-        C1_v = C1_common(:,vv);
+    return compatFlag
 
-        compatCheck_v = B_v(C1_v(compatFlag),:) .* B_v( checkState_v,: );
-        compatFlag(compatFlag) = ( sum(compatCheck_v,2)>0 );
-
-    return CompatFlag
-"""
 
 
 """
