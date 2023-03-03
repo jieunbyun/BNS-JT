@@ -2,7 +2,7 @@ import unittest
 import importlib
 import numpy as np
 
-from BNS_JT.cpm import Cpm, ismember, isCompatible, get_value_given_condn
+from BNS_JT.cpm import Cpm, ismember, isCompatible, get_value_given_condn, getCpmSubset, isCompatibleCpm
 from BNS_JT.variable import Variable
 
 np.set_printoptions(precision=3)
@@ -180,7 +180,61 @@ class Test_isCompatible(unittest.TestCase):
         expected = np.array([[1, 1]]).T
         np.testing.assert_array_equal(expected, result)
 
+    def test_getCpmSubset1(self):
 
+        # M[5]
+        rowIndex = [0]  # 1 -> 0
+        result = getCpmSubset(self.M[5], rowIndex)
+
+        np.testing.assert_array_equal(result.C, np.array([[2, 3, 3, 2]]))
+        np.testing.assert_array_equal(result.p, [[1]])
+
+    def test_getCpmSubset2(self):
+
+        # M[5]
+        rowIndex = [1, 2, 3]  # [2, 3, 4] -> 0
+        result = getCpmSubset(self.M[5], rowIndex, 0)
+
+        np.testing.assert_array_equal(result.C, np.array([[2, 3, 3, 2]]))
+        np.testing.assert_array_equal(result.p, [[1]])
+
+    def test_isCompatibleCpm1(self):
+
+        # M[5]
+        rowIndex = [0]  # 1 -> 0
+        M_sys_select = getCpmSubset(self.M[5], rowIndex)
+        result = isCompatibleCpm(self.M[3], M_sys_select, vInfo=self.vars_)
+        expected = np.array([1, 1, 1, 1])[:, np.newaxis]
+        np.testing.assert_array_equal(result, expected)
+
+    def test_isCompatibleCpm2(self):
+
+        # M[5]
+        rowIndex = [0]  # 1 -> 0
+        M_sys_select = getCpmSubset(self.M[5], rowIndex)
+
+        result = isCompatibleCpm(self.M[4], M_sys_select, vInfo=self.vars_)
+        expected = np.array([0, 1, 0, 1])[:, np.newaxis]
+        np.testing.assert_array_equal(result, expected)
+
+    def test_isCompatibleCpm3(self):
+
+        # M[5]
+        rowIndex = [0]  # 1 -> 0
+        M_sys_select = getCpmSubset(self.M[5], rowIndex)
+
+        result = isCompatibleCpm(self.M[1], M_sys_select, vInfo=self.vars_)
+        expected = np.array([1, 1])[:, np.newaxis]
+        np.testing.assert_array_equal(result, expected)
+
+    @unittest.skip('NYI')
+    def test_product(self):
+
+        M1 = self.M[2]
+        M2 = self.M[3]
+        vInfo = self.vars_
+
+        result = product(M1, M2, vInfo)
 class Test_Sum(unittest.TestCase):
 
     @classmethod
