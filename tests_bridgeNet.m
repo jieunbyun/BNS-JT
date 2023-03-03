@@ -60,6 +60,21 @@ compatM_test2 = isComplatibleCpm( M(varInds.x(3)), M_sys_select, vars );
 % No common variables between M.variables and Mcompare.variables --> All rules are compatible
 compatM_test3 = isComplatibleCpm( M(varInds.h), M_sys_select, vars );
 
+%% condition(M, condVars, condStates, vars, <sampleInd>)
+% % % Note: "vars" should also be an output variable as it may be updated during the operation; this may happen because of composite states. % % %
+
+% Conditioning on a child node
+[Mcond_test1, vars] = condition(M(varInds.x(1)), varInds.x(1), 1, vars);
+
+% Conditioning on a parent node
+[Mcond_test2, vars] = condition(M(varInds.x(1)), varInds.h, 1, vars);
+
+% Conditioning on multiple nodes
+[Mcond_test3, vars] = condition(M(varInds.x(1)), [varInds.x(1) varInds.h], [1 1], vars);
+
+% When there are composite states
+[Mcond_test4, vars] = condition(M(varInds.s), [varInds.x(1) varInds.x(2)], [1 1], vars);
+
 %% product(M1, M2, vars)
 % % % Note: "vars" should also be an output variable as it may be updated during the operation; this may happen because of composite states. % % %
 
@@ -80,28 +95,9 @@ Msum_test2 = sum( Mprod_test2, varInds.x(1:2), 1 );
 Msum_test3 = sum( Mprod_test2, varInds.s, 0 );
 
 
-%% condition(M, condVars, condStates, vars, <sampleInd>)
-% % % Note: "vars" should also be an output variable as it may be updated during the operation; this may happen because of composite states. % % %
-
-% Conditioning on a child node
-[Mcond_test1, vars] = condition(Mprod_test2, varInds.x(1), 1, vars);
-
-% Conditioning on a parent node
-[Mcond_test2, vars] = condition(Mprod_test2, varInds.h, 1, vars);
-
-% Conditioning on multiple nodes
-[Mcond_test3, vars] = condition(Mprod_test2, [varInds.x(1) varInds.h], [1 1], vars);
-
-% When there are composite states
-[Mcond_test4, vars] = condition(M(varInds.s), [varInds.x(1) varInds.x(2)], [1 1], vars);
-
-
 %% getSamplingOrder( cpmArray )
 % % % Note that sampling results change with different random seeds. % % %
 rng(1)
-
-% The following operation returns errors because there must not be any parnet node with unknown states.
-Mmcs_test_error = mcsProduct( M([varInds.x(1), varInds.s]), 10, vars );
 
 Mmcs_test1 = mcsProduct( M([varInds.h, varInds.x(1), varInds.x(2)]), 10, vars );
 %{
@@ -143,4 +139,5 @@ sample = [2, 1, 1, 1, 1];
 sampleProb = 0.0688;
 %}
 
-
+% The following operation returns errors because there must not be any parnet node with unknown states.
+Mmcs_test_error = mcsProduct( M([varInds.x(1), varInds.s]), 10, vars );
