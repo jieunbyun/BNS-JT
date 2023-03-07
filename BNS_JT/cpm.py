@@ -82,8 +82,16 @@ def ismember(A, B):
 
 
 def get_value_given_condn(A, condn):
-    assert len(A) == len(condn), f'len of {A} is not equal to len of {condn}'
-    return [x for (i, x) in zip(condn, A) if i is not False]
+
+    if isinstance(A, np.ndarray) and A.ndim==2 and A.shape[1] == len(condn):
+        A = A.T
+        val = np.array([x for (i, x) in zip(condn, A) if i is not False])
+        val = val.reshape(-1, A.shape[1]).T
+    else:
+        assert len(A) == len(condn), f'len of {A} is not equal to len of {condn}'
+        val = [x for (i, x) in zip(condn, A) if i is not False]
+
+    return val
 
 
 def isCompatible(C, variables, checkVars, checkStates, vInfo):
@@ -111,7 +119,8 @@ def isCompatible(C, variables, checkVars, checkStates, vInfo):
         x2 = B[checkState-1, :]
         compatCheck = (np.sum(x1 * x2, axis=1) > 0)[:, np.newaxis]
 
-        compatFlag[:len(compatCheck)] = np.logical_and(compatFlag[:len(compatCheck)], compatCheck)
+        compatFlag[np.where(compatFlag > 0)[0][:len(compatCheck)]] = compatCheck
+        #compatFlag[:len(compatCheck)] = np.logical_and(compatFlag[:len(compatCheck)], compatCheck)
 
     return compatFlag
 
@@ -145,15 +154,17 @@ def getCpmSubset(M, rowIndex, flagRow=1):
     else:
         sampleIndSubset = []
 
-    return Cpm(variables=M.variables, numChild=M.numChild, C=M.C[rowIndex,:], p=pSubset, q=qSubset, sampleIndex=sampleIndSubset)
+    return Cpm(variables=M.variables, numChild=M.numChild,
+               C=M.C[rowIndex,:], p=pSubset, q=qSubset,
+               sampleIndex=sampleIndSubset)
 
 
 def isCompatibleCpm(M, Mcompare, vInfo, isCompositeStateConsidered=1):
     '''
-    M:
-    Mcompare:
-    vInfo:
-    isCompositeStateConsidered:
+    M: an instance of Cpm
+    Mcompare: another instance of Cpm
+    vInfo: list or dictionary of variables
+    isCompositeStateConsidered: True (default) or False
     '''
     #if length(M) ~= 1, error( 'Given CPM must be a single array of Cpm' ) 
     #if size(Mcompare.C,1) ~= 1, error( 'Given CPM to compare must include only a single row' ) 
@@ -181,9 +192,82 @@ def isCompatibleCpm(M, Mcompare, vInfo, isCompositeStateConsidered=1):
         x1 = [B[k-1, :] for k in C1[:, compatFlag.flatten()]][0]
         x2 = B[compareState-1,: ]
         compatCheck = (np.sum(x1 * x2, axis=1) >0)[:, np.newaxis]
-        compatFlag[:len(compatCheck)] = np.logical_and(compatFlag[:len(compatCheck)], compatCheck)
+        #compatFlag[:len(compatCheck)] = np.logical_and(compatFlag[:len(compatCheck)], compatCheck)
+        compatFlag[np.where(compatFlag > 0)[0][:len(compatCheck)]] = compatCheck
 
     return compatFlag
+
+
+def flip(idx):
+    '''
+    boolean flipped
+    Any int including 0 will be flipped False
+    '''
+    return [True if x is False else False for x in idx]
+
+
+def condition(M, condVars, condStates, vars_, sampleInd=[]):
+    '''
+    M: a list or dictionary of instances of Cpm
+    condVars:
+    condStates:
+    vars_:
+    sampleInd:
+    '''
+
+    for Mx in M:
+
+        compatFlag = isCompatible(Mx.C, Mx.variables, condVars, condStates, vars_)
+        # FIXIT
+        #if any(sampleInd) and any(Mx.sampleIndex):
+        #    compatFlag = compatFlag & ( M.sampleIndex == sampleInd )
+
+        Ccompat = Mx.C[compatFlag.flatten(),:].copy()
+
+        idxInCs = np.array(ismember(condVars, Mx.variables))
+        idxIncondVars = ismember(Mx.variables, condVars)
+
+        Ccond = np.zeros_like(Ccompat)
+        not_idxIncondVars = flip(idxIncondVars)
+        Ccond[:, not_idxIncondVars] = get_value_given_condn(Ccompat, not_idxIncondVars)
+
+        condVars = condVars[idxInCs >= 0].copy()
+        condStates = condStates[idxInCs >= 0].copy()
+        idxInCs = idxInCs[idxInCs >= 0].copy()
+
+        for condVar, condState, idxInC in zip(condVars, condStates, idxInCs):
+
+            B = vars_[condVar].B.copy()
+
+            if B.any():
+                _Ccompat = Ccompat[:, idxInC].copy() - 1
+                compatCheck = B[_Ccompat,:] * B[condState - 1,:]
+                vars_[condVar].B = addNewStates(compatCheck, B)
+                Ccond[:, idxInC] = [x + 1 for x in ismember(compatCheck, B)]
+
+        Mx.C = Ccond.copy()
+        if any(Mx.p):
+            Mx.p = Mx.p[compatFlag][:, np.newaxis]
+        if any(Mx.q):
+            Mx.q = Mx.q[compatFlag][:, np.newaxis]
+        if any(Mx.sampleIndex):
+            Mx.sampleIndex = Mx.sampleIndex[compatFlag][:, np.newaxis]
+
+    return (M, vars_)
+
+
+def addNewStates(states, B):
+    newStateCheck = flip(ismember(states,B))
+    newState = states[newStateCheck,:]
+
+    #FIXIT 
+    #newState = unique(newState,'rows')    
+    if any(newState):
+        B = np.append(B, newState, axis=1)
+    return B
+
+
+
 
 """
 def product(M1, M2, vInfo):
@@ -197,39 +281,39 @@ def product(M1, M2, vInfo):
 
     if any(M1.p):
         if not any(M2.p):
-            M2.p = np.ones(shape=(M2.C.shape[0],1)
+            M2.p = np.ones(shape=(M2.C.shape[0],1))
 
-    else
-        if any( M2.p )
-            M1.p = ones( size(M1.C,1),1 )
+    else:
+        if any(M2.p):
+            M1.p = np.ones(shape=(M1.C.shape[0],1))
 
+    if any(M1.q):
+        if not any(M2.q):
+            M2.q = np.ones(shape=(M2.C.shape[0],1))
 
+    else:
+        if any(M2.q):
+            M1.q = np.ones(shape=(M1.C.shape[0],1))
 
-    if any( M1.q )
-        if isempty( M2.q )
-            M2.q = ones( size(M2.C,1),1 )
+    if M1.C.shape[1] > M2.C.shape[1]:
+        M1, M2 = M2, M1
 
-    else
-        if any( M2.q )
-            M1.q = ones( size(M1.C,1),1 )
+    if any(M1.C):
 
+        commonVars = set(M1.variables).intersection(M2.variables)
 
+        flagCommonVarsInM1 = ismember(M1.variables, M2.variables)
+        commonVars = M1.variables[flagCommonVarsInM1]
 
-
-    if size(M1.C,2) > size(M2.C,2)
-        M1_ = M1
-        M1 = M2
-        M2 = M1_
-
-    if any(M1.C)
-        commonVars=intersect(M1.variables,M2.variables)
-
-        flagCommonVarsInM1 = ismember(M1.variables,M2.variables)
-        commonVars = M1.variables(flagCommonVarsInM1)
-
-        C1 = M1.C p1 = M1.p q1 = M1.q
+        C1 = M1.C
+        p1 = M1.p
+        q1 = M1.q
         sampleInd1 = M1.sampleIndex
-        Cproduct = [] pproduct = [] qproduct = [] sampleIndProduct = []
+        Cproduct = []
+        pproduct = []
+        qproduct = []
+        sampleIndProduct = []
+
         for rr = 1:size(C1,1)
             c1_r = C1(rr,flagCommonVarsInM1)
             c1_notCommon_r = C1(rr,~flagCommonVarsInM1)
@@ -247,21 +331,17 @@ def product(M1, M2, vInfo):
                 sampleIndProduct = [sampleIndProduct repmat(sampleInd1_r, size(M2_r.C,1), 1)]
             elseif any( M2_r.sampleIndex )
                 sampleIndProduct = [sampleIndProduct M2_r.sampleIndex]
-            end
 
             if any( p1 )
                 pproductSign_r = sign( M2_r.p * p1(rr) )
                 pproductVal_r = exp( log( abs(M2_r.p) )+log( abs(p1(rr)) ) )
                 pproduct = [pproduct pproductSign_r .* pproductVal_r]
-            end
 
             if any( q1 )
                 qproductSign_r = sign( M2_r.q * q1(rr) )
                 qproductVal_r = exp( log( abs(M2_r.q) )+log( abs(q1(rr)) ) )
                 qproduct = [qproduct qproductSign_r .* qproductVal_r]
-            end
 
-        end
 
         Cproduct_vars = [M2.variables M1.variables(~flagCommonVarsInM1)]
 
@@ -299,7 +379,9 @@ def get_varsRemain(M, sumVars, sumFlag):
         varsRemain = M.variables[tf]
 
     return varsRemain
+"""
 
+"""
 def sum(M, sumVars, sumFlag=1):
     '''
     Sum over CPMs.
