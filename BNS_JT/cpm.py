@@ -94,35 +94,33 @@ def get_value_given_condn(A, condn):
     return val
 
 
-def isCompatible(C, variables, checkVars, checkStates, vInfo):
+def isCompatible(C, variables, varis, states, vInfo):
     '''
     C: np.ndarray
     variables: array_like
-    checkVars: array_like
-    checkStates: array_like
+    vars: array_like
+    sates: array_like
     vInfo: can be dict or list, collection of instance of Variable
     '''
 
-    idx = ismember(checkVars, variables)
-    checkVars = get_value_given_condn(checkVars, idx)
-    checkStates = get_value_given_condn(checkStates, idx)
+    idx = ismember(varis, variables)
+    varis = get_value_given_condn(varis, idx)
+    states = get_value_given_condn(states, idx)
     idx = get_value_given_condn(idx, idx)
 
-    C1_common = C[:, idx].copy()
-    compatFlag = np.ones(shape=(C.shape[0], 1), dtype=bool)
-    for i, (checkVar, checkState) in enumerate(zip(checkVars, checkStates)):
+    C = C[:, idx].copy()
+    flag = np.ones(shape=(C.shape[0], 1), dtype=bool)
+    for i, (vari, state) in enumerate(zip(varis, states)):
 
-        B = vInfo[checkVar].B
-        C1 = C1_common[:, i][np.newaxis, :]
-        #x1_old = [B[k-1, :] for k in C1][0]
-        x1 = [B[k-1, :] for k in C1[:, compatFlag.flatten()]][0]
-        x2 = B[checkState-1, :]
-        compatCheck = (np.sum(x1 * x2, axis=1) > 0)[:, np.newaxis]
+        B = vInfo[vari].B
+        C1 = C[:, i][np.newaxis, :]
+        x1 = [B[k - 1, :] for k in C1[:, flag.flatten()]][0]
+        x2 = B[state - 1, :]
+        check = (np.sum(x1 * x2, axis=1) > 0)[:, np.newaxis]
 
-        compatFlag[np.where(compatFlag > 0)[0][:len(compatCheck)]] = compatCheck
-        #compatFlag[:len(compatCheck)] = np.logical_and(compatFlag[:len(compatCheck)], compatCheck)
+        flag[np.where(flag > 0)[0][:len(check)]] = check
 
-    return compatFlag
+    return flag
 
 
 def getCpmSubset(M, rowIndex, flagRow=1):
@@ -169,33 +167,29 @@ def isCompatibleCpm(M, Mcompare, vInfo, isCompositeStateConsidered=1):
     #if length(M) ~= 1, error( 'Given CPM must be a single array of Cpm' ) 
     #if size(Mcompare.C,1) ~= 1, error( 'Given CPM to compare must include only a single row' ) 
 
-    compareVars = Mcompare.variables
-    compareStates = Mcompare.C
-
-    idx = ismember(compareVars, M.variables)
-    compareVars = get_value_given_condn(compareVars, idx)
-    compareStates = get_value_given_condn(compareStates[0], idx)
+    idx = ismember(Mcompare.variables, M.variables)
+    varis = get_value_given_condn(Mcompare.variables, idx)
+    states = get_value_given_condn(Mcompare.C[0], idx)
     idx = get_value_given_condn(idx, idx)
 
-    C_common = M.C[:, idx].copy()
+    C = M.C[:, idx].copy()
     if any(Mcompare.sampleIndex) and any(M.sampleIndex):
-        compatFlag = ( M.sampleIndex == Mcompare.sampleIndex )[:, np.newaxis]
+        flag = ( M.sampleIndex == Mcompare.sampleIndex )[:, np.newaxis]
     else:
-        compatFlag = np.ones(shape=(C_common.shape[0], 1), dtype=bool)
+        flag = np.ones(shape=(C.shape[0], 1), dtype=bool)
 
-    for i, (compareVar, compareState) in enumerate(zip(compareVars, compareStates)):
-        C1 = C_common[:, i][np.newaxis, :]
+    for i, (vari, state) in enumerate(zip(varis, states)):
+        C1 = C[:, i][np.newaxis, :]
         if isCompositeStateConsidered:
-            B = vInfo[compareVar].B
+            B = vInfo[vari].B
         else:
             B = np.eye(np.max(C1))
-        x1 = [B[k-1, :] for k in C1[:, compatFlag.flatten()]][0]
-        x2 = B[compareState-1,: ]
-        compatCheck = (np.sum(x1 * x2, axis=1) >0)[:, np.newaxis]
-        #compatFlag[:len(compatCheck)] = np.logical_and(compatFlag[:len(compatCheck)], compatCheck)
-        compatFlag[np.where(compatFlag > 0)[0][:len(compatCheck)]] = compatCheck
+        x1 = [B[k - 1, :] for k in C1[:, flag.flatten()]][0]
+        x2 = B[state - 1,: ]
+        check = (np.sum(x1 * x2, axis=1) >0)[:, np.newaxis]
+        flag[np.where(flag > 0)[0][:len(check)]] = check
 
-    return compatFlag
+    return flag
 
 
 def flip(idx):
@@ -206,56 +200,56 @@ def flip(idx):
     return [True if x is False else False for x in idx]
 
 
-def condition(M, condVars, condStates, vars_, sampleInd=[]):
+def condition(M, varis, states, vars_, sampleInd=[]):
     '''
     M: a list or dictionary of instances of Cpm
-    condVars:
-    condStates:
+    varis:
+    states:
     vars_:
     sampleInd:
     '''
 
     for Mx in M:
-        compatFlag = isCompatible(Mx.C, Mx.variables, condVars, condStates, vars_)
+        flag = isCompatible(Mx.C, Mx.variables, varis, states, vars_)
         # FIXIT
         #if any(sampleInd) and any(Mx.sampleIndex):
-        #    compatFlag = compatFlag & ( M.sampleIndex == sampleInd )
-        Ccompat = Mx.C[compatFlag.flatten(),:].copy()
-        idxInCs = np.array(ismember(condVars, Mx.variables))
-        idxIncondVars = ismember(Mx.variables, condVars)
+        #    flag = flag & ( M.sampleIndex == sampleInd )
+        C = Mx.C[flag.flatten(),:].copy()
+        idxInCs = np.array(ismember(varis, Mx.variables))
+        idxInvaris = ismember(Mx.variables, varis)
 
-        Ccond = np.zeros_like(Ccompat)
-        not_idxIncondVars = flip(idxIncondVars)
-        Ccond[:, not_idxIncondVars] = get_value_given_condn(Ccompat, not_idxIncondVars)
+        Ccond = np.zeros_like(C)
+        not_idxInvaris = flip(idxInvaris)
+        Ccond[:, not_idxInvaris] = get_value_given_condn(C, not_idxInvaris)
 
-        condVars = condVars[idxInCs >= 0].copy()
-        condStates = condStates[idxInCs >= 0].copy()
+        varis = varis[idxInCs >= 0].copy()
+        states = states[idxInCs >= 0].copy()
         idxInCs = idxInCs[idxInCs >= 0].copy()
 
-        for condVar, condState, idxInC in zip(condVars, condStates, idxInCs):
+        for vari, state, idxInC in zip(varis, states, idxInCs):
 
-            B = vars_[condVar].B.copy()
+            B = vars_[vari].B.copy()
 
             if B.any():
-                _Ccompat = Ccompat[:, idxInC].copy() - 1
-                compatCheck = B[_Ccompat,:] * B[condState - 1,:]
-                vars_[condVar].B = addNewStates(compatCheck, B)
-                Ccond[:, idxInC] = [x + 1 for x in ismember(compatCheck, B)]
+                C1 = C[:, idxInC].copy() - 1
+                check = B[C1, :] * B[state - 1,:]
+                vars_[vari].B = addNewStates(check, B)
+                Ccond[:, idxInC] = [x + 1 for x in ismember(check, B)]
 
         Mx.C = Ccond.copy()
         if any(Mx.p):
-            Mx.p = Mx.p[compatFlag][:, np.newaxis]
+            Mx.p = Mx.p[flag][:, np.newaxis]
         if any(Mx.q):
-            Mx.q = Mx.q[compatFlag][:, np.newaxis]
+            Mx.q = Mx.q[flag][:, np.newaxis]
         if any(Mx.sampleIndex):
-            Mx.sampleIndex = Mx.sampleIndex[compatFlag][:, np.newaxis]
+            Mx.sampleIndex = Mx.sampleIndex[flag][:, np.newaxis]
 
     return (M, vars_)
 
 
 def addNewStates(states, B):
-    newStateCheck = flip(ismember(states,B))
-    newState = states[newStateCheck,:]
+    check = flip(ismember(states, B))
+    newState = states[check,:]
 
     #FIXIT 
     #newState = unique(newState,'rows')    
