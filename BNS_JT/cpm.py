@@ -216,14 +216,11 @@ def condition(M, condVars, condStates, vars_, sampleInd=[]):
     '''
 
     for Mx in M:
-
         compatFlag = isCompatible(Mx.C, Mx.variables, condVars, condStates, vars_)
         # FIXIT
         #if any(sampleInd) and any(Mx.sampleIndex):
         #    compatFlag = compatFlag & ( M.sampleIndex == sampleInd )
-
         Ccompat = Mx.C[compatFlag.flatten(),:].copy()
-
         idxInCs = np.array(ismember(condVars, Mx.variables))
         idxIncondVars = ismember(Mx.variables, condVars)
 

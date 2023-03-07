@@ -215,7 +215,7 @@ class Test_isCompatible(unittest.TestCase):
 
         result = isCompatible(C, variables, checkVars, checkStates, vars_)
         expected = np.array([[1,0,1,0,0,0,0,0,1,0,1,0,0,0,0,0]]).T
-        #np.testing.assert_array_equal(expected, result)
+        np.testing.assert_array_equal(expected, result)
 
         idx = ismember(checkVars, variables)
         # should be one less than the Matlab result
@@ -273,8 +273,8 @@ class Test_isCompatible(unittest.TestCase):
         compatFlag[np.where(compatFlag > 0)[0][:len(compatCheck)]] = compatCheck
         np.testing.assert_array_equal(compatFlag, np.array([[1, 0, 1, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0]]).T)
 
-    def test_getCpmSubset1(self):
 
+    def test_getCpmSubset1(self):
 
         # M[5]
         rowIndex = [0]  # 1 -> 0
@@ -550,38 +550,28 @@ class Test_isCompatible(unittest.TestCase):
         expected = np.array([[0.9405,0.0495,0.9405,0.0495]]).T
         np.testing.assert_array_equal(M_n[0].p, expected)
 
-    @unittest.skip('NW')
     def test_condition4(self):
 
-        C = np.array([[1,1,1,1,1],
-             [2,1,1,1,1],
-             [1,2,1,1,1],
-             [2,2,2,1,1],
-             [1,1,1,2,1],
-             [2,1,1,2,1],
-             [1,2,1,2,1],
-             [2,2,2,2,1],
-             [1,1,2,1,2],
-             [2,1,2,1,2],
-             [1,2,2,1,2],
-             [2,2,2,1,2],
-             [1,1,2,2,2],
-             [2,1,2,2,2],
-             [1,2,2,2,2],
-             [2,2,2,2,2]])
-        p = np.array([0.9405, 0.0095, 0.0495, 0.0005, 0.7650, 0.0850, 0.1350, 0.0150, 0.9405, 0.0095, 0.0495, 0.0005, 0.7650, 0.0850, 0.1350, 0.0150])
-        Mx = Cpm(variables=[2, 3, 5, 1, 4], numChild=3, C = C, p = p.T)
+        C = np.array([[2, 3, 3, 2],
+                     [1, 1, 3, 1],
+                     [1, 2, 1, 1],
+                     [2, 2, 2, 1]])
+        p = np.array([1, 1, 1, 1, ])
+        Mx = Cpm(variables=[5, 2, 3, 4], numChild=1, C = C, p = p.T)
         condVars = np.array([2, 3])
         condStates = np.array([1, 1])
         vars_ = self.vars_
 
+        result = isCompatible(Mx.C, Mx.variables, condVars, condStates, vars_)
+        expected = np.array([[1,1,0,0]]).T
+        np.testing.assert_array_equal(expected, result)
+
         M_n, vars_n = condition([Mx], condVars, condStates, vars_)
 
-        self.assertEqual(M_n[0].variables, [2, 3, 5, 1, 4])
-        self.assertEqual(M_n[0].numChild, 3)
+        self.assertEqual(M_n[0].variables, [5, 2, 3, 4])
+        self.assertEqual(M_n[0].numChild, 1)
         expected = np.array([[2,1,1,2],
                              [1,1,1,1]])
-
         np.testing.assert_array_equal(M_n[0].C, expected)
 
         expected = np.array([[1, 1]]).T
