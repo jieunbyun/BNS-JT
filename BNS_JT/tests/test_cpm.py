@@ -2,7 +2,7 @@ import unittest
 import importlib
 import numpy as np
 
-from BNS_JT.cpm import Cpm, ismember, isCompatible, get_value_given_condn, getCpmSubset, isCompatibleCpm, flip, addNewStates, condition
+from BNS_JT.cpm import Cpm, ismember, isCompatible, get_value_given_condn, getCpmSubset, isCompatibleCpm, flip, addNewStates, condition, get_sign_prod, argsort, product
 from BNS_JT.variable import Variable
 
 np.set_printoptions(precision=3)
@@ -321,14 +321,251 @@ class Test_isCompatible(unittest.TestCase):
         expected = np.array([1, 1])[:, np.newaxis]
         np.testing.assert_array_equal(result, expected)
 
-    @unittest.skip('NYI')
-    def test_product(self):
+
+    def test_product1(self):
+        # When there is no common variable
+        M1 = self.M[2]
+        M2 = self.M[3]
+        vInfo = self.vars_
+
+        if any(M1.p):
+            if not any(M2.p):
+                M1.p = np.ones(M1.C.shape[0])
+        else:
+            if any(M2.p):
+                M2.p = np.ones(M2.C.shape[0])
+
+        if any(M1.q):
+            if not any(M2.q):
+                M2.q = np.ones(M2.C.shape[0])
+        else:
+            if any(M2.q):
+                M1.q = ones(M1.C.shape[0])
+
+        np.testing.assert_array_equal(M1.p, np.array([[0.99, 0.01, 0.9, 0.1]]).T)
+        np.testing.assert_array_equal(M1.q, np.array([]).T)
+        np.testing.assert_array_equal(M2.p, np.array([[0.95, 0.05, 0.85, 0.15]]).T)
+        np.testing.assert_array_equal(M1.q, np.array([]).T)
+
+        commonVars=set(M1.variables).intersection(M2.variables)
+
+        self.assertEqual(list(commonVars), [1])
+
+        idxVarsM1 = ismember(M1.variables, M2.variables)
+        commonVars = get_value_given_condn(M1.variables, idxVarsM1)
+
+        np.testing.assert_array_equal(idxVarsM1, np.array([0, 1]))
+        self.assertEqual(commonVars, [1])
+
+        #Cprod = np.array([])
+        #pprod = np.array([])
+        #qprod = np.array([])
+        #sampleIndProd = np.array([])
+
+        for i in range(M1.C.shape[0]):
+            c1_ = get_value_given_condn(M1.C[i, :], idxVarsM1)
+            c1_notCommon = M1.C[i, flip(idxVarsM1)]
+
+            if any(M1.sampleIndex):
+                sampleInd1 = M1.sampleIndex[i]
+            else:
+                sampleInd1 = []
+
+            #if isinstance(commonVars, list):
+            #    commonVars = np.array(commonVars)
+
+            #if isinstance(c1_, list):
+            #    c1_ = np.array(c1_)
+            [[M2_], vInfo] = condition([M2], commonVars, c1_, vInfo, sampleInd1)
+
+            #self.assertEqual(M2_.variables, [3, 1])
+            #self.assertEqual(M2_.numChild, 1)
+            #np.testing.assert_array_equal(M2_.C, np.array([[1, 1], [2, 1]]))
+            #np.testing.assert_array_equal(M2_.p, np.array([[0.95, 0.05]]).T)
+            #Cprod = np.append(Cprod, M2_.C).reshape(M2_.C.shape[0], -1)
+            #print(c1_notCommon)
+            #print(np.tile(c1_notCommon, (M2_.C.shape[0], 1)))
+            _add = np.append(M2_.C, np.tile(c1_notCommon, (M2_.C.shape[0], 1)), axis=1)
+            #print(_add)
+            if i:
+                Cprod = np.append(Cprod, _add, axis=0)
+            else:
+                Cprod = _add
+
+            #print(f'Cprod after: {i}')
+            #print(Cprod)
+            #result = product(M1, M2, vInfo)
+
+            #np.testing.assert_array_equal(Cp, np.array([[1, 1, 1], [2, 1, 1]]))
+
+            #sampleIndProd = np.array([])
+            if any(sampleInd1):
+                _add = repmat(sampleInd1, M2.C.shape[0], 1)
+                sampleIndProd = np.append(sampleIndProd, _add).reshape(M2C.shape[0], -1)
+            elif any(M2_.sampleIndex):
+                sampleIndProd = np.append(sampleIndPro, M2_.sampleIndex).reshape(M2_.sampleIndex.shape[0], -1)
+
+            #np.testing.assert_array_equal(sampleIndProd, [])
+            if any(M1.p):
+                '''
+                val = M2_.p * M1.p[0]
+                np.testing.assert_array_equal(val, np.array([[0.9405, 0.0495]]).T)
+                pproductSign = np.sign(val)
+                np.testing.assert_array_equal(pproductSign, np.ones_like(val))
+                pproductVal = np.exp(np.log(np.abs(M2_.p)) + np.log(np.abs(M1.p[0])))
+                _prod = pproductSign * pproductVal
+                np.testing.assert_array_equal(pproductVal, np.array([[0.9405, 0.0495]]).T)
+                pproduct = np.array([])
+                pproduct = np.append(pproduct, _prod).reshape(_prod.shape[0], -1)
+
+                np.testing.assert_array_equal(pproduct, np.array([[0.9405, 0.0495]]).T)
+                '''
+                _prod = get_sign_prod(M2_.p, M1.p[i])
+                #np.testing.assert_array_equal(pproductVal, np.array([[0.9405, 0.0495]]).T)
+                #pproduct = np.array([])
+                if i:
+                    #pprod = np.append(pprod, _prod, axis=0.reshape(_prod.shape[0], -1)
+
+                    pprod = np.append(pprod, _prod, axis=0)
+                else:
+                    pprod = _prod
+
+        np.testing.assert_array_almost_equal(pprod, np.array([[0.9405, 0.0495, 0.0095, 0.0005, 0.7650, 0.1350, 0.0850, 0.0150]]).T)
+        np.testing.assert_array_almost_equal(Cprod, np.array([[1, 1, 1], [2, 1, 1], [1, 1, 2], [2, 1, 2], [1, 2, 1], [2, 2, 1], [1, 2, 2], [2, 2, 2]]))
+
+        Cprod_vars = np.append(M2.variables, get_value_given_condn(M1.variables, flip(idxVarsM1)))
+        np.testing.assert_array_equal(Cprod_vars, [3, 1, 2])
+
+        newVarsChild = np.append(M1.variables[0:M1.numChild], M2.variables[0:M2.numChild])
+        newVarsChild = np.sort(newVarsChild)
+        np.testing.assert_array_equal(newVarsChild, [2, 3])
+
+        newVarsParent = np.append(M1.variables[M1.numChild:], M2.variables[M2.numChild:])
+        newVarsParent = list(set(newVarsParent).difference(newVarsChild))
+        newVars = np.append(newVarsChild, newVarsParent, axis=0)
+        np.testing.assert_array_equal(newVars, [2, 3, 1])
+
+        idxVars = ismember(newVars, Cprod_vars)
+
+        self.assertEqual(idxVars, [2, 0, 1]) # matlab 3, 1, 2
+
+        Mprod = Cpm(variables=newVars,
+                    numChild = len(newVarsChild),
+                    C = Cprod[:, idxVars],
+                    p = pprod)
+
+        Mprod.sort()
+
+        np.testing.assert_array_equal(Mprod.variables, [2, 3, 1])
+        self.assertEqual(Mprod.numChild, 2)
+        np.testing.assert_array_equal(Mprod.C, np.array([[1, 1, 1], [2, 1, 1], [1, 2, 1], [2, 2, 1], [1, 1, 2], [2, 1, 2], [1, 2, 2], [2, 2, 2]]))
+        np.testing.assert_array_almost_equal(Mprod.p, np.array([[0.9405, 0.0095, 0.0495, 5.0e-4, 0.7650, 0.0850, 0.1350, 0.0150]]).T)
+
+    def test_product2(self):
 
         M1 = self.M[2]
         M2 = self.M[3]
         vInfo = self.vars_
 
-        result = product(M1, M2, vInfo)
+        Mprod, vInfo_ = product(M1, M2, vInfo)
+
+        np.testing.assert_array_equal(Mprod.variables, [2, 3, 1])
+        self.assertEqual(Mprod.numChild, 2)
+        np.testing.assert_array_equal(Mprod.C, np.array([[1, 1, 1], [2, 1, 1], [1, 2, 1], [2, 2, 1], [1, 1, 2], [2, 1, 2], [1, 2, 2], [2, 2, 2]]))
+        np.testing.assert_array_almost_equal(Mprod.p, np.array([[0.9405, 0.0095, 0.0495, 5.0e-4, 0.7650, 0.0850, 0.1350, 0.0150]]).T)
+
+    def test_product3(self):
+
+        M1 = Cpm(variables=[2, 3, 1], numChild=2, C = np.array([[1, 1, 1], [2, 1, 1], [1, 2, 1], [2, 2, 1], [1, 1, 2], [2, 1, 2], [1, 2, 2], [2, 2, 2]]), p = np.array([[0.9405, 0.0095, 0.0495, 5.0e-4, 0.7650, 0.0850, 0.1350, 0.0150]]).T)
+
+        M2 = self.M[5]
+        vInfo = self.vars_
+
+        Mprod, vInfo_ = product(M1, M2, vInfo)
+
+        np.testing.assert_array_equal(Mprod.variables, [2, 3, 5, 1, 4])
+        self.assertEqual(Mprod.numChild, 3)
+
+        expected_C = np.array([
+              [1,1,1,1,1],
+              [2,1,1,1,1],
+              [1,2,1,1,1],
+              [2,2,2,1,1],
+              [1,1,1,2,1],
+              [2,1,1,2,1],
+              [1,2,1,2,1],
+              [2,2,2,2,1],
+              [1,1,2,1,2],
+              [2,1,2,1,2],
+              [1,2,2,1,2],
+              [2,2,2,1,2],
+              [1,1,2,2,2],
+              [2,1,2,2,2],
+              [1,2,2,2,2],
+              [2,2,2,2,2]])
+
+        expected_p = np.array([[0.9405,0.0095,0.0495,0.0005,0.7650,0.0850,0.1350,0.0150,0.9405,0.0095,0.0495,0.0005,0.7650,0.0850,0.1350,0.0150]]).T
+        np.testing.assert_array_equal(Mprod.C, expected_C)
+        np.testing.assert_array_almost_equal(Mprod.p, expected_p)
+
+    def test_sort(self):
+
+        p = np.array([[0.9405, 0.0495, 0.0095, 0.0005, 0.7650, 0.1350, 0.0850, 0.0150]]).T
+        C = np.array([[1, 1, 1], [1, 2, 1], [2, 1, 1], [2, 2, 1], [1, 1, 2], [1, 2, 2], [2, 1, 2], [2, 2, 2]])
+
+        M = Cpm(variables=[2, 3, 1],
+                numChild = 2,
+                C = C,
+                p = p)
+
+        if any(M.sampleIndex):
+            rowIdx = argsort(M.sampleIndex)
+        else:
+            rowIdx = argsort(list(map(tuple, C[:, ::-1])))
+
+        try:
+            Ms_p = M.p[rowIdx]
+        except IndexError:
+            Ms_p = M.p
+
+        try:
+            Ms_q = M.q[rowIdx]
+        except IndexError:
+            Ms_q = M.q
+
+        try:
+            Ms_sampleIndex = M.sampleIndex[rowIdx]
+        except IndexError:
+            Ms_sampleIndex = M.sampleIndex
+
+        Ms = Cpm(C=M.C[rowIdx, :],
+                 p=Ms_p,
+                 q=Ms_q,
+                 sampleIndex=Ms_sampleIndex,
+                 variables=M.variables,
+                 numChild=M.numChild)
+
+        np.testing.assert_array_equal(Ms.C, np.array([[1, 1, 1], [2, 1, 1], [1, 2, 1], [2, 2, 1], [1, 1, 2], [2, 1, 2], [1, 2, 2], [2, 2, 2]]))
+        np.testing.assert_array_almost_equal(Ms.p, np.array([[0.9405, 0.0095, 0.0495, 5.0e-4, 0.7650, 0.0850, 0.1350, 0.0150]]).T)
+
+
+
+    def test_argsort(self):
+
+        C = np.array([[1, 1, 1], [1, 2, 1], [2, 1, 1], [2, 2, 1], [1, 1, 2], [1, 2, 2], [2, 1, 2], [2, 2, 2]])
+        x = list(map(tuple, C[:, ::-1]))
+        res = argsort(x)
+        self.assertEqual(res, [0, 2, 1, 3, 4, 6, 5, 7])  # matlab index -1
+
+
+    def test_get_sign_prod(self):
+
+        A = np.array([[0.95, 0.05]]).T
+        B = np.array([0.99])
+
+        result = get_sign_prod(A, B)
+        np.testing.assert_array_equal(result, np.array([[0.9405, 0.0495]]).T)
+
 
     def test_condition0(self):
 
@@ -453,7 +690,6 @@ class Test_isCompatible(unittest.TestCase):
         vars_ = self.vars_
 
         M_n, vars_n = condition([Mx], condVars, condStates, vars_)
-
         self.assertEqual(M_n[0].variables, [2, 3, 5, 1, 4])
         self.assertEqual(M_n[0].numChild, 3)
         expected = np.array([[1,1,1,1,1],
@@ -575,6 +811,29 @@ class Test_isCompatible(unittest.TestCase):
         np.testing.assert_array_equal(M_n[0].C, expected)
 
         expected = np.array([[1, 1]]).T
+        np.testing.assert_array_equal(M_n[0].p, expected)
+
+    def test_condition5(self):
+
+        C = np.array([[1, 1],
+                     [2, 1],
+                     [1, 2],
+                     [2, 2]])
+        p = np.array([0.95, 0.05, 0.85, 0.15])
+        M2 = Cpm(variables=[3, 1], numChild=1, C = C, p = p.T)
+        condVars = np.array([1])
+        states = np.array([2])
+        vars_ = self.vars_
+
+        M_n, vars_n = condition([M2], condVars, states, vars_)
+
+        self.assertEqual(M_n[0].variables, [3, 1])
+        self.assertEqual(M_n[0].numChild, 1)
+        expected = np.array([[1,2],
+                             [2,2]])
+        np.testing.assert_array_equal(M_n[0].C, expected)
+
+        expected = np.array([[0.85, 0.15]]).T
         np.testing.assert_array_equal(M_n[0].p, expected)
 
     def test_addNewStates(self):

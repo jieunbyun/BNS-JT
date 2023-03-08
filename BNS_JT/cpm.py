@@ -1,5 +1,6 @@
 import numpy as np
 import textwrap
+import copy
 
 # save away Python sum
 _sum_ = sum
@@ -34,8 +35,8 @@ class Cpm(object):
             self.p = np.array(kwargs['p'])[:, np.newaxis]
         else:
             self.p = kwargs['p']
-        self.q = kwargs.get('q', [])
-        self.sampleIndex  = kwargs.get('sampleIndex', []) ## sample index (numbering) vector
+        self.q = kwargs.get('q', np.array([]))
+        self.sampleIndex  = kwargs.get('sampleIndex', np.array([])) ## sample index (numbering) vector
 
         assert len(self.variables), 'variables must be a numeric vector'
         assert all(isinstance(x, (int, np.int32, np.int64)) for x in self.variables), 'variables must be a numeric vector'
@@ -73,6 +74,29 @@ class Cpm(object):
         return textwrap.dedent(f'''\
 {self.__class__.__name__}(variables={self.variables}, numChild={self.numChild}, C={self.C}, p={self.p}''')
 
+    def sort(self):
+
+        if any(self.sampleIndex):
+            rowIdx = argsort(self.sampleIndex)
+        else:
+            rowIdx = argsort(list(map(tuple, self.C[:, ::-1])))
+
+        self.C = self.C[rowIdx, :]
+
+        if self.p.any():
+            self.p = self.p[rowIdx]
+
+        if self.q.any():
+            self.q = self.q[rowIdx]
+
+        if self.sampleIndex.any():
+            self.sampleIndex = self.sampleIndex[rowIdx]
+
+def argsort(seq):
+
+    #http://stackoverflow.com/questions/3382352/equivalent-of-numpy-argsort-in-basic-python/3382369#3382369
+    return sorted(range(len(seq)), key=seq.__getitem__)
+
 
 def ismember(A, B):
     '''
@@ -86,7 +110,8 @@ def get_value_given_condn(A, condn):
     if isinstance(A, np.ndarray) and A.ndim==2 and A.shape[1] == len(condn):
         A = A.T
         val = np.array([x for (i, x) in zip(condn, A) if i is not False])
-        val = val.reshape(-1, A.shape[1]).T
+        if val.any():
+            val = val.reshape(-1, A.shape[1]).T
     else:
         assert len(A) == len(condn), f'len of {A} is not equal to len of {condn}'
         val = [x for (i, x) in zip(condn, A) if i is not False]
@@ -203,13 +228,19 @@ def flip(idx):
 def condition(M, varis, states, vars_, sampleInd=[]):
     '''
     M: a list or dictionary of instances of Cpm
-    varis:
-    states:
+    varis: array
+    states: array
     vars_:
     sampleInd:
     '''
+    if isinstance(varis, list):
+        varis = np.array(varis)
 
-    for Mx in M:
+    if isinstance(states, list):
+        states = np.array(states)
+
+    Mc = copy.deepcopy(M)
+    for Mx in Mc:
         flag = isCompatible(Mx.C, Mx.variables, varis, states, vars_)
         # FIXIT
         #if any(sampleInd) and any(Mx.sampleIndex):
@@ -244,7 +275,7 @@ def condition(M, varis, states, vars_, sampleInd=[]):
         if any(Mx.sampleIndex):
             Mx.sampleIndex = Mx.sampleIndex[flag][:, np.newaxis]
 
-    return (M, vars_)
+    return (Mc, vars_)
 
 
 def addNewStates(states, B):
@@ -257,107 +288,6 @@ def addNewStates(states, B):
         B = np.append(B, newState, axis=1)
     return B
 
-
-
-
-"""
-def product(M1, M2, vInfo):
-    '''
-    M1:
-    M2:
-    vInfo:
-    '''
-
-    assert not any(set(M1.variables[:M1.numChild]).intersection(M2.variables[:M2.numChild])), 'PMFs must not have common child nodes'
-
-    if any(M1.p):
-        if not any(M2.p):
-            M2.p = np.ones(shape=(M2.C.shape[0],1))
-
-    else:
-        if any(M2.p):
-            M1.p = np.ones(shape=(M1.C.shape[0],1))
-
-    if any(M1.q):
-        if not any(M2.q):
-            M2.q = np.ones(shape=(M2.C.shape[0],1))
-
-    else:
-        if any(M2.q):
-            M1.q = np.ones(shape=(M1.C.shape[0],1))
-
-    if M1.C.shape[1] > M2.C.shape[1]:
-        M1, M2 = M2, M1
-
-    if any(M1.C):
-
-        commonVars = set(M1.variables).intersection(M2.variables)
-
-        flagCommonVarsInM1 = ismember(M1.variables, M2.variables)
-        commonVars = M1.variables[flagCommonVarsInM1]
-
-        C1 = M1.C
-        p1 = M1.p
-        q1 = M1.q
-        sampleInd1 = M1.sampleIndex
-        Cproduct = []
-        pproduct = []
-        qproduct = []
-        sampleIndProduct = []
-
-        for rr = 1:size(C1,1)
-            c1_r = C1(rr,flagCommonVarsInM1)
-            c1_notCommon_r = C1(rr,~flagCommonVarsInM1)
-
-            if any( sampleInd1 )
-                sampleInd1_r = sampleInd1(rr)
-            else
-                sampleInd1_r = []
-            end
-
-            [M2_r,vInfo] = condition(M2, commonVars, c1_r, vInfo, sampleInd1_r)
-            Cproduct = [Cproduct M2_r.C repmat(c1_notCommon_r, size(M2_r.C,1), 1)]
-
-            if any( sampleInd1_r )
-                sampleIndProduct = [sampleIndProduct repmat(sampleInd1_r, size(M2_r.C,1), 1)]
-            elseif any( M2_r.sampleIndex )
-                sampleIndProduct = [sampleIndProduct M2_r.sampleIndex]
-
-            if any( p1 )
-                pproductSign_r = sign( M2_r.p * p1(rr) )
-                pproductVal_r = exp( log( abs(M2_r.p) )+log( abs(p1(rr)) ) )
-                pproduct = [pproduct pproductSign_r .* pproductVal_r]
-
-            if any( q1 )
-                qproductSign_r = sign( M2_r.q * q1(rr) )
-                qproductVal_r = exp( log( abs(M2_r.q) )+log( abs(q1(rr)) ) )
-                qproduct = [qproduct qproductSign_r .* qproductVal_r]
-
-
-        Cproduct_vars = [M2.variables M1.variables(~flagCommonVarsInM1)]
-
-        newVarsChild = [M1.variables(1:M1.numChild) M2.variables(1:M2.numChild)]
-        newVarsChild = sort(newVarsChild)
-        newVarsParent = [M1.variables(M1.numChild+1:end) M2.variables(M2.numChild+1:end)]
-        newVarsParent = setdiff(newVarsParent,newVarsChild)
-        newVars = [newVarsChild newVarsParent]
-
-        [~,idxVars] = ismember(newVars,Cproduct_vars)
-        Cproduct = Cproduct(:,idxVars)
-
-        Mproduct = Cpm
-        Mproduct.variables = newVars
-        Mproduct.numChild = length(newVarsChild)
-        Mproduct.C = Cproduct Mproduct.p = pproduct Mproduct.q = qproduct
-        Mproduct.sampleIndex = sampleIndProduct
-
-        Mproduct = sort(Mproduct)
-    else
-        Mproduct = M2
-    end
-
-    return (Mproduct, vInfo)
-"""
 """
 def get_varsRemain(M, sumVars, sumFlag):
 
@@ -432,13 +362,20 @@ def sum(M, sumVars, sumFlag=1):
     end
 """
 
-    
+
+
+def get_sign_prod(A, B):
+    '''
+    A: M2_.p
+    B: M1.p[i]
+    '''
+    assert A.shape[1] == B.shape[0]
+    prodSign = np.sign(A * B)
+    prodVal = np.exp(np.log(np.abs(A)) + np.log(np.abs(B)))
+    return prodSign * prodVal
 
 
 
-
-
-"""
 def product(M1, M2, vInfo):
     '''
     M1: instance of Cpm
@@ -446,15 +383,17 @@ def product(M1, M2, vInfo):
     vInfo:
 
     '''
+    assert isinstance(M1, Cpm), f'M1 should be an instance of Cpm'
+    assert isinstance(M2, Cpm), f'M2 should be an instance of Cpm'
 
-    assert bool(set(M1.variables[:M1.numChild]).intersection(
-        M2.variables[:M2.numChild]), 'PMFs must not have common child nodes'
+    check = set(M1.variables[:M1.numChild]).intersection(M2.variables[:M2.numChild])
+    assert not bool(check), 'PMFs must not have common child nodes'
 
     if any(M1.p):
-        if any(M2.p):
+        if not any(M2.p):
             M1.p = np.ones(M1.C.shape[0])
     else:
-       if not any(M2.p):
+        if any(M2.p):
             M2.p = np.ones(M2.C.shape[0])
 
     if any(M1.q):
@@ -469,74 +408,78 @@ def product(M1, M2, vInfo):
         M1 = M2
         M2 = M1_
 
-    if any(M1.C):
+    if M1.C.any():
+        # FIXIT: defined but not used
+        commonVars = list(set(M1.variables).intersection(M2.variables))
 
-        commonVars=set(M1.variables).intersection(M2.variables)
+        idxVarsM1 = ismember(M1.variables, M2.variables)
+        commonVars = get_value_given_condn(M1.variables, idxVarsM1)
 
-        flagCommonVarsInM1 = ismember(M1.variables,M2.variables)
-        commonVars = M1.variables(flagCommonVarsInM1)
+        for i in range(M1.C.shape[0]):
 
-        C1 = M1.C
-        p1 = M1.p
-        q1 = M1.q
+            c1_ = get_value_given_condn(M1.C[i, :], idxVarsM1)
+            c1_notCommon = M1.C[i, flip(idxVarsM1)]
 
-        sampleInd1 = M1.sampleIndex
-
-        Cproduct = []
-        pproduct = []
-        qproduct = []
-        sampleIndProduct = []
-
-        for rr in 1:size(C1,1):
-            c1_r = C1(rr, flagCommonVarsInM1)
-            c1_notCommon_r = C1[rr, ~flagCommonVarsInM1]
-
-            if any(sampleInd1):
-                sampleInd1_r = sampleInd1(rr)
+            if M1.sampleIndex.any():
+                sampleInd1 = M1.sampleIndex[i]
             else:
-                sampleInd1_r = []
+                sampleInd1 = []
 
-            [M2_r,vInfo] = condition(M2, commonVars, c1_r, vInfo, sampleInd1_r)
-            Cproduct = [Cproduct M2_r.C repmat(c1_notCommon_r, size(M2_r.C,1), 1)]
+            [[M2_], vInfo] = condition([M2], commonVars, c1_, vInfo, sampleInd1)
+            _add = np.append(M2_.C, np.tile(c1_notCommon, (M2_.C.shape[0], 1)), axis=1)
 
-            if any(sampleInd1_r):
-                sampleIndProduct = [sampleIndProduct repmat(sampleInd1_r, size(M2_r.C,1), 1)]
-            elseif ~isempty( M2_r.sampleIndex )
-                sampleIndProduct = [sampleIndProduct M2_r.sampleIndex]
+            if i:
+                Cprod = np.append(Cprod, _add, axis=0)
+            else:
+                Cprod = _add
 
-            if any(p1):
-                pproductSign_r = sign( M2_r.p * p1(rr) )
-                pproductVal_r = exp( log( abs(M2_r.p) )+log( abs(p1(rr)) ) )
-                pproduct = [pproduct pproductSign_r .* pproductVal_r]
-            end
+            # FIXIT
+            #if any(sampleInd1):
+                #_add = repmat(sampleInd1, M2_.C.shape[0], 1)
+                #sampleIndProd = np.append(sampleIndProd, _add).reshape(M2_.C.shape[0], -1)
 
-            if any(q1):
-                qproductSign_r = sign( M2_r.q * q1(rr) )
-                qproductVal_r = exp( log( abs(M2_r.q) )+log( abs(q1(rr)) ) )
-                qproduct = [qproduct qproductSign_r .* qproductVal_r]
-            end
+            #elif any(M2_.s):
+            #    sampleIndProd = np.append(sampleIndPro, M2_.s).reshape(M2_s.shape[0], -1)
 
-        end
+            if any(M1.p):
+                _prod = get_sign_prod(M2_.p, M1.p[i])
 
-        Cproduct_vars = [M2.variables M1.variables(~flagCommonVarsInM1)]
+            if i:
+                pprod = np.append(pprod, _prod, axis=0)
+            else:
+                pprod = _prod
 
-        newVarsChild = [M1.variables(1:M1.numChild) M2.variables(1:M2.numChild)]
-        newVarsChild = sort(newVarsChild)
-        newVarsParent = [M1.variables(M1.numChild+1:]  M2.variables(M2.numChild+1:] ]
-        newVarsParent = setdiff(newVarsParent,newVarsChild)
-        newVars = [newVarsChild newVarsParent]
+            if any(M1.q):
+                _prod = get_sign_prod(M2_.q, M1.q[i])
 
-        [~,idxVars] = ismember(newVars,Cproduct_vars)
-        Cproduct = Cproduct(:,idxVars)
+            if i:
+                qprod = np.append(qprod, _prod, axis=0)
+            else:
+                qprod = _prod
 
-        Mproduct = Cpm
-        Mproduct.variables = newVars
-        Mproduct.numChild = length(newVarsChild)
-        Mproduct.C = Cproduct Mproduct.p = pproduct Mproduct.q = qproduct
-        Mproduct.sampleIndex = sampleIndProduct
+        Cprod_vars = np.append(M2.variables, get_value_given_condn(M1.variables, flip(idxVarsM1)))
 
-        Mproduct = sort(Mproduct)
-    else
-        Mproduct = M2
-    end
-"""
+        newVarsChild = np.append(M1.variables[:M1.numChild], M2.variables[:M2.numChild])
+        newVarsChild = np.sort(newVarsChild)
+
+        newVarsParent = np.append(M1.variables[M1.numChild:], M2.variables[M2.numChild:])
+        newVarsParent = list(set(newVarsParent).difference(newVarsChild))
+        newVars = np.append(newVarsChild, newVarsParent, axis=0)
+
+        idxVars = ismember(newVars, Cprod_vars)
+
+        Mprod = Cpm(variables=newVars,
+                    numChild = len(newVarsChild),
+                    C = Cprod[:, idxVars],
+                    p = pprod)
+
+        if any(qprod):
+            Mprod.q = qprod
+
+        Mprod.sort()
+
+    else:
+        Mprod = M2
+
+    return  Mprod, vInfo
+
