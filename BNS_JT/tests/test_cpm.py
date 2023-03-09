@@ -2,7 +2,9 @@ import unittest
 import importlib
 import numpy as np
 
-from BNS_JT.cpm import Cpm, ismember, isCompatible, get_value_given_condn, getCpmSubset, isCompatibleCpm, flip, addNewStates, condition, get_sign_prod, argsort, product
+_sum_ = sum
+
+from BNS_JT.cpm import Cpm, ismember, isCompatible, get_value_given_condn, getCpmSubset, isCompatibleCpm, flip, addNewStates, condition, get_sign_prod, argsort, product, setdiff, sum
 from BNS_JT.variable import Variable
 
 np.set_printoptions(precision=3)
@@ -27,7 +29,7 @@ class Test_Cpm(unittest.TestCase):
         a = Cpm(**self.kwargs)
 
         self.assertTrue(isinstance(a, Cpm))
-        self.assertEqual(a.variables, self.kwargs['variables'])
+        np.testing.assert_array_equal(a.variables, self.kwargs['variables'])
         self.assertEqual(a.numChild, self.kwargs['numChild'])
         np.testing.assert_array_equal(a.C, self.kwargs['C'])
 
@@ -291,6 +293,19 @@ class Test_isCompatible(unittest.TestCase):
 
         np.testing.assert_array_equal(result.C, np.array([[2, 3, 3, 2]]))
         np.testing.assert_array_equal(result.p, [[1]])
+
+    def test_getCpmSubset3(self):
+
+        M = Cpm(variables=[2, 3, 5, 1, 4],
+                numChild=5,
+                C=np.array([[2, 2, 2, 2, 2]]),
+                p=np.array([[0.0150]]).T)
+
+        result = getCpmSubset(M, [0], 0)
+
+        self.assertFalse(result.C.any())
+        self.assertFalse(result.p.any())
+
 
     def test_isCompatibleCpm1(self):
 
@@ -690,7 +705,7 @@ class Test_isCompatible(unittest.TestCase):
         vars_ = self.vars_
 
         M_n, vars_n = condition([Mx], condVars, condStates, vars_)
-        self.assertEqual(M_n[0].variables, [2, 3, 5, 1, 4])
+        np.testing.assert_array_equal(M_n[0].variables, [2, 3, 5, 1, 4])
         self.assertEqual(M_n[0].numChild, 3)
         expected = np.array([[1,1,1,1,1],
                             [1,2,1,1,1],
@@ -732,7 +747,7 @@ class Test_isCompatible(unittest.TestCase):
 
         M_n, vars_n = condition([Mx], condVars, condStates, vars_)
 
-        self.assertEqual(M_n[0].variables, [2, 3, 5, 1, 4])
+        np.testing.assert_array_equal(M_n[0].variables, [2, 3, 5, 1, 4])
         self.assertEqual(M_n[0].numChild, 3)
         expected = np.array([[1,1,1,1,1],
                             [2,1,1,1,1],
@@ -772,19 +787,19 @@ class Test_isCompatible(unittest.TestCase):
         condStates = np.array([1, 1])
         vars_ = self.vars_
 
-        M_n, vars_n = condition([Mx], condVars, condStates, vars_)
+        ([M_n], vars_n) = condition([Mx], condVars, condStates, vars_)
 
-        self.assertEqual(M_n[0].variables, [2, 3, 5, 1, 4])
-        self.assertEqual(M_n[0].numChild, 3)
+        np.testing.assert_array_equal(M_n.variables, [2, 3, 5, 1, 4])
+        self.assertEqual(M_n.numChild, 3)
         expected = np.array([[1,1,1,1,1],
                             [1,2,1,1,1],
                             [1,1,2,1,2],
                             [1,2,2,1,2]])
 
-        np.testing.assert_array_equal(M_n[0].C, expected)
+        np.testing.assert_array_equal(M_n.C, expected)
 
         expected = np.array([[0.9405,0.0495,0.9405,0.0495]]).T
-        np.testing.assert_array_equal(M_n[0].p, expected)
+        np.testing.assert_array_equal(M_n.p, expected)
 
     def test_condition4(self):
 
@@ -802,16 +817,16 @@ class Test_isCompatible(unittest.TestCase):
         expected = np.array([[1,1,0,0]]).T
         np.testing.assert_array_equal(expected, result)
 
-        M_n, vars_n = condition([Mx], condVars, condStates, vars_)
+        [M_n], vars_n = condition([Mx], condVars, condStates, vars_)
 
-        self.assertEqual(M_n[0].variables, [5, 2, 3, 4])
-        self.assertEqual(M_n[0].numChild, 1)
+        np.testing.assert_array_equal(M_n.variables, [5, 2, 3, 4])
+        self.assertEqual(M_n.numChild, 1)
         expected = np.array([[2,1,1,2],
                              [1,1,1,1]])
-        np.testing.assert_array_equal(M_n[0].C, expected)
+        np.testing.assert_array_equal(M_n.C, expected)
 
         expected = np.array([[1, 1]]).T
-        np.testing.assert_array_equal(M_n[0].p, expected)
+        np.testing.assert_array_equal(M_n.p, expected)
 
     def test_condition5(self):
 
@@ -825,16 +840,16 @@ class Test_isCompatible(unittest.TestCase):
         states = np.array([2])
         vars_ = self.vars_
 
-        M_n, vars_n = condition([M2], condVars, states, vars_)
+        [M_n], vars_n = condition([M2], condVars, states, vars_)
 
-        self.assertEqual(M_n[0].variables, [3, 1])
-        self.assertEqual(M_n[0].numChild, 1)
+        np.testing.assert_array_equal(M_n.variables, [3, 1])
+        self.assertEqual(M_n.numChild, 1)
         expected = np.array([[1,2],
                              [2,2]])
-        np.testing.assert_array_equal(M_n[0].C, expected)
+        np.testing.assert_array_equal(M_n.C, expected)
 
         expected = np.array([[0.85, 0.15]]).T
-        np.testing.assert_array_equal(M_n[0].p, expected)
+        np.testing.assert_array_equal(M_n.p, expected)
 
     def test_addNewStates(self):
         states = np.array([np.ones(8), np.zeros(8)]).T
@@ -858,10 +873,27 @@ class Test_Sum(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
 
-        variables = [3, 1, 2]
-        numChild = 1
-        C = np.array([[2, 2, 3], [2, 1, 2], [1, 1, 1]])
-        p = [1, 1, 1]
+        variables = [2, 3, 5, 1, 4]
+        numChild = 3
+        C = np.array([
+              [1,1,1,1,1],
+              [2,1,1,1,1],
+              [1,2,1,1,1],
+              [2,2,2,1,1],
+              [1,1,1,2,1],
+              [2,1,1,2,1],
+              [1,2,1,2,1],
+              [2,2,2,2,1],
+              [1,1,2,1,2],
+              [2,1,2,1,2],
+              [1,2,2,1,2],
+              [2,2,2,1,2],
+              [1,1,2,2,2],
+              [2,1,2,2,2],
+              [1,2,2,2,2],
+              [2,2,2,2,2]])
+
+        p = np.array([[0.9405,0.0095,0.0495,0.0005,0.7650,0.0850,0.1350,0.0150,0.9405,0.0095,0.0495,0.0005,0.7650,0.0850,0.1350,0.0150]]).T
 
         cls.kwargs = {'variables': variables,
                       'numChild': numChild,
@@ -877,6 +909,203 @@ class Test_Sum(unittest.TestCase):
         #result = get_varsRemain(Msys, sumVars, 0)
 
         #self.assertEqual(expected, result)
+
+    def test_setdiff(self):
+
+        A = [3, 6, 2, 1, 5, 1, 1]
+        B = [2, 4, 6]
+        C, ia = setdiff(A, B)
+
+        self.assertEqual(C, [1, 3, 5])
+        self.assertEqual(ia, [3, 0, 4])
+
+    def test_sum1(self):
+
+        M = Cpm(**self.kwargs)
+        sumVars = [1]
+        varsRemainIdx = ismember( sumVars, M.variables[:M.numChild])
+
+        sumFlag = 1
+        if sumFlag:
+            varsRemain, varsRemainIdx = setdiff(M.variables[:M.numChild], sumVars)
+            self.assertEqual(varsRemain, [2, 3, 5])
+            self.assertEqual(varsRemainIdx, [0, 1, 2])  # Matlab: [1, 2, 3]
+        else:
+            varsRemainIdx = get_value_given_condn(varsRemainIdx, varsRemainIdx)
+            self.assertEqual(varsRemainIdx, [])
+            varsRemain = get_value_given_condn(M.variables, varsRemainIdx)
+
+        numChild = len(varsRemain)
+
+        if any(M.variables[M.numChild:]):
+            varsRemain = np.append(varsRemain, M.variables[M.numChild:])
+            varsRemainIdx = np.append(varsRemainIdx, range(M.numChild, len(M.variables)))
+
+        np.testing.assert_array_equal(varsRemain, [2, 3, 5, 1, 4])
+        np.testing.assert_array_equal(varsRemainIdx, [0, 1, 2, 3, 4])
+
+        Mloop = Cpm(variables=get_value_given_condn(M.variables, varsRemainIdx),
+                    C=M.C[:, varsRemainIdx],
+                    p=M.p,
+                    q=M.q,
+                    sampleIndex=M.sampleIndex,
+                    numChild=len(varsRemainIdx))
+        i = 0
+        while Mloop.C.any():
+            Mcompare = getCpmSubset(Mloop, [0]) # need to change to 0 
+            if i==0:
+                np.testing.assert_array_equal(Mcompare.variables, [2, 3, 5, 1, 4])
+                np.testing.assert_array_equal(Mcompare.numChild, 5)
+                np.testing.assert_array_equal(Mcompare.p, np.array([[0.9405]]).T)
+                np.testing.assert_array_equal(Mcompare.C, np.array([[1, 1, 1, 1, 1]]))
+                np.testing.assert_array_equal(Mcompare.q, [])
+                np.testing.assert_array_equal(Mcompare.sampleIndex, [])
+
+            flag = isCompatibleCpm(Mloop, Mcompare)
+            expected = np.zeros((16, 1))
+            expected[0, 0] = 1
+            if i==0:
+                np.testing.assert_array_equal(flag, expected)
+
+            if i==0:
+                Csum = Mloop.C[0, :][np.newaxis, :]
+            else:
+                Csum = np.append(Csum, Mloop.C[0, :][np.newaxis, :], axis=0)
+
+            if i==0:
+                np.testing.assert_array_equal(Csum, np.array([[1, 1, 1, 1, 1]]))
+
+            if any(Mloop.p):
+                pval = np.array([np.sum(Mloop.p[flag])])[:, np.newaxis]
+                if i==0:
+                    psum = pval
+                else:
+                    psum = np.append(psum, pval, axis=0)
+
+                if i==0:
+                    np.testing.assert_array_equal(psum, [[0.9405]])
+
+            try:
+                Mloop = getCpmSubset(Mloop, np.where(flag)[0], flagRow=0)
+            except AssertionError:
+                print(Mloop)
+
+            expected_C = np.array([[2,1,1,1,1],
+                                  [1,2,1,1,1],
+                                  [2,2,2,1,1],
+                                  [1,1,1,2,1],
+                                  [2,1,1,2,1],
+                                  [1,2,1,2,1],
+                                  [2,2,2,2,1],
+                                  [1,1,2,1,2],
+                                  [2,1,2,1,2],
+                                  [1,2,2,1,2],
+                                  [2,2,2,1,2],
+                                  [1,1,2,2,2],
+                                  [2,1,2,2,2],
+                                  [1,2,2,2,2],
+                                  [2,2,2,2,2]])
+            expected_p = np.array([[0.0095,0.0495,0.0005,0.7650,0.0850,0.1350,0.0150,0.9405,0.0095,0.0495,0.0005,0.7650,0.0850,0.1350,0.0150]]).T
+            if i==0:
+                np.testing.assert_array_equal(Mloop.variables, [2, 3, 5, 1, 4])
+                np.testing.assert_array_equal(Mloop.numChild, 5)
+                np.testing.assert_array_equal(Mloop.p, expected_p)
+                np.testing.assert_array_equal(Mloop.C, expected_C)
+                np.testing.assert_array_equal(Mloop.q, [])
+                np.testing.assert_array_equal(Mloop.sampleIndex, [])
+            i += 1
+
+        Msum = Cpm(variables=varsRemain,
+                   numChild=numChild,
+                   C=Csum,
+                   p=psum)
+
+        expected_C = np.array([[1,1,1,1,1],
+                            [2,1,1,1,1],
+                            [1,2,1,1,1],
+                            [2,2,2,1,1],
+                            [1,1,1,2,1],
+                            [2,1,1,2,1],
+                            [1,2,1,2,1],
+                            [2,2,2,2,1],
+                            [1,1,2,1,2],
+                            [2,1,2,1,2],
+                            [1,2,2,1,2],
+                            [2,2,2,1,2],
+                            [1,1,2,2,2],
+                            [2,1,2,2,2],
+                            [1,2,2,2,2],
+                            [2,2,2,2,2]])
+
+        expected_p = np.array([[0.9405,0.0095,0.0495,0.0005,0.7650,0.0850,0.1350,0.0150,0.9405,0.0095,0.0495,0.0005,0.7650,0.0850,0.1350,0.0150]]).T
+        np.testing.assert_array_equal(Msum.C, expected_C)
+        np.testing.assert_array_equal(Msum.p, expected_p)
+
+    def test_sum2(self):
+
+        M = Cpm(**self.kwargs)
+        sumVars = [1]
+
+        Ms = sum(M, sumVars, sumFlag=1)
+
+        expected_C = np.array([[1,1,1,1,1],
+                            [2,1,1,1,1],
+                            [1,2,1,1,1],
+                            [2,2,2,1,1],
+                            [1,1,1,2,1],
+                            [2,1,1,2,1],
+                            [1,2,1,2,1],
+                            [2,2,2,2,1],
+                            [1,1,2,1,2],
+                            [2,1,2,1,2],
+                            [1,2,2,1,2],
+                            [2,2,2,1,2],
+                            [1,1,2,2,2],
+                            [2,1,2,2,2],
+                            [1,2,2,2,2],
+                            [2,2,2,2,2]])
+
+        expected_p = np.array([[0.9405,0.0095,0.0495,0.0005,0.7650,0.0850,0.1350,0.0150,0.9405,0.0095,0.0495,0.0005,0.7650,0.0850,0.1350,0.0150]]).T
+        np.testing.assert_array_equal(Ms.C, expected_C)
+        np.testing.assert_array_equal(Ms.p, expected_p)
+
+    def test_sum3(self):
+
+        M = Cpm(**self.kwargs)
+        sumVars = [2, 3]
+        Ms = sum(M, sumVars)
+        expected_C = np.array([[1,1,1],
+                              [2,1,1],
+                              [1,2,1],
+                              [2,2,1],
+                              [2,1,2],
+                              [2,2,2]])
+        expected_p = np.array([[0.9995, 0.0005,0.985, 0.015, 1.00, 1.00]]).T
+
+        np.testing.assert_array_equal(Ms.C, expected_C)
+        np.testing.assert_array_almost_equal(Ms.p, expected_p)
+        np.testing.assert_array_equal(Ms.variables, [5, 1, 4])
+
+    def test_sum4(self):
+
+        M = Cpm(**self.kwargs)
+        sumVars = [5]
+        Ms = sum(M, sumVars, sumFlag=0)
+        expected_C = np.array([[1,1,1],
+                              [2,1,1],
+                              [1,2,1],
+                              [2,2,1],
+                              [2,1,2],
+                              [2,2,2]])
+        expected_p = np.array([[0.9995, 0.0005,0.985, 0.015, 1.00, 1.00]]).T
+
+        np.testing.assert_array_equal(Ms.C, expected_C)
+        np.testing.assert_array_almost_equal(Ms.p, expected_p)
+        np.testing.assert_array_equal(Ms.variables, [5, 1, 4])
+        self.assertEqual(Ms.numChild, 1)
+
+
+
 
 if __name__=='__main__':
     unittest.main()

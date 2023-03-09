@@ -28,7 +28,11 @@ class Cpm(object):
     '''
     def __init__(self, **kwargs):
 
-        self.variables = kwargs['variables']
+        if isinstance(kwargs['variables'], list):
+            self.variables = np.array(kwargs['variables'])
+        else:
+            self.variables = kwargs['variables']
+
         self.numChild = kwargs['numChild']
         self.C = kwargs['C']
         if isinstance(kwargs['p'], list):
@@ -51,7 +55,7 @@ class Cpm(object):
         else:
             assert self.C.shape[1] == len(self.variables), 'C must have the same number of columns with that of variables'
 
-        assert len(self.p), 'p must be a numeric vector'
+        assert isinstance(self.p, np.ndarray), 'p must be a numeric vector'
         all(isinstance(y, (float, np.float32, np.float64, int, np.int32, np.int64)) for y in self.p), 'p must be a numeric vector'
 
         if self.p.ndim == 1:
@@ -103,6 +107,15 @@ def ismember(A, B):
     FIXIT: shuld we return False
     '''
     return [np.where(np.array(B) == x)[0].min() if x in B else False for x in A]
+
+
+def setdiff(A, B):
+    '''
+    matlab setdiff equivalent
+    '''
+    C = list(set(A).difference(B))
+    ia = [list(A).index(x) for x in C]
+    return C, ia
 
 
 def get_value_given_condn(A, condn):
@@ -165,29 +178,28 @@ def getCpmSubset(M, rowIndex, flagRow=1):
     if any(M.p):
         pSubset = M.p[rowIndex]
     else:
-        pSubset = []
+        pSubset = np.array([])
 
     if any(M.q):
         qSubset = M.q[rowIndex]
     else:
-        qSubset = []
+        qSubset = np.array([])
 
     if any(M.sampleIndex):
         sampleIndSubset = M.sampleIndex( rowIndex )
     else:
-        sampleIndSubset = []
+        sampleIndSubset = np.array([])
 
     return Cpm(variables=M.variables, numChild=M.numChild,
                C=M.C[rowIndex,:], p=pSubset, q=qSubset,
                sampleIndex=sampleIndSubset)
 
 
-def isCompatibleCpm(M, Mcompare, vInfo, isCompositeStateConsidered=1):
+def isCompatibleCpm(M, Mcompare, vInfo=[]):
     '''
     M: an instance of Cpm
     Mcompare: another instance of Cpm
     vInfo: list or dictionary of variables
-    isCompositeStateConsidered: True (default) or False
     '''
     #if length(M) ~= 1, error( 'Given CPM must be a single array of Cpm' ) 
     #if size(Mcompare.C,1) ~= 1, error( 'Given CPM to compare must include only a single row' ) 
@@ -205,7 +217,7 @@ def isCompatibleCpm(M, Mcompare, vInfo, isCompositeStateConsidered=1):
 
     for i, (vari, state) in enumerate(zip(varis, states)):
         C1 = C[:, i][np.newaxis, :]
-        if isCompositeStateConsidered:
+        if any(vInfo):
             B = vInfo[vari].B
         else:
             B = np.eye(np.max(C1))
@@ -302,7 +314,6 @@ def get_varsRemain(M, sumVars, sumFlag):
     return varsRemain
 """
 
-"""
 def sum(M, sumVars, sumFlag=1):
     '''
     Sum over CPMs.
@@ -318,50 +329,75 @@ def sum(M, sumVars, sumFlag=1):
     if sumFlag and any(set(M.variables[M.numChild:]).intersection(sumVars)):
         print('Parent nodes are NOT summed up')
 
-    varsRemain, varsRemainIdx = compute_varsRemain(M, sumVars, sumFlag)
-    numChild = length( varsRemain )
+    if sumFlag:
+        varsRemain, varsRemainIdx = setdiff(M.variables[:M.numChild], sumVars)
+    else:
+        # FIXIT
+        varsRemainIdx = ismember(sumVars, M.variables[:M.numChild])
+        varsRemainIdx = get_value_given_condn(varsRemainIdx, varsRemainIdx)
+        varsRemainIdx = np.sort(varsRemainIdx)
+        varsRemain = M.variables[varsRemainIdx]
 
-    if ~isempty( M.variables(M.numChild+1:]  )
-        varsRemain = [varsRemain M.variables(M.numChild+1:] ]
-        varsRemainIdx = [varsRemainIdx (M.numChild+1):length(M.variables)]
-    end
+    numChild = len(varsRemain)
 
-    Mloop = Cpm( M.variables( varsRemainIdx ), length( varsRemainIdx ), M.C(:,varsRemainIdx), M.p, M.q, M.sampleIndex )
-    if isempty(Mloop.C)
-        Msum = Cpm(varsRemain, numChild, zeros(1,0), sum(M.p), [], [] ) 
-    else
-        Csum = [] psum = [] qsum = [] sampleIndSum = []
-        while ~isempty(Mloop.C)
-                
-            Mcompare = getCpmSubset( Mloop, 1 )
-            compatFlag = isComplatibleCpm( Mloop, Mcompare )
-         
-            Csum = [Csum Mloop.C(1,:)]
-            
-            if ~isempty(Mloop.p)
-                psum = [psum sum(Mloop.p(compatFlag))]
-            end
-            
-            if ~isempty(Mloop.q)
-                if ~all( Mloop.q( compatFlag ) == Mloop.q(1) )
-                    error( 'Compatible samples cannot have different weights' )
-                else
-                    qsum = [qsum Mloop.q(1)]
-                end
-            end
-                
-            if ~isempty( Mloop.sampleIndex )
-                sampleIndSum = [sampleIndSum Mloop.sampleIndex(1)]
-            end
-            
-            Mloop = getCpmSubset( Mloop, find( compatFlag ), 0 )
+    if any(M.variables[M.numChild:]):
+        varsRemain = np.append(varsRemain, M.variables[M.numChild:])
+        varsRemainIdx = np.append(varsRemainIdx, range(M.numChild, len(M.variables)))
 
-        end
-        
-        Msum = Cpm( varsRemain, numChild, Csum, psum, qsum, sampleIndSum )
-    end
-"""
+    Mloop = Cpm(variables=M.variables[varsRemainIdx],
+                C=M.C[:, varsRemainIdx],
+                p=M.p,
+                q=M.q,
+                sampleIndex=M.sampleIndex,
+                numChild=len(varsRemainIdx))
 
+    while Mloop.C.any():
+
+        Mcompare = getCpmSubset(Mloop, [0]) # need to change to 0 
+        flag = isCompatibleCpm(Mloop, Mcompare)
+
+        val = Mloop.C[0, :][np.newaxis, :]
+        try:
+            Csum = np.append(Csum, val, axis=0)
+        except NameError:
+            Csum = val
+
+        if any(Mloop.p):
+            pval = np.array([np.sum(Mloop.p[flag])])[:, np.newaxis]
+            try:
+                psum = np.append(psum, pval, axis=0)
+            except NameError:
+                psum = pval
+
+        if any(Mloop.q):
+            qval = Mloop.q[0]
+            try:
+                qsum = np.append(qsum, qval, axis=0)
+            except NameError:
+                qsum = qval
+
+        if any(Mloop.sampleIndex):
+            val = Mloop.sampleIndex[0]
+            try:
+                samplesum = np.append(sampleIndsum, val, axis=0)
+            except NameError:
+                sampleIndsum = val
+
+        Mloop = getCpmSubset(Mloop, np.where(flag)[0], flagRow=0)
+
+    Ms = Cpm(variables=varsRemain, numChild=numChild, C=Csum, p=psum)
+
+    try:
+        Ms.q = qsum
+    except NameError:
+        pass
+
+    try:
+        Ms.sampleIndex = sampleIndsum
+    except NameError:
+        pass
+
+    return Ms
 
 
 def get_sign_prod(A, B):
