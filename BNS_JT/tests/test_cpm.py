@@ -4,7 +4,7 @@ import numpy as np
 
 _sum_ = sum
 
-from BNS_JT.cpm import Cpm, ismember, isCompatible, get_value_given_condn, getCpmSubset, isCompatibleCpm, flip, addNewStates, condition, get_sign_prod, argsort, product, setdiff, sum
+from BNS_JT.cpm import Cpm, ismember, isCompatible, get_value_given_condn, flip, addNewStates, condition, get_sign_prod, argsort, setdiff
 from BNS_JT.variable import Variable
 
 np.set_printoptions(precision=3)
@@ -280,7 +280,7 @@ class Test_isCompatible(unittest.TestCase):
 
         # M[5]
         rowIndex = [0]  # 1 -> 0
-        result = getCpmSubset(self.M[5], rowIndex)
+        result = self.M[5].getCpmSubset(rowIndex)
 
         np.testing.assert_array_equal(result.C, np.array([[2, 3, 3, 2]]))
         np.testing.assert_array_equal(result.p, [[1]])
@@ -289,7 +289,7 @@ class Test_isCompatible(unittest.TestCase):
 
         # M[5]
         rowIndex = [1, 2, 3]  # [2, 3, 4] -> 0
-        result = getCpmSubset(self.M[5], rowIndex, 0)
+        result = self.M[5].getCpmSubset(rowIndex, 0)
 
         np.testing.assert_array_equal(result.C, np.array([[2, 3, 3, 2]]))
         np.testing.assert_array_equal(result.p, [[1]])
@@ -301,7 +301,7 @@ class Test_isCompatible(unittest.TestCase):
                 C=np.array([[2, 2, 2, 2, 2]]),
                 p=np.array([[0.0150]]).T)
 
-        result = getCpmSubset(M, [0], 0)
+        result = M.getCpmSubset([0], 0)
 
         self.assertFalse(result.C.any())
         self.assertFalse(result.p.any())
@@ -311,8 +311,8 @@ class Test_isCompatible(unittest.TestCase):
 
         # M[5]
         rowIndex = [0]  # 1 -> 0
-        M_sys_select = getCpmSubset(self.M[5], rowIndex)
-        result = isCompatibleCpm(self.M[3], M_sys_select, vInfo=self.vars_)
+        M_sys_select = self.M[5].getCpmSubset(rowIndex)
+        result = self.M[3].isCompatible(M_sys_select, vInfo=self.vars_)
         expected = np.array([1, 1, 1, 1])[:, np.newaxis]
         np.testing.assert_array_equal(result, expected)
 
@@ -320,9 +320,9 @@ class Test_isCompatible(unittest.TestCase):
 
         # M[5]
         rowIndex = [0]  # 1 -> 0
-        M_sys_select = getCpmSubset(self.M[5], rowIndex)
+        M_sys_select = self.M[5].getCpmSubset(rowIndex)
 
-        result = isCompatibleCpm(self.M[4], M_sys_select, vInfo=self.vars_)
+        result = self.M[4].isCompatible(M_sys_select, vInfo=self.vars_)
         expected = np.array([0, 1, 0, 1])[:, np.newaxis]
         np.testing.assert_array_equal(result, expected)
 
@@ -330,9 +330,9 @@ class Test_isCompatible(unittest.TestCase):
 
         # M[5]
         rowIndex = [0]  # 1 -> 0
-        M_sys_select = getCpmSubset(self.M[5], rowIndex)
+        M_sys_select = self.M[5].getCpmSubset(rowIndex)
 
-        result = isCompatibleCpm(self.M[1], M_sys_select, vInfo=self.vars_)
+        result = self.M[1].isCompatible(M_sys_select, vInfo=self.vars_)
         expected = np.array([1, 1])[:, np.newaxis]
         np.testing.assert_array_equal(result, expected)
 
@@ -482,7 +482,7 @@ class Test_isCompatible(unittest.TestCase):
         M2 = self.M[3]
         vInfo = self.vars_
 
-        Mprod, vInfo_ = product(M1, M2, vInfo)
+        Mprod, vInfo_ = M1.product(M2, vInfo)
 
         np.testing.assert_array_equal(Mprod.variables, [2, 3, 1])
         self.assertEqual(Mprod.numChild, 2)
@@ -496,7 +496,7 @@ class Test_isCompatible(unittest.TestCase):
         M2 = self.M[5]
         vInfo = self.vars_
 
-        Mprod, vInfo_ = product(M1, M2, vInfo)
+        Mprod, vInfo_ = M1.product(M2, vInfo)
 
         np.testing.assert_array_equal(Mprod.variables, [2, 3, 5, 1, 4])
         self.assertEqual(Mprod.numChild, 3)
@@ -952,7 +952,7 @@ class Test_Sum(unittest.TestCase):
                     numChild=len(varsRemainIdx))
         i = 0
         while Mloop.C.any():
-            Mcompare = getCpmSubset(Mloop, [0]) # need to change to 0 
+            Mcompare = Mloop.getCpmSubset([0]) # need to change to 0 
             if i==0:
                 np.testing.assert_array_equal(Mcompare.variables, [2, 3, 5, 1, 4])
                 np.testing.assert_array_equal(Mcompare.numChild, 5)
@@ -961,7 +961,7 @@ class Test_Sum(unittest.TestCase):
                 np.testing.assert_array_equal(Mcompare.q, [])
                 np.testing.assert_array_equal(Mcompare.sampleIndex, [])
 
-            flag = isCompatibleCpm(Mloop, Mcompare)
+            flag = Mloop.isCompatible(Mcompare)
             expected = np.zeros((16, 1))
             expected[0, 0] = 1
             if i==0:
@@ -986,7 +986,7 @@ class Test_Sum(unittest.TestCase):
                     np.testing.assert_array_equal(psum, [[0.9405]])
 
             try:
-                Mloop = getCpmSubset(Mloop, np.where(flag)[0], flagRow=0)
+                Mloop = Mloop.getCpmSubset(np.where(flag)[0], flagRow=0)
             except AssertionError:
                 print(Mloop)
 
@@ -1046,7 +1046,7 @@ class Test_Sum(unittest.TestCase):
         M = Cpm(**self.kwargs)
         sumVars = [1]
 
-        Ms = sum(M, sumVars, sumFlag=1)
+        Ms = M.sum(sumVars, flag=1)
 
         expected_C = np.array([[1,1,1,1,1],
                             [2,1,1,1,1],
@@ -1073,7 +1073,7 @@ class Test_Sum(unittest.TestCase):
 
         M = Cpm(**self.kwargs)
         sumVars = [2, 3]
-        Ms = sum(M, sumVars)
+        Ms = M.sum(sumVars)
         expected_C = np.array([[1,1,1],
                               [2,1,1],
                               [1,2,1],
@@ -1090,7 +1090,7 @@ class Test_Sum(unittest.TestCase):
 
         M = Cpm(**self.kwargs)
         sumVars = [5]
-        Ms = sum(M, sumVars, sumFlag=0)
+        Ms = M.sum(sumVars, flag=0)
         expected_C = np.array([[1,1,1],
                               [2,1,1],
                               [1,2,1],
