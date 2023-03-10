@@ -2,8 +2,6 @@ import numpy as np
 import textwrap
 import copy
 
-# save away Python sum
-_sum_ = sum
 
 
 class Cpm(object):
@@ -24,7 +22,7 @@ class Cpm(object):
         sampleIndex: array_like
             sample index vector
 
-        Cpm(varibles, numChild, C, p)
+        Cpm(varibles, numChild, C, p, q, sampleIndex)
     '''
     def __init__(self, **kwargs):
 
@@ -62,16 +60,18 @@ class Cpm(object):
             self.p.shape = (len(self.p), 1)
         assert len(self.p) == self.C.shape[0], 'p must have the same length with the number of rows in C'
 
+        if any(self.q):
+            assert len(self.q) == self.C.shape[0], 'q must have the same length with the number of rows in C'
+
+        if any(self.sampleIndex):
+            assert len(self.sampleIndex) == self.C.shape[0], 'sampleIndex must have the same length with the number of rows in C'
+
         '''
         elseif ~isempty(M.q) && ~isnumeric(M.q)
             errFlag = 1
             errMess ='Sampling probability vector q must be a numeric vector'
         elseif (~isempty(M.q)&&~isempty(M.C)) && (length(M.q)~=size(M.C,1))
-            errFlag = 1
-            errMess = 'q must have the same length with the number of rows in C'
         elseif (~isempty(M.sampleIndex)&&~isempty(M.C)) && (length(M.sampleIndex)~=size(M.C,1))
-            errFlag = 1
-            errMess = 'Sample index array must have the same length with the number of rows in C'
         '''
 
     def __repr__(self):
@@ -162,7 +162,7 @@ class Cpm(object):
         if flag:
             varsRemain, varsRemainIdx = setdiff(self.variables[:self.numChild], varis)
         else:
-            # FIXIT
+            # FIXME
             varsRemainIdx = ismember(varis, self.variables[:self.numChild])
             varsRemainIdx = get_value_given_condn(varsRemainIdx, varsRemainIdx)
             varsRemainIdx = np.sort(varsRemainIdx)
@@ -259,7 +259,7 @@ class Cpm(object):
                 self.q = ones(self.C.shape[0])
 
         if self.C.any():
-            # FIXIT: defined but not used
+            # FIXME: defined but not used
             commonVars = list(set(self.variables).intersection(M2.variables))
 
             idxVarsM1 = ismember(self.variables, M2.variables)
@@ -283,7 +283,7 @@ class Cpm(object):
                 else:
                     Cprod = _add
 
-                # FIXIT
+                # FIXME
                 #if any(sampleInd1):
                     #_add = repmat(sampleInd1, M2_.C.shape[0], 1)
                     #sampleIndProd = np.append(sampleIndProd, _add).reshape(M2_.C.shape[0], -1)
@@ -360,9 +360,7 @@ def argsort(seq):
 
 
 def ismember(A, B):
-    '''
-    FIXIT: shuld we return False
-    '''
+    #FIXME: shuld we return False
     return [np.where(np.array(B) == x)[0].min() if x in B else False for x in A]
 
 
@@ -443,7 +441,7 @@ def condition(M, varis, states, vars_, sampleInd=[]):
     Mc = copy.deepcopy(M)
     for Mx in Mc:
         flag = isCompatible(Mx.C, Mx.variables, varis, states, vars_)
-        # FIXIT
+        # FIXME
         #if any(sampleInd) and any(Mx.sampleIndex):
         #    flag = flag & ( M.sampleIndex == sampleInd )
         C = Mx.C[flag.flatten(),:].copy()
@@ -483,7 +481,7 @@ def addNewStates(states, B):
     check = flip(ismember(states, B))
     newState = states[check,:]
 
-    #FIXIT 
+    #FIXME 
     #newState = unique(newState,'rows')    
     if any(newState):
         B = np.append(B, newState, axis=1)

@@ -2,8 +2,6 @@ import unittest
 import importlib
 import numpy as np
 
-_sum_ = sum
-
 from BNS_JT.cpm import Cpm, ismember, isCompatible, get_value_given_condn, flip, addNewStates, condition, get_sign_prod, argsort, setdiff
 from BNS_JT.variable import Variable
 
@@ -74,26 +72,48 @@ class Test_Cpm(unittest.TestCase):
                        'C': self.kwargs['C'],
                        'p': self.kwargs['p']})
 
+    def test_sort(self):
 
-class Test_isCompatible(unittest.TestCase):
+        p = np.array([[0.9405, 0.0495, 0.0095, 0.0005, 0.7650, 0.1350, 0.0850, 0.0150]]).T
+        C = np.array([[1, 1, 1], [1, 2, 1], [2, 1, 1], [2, 2, 1], [1, 1, 2], [1, 2, 2], [2, 1, 2], [2, 2, 2]])
 
-    @classmethod
-    def setUpClass(cls):
+        M = Cpm(variables=[2, 3, 1],
+                numChild = 2,
+                C = C,
+                p = p)
 
-        cls.M = {}
-        cls.vars_ = {}
+        if any(M.sampleIndex):
+            rowIdx = argsort(M.sampleIndex)
+        else:
+            rowIdx = argsort(list(map(tuple, C[:, ::-1])))
 
-        cls.M[1] = Cpm(variables=[1], numChild=1, C = np.array([1, 2]).T, p = np.array([0.9, 0.1]).T)
-        cls.M[2] = Cpm(variables=[2, 1], numChild=1, C = np.array([[1, 1], [2, 1], [1, 2], [2, 2]]), p = np.array([0.99, 0.01, 0.9, 0.1]).T)
-        cls.M[3] = Cpm(variables=[3, 1], numChild=1, C = np.array([[1, 1], [2, 1], [1, 2], [2, 2]]), p = np.array([0.95, 0.05, 0.85, 0.15]).T)
-        cls.M[4] = Cpm(variables=[4, 1], numChild=1, C = np.array([[1, 1], [2, 1], [1, 2], [2, 2]]), p = np.array([0.99, 0.01, 0.9, 0.1]).T)
-        cls.M[5] = Cpm(variables=[5, 2, 3, 4], numChild=1, C = np.array([[2, 3, 3, 2], [1, 1, 3, 1], [1, 2, 1, 1], [2, 2, 2, 1]]), p = np.array([1, 1, 1, 1]).T)
+        try:
+            Ms_p = M.p[rowIdx]
+        except IndexError:
+            Ms_p = M.p
 
-        cls.vars_[1] = Variable(B=np.eye(2), value=['Mild', 'Severe'])
-        cls.vars_[2] = Variable(B=np.array([[1, 0], [0, 1], [1, 1]]), value=['Survive', 'Fail'])
-        cls.vars_[3] = Variable(B=np.array([[1, 0], [0, 1], [1, 1]]), value=['Survive', 'Fail'])
-        cls.vars_[4] = Variable(B=np.array([[1, 0], [0, 1], [1, 1]]), value=['Survive', 'Fail'])
-        cls.vars_[5] = Variable(B=np.array([[1, 0], [0, 1]]), value=['Survive', 'Fail'])
+        try:
+            Ms_q = M.q[rowIdx]
+        except IndexError:
+            Ms_q = M.q
+
+        try:
+            Ms_sampleIndex = M.sampleIndex[rowIdx]
+        except IndexError:
+            Ms_sampleIndex = M.sampleIndex
+
+        Ms = Cpm(C=M.C[rowIdx, :],
+                 p=Ms_p,
+                 q=Ms_q,
+                 sampleIndex=Ms_sampleIndex,
+                 variables=M.variables,
+                 numChild=M.numChild)
+
+        np.testing.assert_array_equal(Ms.C, np.array([[1, 1, 1], [2, 1, 1], [1, 2, 1], [2, 2, 1], [1, 1, 2], [2, 1, 2], [1, 2, 2], [2, 2, 2]]))
+        np.testing.assert_array_almost_equal(Ms.p, np.array([[0.9405, 0.0095, 0.0495, 5.0e-4, 0.7650, 0.0850, 0.1350, 0.0150]]).T)
+
+
+class Test_functions(unittest.TestCase):
 
     def test_ismember1(self):
 
@@ -116,7 +136,6 @@ class Test_isCompatible(unittest.TestCase):
         result = ismember(B, A)
         self.assertEqual([3, 2, 2, 2, False, False], result)
 
-
     def test_ismember3(self):
 
         A = np.array([5, 3, 4, 2])
@@ -137,6 +156,29 @@ class Test_isCompatible(unittest.TestCase):
         result = ismember(A, B)
         self.assertEqual(expected, result)
 
+    def test_argsort(self):
+
+        C = np.array([[1, 1, 1], [1, 2, 1], [2, 1, 1], [2, 2, 1], [1, 1, 2], [1, 2, 2], [2, 1, 2], [2, 2, 2]])
+        x = list(map(tuple, C[:, ::-1]))
+        res = argsort(x)
+        self.assertEqual(res, [0, 2, 1, 3, 4, 6, 5, 7])  # matlab index -1
+
+    def test_get_sign_prod(self):
+
+        A = np.array([[0.95, 0.05]]).T
+        B = np.array([0.99])
+
+        result = get_sign_prod(A, B)
+        np.testing.assert_array_equal(result, np.array([[0.9405, 0.0495]]).T)
+
+    def test_setdiff(self):
+
+        A = [3, 6, 2, 1, 5, 1, 1]
+        B = [2, 4, 6]
+        C, ia = setdiff(A, B)
+
+        self.assertEqual(C, [1, 3, 5])
+        self.assertEqual(ia, [3, 0, 4])
 
     def test_get_value_given_condn1(self):
 
@@ -152,6 +194,46 @@ class Test_isCompatible(unittest.TestCase):
 
         with self.assertRaises(AssertionError):
             get_value_given_condn(A, condn)
+
+    def test_addNewStates(self):
+        states = np.array([np.ones(8), np.zeros(8)]).T
+        B = np.array([[1, 0], [0, 1], [1, 1]])
+
+        newStateCheck = ismember(states, B)
+        expected = [0, 0, 0, 0, 0, 0, 0, 0]
+        self.assertEqual(newStateCheck, expected)
+
+        newStateCheck = flip(newStateCheck)
+        np.testing.assert_array_equal(newStateCheck, np.zeros_like(newStateCheck, dtype=bool))
+        newState = states[newStateCheck, :]
+        np.testing.assert_array_equal(newState, np.empty(shape=(0, 2)))
+        #B = np.append(B, newState, axis=1)
+
+        result = addNewStates(states, B)
+        np.testing.assert_array_equal(result, B)
+
+
+
+class Test_isCompatible(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+
+        cls.M = {}
+        cls.vars_ = {}
+
+        cls.M[1] = Cpm(variables=[1], numChild=1, C = np.array([1, 2]).T, p = np.array([0.9, 0.1]).T)
+        cls.M[2] = Cpm(variables=[2, 1], numChild=1, C = np.array([[1, 1], [2, 1], [1, 2], [2, 2]]), p = np.array([0.99, 0.01, 0.9, 0.1]).T)
+        cls.M[3] = Cpm(variables=[3, 1], numChild=1, C = np.array([[1, 1], [2, 1], [1, 2], [2, 2]]), p = np.array([0.95, 0.05, 0.85, 0.15]).T)
+        cls.M[4] = Cpm(variables=[4, 1], numChild=1, C = np.array([[1, 1], [2, 1], [1, 2], [2, 2]]), p = np.array([0.99, 0.01, 0.9, 0.1]).T)
+        cls.M[5] = Cpm(variables=[5, 2, 3, 4], numChild=1, C = np.array([[2, 3, 3, 2], [1, 1, 3, 1], [1, 2, 1, 1], [2, 2, 2, 1]]), p = np.array([1, 1, 1, 1]).T)
+
+        cls.vars_[1] = Variable(B=np.eye(2), value=['Mild', 'Severe'])
+        cls.vars_[2] = Variable(B=np.array([[1, 0], [0, 1], [1, 1]]), value=['Survive', 'Fail'])
+        cls.vars_[3] = Variable(B=np.array([[1, 0], [0, 1], [1, 1]]), value=['Survive', 'Fail'])
+        cls.vars_[4] = Variable(B=np.array([[1, 0], [0, 1], [1, 1]]), value=['Survive', 'Fail'])
+        cls.vars_[5] = Variable(B=np.array([[1, 0], [0, 1]]), value=['Survive', 'Fail'])
+
 
     def test_isCompatible1(self):
 
@@ -336,6 +418,24 @@ class Test_isCompatible(unittest.TestCase):
         expected = np.array([1, 1])[:, np.newaxis]
         np.testing.assert_array_equal(result, expected)
 
+
+class Test_Product(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+
+        cls.M = {}
+        cls.vars_ = {}
+
+        cls.M[2] = Cpm(variables=[2, 1], numChild=1, C = np.array([[1, 1], [2, 1], [1, 2], [2, 2]]), p = np.array([0.99, 0.01, 0.9, 0.1]).T)
+        cls.M[3] = Cpm(variables=[3, 1], numChild=1, C = np.array([[1, 1], [2, 1], [1, 2], [2, 2]]), p = np.array([0.95, 0.05, 0.85, 0.15]).T)
+        cls.M[5] = Cpm(variables=[5, 2, 3, 4], numChild=1, C = np.array([[2, 3, 3, 2], [1, 1, 3, 1], [1, 2, 1, 1], [2, 2, 2, 1]]), p = np.array([1, 1, 1, 1]).T)
+
+        cls.vars_[1] = Variable(B=np.eye(2), value=['Mild', 'Severe'])
+        cls.vars_[2] = Variable(B=np.array([[1, 0], [0, 1], [1, 1]]), value=['Survive', 'Fail'])
+        cls.vars_[3] = Variable(B=np.array([[1, 0], [0, 1], [1, 1]]), value=['Survive', 'Fail'])
+        cls.vars_[4] = Variable(B=np.array([[1, 0], [0, 1], [1, 1]]), value=['Survive', 'Fail'])
+        cls.vars_[5] = Variable(B=np.array([[1, 0], [0, 1]]), value=['Survive', 'Fail'])
 
     def test_product1(self):
         # When there is no common variable
@@ -523,68 +623,13 @@ class Test_isCompatible(unittest.TestCase):
         np.testing.assert_array_equal(Mprod.C, expected_C)
         np.testing.assert_array_almost_equal(Mprod.p, expected_p)
 
-    def test_sort(self):
 
-        p = np.array([[0.9405, 0.0495, 0.0095, 0.0005, 0.7650, 0.1350, 0.0850, 0.0150]]).T
-        C = np.array([[1, 1, 1], [1, 2, 1], [2, 1, 1], [2, 2, 1], [1, 1, 2], [1, 2, 2], [2, 1, 2], [2, 2, 2]])
+class Test_Condition(unittest.TestCase):
 
-        M = Cpm(variables=[2, 3, 1],
-                numChild = 2,
-                C = C,
-                p = p)
+    @classmethod
+    def setUpClass(cls):
 
-        if any(M.sampleIndex):
-            rowIdx = argsort(M.sampleIndex)
-        else:
-            rowIdx = argsort(list(map(tuple, C[:, ::-1])))
-
-        try:
-            Ms_p = M.p[rowIdx]
-        except IndexError:
-            Ms_p = M.p
-
-        try:
-            Ms_q = M.q[rowIdx]
-        except IndexError:
-            Ms_q = M.q
-
-        try:
-            Ms_sampleIndex = M.sampleIndex[rowIdx]
-        except IndexError:
-            Ms_sampleIndex = M.sampleIndex
-
-        Ms = Cpm(C=M.C[rowIdx, :],
-                 p=Ms_p,
-                 q=Ms_q,
-                 sampleIndex=Ms_sampleIndex,
-                 variables=M.variables,
-                 numChild=M.numChild)
-
-        np.testing.assert_array_equal(Ms.C, np.array([[1, 1, 1], [2, 1, 1], [1, 2, 1], [2, 2, 1], [1, 1, 2], [2, 1, 2], [1, 2, 2], [2, 2, 2]]))
-        np.testing.assert_array_almost_equal(Ms.p, np.array([[0.9405, 0.0095, 0.0495, 5.0e-4, 0.7650, 0.0850, 0.1350, 0.0150]]).T)
-
-
-
-    def test_argsort(self):
-
-        C = np.array([[1, 1, 1], [1, 2, 1], [2, 1, 1], [2, 2, 1], [1, 1, 2], [1, 2, 2], [2, 1, 2], [2, 2, 2]])
-        x = list(map(tuple, C[:, ::-1]))
-        res = argsort(x)
-        self.assertEqual(res, [0, 2, 1, 3, 4, 6, 5, 7])  # matlab index -1
-
-
-    def test_get_sign_prod(self):
-
-        A = np.array([[0.95, 0.05]]).T
-        B = np.array([0.99])
-
-        result = get_sign_prod(A, B)
-        np.testing.assert_array_equal(result, np.array([[0.9405, 0.0495]]).T)
-
-
-    def test_condition0(self):
-
-        C = np.array([[1,1,1,1,1],
+        cls.C = np.array([[1,1,1,1,1],
              [2,1,1,1,1],
              [1,2,1,1,1],
              [2,2,2,1,1],
@@ -600,17 +645,28 @@ class Test_isCompatible(unittest.TestCase):
              [2,1,2,2,2],
              [1,2,2,2,2],
              [2,2,2,2,2]])
-        p = np.array([0.9405, 0.0095, 0.0495, 0.0005, 0.7650, 0.0850, 0.1350, 0.0150, 0.9405, 0.0095, 0.0495, 0.0005, 0.7650, 0.0850, 0.1350, 0.0150])
-        Mx = Cpm(variables=[2, 3, 5, 1, 4], numChild=3, C = C, p = p.T)
+        cls.p = np.array([[0.9405, 0.0095, 0.0495, 0.0005, 0.7650, 0.0850, 0.1350, 0.0150, 0.9405, 0.0095, 0.0495, 0.0005, 0.7650, 0.0850, 0.1350, 0.0150]]).T
+
+        cls.vars_ = {}
+        cls.vars_[1] = Variable(B=np.eye(2), value=['Mild', 'Severe'])
+        cls.vars_[2] = Variable(B=np.array([[1, 0], [0, 1], [1, 1]]), value=['Survive', 'Fail'])
+        cls.vars_[3] = Variable(B=np.array([[1, 0], [0, 1], [1, 1]]), value=['Survive', 'Fail'])
+        cls.vars_[4] = Variable(B=np.array([[1, 0], [0, 1], [1, 1]]), value=['Survive', 'Fail'])
+        cls.vars_[5] = Variable(B=np.array([[1, 0], [0, 1]]), value=['Survive', 'Fail'])
+
+        cls.Mx = Cpm(variables=[2, 3, 5, 1, 4], numChild=3, C = cls.C, p = cls.p)
+
+    def test_condition0(self):
+
         condVars = np.array([2])
         condStates = np.array([1])
         vars_ = self.vars_
 
-        compatFlag = isCompatible(Mx.C, Mx.variables, condVars, condStates, vars_)
+        compatFlag = isCompatible(self.Mx.C, self.Mx.variables, condVars, condStates, vars_)
         expected = np.array([1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0])[:, np.newaxis]
 
         np.testing.assert_array_equal(expected, compatFlag)
-        Ccompat = Mx.C[compatFlag.flatten(), :]
+        Ccompat = self.Mx.C[compatFlag.flatten(), :]
         expected = np.array([[1,1,1,1,1],
                             [1,2,1,1,1],
                             [1,1,1,2,1],
@@ -621,10 +677,10 @@ class Test_isCompatible(unittest.TestCase):
                             [1,2,2,2,2]])
         np.testing.assert_array_equal(expected, Ccompat)
 
-        idxInC = np.array(ismember(condVars, Mx.variables))
+        idxInC = np.array(ismember(condVars, self.Mx.variables))
         np.testing.assert_array_equal(idxInC, [0])  # matlab 1 though
 
-        idxInCondVars = ismember(Mx.variables, condVars)
+        idxInCondVars = ismember(self.Mx.variables, condVars)
         np.testing.assert_array_equal(idxInCondVars, [0, False, False, False, False])  # matlab 1 though
 
         not_idxInCondVars = flip(idxInCondVars)
@@ -646,14 +702,14 @@ class Test_isCompatible(unittest.TestCase):
         B = vars_[_condVars[0]].B
         np.testing.assert_array_equal(B, np.array([[1, 0], [0, 1], [1, 1]]))
 
-        # FIXIT: index or not
+        # FIXME: index or not
         _Ccompat = Ccompat[:, _idxInC].copy() - 1
         #np.testing.assert_array_equal(_Ccompat, np.ones((8, 1)))
         np.testing.assert_array_equal(_Ccompat, np.zeros((8, 1)))
 
         expected = np.array([np.ones(8), np.zeros(8)]).T
         np.testing.assert_array_equal(B[_Ccompat.flatten(), :], expected)
-        # FIXIT: index or not
+        # FIXME: index or not
         np.testing.assert_array_equal(B[_condStates - 1, :], np.array([[1, 0]]))
         #np.testing.assert_array_equal(B[_condStates, :], np.array([1, 0]))
         compatCheck_mv = B[_Ccompat.flatten(), :] * B[_condStates - 1, :]
@@ -662,7 +718,7 @@ class Test_isCompatible(unittest.TestCase):
         B = addNewStates(compatCheck_mv, B)
         vars_[_condVars[0]].B = B
 
-        # FIXIT: index or not
+        # FIXME: index or not
         Ccond[:, _idxInC[0]] = [x+1 for x in ismember(compatCheck_mv, B)]
 
         # Need to confirm whether 
@@ -678,33 +734,15 @@ class Test_isCompatible(unittest.TestCase):
 
         # Mx.p
         expected = np.array([[0.9405,0.0495,0.7650,0.1350,0.9405,0.0495,0.7650,0.1350]]).T
-        np.testing.assert_array_equal(Mx.p[compatFlag][:, np.newaxis], expected)
+        np.testing.assert_array_equal(self.Mx.p[compatFlag][:, np.newaxis], expected)
 
     def test_condition1(self):
 
-        C = np.array([[1,1,1,1,1],
-             [2,1,1,1,1],
-             [1,2,1,1,1],
-             [2,2,2,1,1],
-             [1,1,1,2,1],
-             [2,1,1,2,1],
-             [1,2,1,2,1],
-             [2,2,2,2,1],
-             [1,1,2,1,2],
-             [2,1,2,1,2],
-             [1,2,2,1,2],
-             [2,2,2,1,2],
-             [1,1,2,2,2],
-             [2,1,2,2,2],
-             [1,2,2,2,2],
-             [2,2,2,2,2]])
-        p = np.array([0.9405, 0.0095, 0.0495, 0.0005, 0.7650, 0.0850, 0.1350, 0.0150, 0.9405, 0.0095, 0.0495, 0.0005, 0.7650, 0.0850, 0.1350, 0.0150])
-        Mx = Cpm(variables=[2, 3, 5, 1, 4], numChild=3, C = C, p = p.T)
         condVars = np.array([2])
         condStates = np.array([1])
         vars_ = self.vars_
 
-        M_n, vars_n = condition([Mx], condVars, condStates, vars_)
+        M_n, vars_n = condition([self.Mx], condVars, condStates, vars_)
         np.testing.assert_array_equal(M_n[0].variables, [2, 3, 5, 1, 4])
         self.assertEqual(M_n[0].numChild, 3)
         expected = np.array([[1,1,1,1,1],
@@ -723,29 +761,11 @@ class Test_isCompatible(unittest.TestCase):
 
     def test_condition2(self):
 
-        C = np.array([[1,1,1,1,1],
-             [2,1,1,1,1],
-             [1,2,1,1,1],
-             [2,2,2,1,1],
-             [1,1,1,2,1],
-             [2,1,1,2,1],
-             [1,2,1,2,1],
-             [2,2,2,2,1],
-             [1,1,2,1,2],
-             [2,1,2,1,2],
-             [1,2,2,1,2],
-             [2,2,2,1,2],
-             [1,1,2,2,2],
-             [2,1,2,2,2],
-             [1,2,2,2,2],
-             [2,2,2,2,2]])
-        p = np.array([0.9405, 0.0095, 0.0495, 0.0005, 0.7650, 0.0850, 0.1350, 0.0150, 0.9405, 0.0095, 0.0495, 0.0005, 0.7650, 0.0850, 0.1350, 0.0150])
-        Mx = Cpm(variables=[2, 3, 5, 1, 4], numChild=3, C = C, p = p.T)
         condVars = np.array([1])
         condStates = np.array([1])
         vars_ = self.vars_
 
-        M_n, vars_n = condition([Mx], condVars, condStates, vars_)
+        M_n, vars_n = condition([self.Mx], condVars, condStates, vars_)
 
         np.testing.assert_array_equal(M_n[0].variables, [2, 3, 5, 1, 4])
         self.assertEqual(M_n[0].numChild, 3)
@@ -765,29 +785,11 @@ class Test_isCompatible(unittest.TestCase):
 
     def test_condition3(self):
 
-        C = np.array([[1,1,1,1,1],
-             [2,1,1,1,1],
-             [1,2,1,1,1],
-             [2,2,2,1,1],
-             [1,1,1,2,1],
-             [2,1,1,2,1],
-             [1,2,1,2,1],
-             [2,2,2,2,1],
-             [1,1,2,1,2],
-             [2,1,2,1,2],
-             [1,2,2,1,2],
-             [2,2,2,1,2],
-             [1,1,2,2,2],
-             [2,1,2,2,2],
-             [1,2,2,2,2],
-             [2,2,2,2,2]])
-        p = np.array([0.9405, 0.0095, 0.0495, 0.0005, 0.7650, 0.0850, 0.1350, 0.0150, 0.9405, 0.0095, 0.0495, 0.0005, 0.7650, 0.0850, 0.1350, 0.0150])
-        Mx = Cpm(variables=[2, 3, 5, 1, 4], numChild=3, C = C, p = p.T)
         condVars = np.array([2, 1])
         condStates = np.array([1, 1])
         vars_ = self.vars_
 
-        ([M_n], vars_n) = condition([Mx], condVars, condStates, vars_)
+        ([M_n], vars_n) = condition([self.Mx], condVars, condStates, vars_)
 
         np.testing.assert_array_equal(M_n.variables, [2, 3, 5, 1, 4])
         self.assertEqual(M_n.numChild, 3)
@@ -851,22 +853,6 @@ class Test_isCompatible(unittest.TestCase):
         expected = np.array([[0.85, 0.15]]).T
         np.testing.assert_array_equal(M_n.p, expected)
 
-    def test_addNewStates(self):
-        states = np.array([np.ones(8), np.zeros(8)]).T
-        B = np.array([[1, 0], [0, 1], [1, 1]])
-
-        newStateCheck = ismember(states, B)
-        expected = [0, 0, 0, 0, 0, 0, 0, 0]
-        self.assertEqual(newStateCheck, expected)
-
-        newStateCheck = flip(newStateCheck)
-        np.testing.assert_array_equal(newStateCheck, np.zeros_like(newStateCheck, dtype=bool))
-        newState = states[newStateCheck, :]
-        np.testing.assert_array_equal(newState, np.empty(shape=(0, 2)))
-        #B = np.append(B, newState, axis=1)
-
-        result = addNewStates(states, B)
-        np.testing.assert_array_equal(result, B)
 
 class Test_Sum(unittest.TestCase):
 
@@ -899,25 +885,6 @@ class Test_Sum(unittest.TestCase):
                       'numChild': numChild,
                       'C': C,
                       'p': p}
-
-    @unittest.skip('NYI')
-    def test_get_varsRemain0(self):
-        #sumFlag = 0
-        sumVars = 2
-        expected = np.array([1, 2])
-        Msys = Cpm(**self.kwargs)
-        #result = get_varsRemain(Msys, sumVars, 0)
-
-        #self.assertEqual(expected, result)
-
-    def test_setdiff(self):
-
-        A = [3, 6, 2, 1, 5, 1, 1]
-        B = [2, 4, 6]
-        C, ia = setdiff(A, B)
-
-        self.assertEqual(C, [1, 3, 5])
-        self.assertEqual(ia, [3, 0, 4])
 
     def test_sum1(self):
 
@@ -1103,8 +1070,6 @@ class Test_Sum(unittest.TestCase):
         np.testing.assert_array_almost_equal(Ms.p, expected_p)
         np.testing.assert_array_equal(Ms.variables, [5, 1, 4])
         self.assertEqual(Ms.numChild, 1)
-
-
 
 
 if __name__=='__main__':
