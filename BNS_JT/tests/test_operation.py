@@ -21,14 +21,14 @@ class Test_bridge_network(unittest.TestCase):
     def setUpClass(cls):
 
         variables = [4, 1, 2, 3]
-        numChild = 1
+        no_child = 1
         C = np.array([[2, 3, 3, 2], [1, 1, 3, 1], [1, 2, 1, 1], [2, 2, 2, 1]])
         p = [1, 1, 1, 1]
         B = [[1, 0], [0, 1], [1, 1]]
         value = ['survival', 'fail']
 
         cls.cpms = Cpm(**{'variables': variables,
-                          'numChild': numChild,
+                          'no_child': no_child,
                           'C': C,
                           'p': p})
         cls.x1 = Variable(**{'B': B, 'value': value})

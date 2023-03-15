@@ -11,19 +11,24 @@ class Variable(object):
 
     '''
 
-    def __init__(self, **kwargs):
+    def __init__(self, B, value):
 
-        assert isinstance(kwargs['B'], (np.ndarray, list)), 'B must be a array'
-        if isinstance(kwargs['B'], list):
-            self.B = np.array(kwargs['B'])
+        assert isinstance(B, (np.ndarray, list)), 'B must be a array'
+
+        if isinstance(B, list):
+            self.B = np.array(B)
         else:
-            self.B = kwargs['B']
+            self.B = B
+
+        assert isinstance(value, (np.ndarray, list)), 'value must be a vector'
+        if isinstance(value, list):
+            self.value = np.array(value)
+        else:
+            self.value = value
 
         numBasicState = self.B.shape[1]
-        assert (self.B[:numBasicState, :] == np.eye(numBasicState)).all(), 'The upper part corresponding to basic states must form an identity matrix'
 
-        assert isinstance(kwargs['value'], (np.ndarray, list)), 'value must be a vector'
-        self.value = kwargs['value']
+        assert (self.B[:numBasicState, :] == np.eye(numBasicState)).all(), 'The upper part corresponding to basic states must form an identity matrix'
 
     def __repr__(self):
         return repr(f'Variable(B={self.B}, value={self.value})')
