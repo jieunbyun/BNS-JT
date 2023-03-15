@@ -24,7 +24,7 @@ class Test_Varaible(unittest.TestCase):
 
         self.assertTrue(isinstance(a, Variable))
         np.testing.assert_array_equal(a.B, self.kwargs['B'])
-        self.assertEqual(a.value, self.kwargs['value'])
+        np.testing.assert_array_equal(a.value, self.kwargs['value'])
 
     def test_B1(self):
 

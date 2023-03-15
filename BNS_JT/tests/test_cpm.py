@@ -14,12 +14,12 @@ class Test_Cpm(unittest.TestCase):
     def setUpClass(cls):
 
         variables = [3, 2, 1]
-        numChild = 1
+        no_child = 1
         C = np.array([[2, 2, 3], [2, 1, 2], [1, 1, 1]])
         p = [1, 1, 1]
 
         cls.kwargs = {'variables': variables,
-                      'numChild': numChild,
+                      'no_child': no_child,
                       'C': C,
                       'p': p}
 
@@ -28,12 +28,12 @@ class Test_Cpm(unittest.TestCase):
 
         self.assertTrue(isinstance(a, Cpm))
         np.testing.assert_array_equal(a.variables, self.kwargs['variables'])
-        self.assertEqual(a.numChild, self.kwargs['numChild'])
+        self.assertEqual(a.no_child, self.kwargs['no_child'])
         np.testing.assert_array_equal(a.C, self.kwargs['C'])
 
     def test_init2(self):
         # using list for P
-        a = Cpm(variables=[1], numChild=1, C=np.array([1, 2]), p=[0.9, 0.1])
+        a = Cpm(variables=[1], no_child=1, C=np.array([1, 2]), p=[0.9, 0.1])
         self.assertTrue(isinstance(a, Cpm))
 
     def test_variables1(self):
@@ -41,7 +41,7 @@ class Test_Cpm(unittest.TestCase):
         f_variables = [1, 2]
         with self.assertRaises(AssertionError):
             _ = Cpm(**{'variables': f_variables,
-                       'numChild': self.kwargs['numChild'],
+                       'no_child': self.kwargs['no_child'],
                        'C': self.kwargs['C'],
                        'p': self.kwargs['p']})
 
@@ -50,7 +50,7 @@ class Test_Cpm(unittest.TestCase):
         f_variables = [1, 2, 3, 4]
         with self.assertRaises(AssertionError):
             _ = Cpm(**{'variables': f_variables,
-                       'numChild': self.kwargs['numChild'],
+                       'no_child': self.kwargs['no_child'],
                        'C': self.kwargs['C'],
                        'p': self.kwargs['p']})
 
@@ -59,16 +59,16 @@ class Test_Cpm(unittest.TestCase):
         f_variables = ['x', 2, 3]
         with self.assertRaises(AssertionError):
             _ = Cpm(**{'variables': f_variables,
-                       'numChild': self.kwargs['numChild'],
+                       'no_child': self.kwargs['no_child'],
                        'C': self.kwargs['C'],
                        'p': self.kwargs['p']})
 
-    def test_numChild(self):
+    def test_no_child(self):
 
-        f_numChild = 4
+        f_no_child = 4
         with self.assertRaises(AssertionError):
             _ = Cpm(**{'variables': self.kwargs['variables'],
-                       'numChild': f_numChild,
+                       'no_child': f_no_child,
                        'C': self.kwargs['C'],
                        'p': self.kwargs['p']})
 
@@ -78,12 +78,12 @@ class Test_Cpm(unittest.TestCase):
         C = np.array([[1, 1, 1], [1, 2, 1], [2, 1, 1], [2, 2, 1], [1, 1, 2], [1, 2, 2], [2, 1, 2], [2, 2, 2]])
 
         M = Cpm(variables=[2, 3, 1],
-                numChild = 2,
+                no_child = 2,
                 C = C,
                 p = p)
 
-        if any(M.sampleIndex):
-            rowIdx = argsort(M.sampleIndex)
+        if any(M.sample_idx):
+            rowIdx = argsort(M.sample_idx)
         else:
             rowIdx = argsort(list(map(tuple, C[:, ::-1])))
 
@@ -98,16 +98,16 @@ class Test_Cpm(unittest.TestCase):
             Ms_q = M.q
 
         try:
-            Ms_sampleIndex = M.sampleIndex[rowIdx]
+            Ms_sample_idx = M.sample_idx[rowIdx]
         except IndexError:
-            Ms_sampleIndex = M.sampleIndex
+            Ms_sample_idx = M.sample_idx
 
         Ms = Cpm(C=M.C[rowIdx, :],
                  p=Ms_p,
                  q=Ms_q,
-                 sampleIndex=Ms_sampleIndex,
+                 sample_idx=Ms_sample_idx,
                  variables=M.variables,
-                 numChild=M.numChild)
+                 no_child=M.no_child)
 
         np.testing.assert_array_equal(Ms.C, np.array([[1, 1, 1], [2, 1, 1], [1, 2, 1], [2, 2, 1], [1, 1, 2], [2, 1, 2], [1, 2, 2], [2, 2, 2]]))
         np.testing.assert_array_almost_equal(Ms.p, np.array([[0.9405, 0.0095, 0.0495, 5.0e-4, 0.7650, 0.0850, 0.1350, 0.0150]]).T)
@@ -222,11 +222,11 @@ class Test_isCompatible(unittest.TestCase):
         cls.M = {}
         cls.vars_ = {}
 
-        cls.M[1] = Cpm(variables=[1], numChild=1, C = np.array([1, 2]).T, p = np.array([0.9, 0.1]).T)
-        cls.M[2] = Cpm(variables=[2, 1], numChild=1, C = np.array([[1, 1], [2, 1], [1, 2], [2, 2]]), p = np.array([0.99, 0.01, 0.9, 0.1]).T)
-        cls.M[3] = Cpm(variables=[3, 1], numChild=1, C = np.array([[1, 1], [2, 1], [1, 2], [2, 2]]), p = np.array([0.95, 0.05, 0.85, 0.15]).T)
-        cls.M[4] = Cpm(variables=[4, 1], numChild=1, C = np.array([[1, 1], [2, 1], [1, 2], [2, 2]]), p = np.array([0.99, 0.01, 0.9, 0.1]).T)
-        cls.M[5] = Cpm(variables=[5, 2, 3, 4], numChild=1, C = np.array([[2, 3, 3, 2], [1, 1, 3, 1], [1, 2, 1, 1], [2, 2, 2, 1]]), p = np.array([1, 1, 1, 1]).T)
+        cls.M[1] = Cpm(variables=[1], no_child=1, C = np.array([1, 2]).T, p = np.array([0.9, 0.1]).T)
+        cls.M[2] = Cpm(variables=[2, 1], no_child=1, C = np.array([[1, 1], [2, 1], [1, 2], [2, 2]]), p = np.array([0.99, 0.01, 0.9, 0.1]).T)
+        cls.M[3] = Cpm(variables=[3, 1], no_child=1, C = np.array([[1, 1], [2, 1], [1, 2], [2, 2]]), p = np.array([0.95, 0.05, 0.85, 0.15]).T)
+        cls.M[4] = Cpm(variables=[4, 1], no_child=1, C = np.array([[1, 1], [2, 1], [1, 2], [2, 2]]), p = np.array([0.99, 0.01, 0.9, 0.1]).T)
+        cls.M[5] = Cpm(variables=[5, 2, 3, 4], no_child=1, C = np.array([[2, 3, 3, 2], [1, 1, 3, 1], [1, 2, 1, 1], [2, 2, 2, 1]]), p = np.array([1, 1, 1, 1]).T)
 
         cls.vars_[1] = Variable(B=np.eye(2), value=['Mild', 'Severe'])
         cls.vars_[2] = Variable(B=np.array([[1, 0], [0, 1], [1, 1]]), value=['Survive', 'Fail'])
@@ -379,7 +379,7 @@ class Test_isCompatible(unittest.TestCase):
     def test_getCpmSubset3(self):
 
         M = Cpm(variables=[2, 3, 5, 1, 4],
-                numChild=5,
+                no_child=5,
                 C=np.array([[2, 2, 2, 2, 2]]),
                 p=np.array([[0.0150]]).T)
 
@@ -427,9 +427,9 @@ class Test_Product(unittest.TestCase):
         cls.M = {}
         cls.vars_ = {}
 
-        cls.M[2] = Cpm(variables=[2, 1], numChild=1, C = np.array([[1, 1], [2, 1], [1, 2], [2, 2]]), p = np.array([0.99, 0.01, 0.9, 0.1]).T)
-        cls.M[3] = Cpm(variables=[3, 1], numChild=1, C = np.array([[1, 1], [2, 1], [1, 2], [2, 2]]), p = np.array([0.95, 0.05, 0.85, 0.15]).T)
-        cls.M[5] = Cpm(variables=[5, 2, 3, 4], numChild=1, C = np.array([[2, 3, 3, 2], [1, 1, 3, 1], [1, 2, 1, 1], [2, 2, 2, 1]]), p = np.array([1, 1, 1, 1]).T)
+        cls.M[2] = Cpm(variables=[2, 1], no_child=1, C = np.array([[1, 1], [2, 1], [1, 2], [2, 2]]), p = np.array([0.99, 0.01, 0.9, 0.1]).T)
+        cls.M[3] = Cpm(variables=[3, 1], no_child=1, C = np.array([[1, 1], [2, 1], [1, 2], [2, 2]]), p = np.array([0.95, 0.05, 0.85, 0.15]).T)
+        cls.M[5] = Cpm(variables=[5, 2, 3, 4], no_child=1, C = np.array([[2, 3, 3, 2], [1, 1, 3, 1], [1, 2, 1, 1], [2, 2, 2, 1]]), p = np.array([1, 1, 1, 1]).T)
 
         cls.vars_[1] = Variable(B=np.eye(2), value=['Mild', 'Severe'])
         cls.vars_[2] = Variable(B=np.array([[1, 0], [0, 1], [1, 1]]), value=['Survive', 'Fail'])
@@ -458,9 +458,9 @@ class Test_Product(unittest.TestCase):
                 M1.q = ones(M1.C.shape[0])
 
         np.testing.assert_array_equal(M1.p, np.array([[0.99, 0.01, 0.9, 0.1]]).T)
-        np.testing.assert_array_equal(M1.q, np.array([]).T)
+        np.testing.assert_array_equal(M1.q, np.array([[]]).T)
         np.testing.assert_array_equal(M2.p, np.array([[0.95, 0.05, 0.85, 0.15]]).T)
-        np.testing.assert_array_equal(M1.q, np.array([]).T)
+        np.testing.assert_array_equal(M2.q, np.array([[]]).T)
 
         commonVars=set(M1.variables).intersection(M2.variables)
 
@@ -481,8 +481,8 @@ class Test_Product(unittest.TestCase):
             c1_ = get_value_given_condn(M1.C[i, :], idxVarsM1)
             c1_notCommon = M1.C[i, flip(idxVarsM1)]
 
-            if any(M1.sampleIndex):
-                sampleInd1 = M1.sampleIndex[i]
+            if any(M1.sample_idx):
+                sampleInd1 = M1.sample_idx[i]
             else:
                 sampleInd1 = []
 
@@ -494,7 +494,7 @@ class Test_Product(unittest.TestCase):
             [[M2_], vInfo] = condition([M2], commonVars, c1_, vInfo, sampleInd1)
 
             #self.assertEqual(M2_.variables, [3, 1])
-            #self.assertEqual(M2_.numChild, 1)
+            #self.assertEqual(M2_.no_child, 1)
             #np.testing.assert_array_equal(M2_.C, np.array([[1, 1], [2, 1]]))
             #np.testing.assert_array_equal(M2_.p, np.array([[0.95, 0.05]]).T)
             #Cprod = np.append(Cprod, M2_.C).reshape(M2_.C.shape[0], -1)
@@ -517,8 +517,8 @@ class Test_Product(unittest.TestCase):
             if any(sampleInd1):
                 _add = repmat(sampleInd1, M2.C.shape[0], 1)
                 sampleIndProd = np.append(sampleIndProd, _add).reshape(M2C.shape[0], -1)
-            elif any(M2_.sampleIndex):
-                sampleIndProd = np.append(sampleIndPro, M2_.sampleIndex).reshape(M2_.sampleIndex.shape[0], -1)
+            elif any(M2_.sample_idx):
+                sampleIndProd = np.append(sampleIndPro, M2_.sample_idx).reshape(M2_.sample_idx.shape[0], -1)
 
             #np.testing.assert_array_equal(sampleIndProd, [])
             if any(M1.p):
@@ -551,11 +551,11 @@ class Test_Product(unittest.TestCase):
         Cprod_vars = np.append(M2.variables, get_value_given_condn(M1.variables, flip(idxVarsM1)))
         np.testing.assert_array_equal(Cprod_vars, [3, 1, 2])
 
-        newVarsChild = np.append(M1.variables[0:M1.numChild], M2.variables[0:M2.numChild])
+        newVarsChild = np.append(M1.variables[0:M1.no_child], M2.variables[0:M2.no_child])
         newVarsChild = np.sort(newVarsChild)
         np.testing.assert_array_equal(newVarsChild, [2, 3])
 
-        newVarsParent = np.append(M1.variables[M1.numChild:], M2.variables[M2.numChild:])
+        newVarsParent = np.append(M1.variables[M1.no_child:], M2.variables[M2.no_child:])
         newVarsParent = list(set(newVarsParent).difference(newVarsChild))
         newVars = np.append(newVarsChild, newVarsParent, axis=0)
         np.testing.assert_array_equal(newVars, [2, 3, 1])
@@ -565,14 +565,14 @@ class Test_Product(unittest.TestCase):
         self.assertEqual(idxVars, [2, 0, 1]) # matlab 3, 1, 2
 
         Mprod = Cpm(variables=newVars,
-                    numChild = len(newVarsChild),
+                    no_child = len(newVarsChild),
                     C = Cprod[:, idxVars],
                     p = pprod)
 
         Mprod.sort()
 
         np.testing.assert_array_equal(Mprod.variables, [2, 3, 1])
-        self.assertEqual(Mprod.numChild, 2)
+        self.assertEqual(Mprod.no_child, 2)
         np.testing.assert_array_equal(Mprod.C, np.array([[1, 1, 1], [2, 1, 1], [1, 2, 1], [2, 2, 1], [1, 1, 2], [2, 1, 2], [1, 2, 2], [2, 2, 2]]))
         np.testing.assert_array_almost_equal(Mprod.p, np.array([[0.9405, 0.0095, 0.0495, 5.0e-4, 0.7650, 0.0850, 0.1350, 0.0150]]).T)
 
@@ -585,13 +585,13 @@ class Test_Product(unittest.TestCase):
         Mprod, vInfo_ = M1.product(M2, vInfo)
 
         np.testing.assert_array_equal(Mprod.variables, [2, 3, 1])
-        self.assertEqual(Mprod.numChild, 2)
+        self.assertEqual(Mprod.no_child, 2)
         np.testing.assert_array_equal(Mprod.C, np.array([[1, 1, 1], [2, 1, 1], [1, 2, 1], [2, 2, 1], [1, 1, 2], [2, 1, 2], [1, 2, 2], [2, 2, 2]]))
         np.testing.assert_array_almost_equal(Mprod.p, np.array([[0.9405, 0.0095, 0.0495, 5.0e-4, 0.7650, 0.0850, 0.1350, 0.0150]]).T)
 
     def test_product3(self):
 
-        M1 = Cpm(variables=[2, 3, 1], numChild=2, C = np.array([[1, 1, 1], [2, 1, 1], [1, 2, 1], [2, 2, 1], [1, 1, 2], [2, 1, 2], [1, 2, 2], [2, 2, 2]]), p = np.array([[0.9405, 0.0095, 0.0495, 5.0e-4, 0.7650, 0.0850, 0.1350, 0.0150]]).T)
+        M1 = Cpm(variables=[2, 3, 1], no_child=2, C = np.array([[1, 1, 1], [2, 1, 1], [1, 2, 1], [2, 2, 1], [1, 1, 2], [2, 1, 2], [1, 2, 2], [2, 2, 2]]), p = np.array([[0.9405, 0.0095, 0.0495, 5.0e-4, 0.7650, 0.0850, 0.1350, 0.0150]]).T)
 
         M2 = self.M[5]
         vInfo = self.vars_
@@ -599,7 +599,7 @@ class Test_Product(unittest.TestCase):
         Mprod, vInfo_ = M1.product(M2, vInfo)
 
         np.testing.assert_array_equal(Mprod.variables, [2, 3, 5, 1, 4])
-        self.assertEqual(Mprod.numChild, 3)
+        self.assertEqual(Mprod.no_child, 3)
 
         expected_C = np.array([
               [1,1,1,1,1],
@@ -654,7 +654,7 @@ class Test_Condition(unittest.TestCase):
         cls.vars_[4] = Variable(B=np.array([[1, 0], [0, 1], [1, 1]]), value=['Survive', 'Fail'])
         cls.vars_[5] = Variable(B=np.array([[1, 0], [0, 1]]), value=['Survive', 'Fail'])
 
-        cls.Mx = Cpm(variables=[2, 3, 5, 1, 4], numChild=3, C = cls.C, p = cls.p)
+        cls.Mx = Cpm(variables=[2, 3, 5, 1, 4], no_child=3, C = cls.C, p = cls.p)
 
     def test_condition0(self):
 
@@ -744,7 +744,7 @@ class Test_Condition(unittest.TestCase):
 
         M_n, vars_n = condition([self.Mx], condVars, condStates, vars_)
         np.testing.assert_array_equal(M_n[0].variables, [2, 3, 5, 1, 4])
-        self.assertEqual(M_n[0].numChild, 3)
+        self.assertEqual(M_n[0].no_child, 3)
         expected = np.array([[1,1,1,1,1],
                             [1,2,1,1,1],
                             [1,1,1,2,1],
@@ -768,7 +768,7 @@ class Test_Condition(unittest.TestCase):
         M_n, vars_n = condition([self.Mx], condVars, condStates, vars_)
 
         np.testing.assert_array_equal(M_n[0].variables, [2, 3, 5, 1, 4])
-        self.assertEqual(M_n[0].numChild, 3)
+        self.assertEqual(M_n[0].no_child, 3)
         expected = np.array([[1,1,1,1,1],
                             [2,1,1,1,1],
                             [1,2,1,1,1],
@@ -792,7 +792,7 @@ class Test_Condition(unittest.TestCase):
         ([M_n], vars_n) = condition([self.Mx], condVars, condStates, vars_)
 
         np.testing.assert_array_equal(M_n.variables, [2, 3, 5, 1, 4])
-        self.assertEqual(M_n.numChild, 3)
+        self.assertEqual(M_n.no_child, 3)
         expected = np.array([[1,1,1,1,1],
                             [1,2,1,1,1],
                             [1,1,2,1,2],
@@ -810,7 +810,7 @@ class Test_Condition(unittest.TestCase):
                      [1, 2, 1, 1],
                      [2, 2, 2, 1]])
         p = np.array([1, 1, 1, 1, ])
-        Mx = Cpm(variables=[5, 2, 3, 4], numChild=1, C = C, p = p.T)
+        Mx = Cpm(variables=[5, 2, 3, 4], no_child=1, C = C, p = p.T)
         condVars = np.array([2, 3])
         condStates = np.array([1, 1])
         vars_ = self.vars_
@@ -822,7 +822,7 @@ class Test_Condition(unittest.TestCase):
         [M_n], vars_n = condition([Mx], condVars, condStates, vars_)
 
         np.testing.assert_array_equal(M_n.variables, [5, 2, 3, 4])
-        self.assertEqual(M_n.numChild, 1)
+        self.assertEqual(M_n.no_child, 1)
         expected = np.array([[2,1,1,2],
                              [1,1,1,1]])
         np.testing.assert_array_equal(M_n.C, expected)
@@ -837,7 +837,7 @@ class Test_Condition(unittest.TestCase):
                      [1, 2],
                      [2, 2]])
         p = np.array([0.95, 0.05, 0.85, 0.15])
-        M2 = Cpm(variables=[3, 1], numChild=1, C = C, p = p.T)
+        M2 = Cpm(variables=[3, 1], no_child=1, C = C, p = p.T)
         condVars = np.array([1])
         states = np.array([2])
         vars_ = self.vars_
@@ -845,7 +845,7 @@ class Test_Condition(unittest.TestCase):
         [M_n], vars_n = condition([M2], condVars, states, vars_)
 
         np.testing.assert_array_equal(M_n.variables, [3, 1])
-        self.assertEqual(M_n.numChild, 1)
+        self.assertEqual(M_n.no_child, 1)
         expected = np.array([[1,2],
                              [2,2]])
         np.testing.assert_array_equal(M_n.C, expected)
@@ -860,7 +860,7 @@ class Test_Sum(unittest.TestCase):
     def setUpClass(cls):
 
         variables = [2, 3, 5, 1, 4]
-        numChild = 3
+        no_child = 3
         C = np.array([
               [1,1,1,1,1],
               [2,1,1,1,1],
@@ -882,7 +882,7 @@ class Test_Sum(unittest.TestCase):
         p = np.array([[0.9405,0.0095,0.0495,0.0005,0.7650,0.0850,0.1350,0.0150,0.9405,0.0095,0.0495,0.0005,0.7650,0.0850,0.1350,0.0150]]).T
 
         cls.kwargs = {'variables': variables,
-                      'numChild': numChild,
+                      'no_child': no_child,
                       'C': C,
                       'p': p}
 
@@ -890,11 +890,11 @@ class Test_Sum(unittest.TestCase):
 
         M = Cpm(**self.kwargs)
         sumVars = [1]
-        varsRemainIdx = ismember( sumVars, M.variables[:M.numChild])
+        varsRemainIdx = ismember( sumVars, M.variables[:M.no_child])
 
         sumFlag = 1
         if sumFlag:
-            varsRemain, varsRemainIdx = setdiff(M.variables[:M.numChild], sumVars)
+            varsRemain, varsRemainIdx = setdiff(M.variables[:M.no_child], sumVars)
             self.assertEqual(varsRemain, [2, 3, 5])
             self.assertEqual(varsRemainIdx, [0, 1, 2])  # Matlab: [1, 2, 3]
         else:
@@ -902,11 +902,11 @@ class Test_Sum(unittest.TestCase):
             self.assertEqual(varsRemainIdx, [])
             varsRemain = get_value_given_condn(M.variables, varsRemainIdx)
 
-        numChild = len(varsRemain)
+        no_child = len(varsRemain)
 
-        if any(M.variables[M.numChild:]):
-            varsRemain = np.append(varsRemain, M.variables[M.numChild:])
-            varsRemainIdx = np.append(varsRemainIdx, range(M.numChild, len(M.variables)))
+        if any(M.variables[M.no_child:]):
+            varsRemain = np.append(varsRemain, M.variables[M.no_child:])
+            varsRemainIdx = np.append(varsRemainIdx, range(M.no_child, len(M.variables)))
 
         np.testing.assert_array_equal(varsRemain, [2, 3, 5, 1, 4])
         np.testing.assert_array_equal(varsRemainIdx, [0, 1, 2, 3, 4])
@@ -915,18 +915,18 @@ class Test_Sum(unittest.TestCase):
                     C=M.C[:, varsRemainIdx],
                     p=M.p,
                     q=M.q,
-                    sampleIndex=M.sampleIndex,
-                    numChild=len(varsRemainIdx))
+                    sample_idx=M.sample_idx,
+                    no_child=len(varsRemainIdx))
         i = 0
         while Mloop.C.any():
             Mcompare = Mloop.getCpmSubset([0]) # need to change to 0 
             if i==0:
                 np.testing.assert_array_equal(Mcompare.variables, [2, 3, 5, 1, 4])
-                np.testing.assert_array_equal(Mcompare.numChild, 5)
+                np.testing.assert_array_equal(Mcompare.no_child, 5)
                 np.testing.assert_array_equal(Mcompare.p, np.array([[0.9405]]).T)
                 np.testing.assert_array_equal(Mcompare.C, np.array([[1, 1, 1, 1, 1]]))
                 np.testing.assert_array_equal(Mcompare.q, [])
-                np.testing.assert_array_equal(Mcompare.sampleIndex, [])
+                np.testing.assert_array_equal(Mcompare.sample_idx, [])
 
             flag = Mloop.isCompatible(Mcompare)
             expected = np.zeros((16, 1))
@@ -975,15 +975,15 @@ class Test_Sum(unittest.TestCase):
             expected_p = np.array([[0.0095,0.0495,0.0005,0.7650,0.0850,0.1350,0.0150,0.9405,0.0095,0.0495,0.0005,0.7650,0.0850,0.1350,0.0150]]).T
             if i==0:
                 np.testing.assert_array_equal(Mloop.variables, [2, 3, 5, 1, 4])
-                np.testing.assert_array_equal(Mloop.numChild, 5)
+                np.testing.assert_array_equal(Mloop.no_child, 5)
                 np.testing.assert_array_equal(Mloop.p, expected_p)
                 np.testing.assert_array_equal(Mloop.C, expected_C)
                 np.testing.assert_array_equal(Mloop.q, [])
-                np.testing.assert_array_equal(Mloop.sampleIndex, [])
+                np.testing.assert_array_equal(Mloop.sample_idx, [])
             i += 1
 
         Msum = Cpm(variables=varsRemain,
-                   numChild=numChild,
+                   no_child=no_child,
                    C=Csum,
                    p=psum)
 
@@ -1069,7 +1069,7 @@ class Test_Sum(unittest.TestCase):
         np.testing.assert_array_equal(Ms.C, expected_C)
         np.testing.assert_array_almost_equal(Ms.p, expected_p)
         np.testing.assert_array_equal(Ms.variables, [5, 1, 4])
-        self.assertEqual(Ms.numChild, 1)
+        self.assertEqual(Ms.no_child, 1)
 
 
 if __name__=='__main__':

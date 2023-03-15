@@ -6,45 +6,56 @@ import copy
 
 class Cpm(object):
     '''
-    class to define conditional probability matrix (cf., CPT)
+    Defines the conditional probability matrix (cf., CPT)
 
-        Parameters:
-        variables: array_like
-            index for variables
-        numChild: int
-            number of child nodes
-        C: array_like
-            event matrix
-        p: array_like
-            probability vector
-        q: array_like
-            sampling weight vector for continuous r.v.
-        sampleIndex: array_like
-            sample index vector
+    Parameters
+    ----------
+    variables: array_like
+        list of int or string (any hashable python object)
+    no_child: int
+        number of child nodes
+    C: array_like
+        event matrix
+    p: array_like
+        probability vector
+    q: array_like
+        sampling weight vector for continuous r.v.
+    sample_idx: array_like
+        sample index vector
 
-        Cpm(varibles, numChild, C, p, q, sampleIndex)
-    '''
-    def __init__(self, **kwargs):
+    Cpm(varibles, no_child, C, p, q, sample_idx)
+'''
+    def __init__(self, variables, no_child, C, p, q=[], sample_idx=[]):
 
-        if isinstance(kwargs['variables'], list):
-            self.variables = np.array(kwargs['variables'])
+        if isinstance(variables, list):
+            self.variables = np.array(variables)
         else:
-            self.variables = kwargs['variables']
+            self.variables = variables
 
-        self.numChild = kwargs['numChild']
-        self.C = kwargs['C']
-        if isinstance(kwargs['p'], list):
-            self.p = np.array(kwargs['p'])[:, np.newaxis]
+        self.no_child = no_child
+
+        self.C = C
+
+        if isinstance(p, list):
+            self.p = np.array(p)[:, np.newaxis]
         else:
-            self.p = kwargs['p']
-        self.q = kwargs.get('q', np.array([]))
-        self.sampleIndex  = kwargs.get('sampleIndex', np.array([])) ## sample index (numbering) vector
+            self.p = p
+
+        if isinstance(q, list):
+            self.q = np.array(q)[:, np.newaxis]
+        else:
+            self.q = q
+
+        if isinstance(sample_idx, list):
+            self.sample_idx = np.array(sample_idx)[:, np.newaxis]
+        else:
+            self.sample_idx = sample_idx
 
         assert len(self.variables), 'variables must be a numeric vector'
         assert all(isinstance(x, (int, np.int32, np.int64)) for x in self.variables), 'variables must be a numeric vector'
 
-        assert isinstance(self.numChild, (int, np.int32, np.int64)), 'numChild must be a numeric scalar'
-        assert self.numChild <= len(self.variables), 'numChild must be less than or equal to the number of variables'
+        assert isinstance(self.no_child, (int, np.int32, np.int64)), 'no_child must be a numeric scalar'
+        assert self.no_child <= len(self.variables), 'no_child must be less than or equal to the number of variables'
 
         assert isinstance(self.C, np.ndarray), 'Event matrix C must be a numeric matrix'
         assert self.C.dtype in (np.dtype('int64'), np.dtype('int32')), 'Event matrix C must be a numeric matrix'
@@ -63,20 +74,20 @@ class Cpm(object):
         if any(self.q):
             assert len(self.q) == self.C.shape[0], 'q must have the same length with the number of rows in C'
 
-        if any(self.sampleIndex):
-            assert len(self.sampleIndex) == self.C.shape[0], 'sampleIndex must have the same length with the number of rows in C'
+        if any(self.sample_idx):
+            assert len(self.sample_idx) == self.C.shape[0], 'sample_idx must have the same length with the number of rows in C'
 
         '''
         elseif ~isempty(M.q) && ~isnumeric(M.q)
             errFlag = 1
             errMess ='Sampling probability vector q must be a numeric vector'
         elseif (~isempty(M.q)&&~isempty(M.C)) && (length(M.q)~=size(M.C,1))
-        elseif (~isempty(M.sampleIndex)&&~isempty(M.C)) && (length(M.sampleIndex)~=size(M.C,1))
+        elseif (~isempty(M.sample_idx)&&~isempty(M.C)) && (length(M.sample_idx)~=size(M.C,1))
         '''
 
     def __repr__(self):
         return textwrap.dedent(f'''\
-{self.__class__.__name__}(variables={self.variables}, numChild={self.numChild}, C={self.C}, p={self.p}''')
+{self.__class__.__name__}(variables={self.variables}, no_child={self.no_child}, C={self.C}, p={self.p}''')
 
     def getCpmSubset(self, rowIndex, flagRow=1):
         '''
@@ -102,17 +113,17 @@ class Cpm(object):
         else:
             qSubset = np.array([])
 
-        if any(self.sampleIndex):
-            sampleIndSubset = self.sampleIndex( rowIndex )
+        if any(self.sample_idx):
+            sampleIndSubset = self.sample_idx( rowIndex )
         else:
             sampleIndSubset = np.array([])
 
         return Cpm(variables=self.variables,
-                   numChild=self.numChild,
+                   no_child=self.no_child,
                    C=self.C[rowIndex,:],
                    p=pSubset,
                    q=qSubset,
-                   sampleIndex=sampleIndSubset)
+                   sample_idx=sampleIndSubset)
 
     def isCompatible(self, Mc, vInfo=[]):
         '''
@@ -129,8 +140,8 @@ class Cpm(object):
         idx = get_value_given_condn(idx, idx)
 
         C = self.C[:, idx].copy()
-        if any(Mc.sampleIndex) and any(self.sampleIndex):
-            flag = ( self.sampleIndex == Mc.sampleIndex )[:, np.newaxis]
+        if any(Mc.sample_idx) and any(self.sample_idx):
+            flag = ( self.sample_idx == Mc.sample_idx )[:, np.newaxis]
         else:
             flag = np.ones(shape=(C.shape[0], 1), dtype=bool)
 
@@ -156,30 +167,30 @@ class Cpm(object):
             1 (default) - sum out varis, 0 - leave only varis
         '''
 
-        if flag and any(set(self.variables[self.numChild:]).intersection(varis)):
+        if flag and any(set(self.variables[self.no_child:]).intersection(varis)):
             print('Parent nodes are NOT summed up')
 
         if flag:
-            varsRemain, varsRemainIdx = setdiff(self.variables[:self.numChild], varis)
+            varsRemain, varsRemainIdx = setdiff(self.variables[:self.no_child], varis)
         else:
             # FIXME
-            varsRemainIdx = ismember(varis, self.variables[:self.numChild])
+            varsRemainIdx = ismember(varis, self.variables[:self.no_child])
             varsRemainIdx = get_value_given_condn(varsRemainIdx, varsRemainIdx)
             varsRemainIdx = np.sort(varsRemainIdx)
             varsRemain = self.variables[varsRemainIdx]
 
-        numChild = len(varsRemain)
+        no_child = len(varsRemain)
 
-        if any(self.variables[self.numChild:]):
-            varsRemain = np.append(varsRemain, self.variables[self.numChild:])
-            varsRemainIdx = np.append(varsRemainIdx, range(self.numChild, len(self.variables)))
+        if any(self.variables[self.no_child:]):
+            varsRemain = np.append(varsRemain, self.variables[self.no_child:])
+            varsRemainIdx = np.append(varsRemainIdx, range(self.no_child, len(self.variables)))
 
         Mloop = Cpm(variables=self.variables[varsRemainIdx],
                     C=self.C[:, varsRemainIdx],
                     p=self.p,
                     q=self.q,
-                    sampleIndex=self.sampleIndex,
-                    numChild=len(varsRemainIdx))
+                    sample_idx=self.sample_idx,
+                    no_child=len(varsRemainIdx))
 
         while Mloop.C.any():
 
@@ -206,8 +217,8 @@ class Cpm(object):
                 except NameError:
                     qsum = qval
 
-            if any(Mloop.sampleIndex):
-                val = Mloop.sampleIndex[0]
+            if any(Mloop.sample_idx):
+                val = Mloop.sample_idx[0]
                 try:
                     samplesum = np.append(sampleIndsum, val, axis=0)
                 except NameError:
@@ -215,7 +226,7 @@ class Cpm(object):
 
             Mloop = Mloop.getCpmSubset(np.where(_flag)[0], flagRow=0)
 
-        Ms = Cpm(variables=varsRemain, numChild=numChild, C=Csum, p=psum)
+        Ms = Cpm(variables=varsRemain, no_child=no_child, C=Csum, p=psum)
 
         try:
             Ms.q = qsum
@@ -223,7 +234,7 @@ class Cpm(object):
             pass
 
         try:
-            Ms.sampleIndex = sampleIndsum
+            Ms.sample_idx = sampleIndsum
         except NameError:
             pass
 
@@ -241,7 +252,7 @@ class Cpm(object):
         if self.C.shape[1] > M2.C.shape[1]:
             return M2.product(self, vInfo)
 
-        check = set(self.variables[:self.numChild]).intersection(M2.variables[:M2.numChild])
+        check = set(self.variables[:self.no_child]).intersection(M2.variables[:M2.no_child])
         assert not bool(check), 'PMFs must not have common child nodes'
 
         if any(self.p):
@@ -270,8 +281,8 @@ class Cpm(object):
                 c1_ = get_value_given_condn(self.C[i, :], idxVarsM1)
                 c1_notCommon = self.C[i, flip(idxVarsM1)]
 
-                if self.sampleIndex.any():
-                    sampleInd1 = self.sampleIndex[i]
+                if self.sample_idx.any():
+                    sampleInd1 = self.sample_idx[i]
                 else:
                     sampleInd1 = []
 
@@ -309,17 +320,17 @@ class Cpm(object):
 
             Cprod_vars = np.append(M2.variables, get_value_given_condn(self.variables, flip(idxVarsM1)))
 
-            newVarsChild = np.append(self.variables[:self.numChild], M2.variables[:M2.numChild])
+            newVarsChild = np.append(self.variables[:self.no_child], M2.variables[:M2.no_child])
             newVarsChild = np.sort(newVarsChild)
 
-            newVarsParent = np.append(self.variables[self.numChild:], M2.variables[M2.numChild:])
+            newVarsParent = np.append(self.variables[self.no_child:], M2.variables[M2.no_child:])
             newVarsParent = list(set(newVarsParent).difference(newVarsChild))
             newVars = np.append(newVarsChild, newVarsParent, axis=0)
 
             idxVars = ismember(newVars, Cprod_vars)
 
             Mprod = Cpm(variables=newVars,
-                        numChild = len(newVarsChild),
+                        no_child = len(newVarsChild),
                         C = Cprod[:, idxVars],
                         p = pprod)
 
@@ -336,8 +347,8 @@ class Cpm(object):
 
     def sort(self):
 
-        if any(self.sampleIndex):
-            rowIdx = argsort(self.sampleIndex)
+        if any(self.sample_idx):
+            rowIdx = argsort(self.sample_idx)
         else:
             rowIdx = argsort(list(map(tuple, self.C[:, ::-1])))
 
@@ -349,8 +360,8 @@ class Cpm(object):
         if self.q.any():
             self.q = self.q[rowIdx]
 
-        if self.sampleIndex.any():
-            self.sampleIndex = self.sampleIndex[rowIdx]
+        if self.sample_idx.any():
+            self.sample_idx = self.sample_idx[rowIdx]
 
 
 def argsort(seq):
@@ -442,8 +453,8 @@ def condition(M, varis, states, vars_, sampleInd=[]):
     for Mx in Mc:
         flag = isCompatible(Mx.C, Mx.variables, varis, states, vars_)
         # FIXME
-        #if any(sampleInd) and any(Mx.sampleIndex):
-        #    flag = flag & ( M.sampleIndex == sampleInd )
+        #if any(sampleInd) and any(Mx.sample_idx):
+        #    flag = flag & ( M.sample_idx == sampleInd )
         C = Mx.C[flag.flatten(),:].copy()
         idxInCs = np.array(ismember(varis, Mx.variables))
         idxInvaris = ismember(Mx.variables, varis)
@@ -471,8 +482,8 @@ def condition(M, varis, states, vars_, sampleInd=[]):
             Mx.p = Mx.p[flag][:, np.newaxis]
         if any(Mx.q):
             Mx.q = Mx.q[flag][:, np.newaxis]
-        if any(Mx.sampleIndex):
-            Mx.sampleIndex = Mx.sampleIndex[flag][:, np.newaxis]
+        if any(Mx.sample_idx):
+            Mx.sample_idx = Mx.sample_idx[flag][:, np.newaxis]
 
     return (Mc, vars_)
 
