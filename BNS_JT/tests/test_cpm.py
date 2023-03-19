@@ -2,7 +2,7 @@ import unittest
 import importlib
 import numpy as np
 
-from BNS_JT.cpm import Cpm, ismember, isCompatible, get_value_given_condn, flip, addNewStates, condition, get_sign_prod, argsort, setdiff
+from BNS_JT.cpm import Cpm, ismember, isCompatible, get_value_given_condn, flip, addNewStates, condition, get_sign_prod, argsort, setdiff, getSamplingOrder, getCpmProductInd, singleSample
 from BNS_JT.variable import Variable
 
 np.set_printoptions(precision=3)
@@ -853,6 +853,25 @@ class Test_Condition(unittest.TestCase):
         expected = np.array([[0.85, 0.15]]).T
         np.testing.assert_array_equal(M_n.p, expected)
 
+    def test_condition6(self):
+
+        C = np.array([[1, 2]]).T
+        p = np.array([0.9, 0.1])
+        M2 = Cpm(variables=[1], no_child=1, C = C, p = p.T)
+        condVars = np.array([])
+        states = np.array([])
+        vars_ = self.vars_
+
+        [M_n], vars_n = condition([M2], condVars, states, vars_)
+
+        np.testing.assert_array_equal(M_n.variables, [1])
+        self.assertEqual(M_n.no_child, 1)
+        expected = np.array([[1,2]]).T
+        np.testing.assert_array_equal(M_n.C, expected)
+
+        expected = np.array([[0.9, 0.1]]).T
+        np.testing.assert_array_equal(M_n.p, expected)
+
 
 class Test_Sum(unittest.TestCase):
 
@@ -1071,6 +1090,70 @@ class Test_Sum(unittest.TestCase):
         np.testing.assert_array_equal(Ms.variables, [5, 1, 4])
         self.assertEqual(Ms.no_child, 1)
 
+
+class Test_mcsProduct(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+
+        cpms = {}
+
+        cpms['x1'] = Cpm(variables=[1],
+                         no_child = 1,
+                         C = np.array([[1, 2]]).T,
+                         p = np.array([[0.9, 0.1]]).T)
+
+        cpms['x2'] = Cpm(variables=[2, 1],
+                         no_child = 1,
+                         C = np.array([[1, 1], [2, 1], [1, 2], [2, 2]]),
+                         p = np.array([[0.99, 0.01, 0.9, 0.1]]).T)
+
+        cpms['x3'] = Cpm(variables=[3, 1],
+                         no_child = 1,
+                         C = np.array([[1, 1], [2, 1], [1, 2], [2, 2]]),
+                         p = np.array([[0.95, 0.05, 0.85, 0.15]]).T)
+
+        cls.cpms = cpms
+
+        cls.vars_ = {}
+
+        cls.vars_[1] = Variable(B=np.eye(2), value=['Mild', 'Severe'])
+        cls.vars_[2] = Variable(B=np.array([[1, 0], [0, 1], [1, 1]]), value=['Survive', 'Fail'])
+        cls.vars_[3] = Variable(B=np.array([[1, 0], [0, 1], [1, 1]]), value=['Survive', 'Fail'])
+        cls.vars_[4] = Variable(B=np.array([[1, 0], [0, 1], [1, 1]]), value=['Survive', 'Fail'])
+        cls.vars_[5] = Variable(B=np.array([[1, 0], [0, 1]]), value=['Survive', 'Fail'])
+
+
+    def test_getSamplingOrder(self):
+
+        sampleOrder, sampleVars, varAdditionOrder = getSamplingOrder(self.cpms)
+
+        expected = [0, 1, 2]
+        np.testing.assert_array_equal(sampleOrder, expected)
+        np.testing.assert_array_equal(varAdditionOrder, expected)
+
+        expected = [1, 2, 3]
+        np.testing.assert_array_equal(sampleVars, expected)
+
+    def test_getCpmProductInd(self):
+
+        cpms = list(self.cpms.values())
+        result = getCpmProductInd(cpms, [])
+
+        expected = 0
+
+        np.testing.assert_array_equal(result, expected)
+
+    def test_singleSample(self):
+
+        cpms = list(self.cpms.values())
+        sampleOrder = [0, 1, 2]
+        sampleVars = [1, 2, 3]
+        varAdditionOrder = [1, 2, 3]
+        varis = self.vars_
+        sampleInd = [1]
+
+        sample, sampleProb = singleSample(cpms, sampleOrder, sampleVars, varAdditionOrder, varis, sampleInd)
 
 if __name__=='__main__':
     unittest.main()
