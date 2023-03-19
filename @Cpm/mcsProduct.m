@@ -82,7 +82,9 @@ for operation = 1:nCpm
     if ( sampleInd == 1 ) && ( sum( cpmToSample.p ) ~= 1 )
         warning( 'Given probability vector does not sum to 1' )
     end
-    iSampleRowInd = randsample( length(cpmToSample.p), 1, true, cpmToSample.p );
+%     iSampleRowInd = randsample( length(cpmToSample.p), 1, true, cpmToSample.p );
+    iP_cumsum = cumsum(cpmToSample.p); iRand = rand( 1 ); % To not use randsample (because of a toolkit issue)
+    iSampleRowInd = find( iP_cumsum > iRand, 1 );
     iSample = cpmToSample.C( iSampleRowInd,1:cpmToSample.numChild );
     logSampleProb = logSampleProb + log( cpmToSample.p( iSampleRowInd ) );
 
