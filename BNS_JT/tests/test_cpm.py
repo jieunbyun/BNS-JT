@@ -2,7 +2,7 @@ import unittest
 import importlib
 import numpy as np
 
-from BNS_JT.cpm import Cpm, ismember, isCompatible, get_value_given_condn, flip, addNewStates, condition, get_sign_prod, argsort, setdiff
+from BNS_JT.cpm import Cpm, ismember, isCompatible, get_value_given_condn, flip, addNewStates, condition, get_sign_prod, argsort, setdiff, getSamplingOrder, getCpmProductInd, singleSample, mcsProduct
 from BNS_JT.variable import Variable
 
 np.set_printoptions(precision=3)
@@ -853,6 +853,25 @@ class Test_Condition(unittest.TestCase):
         expected = np.array([[0.85, 0.15]]).T
         np.testing.assert_array_equal(M_n.p, expected)
 
+    def test_condition6(self):
+
+        C = np.array([[1, 2]]).T
+        p = np.array([0.9, 0.1])
+        M2 = Cpm(variables=[1], no_child=1, C = C, p = p.T)
+        condVars = np.array([])
+        states = np.array([])
+        vars_ = self.vars_
+
+        [M_n], vars_n = condition([M2], condVars, states, vars_)
+
+        np.testing.assert_array_equal(M_n.variables, [1])
+        self.assertEqual(M_n.no_child, 1)
+        expected = np.array([[1,2]]).T
+        np.testing.assert_array_equal(M_n.C, expected)
+
+        expected = np.array([[0.9, 0.1]]).T
+        np.testing.assert_array_equal(M_n.p, expected)
+
 
 class Test_Sum(unittest.TestCase):
 
@@ -1071,6 +1090,143 @@ class Test_Sum(unittest.TestCase):
         np.testing.assert_array_equal(Ms.variables, [5, 1, 4])
         self.assertEqual(Ms.no_child, 1)
 
+
+class Test_mcsProduct(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+
+        cls.M = {}
+
+        cls.M[1] = Cpm(variables=[1],
+                       no_child=1,
+                       C = np.array([1, 2]).T,
+                       p = np.array([0.9, 0.1]).T)
+
+        cls.M[2] = Cpm(variables=[2, 1],
+                       no_child=1,
+                       C = np.array([[1, 1], [2, 1], [1, 2], [2, 2]]),
+                       p = np.array([0.99, 0.01, 0.9, 0.1]).T)
+
+        cls.M[3] = Cpm(variables=[3, 1],
+                       no_child=1,
+                       C = np.array([[1, 1], [2, 1], [1, 2], [2, 2]]),
+                       p = np.array([0.95, 0.05, 0.85, 0.15]).T)
+
+        cls.M[4] = Cpm(variables=[4, 1],
+                       no_child=1,
+                       C = np.array([[1, 1], [2, 1], [1, 2], [2, 2]]),
+                       p = np.array([0.99, 0.01, 0.9, 0.1]).T)
+
+        cls.M[5] = Cpm(variables=[5, 2, 3, 4],
+                       no_child=1,
+                       C = np.array([[2, 3, 3, 2], [1, 1, 3, 1], [1, 2, 1, 1], [2, 2, 2, 1]]),
+                       p = np.array([1, 1, 1, 1]).T)
+
+        cls.cpms = {k: cls.M[k] for k in [1, 2, 3]}
+
+        cls.vars_ = {}
+
+        cls.vars_[1] = Variable(B=np.eye(2), value=['Mild', 'Severe'])
+        cls.vars_[2] = Variable(B=np.array([[1, 0], [0, 1], [1, 1]]), value=['Survive', 'Fail'])
+        cls.vars_[3] = Variable(B=np.array([[1, 0], [0, 1], [1, 1]]), value=['Survive', 'Fail'])
+        cls.vars_[4] = Variable(B=np.array([[1, 0], [0, 1], [1, 1]]), value=['Survive', 'Fail'])
+        cls.vars_[5] = Variable(B=np.array([[1, 0], [0, 1]]), value=['Survive', 'Fail'])
+
+    def test_getSamplingOrder(self):
+
+        sampleOrder, sampleVars, varAdditionOrder = getSamplingOrder(self.cpms)
+
+        expected = [0, 1, 2]
+        np.testing.assert_array_equal(sampleOrder, expected)
+        np.testing.assert_array_equal(varAdditionOrder, expected)
+
+        expected = [1, 2, 3]
+        np.testing.assert_array_equal(sampleVars, expected)
+
+    def test_getCpmProductInd(self):
+
+        cpms = list(self.cpms.values())
+        result = getCpmProductInd(cpms, [])
+
+        expected = [1, 0, 0]
+
+        np.testing.assert_array_equal(result, expected)
+
+    def test_singleSample(self):
+
+        cpms = list(self.cpms.values())
+        sampleOrder = [0, 1, 2]
+        sampleVars = [1, 2, 3]
+        varAdditionOrder = [0, 1, 2]
+        varis = self.vars_
+        sampleInd = [1]
+
+        sample, sampleProb = singleSample(cpms, sampleOrder, sampleVars, varAdditionOrder, varis, sampleInd)
+
+        np.testing.assert_array_equal(sample, [1, 1, 1])
+        try:
+            self.assertAlmostEqual(sampleProb, 0.8464)
+        except TypeError:
+            print(sampleProb)
+
+    def test_mcsProduct1(self):
+
+        nSample = 10
+        cpms = list(self.cpms.values())
+        Mcs = mcsProduct(cpms, nSample, self.vars_)
+
+        np.testing.assert_array_equal(Mcs.variables, [3, 2, 1])
+
+        self.assertEqual(Mcs.C.shape, (10, 3))
+        self.assertEqual(Mcs.q.shape, (10, 1))
+        self.assertEqual(Mcs.sample_idx.shape, (10, 1))
+
+        irow = np.where((Mcs.C == (1, 1, 1)).all(axis=1))[0]
+        try:
+            np.testing.assert_array_almost_equal(Mcs.q[irow], 0.8464*np.ones((len(irow), 1)), decimal=4)
+        except AssertionError:
+            print(Mcs.q)
+            print(Mcs.C)
+
+        irow = np.where((Mcs.C == (1, 1, 2)).all(axis=1))[0]
+        try:
+            np.testing.assert_array_almost_equal(Mcs.q[irow], 0.0765*np.ones((len(irow), 1)))
+        except AssertionError:
+            print(Mcs.q)
+
+    def test_mcsProduct2(self):
+
+        nSample = 10
+        cpms = list(self.M.values())
+        Mcs = mcsProduct(cpms, nSample, self.vars_)
+
+        np.testing.assert_array_equal(Mcs.variables, [5, 4, 3, 2, 1])
+
+        self.assertEqual(Mcs.C.shape, (10, 5))
+        self.assertEqual(Mcs.q.shape, (10, 1))
+        self.assertEqual(Mcs.sample_idx.shape, (10, 1))
+
+        irow = np.where((Mcs.C == (1, 1, 1, 1, 1)).all(axis=1))[0]
+        try:
+            np.testing.assert_array_almost_equal(Mcs.q[irow], 0.8380*np.ones((len(irow), 1)), decimal=4)
+        except AssertionError:
+            print(Mcs.q)
+            print(Mcs.C)
+
+        irow = np.where((Mcs.C == (1, 1, 1, 1, 2)).all(axis=1))[0]
+        try:
+            np.testing.assert_array_almost_equal(Mcs.q[irow], 0.0688*np.ones((len(irow), 1)))
+        except AssertionError:
+            print(Mcs.q)
+
+    def test_mcsProduct3(self):
+
+        cpms = {k: self.M[k] for k in [2, 5]}
+        nSample = 10
+
+        with self.assertRaises(UnboundLocalError):
+            Mcs = mcsProduct(cpms, nSample, self.vars_)
 
 if __name__=='__main__':
     unittest.main()

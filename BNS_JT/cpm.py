@@ -1,11 +1,11 @@
 import numpy as np
 import textwrap
 import copy
-
+import collections
 
 
 class Cpm(object):
-    '''
+    """
     Defines the conditional probability matrix (cf., CPT)
 
     Parameters
@@ -23,8 +23,12 @@ class Cpm(object):
     sample_idx: array_like
         sample index vector
 
+    Examples
+    --------
+
     Cpm(varibles, no_child, C, p, q, sample_idx)
-'''
+    """
+
     def __init__(self, variables, no_child, C, p, q=[], sample_idx=[]):
 
         if isinstance(variables, list):
@@ -69,21 +73,24 @@ class Cpm(object):
 
         if self.p.ndim == 1:
             self.p.shape = (len(self.p), 1)
-        assert len(self.p) == self.C.shape[0], 'p must have the same length with the number of rows in C'
 
         if any(self.q):
+            assert isinstance(self.q, np.ndarray), 'q must be a numeric vector'
+            all(isinstance(y, (float, np.float32, np.float64, int, np.int32, np.int64)) for y in self.q), 'p must be a numeric vector'
+
             assert len(self.q) == self.C.shape[0], 'q must have the same length with the number of rows in C'
+
+            if self.q.ndim == 1:
+                self.q.shape = (len(self.q), 1)
+
+        else:
+            assert len(self.p) == self.C.shape[0], 'p must have the same length with the number of rows in C'
 
         if any(self.sample_idx):
             assert len(self.sample_idx) == self.C.shape[0], 'sample_idx must have the same length with the number of rows in C'
 
-        '''
-        elseif ~isempty(M.q) && ~isnumeric(M.q)
-            errFlag = 1
-            errMess ='Sampling probability vector q must be a numeric vector'
-        elseif (~isempty(M.q)&&~isempty(M.C)) && (length(M.q)~=size(M.C,1))
-        elseif (~isempty(M.sample_idx)&&~isempty(M.C)) && (length(M.sample_idx)~=size(M.C,1))
-        '''
+            if self.sample_idx.ndim == 1:
+                self.sample_idx.shape = (len(self.sample_idx), 1)
 
     def __repr__(self):
         return textwrap.dedent(f'''\
@@ -419,7 +426,10 @@ def isCompatible(C, variables, varis, states, vInfo):
         B = vInfo[vari].B
         C1 = C[:, i][np.newaxis, :]
         x1 = [B[k - 1, :] for k in C1[:, flag.flatten()]][0]
-        x2 = B[state - 1, :]
+        try:
+            x2 = B[state - 1, :]
+        except IndexError:
+            print('IndexError: {state}')
         check = (np.sum(x1 * x2, axis=1) > 0)[:, np.newaxis]
 
         flag[np.where(flag > 0)[0][:len(check)]] = check
@@ -443,11 +453,16 @@ def condition(M, varis, states, vars_, sampleInd=[]):
     vars_:
     sampleInd:
     '''
+    if isinstance(M, Cpm):
+        M = [M]
+
     if isinstance(varis, list):
         varis = np.array(varis)
 
     if isinstance(states, list):
         states = np.array(states)
+
+    assert isinstance(sampleInd, list), 'sampleInd should be a list'
 
     Mc = copy.deepcopy(M)
     for Mx in Mc:
@@ -510,3 +525,138 @@ def get_sign_prod(A, B):
     return prodSign * prodVal
 
 
+def getCpmProductInd(cpms, varis):
+
+    assert isinstance(cpms, (list,  collections.abc.ValuesView)), 'cpms should be a list'
+
+    cpmProductInd = []
+    for cpm in cpms:
+        val = cpm.variables[cpm.no_child:].tolist()
+        val = not any(set(val).difference(varis))
+        cpmProductInd.append(val)
+
+    return cpmProductInd
+
+def getSamplingOrder(cpms):
+
+    if isinstance(cpms, dict):
+
+        cpms = list(cpms.values())
+
+    ncpms = len(cpms)
+    cpms_ = copy.deepcopy(cpms)
+    cpms_idx = list(range(ncpms))
+
+    sampleOrder = []
+    sampleVars = []
+
+    for i in range(ncpms):
+
+        # FIXME: cpmProductInd should be int not a list
+        cpmProductInd = getCpmProductInd(cpms_, sampleVars)
+
+        try:
+            # take integer from the list
+            cpmProductInd = np.where(cpmProductInd)[0][0]
+
+        except IndexError as e:
+            print(f'{e}: CPMs include undefined parent node')
+            break
+        else:
+            sampleOrder.append(cpms_idx[cpmProductInd])
+            cpmProduct = cpms_[cpmProductInd]
+
+            varsToBeProduct = cpmProduct.variables[:cpmProduct.no_child].tolist()
+
+            if any(set(sampleVars).intersection(varsToBeProduct)):
+                print('Given Cpms must not have common child nodes')
+            else:
+                [sampleVars.append(x) for x in varsToBeProduct]
+
+            try:
+                varAdditionOrder = np.append(
+                    varAdditionOrder,
+                    i*np.ones(len(varsToBeProduct)))
+            except NameError:
+                varAdditionOrder = i*np.ones(len(varsToBeProduct))
+
+            cpms_.pop(cpmProductInd)
+            cpms_idx.pop(cpmProductInd)
+
+    return sampleOrder, sampleVars, varAdditionOrder
+
+
+def mcsProduct(cpms, nSample, varis):
+    """
+
+
+    """
+    sampleOrder, sampleVars, varAdditionOrder = getSamplingOrder(cpms)
+
+    nVars = len(sampleVars)
+    Cproduct = np.zeros((nSample, nVars), dtype=int)
+    qproduct = np.zeros((nSample, 1))
+    sampleIndProduct = np.arange(nSample)
+
+    for i in sampleIndProduct:
+
+        [sample, sampleProb] = singleSample(cpms, sampleOrder, sampleVars, varAdditionOrder, varis, [i])
+        Cproduct[i,:] = sample
+        qproduct[i] = sampleProb
+
+    return Cpm(variables=sampleVars[::-1],
+               no_child=nVars,
+               C=Cproduct[:, ::-1],
+               p=[],
+               q=qproduct,
+               sample_idx=sampleIndProduct)
+
+
+def singleSample(cpms, sampleOrder, sampleVars, varAdditionOrder, varis, sampleInd):
+    """
+    sample from cpms
+
+    parameters:
+        cpms: list-like
+        sampleOrder: list-like
+        sampleVars: list-like
+        varAdditionOrder: list-like
+        varis:
+        sampleInd: list
+
+    """
+    if isinstance(sampleVars, list):
+        sampleVars = np.array(sampleVars)
+
+    if isinstance(varAdditionOrder, list):
+        varAdditionOrder = np.array(varAdditionOrder)
+
+    sample = np.zeros(len(sampleVars), dtype=int)
+    logSampleProb = 0.0
+
+    for i, (idx, cpm) in enumerate(zip(sampleOrder, cpms)):
+
+        [cpm], _ = condition(
+                    M=cpm,
+                    varis=sampleVars[sample>0],
+                    states=sample[sample>0],
+                    vars_=varis,
+                    sampleInd=sampleInd)
+
+        if (sampleInd == [1]) and any(cpm.p.sum(axis=0) != 1):
+            print('Given probability vector does not sum to 1')
+
+        weight = cpm.p.flatten()/cpm.p.sum(axis=0)
+        irow = np.random.choice(range(len(cpm.p)), size=1, p=weight)
+        logSampleProb += np.log(cpm.p[irow])
+        val = cpm.C[irow, :cpm.no_child].flatten()
+        try:
+            sample[varAdditionOrder == i] = val
+        except IndexError:
+            print(f'i: {i}')
+            print(f'val: {val}')
+            print(f'varAdditionOrder: {varAdditionOrder}')
+            print(f'sample: {sample}')
+    sampleProb = np.exp(logSampleProb)
+
+    return sample, sampleProb
