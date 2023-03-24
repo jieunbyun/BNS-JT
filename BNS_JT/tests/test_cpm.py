@@ -2,7 +2,7 @@ import unittest
 import importlib
 import numpy as np
 
-from BNS_JT.cpm import Cpm, ismember, is_compatible, get_value_given_condn, flip, add_new_states, condition, get_sign_prod, argsort, setdiff, get_sample_order, get_prod_idx, single_sample, mcs_product
+from BNS_JT.cpm import Cpm, ismember, is_compatible, get_value_given_condn, flip, add_new_states, condition, get_sign_prod, argsort, setdiff, get_sample_order, get_prod_idx, single_sample, mcs_product, prod_cpms
 from BNS_JT.variable import Variable
 
 np.set_printoptions(precision=3)
@@ -394,7 +394,6 @@ class Test_is_compatible(unittest.TestCase):
         # M[5]
         rowIndex = [0]  # 1 -> 0
         M_sys_select = self.M[5].get_subset(rowIndex)
-        print(M_sys_select.C.shape)
         result = self.M[3].is_compatible(M_sys_select, var=self.vars_)
         expected = np.array([1, 1, 1, 1])[:, np.newaxis]
         np.testing.assert_array_equal(result, expected)
@@ -663,11 +662,18 @@ class Test_Condition(unittest.TestCase):
         condStates = np.array([1])
         vars_ = self.vars_
 
-        compatFlag = is_compatible(self.Mx.C, self.Mx.variables, condVars, condStates, vars_)
-        expected = np.array([1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0])[:, np.newaxis]
+        Mx = Cpm(variables=[2, 1],
+                 no_child = 1,
+                 C = np.array([[1, 1], [2, 1], [1, 2], [2, 2]]),
+                 p = np.array([[0.99, 0.01, 0.9, 0.1]]).T)
 
+        compatFlag = is_compatible(Mx.C, Mx.variables, condVars, condStates, vars_)
+        #expected = np.array([1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0])[:, np.newaxis]
+        expected = np.array([[1, 0, 1, 0]]).T
         np.testing.assert_array_equal(expected, compatFlag)
-        Ccompat = self.Mx.C[compatFlag.flatten(), :]
+
+        Ccompat = Mx.C[compatFlag.flatten(), :]
+
         expected = np.array([[1,1,1,1,1],
                             [1,2,1,1,1],
                             [1,1,1,2,1],
@@ -676,26 +682,27 @@ class Test_Condition(unittest.TestCase):
                             [1,2,2,1,2],
                             [1,1,2,2,2],
                             [1,2,2,2,2]])
+
+        expected = np.array([[1, 1], [1, 2]])
         np.testing.assert_array_equal(expected, Ccompat)
 
         idxInC = np.array(ismember(condVars, self.Mx.variables))
         np.testing.assert_array_equal(idxInC, [0])  # matlab 1 though
 
-        idxInCondVars = ismember(self.Mx.variables, condVars)
-        np.testing.assert_array_equal(idxInCondVars, [0, False, False, False, False])  # matlab 1 though
-
+        idxInCondVars = ismember(Mx.variables, condVars)
+        np.testing.assert_array_equal(idxInCondVars, [0, False])  # matlab 1 though
         not_idxInCondVars = flip(idxInCondVars)
-        self.assertEqual(not_idxInCondVars, [False, True, True, True, True])
+        self.assertEqual(not_idxInCondVars, [False, True])
         Ccond = np.zeros_like(Ccompat)
         Ccond[:, not_idxInCondVars] = get_value_given_condn(Ccompat, not_idxInCondVars)
         #np.testing.assert_array_equal(Ccond_, Ccompat[:, 1:])
         #Ccond[:, new_cond] = Ccond_
-        expected = np.append(np.zeros((Ccompat.shape[0], 1)), Ccompat[:, 1:], axis=1)
+        expected = np.array([[0, 1], [0, 2]])
         np.testing.assert_array_equal(Ccond, expected)
 
-        _condVars = condVars[idxInC >= 0]
-        _condStates = condStates[idxInC >= 0]
-        _idxInC = idxInC[idxInC >= 0]
+        _condVars = get_value_given_condn(condVars, idxInC)
+        _condStates = get_value_given_condn(condStates, idxInC)
+        _idxInC = get_value_given_condn(idxInC, idxInC)
         self.assertEqual(_condVars, np.array([2]))
         self.assertEqual(_condStates, np.array([1]))
         self.assertEqual(_idxInC, np.array([0]))
@@ -704,16 +711,15 @@ class Test_Condition(unittest.TestCase):
         np.testing.assert_array_equal(B, np.array([[1, 0], [0, 1], [1, 1]]))
 
         # FIXME: index or not
-        _Ccompat = Ccompat[:, _idxInC].copy() - 1
-        #np.testing.assert_array_equal(_Ccompat, np.ones((8, 1)))
-        np.testing.assert_array_equal(_Ccompat, np.zeros((8, 1)))
+        _Ccompat = Ccompat[:, _idxInC[0]].copy() - 1
+        np.testing.assert_array_equal(_Ccompat, [0, 0])
 
-        expected = np.array([np.ones(8), np.zeros(8)]).T
+        expected = np.array([[1, 0], [1, 0]])
         np.testing.assert_array_equal(B[_Ccompat.flatten(), :], expected)
         # FIXME: index or not
-        np.testing.assert_array_equal(B[_condStates - 1, :], np.array([[1, 0]]))
+        np.testing.assert_array_equal(B[_condStates[0] - 1, :], [1, 0])
         #np.testing.assert_array_equal(B[_condStates, :], np.array([1, 0]))
-        compatCheck_mv = B[_Ccompat.flatten(), :] * B[_condStates - 1, :]
+        compatCheck_mv = B[_Ccompat.flatten(), :] * B[_condStates[0] - 1, :]
         np.testing.assert_array_equal(compatCheck_mv, expected)
 
         B = add_new_states(compatCheck_mv, B)
@@ -731,11 +737,13 @@ class Test_Condition(unittest.TestCase):
                             [1,2,2,1,2],
                             [1,1,2,2,2],
                             [1,2,2,2,2]])
+        expected = np.array([[1, 1], [1, 2]])
         np.testing.assert_array_equal(Ccond, expected)
 
         # Mx.p
         expected = np.array([[0.9405,0.0495,0.7650,0.1350,0.9405,0.0495,0.7650,0.1350]]).T
-        np.testing.assert_array_equal(self.Mx.p[compatFlag][:, np.newaxis], expected)
+        expected = np.array([[0.99, 0.9]]).T
+        np.testing.assert_array_equal(Mx.p[compatFlag][:, np.newaxis], expected)
 
     def test_condition1(self):
 
@@ -785,7 +793,7 @@ class Test_Condition(unittest.TestCase):
         np.testing.assert_array_equal(M_n[0].p, expected)
 
     def test_condition3(self):
-
+        # conditioning on multiple nodes
         condVars = np.array([2, 1])
         condStates = np.array([1, 1])
         vars_ = self.vars_
@@ -1097,46 +1105,44 @@ class Test_mcs_product(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
 
-        cls.M = {}
-
-        cls.M[1] = Cpm(variables=[1],
+        cls.M1 = Cpm(variables=[1],
                        no_child=1,
                        C = np.array([1, 2]).T,
                        p = np.array([0.9, 0.1]).T)
 
-        cls.M[2] = Cpm(variables=[2, 1],
+        cls.M2= Cpm(variables=[2, 1],
                        no_child=1,
                        C = np.array([[1, 1], [2, 1], [1, 2], [2, 2]]),
                        p = np.array([0.99, 0.01, 0.9, 0.1]).T)
 
-        cls.M[3] = Cpm(variables=[3, 1],
+        cls.M3 = Cpm(variables=[3, 1],
                        no_child=1,
                        C = np.array([[1, 1], [2, 1], [1, 2], [2, 2]]),
                        p = np.array([0.95, 0.05, 0.85, 0.15]).T)
 
-        cls.M[4] = Cpm(variables=[4, 1],
+        cls.M4 = Cpm(variables=[4, 1],
                        no_child=1,
                        C = np.array([[1, 1], [2, 1], [1, 2], [2, 2]]),
                        p = np.array([0.99, 0.01, 0.9, 0.1]).T)
 
-        cls.M[5] = Cpm(variables=[5, 2, 3, 4],
+        cls.M5 = Cpm(variables=[5, 2, 3, 4],
                        no_child=1,
                        C = np.array([[2, 3, 3, 2], [1, 1, 3, 1], [1, 2, 1, 1], [2, 2, 2, 1]]),
                        p = np.array([1, 1, 1, 1]).T)
 
-        cls.cpms = {k: cls.M[k] for k in [1, 2, 3]}
+        vars1 = Variable(B=np.eye(2), value=['Mild', 'Severe'])
+        vars2 = Variable(B=np.array([[1, 0], [0, 1], [1, 1]]), value=['Survive', 'Fail'])
+        vars3 = Variable(B=np.array([[1, 0], [0, 1], [1, 1]]), value=['Survive', 'Fail'])
+        vars4 = Variable(B=np.array([[1, 0], [0, 1], [1, 1]]), value=['Survive', 'Fail'])
+        vars5 = Variable(B=np.array([[1, 0], [0, 1]]), value=['Survive', 'Fail'])
 
-        cls.vars_ = {}
-
-        cls.vars_[1] = Variable(B=np.eye(2), value=['Mild', 'Severe'])
-        cls.vars_[2] = Variable(B=np.array([[1, 0], [0, 1], [1, 1]]), value=['Survive', 'Fail'])
-        cls.vars_[3] = Variable(B=np.array([[1, 0], [0, 1], [1, 1]]), value=['Survive', 'Fail'])
-        cls.vars_[4] = Variable(B=np.array([[1, 0], [0, 1], [1, 1]]), value=['Survive', 'Fail'])
-        cls.vars_[5] = Variable(B=np.array([[1, 0], [0, 1]]), value=['Survive', 'Fail'])
+        cls.vars_ = [vars1, vars2, vars3, vars4, vars5]
 
     def test_get_sample_order(self):
 
-        sampleOrder, sampleVars, varAdditionOrder = get_sample_order(self.cpms)
+        cpms = [self.M1, self.M2, self.M3]
+
+        sampleOrder, sampleVars, varAdditionOrder = get_sample_order(cpms)
 
         expected = [0, 1, 2]
         np.testing.assert_array_equal(sampleOrder, expected)
@@ -1147,7 +1153,8 @@ class Test_mcs_product(unittest.TestCase):
 
     def test_get_prod_idx(self):
 
-        cpms = list(self.cpms.values())
+        cpms = [self.M1, self.M2, self.M3]
+
         result = get_prod_idx(cpms, [])
 
         #expected = [1, 0, 0]
@@ -1157,7 +1164,7 @@ class Test_mcs_product(unittest.TestCase):
 
     def test_single_sample(self):
 
-        cpms = list(self.cpms.values())
+        cpms = [self.M1, self.M2, self.M3]
         sampleOrder = [0, 1, 2]
         sampleVars = [1, 2, 3]
         varAdditionOrder = [0, 1, 2]
@@ -1166,20 +1173,15 @@ class Test_mcs_product(unittest.TestCase):
 
         sample, sampleProb = single_sample(cpms, sampleOrder, sampleVars, varAdditionOrder, varis, sampleInd)
 
-        try:
-            np.testing.assert_array_equal(sample, [1, 1, 1])
-        except AssertionError:
-            print(f'{sample} vs. [1, 1, 1]')
-
-        try:
+        if (sample == [1, 1, 1]).all():
             np.testing.assert_array_almost_equal(sampleProb, [[0.846]], decimal=3)
-        except AssertionError:
-            print(f'{sampleProb[0][0]} vs 0.846')
+        elif (sample == [2, 1, 1]).all():
+            np.testing.assert_array_almost_equal(sampleProb, [[0.0765]], decimal=3)
 
     def test_mcs_product1(self):
 
         nSample = 10
-        cpms = list(self.cpms.values())
+        cpms = [self.M1, self.M2, self.M3]
         Mcs = mcs_product(cpms, nSample, self.vars_)
 
         np.testing.assert_array_equal(Mcs.variables, [3, 2, 1])
@@ -1203,7 +1205,7 @@ class Test_mcs_product(unittest.TestCase):
     def test_mcs_product2(self):
 
         nSample = 10
-        cpms = list(self.M.values())
+        cpms = [self.M1, self.M2, self.M3, self.M4, self.M5]
         Mcs = mcs_product(cpms, nSample, self.vars_)
 
         np.testing.assert_array_equal(Mcs.variables, [5, 4, 3, 2, 1])
@@ -1220,17 +1222,75 @@ class Test_mcs_product(unittest.TestCase):
 
         irow = np.where((Mcs.C == (1, 1, 1, 1, 2)).all(axis=1))[0]
         try:
-            np.testing.assert_array_almost_equal(Mcs.q[irow], 0.0688*np.ones((len(irow), 1)))
+            np.testing.assert_array_almost_equal(Mcs.q[irow], 0.0688*np.ones((len(irow), 1)), decimal=3)
         except AssertionError:
             print(f'{Mcs.q[irow]} vs 0.0688')
 
     def test_mcs_product3(self):
 
-        cpms = {k: self.M[k] for k in [2, 5]}
         nSample = 10
-
+        cpms = [self.M2, self.M5]
         with self.assertRaises(TypeError):
             Mcs = mcs_product(cpms, nSample, self.vars_)
+
+    def test_get_value_given_condn1(self):
+
+        condn = [1, False]
+        value = [1,2]
+        expected = [1]
+
+        result = get_value_given_condn(value, condn)
+
+        self.assertEqual(result, expected)
+
+
+    def test_condition(self):
+
+        condVars = np.array([1, 2])
+        condStates = np.array([1, 1])
+        vars_ = self.vars_
+
+        [M], _ = condition(self.M3, condVars, condStates, vars_, [0])
+        np.testing.assert_array_equal(M.C, [[1, 1], [2, 1]])
+
+class Test_prod_cpms(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+
+        M1 = Cpm(variables=[1],
+                       no_child=1,
+                       C = np.array([1, 2]).T,
+                       p = np.array([0.9, 0.1]).T)
+
+        M2 = Cpm(variables=[2, 1],
+                       no_child=1,
+                       C = np.array([[1, 1], [2, 1], [1, 2], [2, 2]]),
+                       p = np.array([0.99, 0.01, 0.9, 0.1]).T)
+
+        M3 = Cpm(variables=[3, 1],
+                       no_child=1,
+                       C = np.array([[1, 1], [2, 1], [1, 2], [2, 2]]),
+                       p = np.array([0.95, 0.05, 0.85, 0.15]).T)
+
+        cls.cpms = [M1, M2, M3]
+
+        vars1 = Variable(B=np.eye(3), value=['Sunny', 'Cloudy', 'Rainy'])
+        vars2 = Variable(B=np.array([[1, 0], [0, 1]]), value=['Good', 'Bad'])
+        vars3 = Variable(B=np.array([[1, 0], [0, 1]]), value=['Below 0', 'Above 0'])
+        cls.vars_ = [vars1, vars2, vars3]
+
+    def test_prod_cpms(self):
+
+        Mmult, vars_ = prod_cpms(cpms=self.cpms, var=self.vars_)
+
+        np.testing.assert_array_equal(Mmult.variables, [1, 2, 3])
+
+        expected = np.array([[1,1,1],[2,1,1],[1,2,1],[2,2,1],[1,1,2],[2,1,2],[1,2,2],[2,2,2]])
+        np.testing.assert_array_equal(Mmult.C, expected)
+
+        expected = np.array([[0.8464, 0.0765, 0.0086, 0.0085, 0.0446, 0.0135, 4.5e-4, 0.0015]]).T
+        np.testing.assert_array_almost_equal(Mmult.p, expected, decimal=4)
 
 if __name__=='__main__':
     unittest.main()

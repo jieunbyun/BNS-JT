@@ -278,17 +278,17 @@ class Cpm(object):
 
         if any(self.p):
             if not any(M.p):
-                self.p = np.ones(self.C.shape[0])
+                M.p = np.ones(M.C.shape[0])
         else:
             if any(M.p):
-                M.p = np.ones(M.C.shape[0])
+                self.p = np.ones(self.C.shape[0])
 
         if any(self.q):
             if not any(M.q):
                 M.q = np.ones(M.C.shape[0])
         else:
             if any(M.q):
-                self.q = ones(self.C.shape[0])
+                self.q = np.ones(self.C.shape[0])
 
         if self.C.any():
             # FIXME: defined but not used
@@ -330,17 +330,17 @@ class Cpm(object):
                 if any(self.p):
                     _prod = get_sign_prod(Mc.p, self.p[i])
 
-                if i:
+                try:
                     pprod = np.append(pprod, _prod, axis=0)
-                else:
+                except NameError:
                     pprod = _prod
 
                 if any(self.q):
                     _prod = get_sign_prod(Mc.q, self.q[i])
 
-                if i:
+                try:
                     qprod = np.append(qprod, _prod, axis=0)
-                else:
+                except NameError:
                     qprod = _prod
 
             prod_vars = np.append(M.variables, get_value_given_condn(self.variables, flip(idx_vars)))
@@ -350,10 +350,17 @@ class Cpm(object):
 
             new_parent = np.append(self.variables[self.no_child:], M.variables[M.no_child:])
             new_parent = list(set(new_parent).difference(new_child))
-            new_vars = np.append(new_child, new_parent, axis=0)
+            if new_parent:
+                new_vars = np.concatenate((new_child, new_parent), axis=0)
+            else:
+                new_vars = new_child
 
             idx_vars = ismember(new_vars, prod_vars)
 
+            #print(new_vars)
+            #print(new_child)
+            #print(Cprod[:, idx_vars])
+            #print(pprod)
             Mprod = Cpm(variables=new_vars,
                         no_child = len(new_child),
                         C = Cprod[:, idx_vars],
@@ -495,37 +502,43 @@ def condition(M, cnd_vars, cnd_states, var, sample_idx=[]):
     for Mx in Mc:
 
         is_cmp = is_compatible(Mx.C, Mx.variables, cnd_vars, cnd_states, var)
+        #print(f'is_cmp: {is_cmp}')
         # FIXME
         #if any(sample_idx) and any(Mx.sample_idx):
         #    is_cmp = is_cmp & ( M.sample_idx == sample_idx )
-
+        #print(is_cmp)
         C = Mx.C[is_cmp.flatten(), :].copy()
-        idx_cnd = np.array(ismember(cnd_vars, Mx.variables))
+        idx_cnd = ismember(cnd_vars, Mx.variables)
         idx_vars = ismember(Mx.variables, cnd_vars)
+        #print(idx_cnd, idx_vars)
 
         Ccond = np.zeros_like(C)
         not_idx_vars = flip(idx_vars)
         Ccond[:, not_idx_vars] = get_value_given_condn(C, not_idx_vars)
+        #print(f'Ccond: {Ccond}')
+        #print(f'before: {cnd_vars}, {idx_cnd}')
+        cnd_vars = get_value_given_condn(cnd_vars, idx_cnd)
+        cnd_states = get_value_given_condn(cnd_states, idx_cnd)
+        idx_cnd = get_value_given_condn(idx_cnd, idx_cnd)
 
-        cnd_vars = cnd_vars[idx_cnd >= 0].copy()
-        cnd_states = cnd_states[idx_cnd >= 0].copy()
-        idx_cnd = idx_cnd[idx_cnd >= 0].copy()
-
-        for vari, state, idx in zip(cnd_vars, cnd_states, idx_cnd):
-
-            B = var[vari].B.copy()
+        #print(cnd_vars, cnd_states, idx_cnd)
+        for cnd_var, state, idx in zip(cnd_vars, cnd_states, idx_cnd):
+            #print(cnd_var, state, idx)
+            B = var[cnd_var].B.copy()
 
             if B.any():
                 C1 = C[:, idx].copy() - 1
                 check = B[C1, :] * B[state - 1,:]
-                var[vari].B = add_new_states(check, B)
+                var[cnd_var].B = add_new_states(check, B)
                 Ccond[:, idx] = [x + 1 for x in ismember(check, B)]
+                #print(f'C1: {C1}')
+                #print(f'check: {check}')
 
         Mx.C = Ccond.copy()
         if any(Mx.p):
             Mx.p = Mx.p[is_cmp][:, np.newaxis]
         if any(Mx.q):
-            Mx.q = Mx.q[is_cmp][:, np.newaxis]
+            Mx.q = Mx.q[is_cmp.flatten()][:, np.newaxis]
         if any(Mx.sample_idx):
             Mx.sample_idx = Mx.sample_idx[is_cmp][:, np.newaxis]
 
@@ -545,6 +558,19 @@ def add_new_states(states, B):
     if any(newState):
         B = np.append(B, newState, axis=1)
     return B
+
+
+def prod_cpms(cpms, var):
+    """
+
+    """
+    assert isinstance(cpms, (list,  collections.abc.ValuesView)), 'cpms should be a list'
+
+    prod = cpms[0]
+    for c in cpms[1:]:
+        prod, var = prod.product(c, var)
+
+    return prod, var
 
 
 def get_sign_prod(A, B):
@@ -643,7 +669,7 @@ def mcs_product(cpms, nsample, varis):
 
     for i in sample_idx_prod:
 
-        [sample, sample_prob] = single_sample(cpms, sample_order, sample_vars, var_add_order, varis, [i])
+        sample, sample_prob = single_sample(cpms, sample_order, sample_vars, var_add_order, varis, [i])
         C_prod[i,:] = sample
         q_prod[i] = sample_prob
 
@@ -677,15 +703,19 @@ def single_sample(cpms, sample_order, sample_vars, var_add_order, varis, sample_
     sample = np.zeros(len(sample_vars), dtype=int)
     sample_prob = 0.0
 
-    for i, (idx, cpm) in enumerate(zip(sample_order, cpms)):
+    for i, j in enumerate(sample_order):
 
+        cnd_vars = sample_vars[sample > 0]
+        cnd_states = sample[sample > 0]
+        #print(i, cnd_vars, cnd_states)
+        #print(cpms[j])
         [cpm], _ = condition(
-                    M=cpm,
-                    cnd_vars=sample_vars[sample>0],
-                    cnd_states=sample[sample>0],
+                    M=cpms[j],
+                    cnd_vars=cnd_vars,
+                    cnd_states=cnd_states,
                     var=varis,
                     sample_idx=sample_idx)
-
+        #print(cpm)
         if (sample_idx == [1]) and any(cpm.p.sum(axis=0) != 1):
             print('Given probability vector does not sum to 1')
 
@@ -693,7 +723,7 @@ def single_sample(cpms, sample_order, sample_vars, var_add_order, varis, sample_
         irow = np.random.choice(range(len(cpm.p)), size=1, p=weight)
         sample_prob += np.log(cpm.p[irow])
         idx = cpm.C[irow, :cpm.no_child].flatten()
-
+        #print(i, j, cpm.p, irow, idx, cpm.C)
         try:
             sample[var_add_order == i] = idx
         except IndexError:
