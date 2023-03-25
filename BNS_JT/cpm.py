@@ -17,11 +17,11 @@ class Cpm(object):
     C: array_like
         event matrix
     p: array_like
-        probability vector
+        probability vector (n x 1)
     q: array_like
-        sampling weight vector for continuous r.v.
+        sampling weight vector for continuous r.v. (n x 1)
     sample_idx: array_like
-        sample index vector
+        sample index vector (n x 1)
 
     Examples
     --------
@@ -119,17 +119,17 @@ class Cpm(object):
         if any(self.p):
             p_sub = self.p[row_idx]
         else:
-            p_sub = np.array([])
+            p_sub = []
 
         if any(self.q):
             q_sub = self.q[row_idx]
         else:
-            q_sub = np.array([])
+            q_sub = []
 
         if any(self.sample_idx):
             sample_idx_sub = self.sample_idx[row_idx]
         else:
-            sample_idx_sub = np.array([])
+            sample_idx_sub = []
 
         return Cpm(variables=self.variables,
                    no_child=self.no_child,
@@ -140,7 +140,7 @@ class Cpm(object):
 
     def is_compatible(self, M, var=[]):
         """
-        Returns a boolean list
+        Returns a boolean list (n,)
 
         Parameters
         ----------
@@ -151,25 +151,28 @@ class Cpm(object):
         assert M.C.shape[0] == 1, 'C must be a single row'
 
         idx = ismember(M.variables, self.variables)
-        variables = get_value_given_condn(M.variables, idx)
-        states = get_value_given_condn(M.C[0], idx)
+        check_vars = get_value_given_condn(M.variables, idx)
+        check_states = get_value_given_condn(M.C[0], idx)
         idx = get_value_given_condn(idx, idx)
 
         C = self.C[:, idx].copy()
-        if any(M.sample_idx) and any(self.sample_idx):
-            is_cmp = (self.sample_idx == M.sample_idx)[:, np.newaxis]
-        else:
-            is_cmp = np.ones(shape=(C.shape[0], 1), dtype=bool)
 
-        for i, (variable, state) in enumerate(zip(variables, states)):
-            C1 = C[:, i][np.newaxis, :]
+        if any(self.sample_idx) and any(M.sample_idx):
+            is_cmp = (self.sample_idx == M.sample_idx)
+        else:
+            is_cmp = np.ones(shape=C.shape[0], dtype=bool)
+
+        for i, (variable, state) in enumerate(zip(check_vars, check_states)):
+
             if any(var):
                 B = var[variable].B
             else:
-                B = np.eye(np.max(C1))
-            x1 = [B[k - 1, :] for k in C1[:, is_cmp.flatten()]][0]
+                B = np.eye(np.max(C[:, i]))
+
+            x1 = [B[k - 1, :] for k in C[is_cmp, i]]
             x2 = B[state - 1,: ]
-            check = (np.sum(x1 * x2, axis=1) >0)[:, np.newaxis]
+            check = (np.sum(x1 * x2, axis=1) >0)
+
             is_cmp[np.where(is_cmp > 0)[0][:len(check)]] = check
 
         return is_cmp
@@ -222,7 +225,7 @@ class Cpm(object):
                 Csum = val
 
             if any(M.p):
-                val = np.array([np.sum(M.p[is_cmp])])[:, np.newaxis]
+                val = np.array([np.sum(M.p[is_cmp])])
                 try:
                     psum = np.append(psum, val, axis=0)
                 except NameError:
@@ -278,17 +281,17 @@ class Cpm(object):
 
         if any(self.p):
             if not any(M.p):
-                M.p = np.ones(M.C.shape[0])
+                M.p = np.ones(shape=(M.C.shape[0], 1))
         else:
             if any(M.p):
-                self.p = np.ones(self.C.shape[0])
+                self.p = np.ones(shape=(self.C.shape[0], 1))
 
         if any(self.q):
             if not any(M.q):
-                M.q = np.ones(M.C.shape[0])
+                M.q = np.ones(shape=(M.C.shape[0], 1))
         else:
             if any(M.q):
-                self.q = np.ones(self.C.shape[0])
+                self.q = np.ones(shape=(self.C.shape[0], 1))
 
         if self.C.any():
             # FIXME: defined but not used
@@ -328,7 +331,7 @@ class Cpm(object):
                 #    sample_idxProd = np.append(sample_idxPro, Mc.s).reshape(Mcs.shape[0], -1)
 
                 if any(self.p):
-                    _prod = get_sign_prod(Mc.p, self.p[i])
+                    _prod = get_prod(Mc.p, self.p[i])
 
                 try:
                     pprod = np.append(pprod, _prod, axis=0)
@@ -336,7 +339,7 @@ class Cpm(object):
                     pprod = _prod
 
                 if any(self.q):
-                    _prod = get_sign_prod(Mc.q, self.q[i])
+                    _prod = get_prod(Mc.q, self.q[i])
 
                 try:
                     qprod = np.append(qprod, _prod, axis=0)
@@ -436,6 +439,10 @@ def get_value_given_condn(A, condn):
 
 def is_compatible(C, variables, check_vars, check_states, var):
     """
+    Returns a boolean list
+
+    Parameters
+    ----------
     C: np.ndarray
     variables: array_like
     check_vars: array_like
@@ -449,18 +456,19 @@ def is_compatible(C, variables, check_vars, check_states, var):
     idx = get_value_given_condn(idx, idx)
 
     C = C[:, idx].copy()
-    is_cmp = np.ones(shape=(C.shape[0], 1), dtype=bool)
 
-    for i, (var_, state) in enumerate(zip(check_vars, check_states)):
+    is_cmp = np.ones(shape=C.shape[0], dtype=bool)
 
-        B = var[var_].B
-        C1 = C[:, i][np.newaxis, :]
-        x1 = [B[k - 1, :] for k in C1[:, is_cmp.flatten()]][0]
+    for i, (variable, state) in enumerate(zip(check_vars, check_states)):
+
+        B = var[variable].B
+
+        x1 = [B[k - 1, :] for k in C[is_cmp, i]]
         try:
             x2 = B[state - 1, :]
         except IndexError:
             print('IndexError: {state}')
-        check = (np.sum(x1 * x2, axis=1) > 0)[:, np.newaxis]
+        check = (np.sum(x1 * x2, axis=1) > 0)
 
         is_cmp[np.where(is_cmp > 0)[0][:len(check)]] = check
 
@@ -506,8 +514,7 @@ def condition(M, cnd_vars, cnd_states, var, sample_idx=[]):
         # FIXME
         #if any(sample_idx) and any(Mx.sample_idx):
         #    is_cmp = is_cmp & ( M.sample_idx == sample_idx )
-        #print(is_cmp)
-        C = Mx.C[is_cmp.flatten(), :].copy()
+        C = Mx.C[is_cmp, :].copy()
         idx_cnd = ismember(cnd_vars, Mx.variables)
         idx_vars = ismember(Mx.variables, cnd_vars)
         #print(idx_cnd, idx_vars)
@@ -535,12 +542,15 @@ def condition(M, cnd_vars, cnd_states, var, sample_idx=[]):
                 #print(f'check: {check}')
 
         Mx.C = Ccond.copy()
+
         if any(Mx.p):
-            Mx.p = Mx.p[is_cmp][:, np.newaxis]
+            Mx.p = Mx.p[is_cmp]
+
         if any(Mx.q):
-            Mx.q = Mx.q[is_cmp.flatten()][:, np.newaxis]
+            Mx.q = Mx.q[is_cmp]
+
         if any(Mx.sample_idx):
-            Mx.sample_idx = Mx.sample_idx[is_cmp][:, np.newaxis]
+            Mx.sample_idx = Mx.sample_idx[is_cmp]
 
     return Mc, var
 
@@ -551,12 +561,13 @@ def add_new_states(states, B):
     """
 
     check = flip(ismember(states, B))
-    newState = states[check,:]
+    new_state = states[check, :]
 
     #FIXME 
     #newState = unique(newState,'rows')    
-    if any(newState):
-        B = np.append(B, newState, axis=1)
+    if any(new_state):
+        B = np.append(B, new_state, axis=1)
+
     return B
 
 
@@ -573,12 +584,13 @@ def prod_cpms(cpms, var):
     return prod, var
 
 
-def get_sign_prod(A, B):
+def get_prod(A, B):
     """
-    A: M2_.p
-    B: M1.p[i]
+    A: matrix
+    B: matrix
     """
     assert A.shape[1] == B.shape[0]
+
     prod_sign = np.sign(A * B)
     prod_val = np.exp(np.log(np.abs(A)) + np.log(np.abs(B)))
     return prod_sign * prod_val

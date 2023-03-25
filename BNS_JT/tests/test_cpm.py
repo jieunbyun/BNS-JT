@@ -2,7 +2,7 @@ import unittest
 import importlib
 import numpy as np
 
-from BNS_JT.cpm import Cpm, ismember, is_compatible, get_value_given_condn, flip, add_new_states, condition, get_sign_prod, argsort, setdiff, get_sample_order, get_prod_idx, single_sample, mcs_product, prod_cpms
+from BNS_JT.cpm import Cpm, ismember, is_compatible, get_value_given_condn, flip, add_new_states, condition, get_prod, argsort, setdiff, get_sample_order, get_prod_idx, single_sample, mcs_product, prod_cpms
 from BNS_JT.variable import Variable
 
 np.set_printoptions(precision=3)
@@ -163,12 +163,12 @@ class Test_functions(unittest.TestCase):
         res = argsort(x)
         self.assertEqual(res, [0, 2, 1, 3, 4, 6, 5, 7])  # matlab index -1
 
-    def test_get_sign_prod(self):
+    def test_get_prod(self):
 
         A = np.array([[0.95, 0.05]]).T
         B = np.array([0.99])
 
-        result = get_sign_prod(A, B)
+        result = get_prod(A, B)
         np.testing.assert_array_equal(result, np.array([[0.9405, 0.0495]]).T)
 
     def test_setdiff(self):
@@ -245,7 +245,7 @@ class Test_is_compatible(unittest.TestCase):
         v_info = self.vars_
 
         result = is_compatible(C, variables, checkVars, checkStates, v_info)
-        expected = np.array([[1, 1, 0, 0]]).T
+        expected = np.array([1, 1, 0, 0])
         np.testing.assert_array_equal(expected, result)
 
     def test_is_compatible2(self):
@@ -258,7 +258,7 @@ class Test_is_compatible(unittest.TestCase):
         v_info = self.vars_
 
         result = is_compatible(C, variables, checkVars, checkStates, v_info)
-        expected = np.array([[0, 1, 1, 0]]).T
+        expected = np.array([0, 1, 1, 0])
         np.testing.assert_array_equal(expected, result)
 
     def test_is_compatible3(self):
@@ -271,7 +271,7 @@ class Test_is_compatible(unittest.TestCase):
         v_info = self.vars_
 
         result = is_compatible(C, variables, checkVars, checkStates, v_info)
-        expected = np.array([[1, 1]]).T
+        expected = np.array([1, 1])
         np.testing.assert_array_equal(expected, result)
 
     def test_is_compatible4(self):
@@ -298,7 +298,7 @@ class Test_is_compatible(unittest.TestCase):
         vars_ = self.vars_
 
         result = is_compatible(C, variables, checkVars, checkStates, vars_)
-        expected = np.array([[1,0,1,0,0,0,0,0,1,0,1,0,0,0,0,0]]).T
+        expected = np.array([1,0,1,0,0,0,0,0,1,0,1,0,0,0,0,0])
         np.testing.assert_array_equal(expected, result)
 
         idx = ismember(checkVars, variables)
@@ -395,7 +395,7 @@ class Test_is_compatible(unittest.TestCase):
         rowIndex = [0]  # 1 -> 0
         M_sys_select = self.M[5].get_subset(rowIndex)
         result = self.M[3].is_compatible(M_sys_select, var=self.vars_)
-        expected = np.array([1, 1, 1, 1])[:, np.newaxis]
+        expected = np.array([1, 1, 1, 1])
         np.testing.assert_array_equal(result, expected)
 
     def test_is_compatibleCpm2(self):
@@ -405,7 +405,7 @@ class Test_is_compatible(unittest.TestCase):
         M_sys_select = self.M[5].get_subset(rowIndex)
 
         result = self.M[4].is_compatible(M_sys_select, var=self.vars_)
-        expected = np.array([0, 1, 0, 1])[:, np.newaxis]
+        expected = np.array([0, 1, 0, 1])
         np.testing.assert_array_equal(result, expected)
 
     def test_is_compatibleCpm3(self):
@@ -415,7 +415,7 @@ class Test_is_compatible(unittest.TestCase):
         M_sys_select = self.M[5].get_subset(rowIndex)
 
         result = self.M[1].is_compatible(M_sys_select, var=self.vars_)
-        expected = np.array([1, 1])[:, np.newaxis]
+        expected = np.array([1, 1])
         np.testing.assert_array_equal(result, expected)
 
 
@@ -535,7 +535,7 @@ class Test_Product(unittest.TestCase):
 
                 np.testing.assert_array_equal(pproduct, np.array([[0.9405, 0.0495]]).T)
                 '''
-                _prod = get_sign_prod(M2_.p, M1.p[i])
+                _prod = get_prod(M2_.p, M1.p[i])
                 #np.testing.assert_array_equal(pproductVal, np.array([[0.9405, 0.0495]]).T)
                 #pproduct = np.array([])
                 if i:
@@ -669,7 +669,7 @@ class Test_Condition(unittest.TestCase):
 
         compatFlag = is_compatible(Mx.C, Mx.variables, condVars, condStates, vars_)
         #expected = np.array([1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0])[:, np.newaxis]
-        expected = np.array([[1, 0, 1, 0]]).T
+        expected = np.array([1, 0, 1, 0])
         np.testing.assert_array_equal(expected, compatFlag)
 
         Ccompat = Mx.C[compatFlag.flatten(), :]
@@ -743,7 +743,7 @@ class Test_Condition(unittest.TestCase):
         # Mx.p
         expected = np.array([[0.9405,0.0495,0.7650,0.1350,0.9405,0.0495,0.7650,0.1350]]).T
         expected = np.array([[0.99, 0.9]]).T
-        np.testing.assert_array_equal(Mx.p[compatFlag][:, np.newaxis], expected)
+        np.testing.assert_array_equal(Mx.p[compatFlag], expected)
 
     def test_condition1(self):
 
@@ -825,7 +825,7 @@ class Test_Condition(unittest.TestCase):
         vars_ = self.vars_
 
         result = is_compatible(Mx.C, Mx.variables, condVars, condStates, vars_)
-        expected = np.array([[1,1,0,0]]).T
+        expected = np.array([1,1,0,0])
         np.testing.assert_array_equal(expected, result)
 
         [M_n], vars_n = condition([Mx], condVars, condStates, vars_)
@@ -953,12 +953,12 @@ class Test_Sum(unittest.TestCase):
                 np.testing.assert_array_equal(Mcompare.no_child, 5)
                 np.testing.assert_array_equal(Mcompare.p, np.array([[0.9405]]).T)
                 np.testing.assert_array_equal(Mcompare.C, np.array([[1, 1, 1, 1, 1]]))
-                np.testing.assert_array_equal(Mcompare.q, [])
-                np.testing.assert_array_equal(Mcompare.sample_idx, [])
+                self.assertFalse(Mcompare.q.any())
+                self.assertFalse(Mcompare.sample_idx.any())
 
             flag = Mloop.is_compatible(Mcompare)
-            expected = np.zeros((16, 1))
-            expected[0, 0] = 1
+            expected = np.zeros(16)
+            expected[0] = 1
             if i==0:
                 np.testing.assert_array_equal(flag, expected)
 
@@ -1006,8 +1006,8 @@ class Test_Sum(unittest.TestCase):
                 np.testing.assert_array_equal(Mloop.no_child, 5)
                 np.testing.assert_array_equal(Mloop.p, expected_p)
                 np.testing.assert_array_equal(Mloop.C, expected_C)
-                np.testing.assert_array_equal(Mloop.q, [])
-                np.testing.assert_array_equal(Mloop.sample_idx, [])
+                self.assertFalse(Mloop.q.any())
+                self.assertFalse(Mloop.sample_idx.any())
             i += 1
 
         Msum = Cpm(variables=varsRemain,
