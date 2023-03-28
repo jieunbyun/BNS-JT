@@ -491,7 +491,7 @@ class Test_Product(unittest.TestCase):
 
             #if isinstance(c1_, list):
             #    c1_ = np.array(c1_)
-            [[M2_], v_info] = condition([M2], commonVars, c1_, v_info, sampleInd1)
+            [M2_], v_info = condition([M2], commonVars, c1_, v_info, sampleInd1)
 
             #self.assertEqual(M2_.variables, [3, 1])
             #self.assertEqual(M2_.no_child, 1)
@@ -751,9 +751,9 @@ class Test_Condition(unittest.TestCase):
         condStates = np.array([1])
         vars_ = self.vars_
 
-        M_n, vars_n = condition([self.Mx], condVars, condStates, vars_)
-        np.testing.assert_array_equal(M_n[0].variables, [2, 3, 5, 1, 4])
-        self.assertEqual(M_n[0].no_child, 3)
+        [M_n], vars_n = condition([self.Mx], condVars, condStates, vars_)
+        np.testing.assert_array_equal(M_n.variables, [2, 3, 5, 1, 4])
+        self.assertEqual(M_n.no_child, 3)
         expected = np.array([[1,1,1,1,1],
                             [1,2,1,1,1],
                             [1,1,1,2,1],
@@ -762,11 +762,12 @@ class Test_Condition(unittest.TestCase):
                             [1,2,2,1,2],
                             [1,1,2,2,2],
                             [1,2,2,2,2]])
-        np.testing.assert_array_equal(M_n[0].C, expected)
+        np.testing.assert_array_equal(M_n.C, expected)
 
         expected = np.array([[0.9405,0.0495,0.7650,0.1350,0.9405,0.0495,0.7650,0.1350]]).T
-        np.testing.assert_array_equal(M_n[0].p, expected)
-
+        np.testing.assert_array_equal(M_n.p, expected)
+        self.assertTrue(M_n.q.any() == False)
+        self.assertTrue(M_n.sample_idx.any() == False)
 
     def test_condition2(self):
 
@@ -774,10 +775,10 @@ class Test_Condition(unittest.TestCase):
         condStates = np.array([1])
         vars_ = self.vars_
 
-        M_n, vars_n = condition([self.Mx], condVars, condStates, vars_)
+        [M_n], vars_n = condition([self.Mx], condVars, condStates, vars_)
 
-        np.testing.assert_array_equal(M_n[0].variables, [2, 3, 5, 1, 4])
-        self.assertEqual(M_n[0].no_child, 3)
+        np.testing.assert_array_equal(M_n.variables, [2, 3, 5, 1, 4])
+        self.assertEqual(M_n.no_child, 3)
         expected = np.array([[1,1,1,1,1],
                             [2,1,1,1,1],
                             [1,2,1,1,1],
@@ -787,10 +788,12 @@ class Test_Condition(unittest.TestCase):
                             [1,2,2,1,2],
                             [2,2,2,1,2]])
 
-        np.testing.assert_array_equal(M_n[0].C, expected)
+        np.testing.assert_array_equal(M_n.C, expected)
 
         expected = np.array([[0.9405,0.0095,0.0495,0.0005,0.9405,0.0095,0.0495,0.0005]]).T
-        np.testing.assert_array_equal(M_n[0].p, expected)
+        np.testing.assert_array_equal(M_n.p, expected)
+        self.assertTrue(M_n.q.any() == False)
+        self.assertTrue(M_n.sample_idx.any() == False)
 
     def test_condition3(self):
         # conditioning on multiple nodes
@@ -798,7 +801,7 @@ class Test_Condition(unittest.TestCase):
         condStates = np.array([1, 1])
         vars_ = self.vars_
 
-        ([M_n], vars_n) = condition([self.Mx], condVars, condStates, vars_)
+        [M_n], vars_n = condition([self.Mx], condVars, condStates, vars_)
 
         np.testing.assert_array_equal(M_n.variables, [2, 3, 5, 1, 4])
         self.assertEqual(M_n.no_child, 3)
@@ -811,6 +814,8 @@ class Test_Condition(unittest.TestCase):
 
         expected = np.array([[0.9405,0.0495,0.9405,0.0495]]).T
         np.testing.assert_array_equal(M_n.p, expected)
+        self.assertTrue(M_n.q.any() == False)
+        self.assertTrue(M_n.sample_idx.any() == False)
 
     def test_condition4(self):
 
@@ -838,6 +843,8 @@ class Test_Condition(unittest.TestCase):
 
         expected = np.array([[1, 1]]).T
         np.testing.assert_array_equal(M_n.p, expected)
+        self.assertTrue(M_n.q.any() == False)
+        self.assertTrue(M_n.sample_idx.any() == False)
 
     def test_condition5(self):
 
@@ -1252,6 +1259,8 @@ class Test_mcs_product(unittest.TestCase):
 
         [M], _ = condition(self.M3, condVars, condStates, vars_, [0])
         np.testing.assert_array_equal(M.C, [[1, 1], [2, 1]])
+        self.assertTrue(M.q.any() == False)
+        self.assertTrue(M.sample_idx.any() == False)
 
 class Test_prod_cpms(unittest.TestCase):
 

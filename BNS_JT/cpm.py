@@ -218,7 +218,7 @@ class Cpm(object):
             Mc = M.get_subset([0]) # need to change to 0 
             is_cmp = M.is_compatible(Mc)
 
-            val = M.C[0, :][np.newaxis, :]
+            val = M.C[[0]]
             try:
                 Csum = np.append(Csum, val, axis=0)
             except NameError:
@@ -310,25 +310,18 @@ class Cpm(object):
                 else:
                     sample_idx = []
 
-                [[Mc], var] = condition([M],
+                [Mc], var = condition([M],
                                         cnd_vars=com_vars,
                                         cnd_states=c1,
                                         var=var,
                                         sample_idx=sample_idx)
-                _add = np.append(Mc.C, np.tile(c1_not_com, (Mc.C.shape[0], 1)), axis=1)
 
-                if i:
-                    Cprod = np.append(Cprod, _add, axis=0)
-                else:
-                    Cprod = _add
+                _prod = np.append(Mc.C, np.tile(c1_not_com, (Mc.C.shape[0], 1)), axis=1)
 
-                # FIXME
-                #if any(sample_idx):
-                    #_add = repmat(sample_idx, Mc.C.shape[0], 1)
-                    #sample_idxProd = np.append(sample_idxProd, _add).reshape(Mc.C.shape[0], -1)
-
-                #elif any(Mc.s):
-                #    sample_idxProd = np.append(sample_idxPro, Mc.s).reshape(Mcs.shape[0], -1)
+                try:
+                    Cprod = np.append(Cprod, _prod, axis=0)
+                except NameError:
+                    Cprod = _prod
 
                 if any(self.p):
                     _prod = get_prod(Mc.p, self.p[i])
@@ -345,6 +338,23 @@ class Cpm(object):
                     qprod = np.append(qprod, _prod, axis=0)
                 except NameError:
                     qprod = _prod
+
+                if any(sample_idx):
+                    _prod = np.tile(sample_idx, (Mc.C.shape[0], 1))
+
+                    try:
+                        sample_idx_prod = np.append(sample_idx_prod, _prod, axis=0)
+                    except NameError:
+                        sample_idx_prod = _prod
+
+                elif any(Mc.sample_idx):
+
+                    try:
+                        sample_idx_prod = np.append(sample_idx_prod, Mc.sample_idx, axis=0)
+                    except NameError:
+                        sample_idx_prod = Mc.sample_idx
+
+
 
             prod_vars = np.append(M.variables, get_value_given_condn(self.variables, flip(idx_vars)))
 
@@ -719,30 +729,27 @@ def single_sample(cpms, sample_order, sample_vars, var_add_order, varis, sample_
 
         cnd_vars = sample_vars[sample > 0]
         cnd_states = sample[sample > 0]
-        #print(i, cnd_vars, cnd_states)
-        #print(cpms[j])
+
         [cpm], _ = condition(
                     M=cpms[j],
                     cnd_vars=cnd_vars,
                     cnd_states=cnd_states,
                     var=varis,
                     sample_idx=sample_idx)
-        #print(cpm)
+
         if (sample_idx == [1]) and any(cpm.p.sum(axis=0) != 1):
             print('Given probability vector does not sum to 1')
 
         weight = cpm.p.flatten()/cpm.p.sum(axis=0)
-        irow = np.random.choice(range(len(cpm.p)), size=1, p=weight)
-        sample_prob += np.log(cpm.p[irow])
-        idx = cpm.C[irow, :cpm.no_child].flatten()
-        #print(i, j, cpm.p, irow, idx, cpm.C)
+        irow = np.random.choice(range(len(cpm.p)), size=1, p=weight)[0]
+        sample_prob += np.log(cpm.p[[irow]])
+        idx = cpm.C[irow, :cpm.no_child]
         try:
             sample[var_add_order == i] = idx
-        except IndexError:
+        except TypeError:
             print(f'i: {i}')
+            print(f'cpm.no_child: {cpm.no_child}')
             print(f'idx: {idx}')
-            print(f'var_add_order: {var_add_order}')
-            print(f'sample: {sample}')
 
     sample_prob = np.exp(sample_prob)
 
