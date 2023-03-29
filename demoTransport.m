@@ -115,12 +115,28 @@ legend( {'Disconnection' 'Delay'}, 'location', 'northwest' )
 
 % City 1 and 2 experienced a disruption in getting resources, City 3 was okay and 4 is unknown. Probability of damage of roads?
 % % A composite state needs be created for City 1 and City 2
-vars( var_OD(1) ).B = [vars( var_OD(1) ).B; 0 1 1];
-vars( var_OD(2) ).B = [vars( var_OD(2) ).B; 0 1 1];
+for iODInd = 1:nOD
+    vars( var_OD(iODInd) ).B = [vars( var_OD(iODInd) ).B; 0 1 1];
+end
 
-[Mcond, vars] = condition(M,[var_OD(1) var_OD(2) var_OD(3)], [4 4 1], vars);
+% % Add observation nodes
+Mobs = M;
+var_ODobs = zeros(1,nOD);
+for iOdInd = 1:nOD
+    varInd = varInd+1;
+
+    iPaths = arcPaths{iOdInd};
+    iTimes = arcPaths_time{iOdInd};
+
+    Mobs(varInd,1) = Cpm( [varInd var_OD(iOdInd)], 1, [1 1; 2 2; 2 3], [1; 1; 1] );
+    vars(varInd,1) = Variable( eye(2), {'No disruption'; 'Disruption'} );
+
+    var_ODobs(iOdInd) = varInd;
+end
+
+[Mcond, vars] = condition(Mobs,[var_ODobs(1) var_ODobs(2) var_ODobs(3)], [2 2 1], vars);
 [Mcond_mult, vars] = multCPMs(Mcond, vars);
-Mcond_mult_sum = sum( Mcond_mult, var_OD );
+Mcond_mult_sum = sum( Mcond_mult, [var_OD var_ODobs] );
 
 arcs_prob_damage = zeros(1,nArc);
 for iArcInd = 1:nArc
