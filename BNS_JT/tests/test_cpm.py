@@ -2,7 +2,7 @@ import unittest
 import importlib
 import numpy as np
 
-from BNS_JT.cpm import Cpm, ismember, is_compatible, get_value_given_condn, flip, add_new_states, condition, get_prod, argsort, setdiff, get_sample_order, get_prod_idx, single_sample, mcs_product, prod_cpms
+from BNS_JT.cpm import Cpm, ismember, iscompatible, get_value_given_condn, flip, add_new_states, condition, get_prod, argsort, setdiff, get_sample_order, get_prod_idx, single_sample, mcs_product, prod_cpms, isinscope
 from BNS_JT.variable import Variable
 
 np.set_printoptions(precision=3)
@@ -148,13 +148,48 @@ class Test_functions(unittest.TestCase):
         self.assertEqual(expected, result)
 
     def test_ismember4(self):
-
+        # row by row checking
         A = np.array([np.ones(4), np.zeros(4)]).T
         B = np.array([[1, 0], [0, 1], [1, 1]])
 
         expected = [0, 0, 0, 0]
         result = ismember(A, B)
         self.assertEqual(expected, result)
+
+    def test_ismember5(self):
+        # row by row checking
+        A = np.array([[0, 1], [1, 2], [1, 0], [1, 1]])
+        B = np.array([[1, 0], [0, 1], [1, 1]])
+
+        expected = [1, False, 0, 2]
+        result = ismember(A, B)
+        self.assertEqual(expected, result)
+
+    def test_ismember6(self):
+        # row by row checking
+        A = [1]
+        B = np.array([[1, 0], [0, 1], [1, 1]])
+
+        with self.assertRaises(AssertionError):
+            _ = ismember(A, B)
+
+    def test_ismember7(self):
+
+        A = np.array([1])
+        B = np.array([2])
+        expected = [False]
+        # MATLAB: [0, 0, 2, 1] => [False, False, 1, 0]
+        result = ismember(A, B)
+        self.assertEqual(expected, result)
+
+        B = np.array([1])
+        expected = [0]
+        # MATLAB: [0, 0, 2, 1] => [False, False, 1, 0]
+        result = ismember(A, B)
+        self.assertEqual(expected, result)
+
+
+
 
     def test_argsort(self):
 
@@ -212,9 +247,41 @@ class Test_functions(unittest.TestCase):
         result = add_new_states(states, B)
         np.testing.assert_array_equal(result, B)
 
+    def test_isinscope1(self):
+
+        cpms = []
+        # Travel times (systems)
+        c7 = np.array([
+        [1,3,1,3,3,3,3],
+        [2,1,2,1,3,3,3],
+        [3,1,2,2,3,3,3],
+        [3,2,2,3,3,3,3]])
+
+        vars_ = [7, 1, 2, 3, 4, 5, 6]
+        for i in range(1, 7):
+            m = Cpm(variables= [i],
+                          no_child = 1,
+                          C = np.array([[1, 0]]).T,
+                          p = [1, 1])
+            cpms.append(m)
+
+        for i in range(7, 11):
+            m = Cpm(variables= vars_,
+                          no_child = 1,
+                          C = c7,
+                          p = [1, 1, 1, 1])
+            cpms.append(m)
+
+        result = isinscope([1], cpms)
+        expected = np.array([[1, 0, 0, 0, 0, 0, 1, 1, 1, 1]]).T
+        np.testing.assert_array_equal(expected, result)
+
+        result = isinscope([1, 2], cpms)
+        expected = np.array([[1, 1, 0, 0, 0, 0, 1, 1, 1, 1]]).T
+        np.testing.assert_array_equal(expected, result)
 
 
-class Test_is_compatible(unittest.TestCase):
+class Test_iscompatible(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
@@ -235,7 +302,7 @@ class Test_is_compatible(unittest.TestCase):
         cls.vars_[5] = Variable(B=np.array([[1, 0], [0, 1]]), value=['Survive', 'Fail'])
 
 
-    def test_is_compatible1(self):
+    def test_iscompatible1(self):
 
         # M[2]
         C = np.array([[1, 1], [2, 1], [1, 2], [2, 2]])  #M[2].C
@@ -244,11 +311,11 @@ class Test_is_compatible(unittest.TestCase):
         checkStates = [1]
         v_info = self.vars_
 
-        result = is_compatible(C, variables, checkVars, checkStates, v_info)
+        result = iscompatible(C, variables, checkVars, checkStates, v_info)
         expected = np.array([1, 1, 0, 0])
         np.testing.assert_array_equal(expected, result)
 
-    def test_is_compatible2(self):
+    def test_iscompatible2(self):
 
         # M[5]
         C = np.array([[2, 3, 3, 2], [1, 1, 3, 1], [1, 2, 1, 1], [2, 2, 2, 1]])
@@ -257,11 +324,11 @@ class Test_is_compatible(unittest.TestCase):
         checkStates = [1, 1]
         v_info = self.vars_
 
-        result = is_compatible(C, variables, checkVars, checkStates, v_info)
+        result = iscompatible(C, variables, checkVars, checkStates, v_info)
         expected = np.array([0, 1, 1, 0])
         np.testing.assert_array_equal(expected, result)
 
-    def test_is_compatible3(self):
+    def test_iscompatible3(self):
 
         #M[1]
         C = np.array([[1, 2]]).T
@@ -270,11 +337,11 @@ class Test_is_compatible(unittest.TestCase):
         checkStates = [1, 1]
         v_info = self.vars_
 
-        result = is_compatible(C, variables, checkVars, checkStates, v_info)
+        result = iscompatible(C, variables, checkVars, checkStates, v_info)
         expected = np.array([1, 1])
         np.testing.assert_array_equal(expected, result)
 
-    def test_is_compatible4(self):
+    def test_iscompatible4(self):
 
         C = np.array([[1,1,1,1,1],
              [2,1,1,1,1],
@@ -297,7 +364,7 @@ class Test_is_compatible(unittest.TestCase):
         checkStates = np.array([1, 1])
         vars_ = self.vars_
 
-        result = is_compatible(C, variables, checkVars, checkStates, vars_)
+        result = iscompatible(C, variables, checkVars, checkStates, vars_)
         expected = np.array([1,0,1,0,0,0,0,0,1,0,1,0,0,0,0,0])
         np.testing.assert_array_equal(expected, result)
 
@@ -389,32 +456,32 @@ class Test_is_compatible(unittest.TestCase):
         self.assertFalse(result.p.any())
 
 
-    def test_is_compatibleCpm1(self):
+    def test_iscompatibleCpm1(self):
 
         # M[5]
         rowIndex = [0]  # 1 -> 0
         M_sys_select = self.M[5].get_subset(rowIndex)
-        result = self.M[3].is_compatible(M_sys_select, var=self.vars_)
+        result = self.M[3].iscompatible(M_sys_select, var=self.vars_)
         expected = np.array([1, 1, 1, 1])
         np.testing.assert_array_equal(result, expected)
 
-    def test_is_compatibleCpm2(self):
+    def test_iscompatibleCpm2(self):
 
         # M[5]
         rowIndex = [0]  # 1 -> 0
         M_sys_select = self.M[5].get_subset(rowIndex)
 
-        result = self.M[4].is_compatible(M_sys_select, var=self.vars_)
+        result = self.M[4].iscompatible(M_sys_select, var=self.vars_)
         expected = np.array([0, 1, 0, 1])
         np.testing.assert_array_equal(result, expected)
 
-    def test_is_compatibleCpm3(self):
+    def test_iscompatibleCpm3(self):
 
         # M[5]
         rowIndex = [0]  # 1 -> 0
         M_sys_select = self.M[5].get_subset(rowIndex)
 
-        result = self.M[1].is_compatible(M_sys_select, var=self.vars_)
+        result = self.M[1].iscompatible(M_sys_select, var=self.vars_)
         expected = np.array([1, 1])
         np.testing.assert_array_equal(result, expected)
 
@@ -667,7 +734,7 @@ class Test_Condition(unittest.TestCase):
                  C = np.array([[1, 1], [2, 1], [1, 2], [2, 2]]),
                  p = np.array([[0.99, 0.01, 0.9, 0.1]]).T)
 
-        compatFlag = is_compatible(Mx.C, Mx.variables, condVars, condStates, vars_)
+        compatFlag = iscompatible(Mx.C, Mx.variables, condVars, condStates, vars_)
         #expected = np.array([1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0])[:, np.newaxis]
         expected = np.array([1, 0, 1, 0])
         np.testing.assert_array_equal(expected, compatFlag)
@@ -829,7 +896,7 @@ class Test_Condition(unittest.TestCase):
         condStates = np.array([1, 1])
         vars_ = self.vars_
 
-        result = is_compatible(Mx.C, Mx.variables, condVars, condStates, vars_)
+        result = iscompatible(Mx.C, Mx.variables, condVars, condStates, vars_)
         expected = np.array([1,1,0,0])
         np.testing.assert_array_equal(expected, result)
 
@@ -963,7 +1030,7 @@ class Test_Sum(unittest.TestCase):
                 self.assertFalse(Mcompare.q.any())
                 self.assertFalse(Mcompare.sample_idx.any())
 
-            flag = Mloop.is_compatible(Mcompare)
+            flag = Mloop.iscompatible(Mcompare)
             expected = np.zeros(16)
             expected[0] = 1
             if i==0:

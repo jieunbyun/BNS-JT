@@ -138,7 +138,7 @@ class Cpm(object):
                    q=q_sub,
                    sample_idx=sample_idx_sub)
 
-    def is_compatible(self, M, var=[]):
+    def iscompatible(self, M, var=[]):
         """
         Returns a boolean list (n,)
 
@@ -216,7 +216,7 @@ class Cpm(object):
         while M.C.any():
 
             Mc = M.get_subset([0]) # need to change to 0 
-            is_cmp = M.is_compatible(Mc)
+            is_cmp = M.iscompatible(Mc)
 
             val = M.C[[0]]
             try:
@@ -420,9 +420,33 @@ def argsort(seq):
 
 
 def ismember(A, B):
-    #FIXME: shuld we return False
-    return [np.where(np.array(B) == x)[0].min() if x in B else False for x in A]
+    """
+    A: vector
+    B: list
+    return the list (same length as A) of index of the first matching elment in B or False for non-matching element
+    """
 
+
+    if isinstance(A, np.ndarray) and (A.ndim > 1):
+
+        assert A.shape[1] == np.array(B).shape[1]
+
+        res = []
+        for x in A:
+            v = np.where((np.array(B) == x).all(axis=1))[0]
+            if len(v):
+                res.append(v[0])
+            else:
+                res.append(False)
+    else:
+
+        if isinstance(B, np.ndarray) and (B.ndim > 1):
+            assert len(A) == B.shape[1]
+
+        res  = [np.where(np.array(B) == x)[0].min()
+                if x in B else False for x in A]
+
+    return res
 
 def setdiff(A, B):
     """
@@ -447,7 +471,7 @@ def get_value_given_condn(A, condn):
     return val
 
 
-def is_compatible(C, variables, check_vars, check_states, var):
+def iscompatible(C, variables, check_vars, check_states, var):
     """
     Returns a boolean list
 
@@ -519,7 +543,7 @@ def condition(M, cnd_vars, cnd_states, var, sample_idx=[]):
     Mc = copy.deepcopy(M)
     for Mx in Mc:
 
-        is_cmp = is_compatible(Mx.C, Mx.variables, cnd_vars, cnd_states, var)
+        is_cmp = iscompatible(Mx.C, Mx.variables, cnd_vars, cnd_states, var)
         #print(f'is_cmp: {is_cmp}')
         # FIXME
         #if any(sample_idx) and any(Mx.sample_idx):
@@ -590,7 +614,6 @@ def prod_cpms(cpms, var):
     prod = cpms[0]
     for c in cpms[1:]:
         prod, var = prod.product(c, var)
-
     return prod, var
 
 
@@ -754,3 +777,16 @@ def single_sample(cpms, sample_order, sample_vars, var_add_order, varis, sample_
     sample_prob = np.exp(sample_prob)
 
     return sample, sample_prob
+
+def isinscope(idx, Ms):
+    """
+    return list of boolean
+    idx: list of index
+    Ms: list of CPMs
+    """
+    isin = np.zeros((len(Ms), 1), dtype=bool)
+    variables = [M.variables for M in Ms]
+    for i in idx:
+        flag = [[False] if ismember([i], x)[0] is False else [True] for x in variables]
+        isin = isin | np.array(flag)
+    return isin
