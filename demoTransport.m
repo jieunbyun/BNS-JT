@@ -43,7 +43,7 @@ for iArcInd = 1:nArc
     iRoadType = arcsType(iArcInd);
     iFrag_mean = IMs(iRoadType); iFrag_std = IMs_std(iRoadType);
     iGM_obs = GM_obs(iArcInd);
-    iFailProb = normcdf( 1/iFrag_std * log( iGM_obs/iFrag_mean ));
+    iFailProb = funTrans.normcdf( 1/iFrag_std * log( iGM_obs/iFrag_mean ));
 
     M(varInd,1) = Cpm( varInd, 1, [arc_surv; arc_fail], [1-iFailProb; iFailProb] );
     vars(varInd,1) = Variable( [eye(2); 1 1], {'Surv'; 'Fail'} );

@@ -5,7 +5,7 @@ import networkx as nx
 
 
 #from BNS_JT.variable import Variable
-from Trans.trans import get_arcs_length, do_branch
+from Trans.trans import get_arcs_length, do_branch, get_all_paths_and_times
 
 np.set_printoptions(precision=3)
 #pd.set_option.display_precision = 3
@@ -66,14 +66,17 @@ class Test(unittest.TestCase):
 
         ODs = [(5, 1), (5, 2), (5, 3), (5, 4)]
 
-        for org, dest in ODs:
-            for _path in nx.all_simple_paths(G, org, dest):
-                val = nx.path_weight(G, _path, weight='time')
+        path_time = get_all_paths_and_times(ODs, G)
 
-                edges_path = []
-                for x in list(zip(_path, _path[1:])):
-                    edges_path.append(G[x[0]][x[1]]['label'])
-                print(org, dest, edges_path, val)
+        expected = {(5, 1): [([2], 0.0901),
+                             ([3, 1], 0.2401)],
+                    (5, 2): [([2, 1], 0.2401),
+                             ([3], 0.0901)],
+                    (5, 3): [([5], 0.0943),
+                             ([6, 4], 0.1761)],
+                    (5, 4): [([5, 4], 0.1997),
+                             ([6], 0.0707)],
+                    }
 
     def test_do_branch1(self):
         # parallel system 

@@ -12,9 +12,18 @@ def get_all_paths_and_times(ODs, G, key='time'):
     G: instance of networkx.Graph
     key: keyword for weight
     """
+    path_time = {}
     for org, dest in ODs:
         for _path in nx.all_simple_paths(G, org, dest):
             val = nx.path_weight(G, _path, weight=key)
+
+            edges_path = []
+            for x in list(zip(_path, _path[1:])):
+                edges_path.append(G[x[0]][x[1]]['label'])
+
+            path_time.setdefault((org, dest), []).append((edges_path, val))
+
+    return path_time
 
 def get_match(a, b, complete, idx_any):
 
@@ -45,7 +54,6 @@ def do_branch(group, complete, id_any):
         a = group.pop(0)
         b = group.pop(0)
 
-        print(a, b, group)
         res = get_match(a, b, complete, id_any)
 
         if res:
@@ -79,8 +87,6 @@ def get_arcs_length(arcs, node_coords):
             node_coords = nodeCoords.T
         else:
             print('"node_coords" must have either two columns or two rows (each noting coordinates of x and y).')
-    print(node_coords)
-    print(arcs)
     """
     arc_len = {}
     for k, v in arcs.items():
