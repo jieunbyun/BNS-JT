@@ -103,7 +103,6 @@ for iODInd = 1:nOD
     ODs_prob_delay(iODInd) = iDelayProb;
 end
 
-
 figure;
 bar( [ODs_prob_disconn(:) ODs_prob_delay(:)] )
 
@@ -161,3 +160,28 @@ grid on
 xlabel( 'Arc' )
 ylabel( 'Probability' )
 legend( {'Survive' 'Fail'}, 'location', 'northwest' )
+
+
+%% Repeat inferences again using new functions -- the results must be the same.
+% Probability of delay and disconnection
+[M_VE2, vars] = VE( M, varElimOrder, vars ); % "M_VE2" same as "M_VE"
+
+% Retrieve example results
+ODs_prob_disconn2 = zeros(1,nOD); % "ODs_prob_disconn2" same as "ODs_prob_disconn"
+ODs_prob_delay2 = zeros(1,nOD); % "ODs_prob_delay2" same as "ODs_prob_delay"
+for iODInd = 1:nOD
+    iVarInd = var_OD(iODInd);
+
+    % Prob. of disconnection
+    iDisconnState = find( arrayfun(@(x) x==100, vars(iVarInd).v) ); % the state of disconnection is assigned an arbitrarily large number 100
+    iDisconnProb = getProb( M_VE2, iVarInd, iDisconnState, vars );
+    ODs_prob_disconn2(iODInd) = iDisconnProb;
+
+    % Prob. of delay
+    iDelayProb = getProb( M_VE2, iVarInd, 1, vars, 0 ); % Any state greater than 1 means delay.
+    ODs_prob_delay2(iODInd) = iDelayProb;
+end
+
+% Check if the results are the same
+disp( ['Are the disconnected probabilities the same?: ' num2str( isequal( ODs_prob_disconn2, ODs_prob_disconn ) )] )
+disp( ['Are the delay probabilities the same?: ' num2str( isequal( ODs_prob_delay2, ODs_prob_delay ) )] )
