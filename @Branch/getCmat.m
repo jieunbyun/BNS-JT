@@ -1,8 +1,13 @@
-function [C, vars] = getCmat( branches, bnb2mbn_compsStatesCell, bnb2mbn_sysStates, compVarInds, vars )
+function [C, vars] = getCmat( branches, compVarInds, vars, flag_compStateOrder )
 
 complBrs = branches(arrayfun( @(x) x.isComplete, branches ));
 nRow = length( complBrs );
 nComp = length(complBrs(1).down);
+
+if nargin < 4
+    flag_compStateOrder = 1; % 1 (default) if bnb and mbn have the same component states, 0 if bnb has a reverse ordering of components being better and worse
+end
+
 
 C = zeros(nRow, 1+nComp);
 for iRowInd = 1:nRow
@@ -11,34 +16,28 @@ for iRowInd = 1:nRow
     iBr = complBrs(iRowInd);
     
     % System state
-    if ~isempty(bnb2mbn_sysStates)
-        iSysState = bnb2mbn_sysStates(iBr.up_state);
-    else
-        iSysState = iBr.up_state;
-    end
-    iC(1) = iSysState;
+    iC(1) = iBr.up_state;
 
     % Component states
     for jCompInd = 1:nComp
         jDown = iBr.down( jCompInd );
         jUp = iBr.up( jCompInd );
 
-        if ~isempty( bnb2mbn_compsStatesCell )
-            jDown_state = bnb2mbn_compsStatesCell{jCompInd}(jDown);
-            jUp_state = bnb2mbn_compsStatesCell{jCompInd}(jUp);
-        else
+        jCompVarInd = compVarInds(jCompInd);
+        jB = vars(jCompVarInd).B;
+        jNState = size(jB,2);
+
+        if flag_compStateOrder
             jDown_state = jDown;
             jUp_state = jUp;
+        else
+            jDown_state = (jNState+1) - jUp;
+            jUp_state = (jNState+1) - jDown;
         end
 
         if jUp_state ~= jDown_state
-            jB = vars( compVarInds(jCompInd) ).B;
             ijB = zeros(1,size(jB,2));
-            if jUp_state > jDown_state
-                ijB(jDown_state:jUp_state) = 1;
-            else
-                ijB(jUp_state:jDown_state) = 1;
-            end
+            ijB(jDown_state:jUp_state) = 1;
 
             [~,ijLoc] = ismember( ijB, jB, 'rows' );
 
