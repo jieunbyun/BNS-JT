@@ -34,7 +34,7 @@ varInd = 0;
 M = Cpm;
 vars = Variable;
 
-% Arcs (components)
+% Arcs (components): P(X_i | GM = GM_ob ), i = 1 .. N (= nArc)
 nArc = size(arcs,1);
 var_arcs = zeros(1,nArc);
 for iArcInd = 1:nArc
@@ -50,7 +50,7 @@ for iArcInd = 1:nArc
     var_arcs(iArcInd) = varInd;
 end
 
-% Travel times (systems)
+% Travel times (systems): P( OD_j | X_1 ... X_N ), j = 1 .. M (= nOD)
 nOD = size(ODs,1);
 var_OD = zeros(1,nOD);
 for iOdInd = 1:nOD
@@ -69,7 +69,7 @@ end
 %% Inference - by variable elimination (would not work for large-scale systems)
 % Probability of delay and disconnection
 varElimOrder = var_arcs;
-M_VE = M;
+M_VE = M; % Becomes P(OD_1, ..., OD_M) since X_1, ..., X_N are eliminated
 for iVarInd_ = 1:length(varElimOrder)
     iVarInd = varElimOrder(iVarInd_);
     iIsVarInScope = isXinScope( iVarInd, M_VE );
@@ -81,9 +81,10 @@ for iVarInd_ = 1:length(varElimOrder)
     M_VE = [iMMult; M_VE];
 end
 
+
 % Retrieve example results
-ODs_prob_disconn = zeros(1,nOD);
-ODs_prob_delay = zeros(1,nOD);
+ODs_prob_disconn = zeros(1,nOD); % P( OD_j = 3 ), j = 1, ..., M, where State 3 indicates disconnection
+ODs_prob_delay = zeros(1,nOD); % P( (OD_j = 2) U (OD_j = 2) ), j = 1, ..., M, where State 2 indicates the use of the second shortest path (or equivalently, P( (OD_j = 1)^c ), where State 1 indicates the use of the shortest path)
 for iODInd = 1:nOD
     iVarInd = var_OD(iODInd);
 
@@ -118,7 +119,7 @@ for iODInd = 1:nOD
     vars( var_OD(iODInd) ).B = [vars( var_OD(iODInd) ).B; 0 1 1];
 end
 
-% % Add observation nodes
+% % Add observation nodes P( O_j | OD_j ), j = 1, ..., M
 Mobs = M;
 var_ODobs = zeros(1,nOD);
 for iOdInd = 1:nOD
@@ -137,7 +138,7 @@ end
 [Mcond_mult, vars] = multCPMs(Mcond, vars);
 Mcond_mult_sum = sum( Mcond_mult, [var_OD var_ODobs] );
 
-arcs_prob_damage = zeros(1,nArc);
+arcs_prob_damage = zeros(1,nArc); % P( X_i = 2 | OD_1 = 2, OD_2 = 2, OD_3 = 1 ), i = 1, ..., N
 for iArcInd = 1:nArc
     iVarInd = var_arcs(iArcInd);
 
