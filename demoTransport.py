@@ -10,7 +10,6 @@ from scipy.stats import lognorm
 import matplotlib
 import pdb
 
-
 matplotlib.use("TKAgg")
 import matplotlib.pyplot as plt
 
@@ -73,6 +72,7 @@ arc_lens_km = get_arcs_length(arcs, node_coords)
 #arcTimes_h = arcLens_km ./ arcs_Vavg_kmh
 arc_times_h = {k: v/arcs_avg_kmh[k] for k, v in arc_lens_km.items()}
 
+# create a graph
 G = nx.Graph()
 for k, x in arcs.items():
     G.add_edge(x[0], x[1], time=arc_times_h[k], label=k)
@@ -92,7 +92,7 @@ nx.draw(G, pos, with_labels=True, ax=ax)
 nx.draw_networkx_edge_labels(G, pos, edge_labels=edge_labels, ax=ax)
 fig.savefig("graph.png", dpi=200)
 
-# Arcs (components)
+# Arcs (components): P(X_i | GM = GM_ob ), i = 1 .. N (= nArc)
 cpms_arc = {}
 vars_arc = {}
 for k in arcs.keys():
@@ -108,7 +108,7 @@ for k in arcs.keys():
     B = np.array([[1, 0], [0, 1], [1, 1]])
     vars_arc[k] = variable.Variable(B=B, value=['Surv', 'Fail'])
 
-# Travel times (systems)
+# Travel times (systems): P(OD_j | X1, ... Xn) j = 1 ... nOD
 c7 = np.array([
 [1,3,1,3,3,3,3],
 [2,1,2,1,3,3,3],
@@ -172,21 +172,26 @@ vars_arc[10] = variable.Variable(B=B_,
 
 ## Inference - by variable elimination (would not work for large-scale systems)
 # Probability of delay and disconnection
+# Becomes P(OD_1, ..., OD_M) since X_1, ..., X_N are eliminated
 cpms_arc_cp = cpms_arc.values()
 
 for i in arcs.keys():
 
-    isinscope_tf = cpm.isinscope([i], cpms_arc_cp)
-    cpm_sel = [y for x, y in zip(isinscope_tf, cpms_arc_cp) if x]
+    is_inscope = cpm.isinscope([i], cpms_arc_cp)
+    cpm_sel = [y for x, y in zip(is_inscope, cpms_arc_cp) if x]
     cpm_mult, vars_arc = cpm.prod_cpms(cpm_sel, vars_arc)
     cpm_mult = cpm_mult.sum([i])
 
-    cpms_arc_cp = [y for x, y in zip(isinscope_tf, cpms_arc_cp) if x == False]
+    cpms_arc_cp = [y for x, y in zip(is_inscope, cpms_arc_cp) if x == False]
     cpms_arc_cp.insert(0, cpm_mult)
 
 # Retrieve example results
+# P( OD_j = 3 ), j = 1, ..., M, where State 3 indicates disconnection
 ODs_prob_disconn = np.zeros(len(ODs))
+# P( (OD_j = 2) U (OD_j = 2) ), j = 1, ..., M, where State 2 indicates the use of the second shortest path (or equivalently, P( (OD_j = 1)^c ), where State 1 indicates the use of the shortest path)
 ODs_prob_delay = np.zeros(len(ODs))
+
+pdb.set_trace()
 
 var_OD = [7, 8, 9, 10]
 for j, idx in enumerate(var_OD):
@@ -210,7 +215,7 @@ for j, idx in enumerate(var_OD):
 for idx in var_OD:
     vars_arc[idx].B = np.vstack([vars_arc[idx].B, [0, 1, 1]])
 
-# # Add observation nodes
+# # Add observation nodes P( O_j | OD_j ), j = 1, ..., M
 var_OD_obs = []
 for j, (idx, od) in enumerate(zip(var_OD, ODs), start=11):
 
@@ -234,14 +239,47 @@ cpm_ve, vars_arc = cpm.condition(cpms_arc,
 Mcond_mult, vars_arc = cpm.prod_cpms(cpm_ve, vars_arc)
 Mcond_mult_sum = Mcond_mult.sum(var_OD + var_OD_obs)
 
+# P( X_i = 2 | OD_1 = 2, OD_2 = 2, OD_3 = 1 ), i = 1, ..., N
 arcs_prob_damage = np.zeros(len(arcs))
 for j, i in enumerate(arcs.keys()):
 
     iM = Mcond_mult_sum.sum([i], 0)
-    [iM_fail], vars_arc = cpm.condition(iM, [i], [arc_fail], vars_arc)
+    [iM_fail], vars_arc = cpm.condition(iM,
+                           cnd_vars=[i],
+                           cnd_states=[arc_fail],
+                           var=vars_arc)
     fail_prob = iM_fail.p / iM.p.sum(axis=0)
     if fail_prob.any():
         arcs_prob_damage[j] = fail_prob
+
+"""
+
+%% Repeat inferences again using new functions -- the results must be the same.
+% Probability of delay and disconnection
+[M_VE2, vars] = VE( M, varElimOrder, vars ); % "M_VE2" same as "M_VE"
+
+% Retrieve example results
+ODs_prob_disconn2 = zeros(1,nOD); % "ODs_prob_disconn2" same as "ODs_prob_disconn"
+ODs_prob_delay2 = zeros(1,nOD); % "ODs_prob_delay2" same as "ODs_prob_delay"
+for iODInd = 1:nOD
+    iVarInd = var_OD(iODInd);
+
+    % Prob. of disconnection
+    iDisconnState = find( arrayfun(@(x) x==100, vars(iVarInd).v) ); % the state of disconnection is assigned an arbitrarily large number 100
+    iDisconnProb = getProb( M_VE2, iVarInd, iDisconnState, vars );
+    ODs_prob_disconn2(iODInd) = iDisconnProb;
+
+    % Prob. of delay
+    iDelayProb = getProb( M_VE2, iVarInd, 1, vars, 0 ); % Any state greater than 1 means delay.
+    ODs_prob_delay2(iODInd) = iDelayProb;
+end
+
+% Check if the results are the same
+disp( ['Are the disconnected probabilities the same?: ' num2str( isequal( ODs_prob_disconn2, ODs_prob_disconn ) )] )
+disp( ['Are the delay probabilities the same?: ' num2str( isequal( ODs_prob_delay2, ODs_prob_delay ) )] )
+"""
+
+
 
 # plot
 plt.figure()

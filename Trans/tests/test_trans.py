@@ -2,10 +2,12 @@ import unittest
 import numpy as np
 import pandas as pd
 import networkx as nx
-
+import pdb
 
 #from BNS_JT.variable import Variable
 from Trans.trans import get_arcs_length, do_branch, get_all_paths_and_times
+
+from Trans.bnb_fns import bnb_sys, bnb_next_comp, bnb_next_state
 
 np.set_printoptions(precision=3)
 #pd.set_option.display_precision = 3
@@ -192,6 +194,118 @@ class Test(unittest.TestCase):
             _ = Variable(**{'B': f_B,
                          'value': self.kwargs['value']})
     """
+
+    def test_bnb_sys1(self):
+
+        comp_states = [1, 1, 1, 1, 1, 1]
+        info = {'path': [[2], [3, 1]],
+                'path_time': np.array([0.0901, 0.2401]),
+                'arcs': np.array([1, 2, 3, 4, 5, 6]),
+                }
+        #pdb.set_trace()
+        state, val, result = bnb_sys(comp_states, info)
+
+        self.assertEqual(state, 3)
+        self.assertEqual(val, np.inf)
+        self.assertEqual(result, {'path': []})
+
+    def test_bnb_sys2(self):
+
+        comp_states = [1, 2, 1, 1, 1, 1]
+        info = {'path': [[2], [3, 1]],
+                'path_time': np.array([0.0901, 0.2401]),
+                'arcs': np.array([1, 2, 3, 4, 5, 6]),
+                }
+        state, val, result = bnb_sys(comp_states, info)
+
+        self.assertEqual(state, 1)
+        self.assertEqual(val, 0.0901)
+        self.assertEqual(result, {'path': [2]})
+
+    def test_bnb_sys3(self):
+
+        comp_states = [2, 2, 2, 2, 2, 2]
+        info = {'path': [[2], [3, 1]],
+                'path_time': np.array([0.0901, 0.2401]),
+                'arcs': np.array([1, 2, 3, 4, 5, 6]),
+                }
+        #pdb.set_trace()
+        state, val, result = bnb_sys(comp_states, info)
+
+        self.assertEqual(state, 1)
+        self.assertEqual(val, 0.0901)
+        self.assertEqual(result, {'path': [2]})
+
+    def test_bnb_sys4(self):
+
+        comp_states = [1, 2, 2, 2, 2, 2]
+        info = {'path': [[2], [3, 1]],
+                'path_time': np.array([0.0901, 0.2401]),
+                'arcs': np.array([1, 2, 3, 4, 5, 6]),
+                }
+        #pdb.set_trace()
+        state, val, result = bnb_sys(comp_states, info)
+
+        self.assertEqual(state, 1)
+        self.assertEqual(val, 0.0901)
+        self.assertEqual(result, {'path': [2]})
+
+    def test_bnb_sys5(self):
+
+        comp_states = [1, 1, 2, 2, 2, 2]
+        info = {'path': [[2], [3, 1]],
+                'path_time': np.array([0.0901, 0.2401]),
+                'arcs': np.array([1, 2, 3, 4, 5, 6]),
+                }
+        #pdb.set_trace()
+        state, val, result = bnb_sys(comp_states, info)
+
+        self.assertEqual(state, 3)
+        self.assertEqual(val, np.inf)
+        self.assertEqual(result, {'path': []})
+
+    def test_bnb_next_comp1(self):
+
+        cand_comps = [1, 2, 3, 4, 5, 6]
+        down_res = []
+        up_res = [3, 1]
+        info = {'path': [[2], [3, 1]],
+                'path_time': np.array([0.0901, 0.2401]),
+                'arcs': np.array([1, 2, 3, 4, 5, 6]),
+                }
+
+        next_comp = bnb_next_comp(cand_comps, down_res, up_res, info)
+
+        self.assertEqual(next_comp, 1)
+
+    def test_bnb_next_comp2(self):
+
+        cand_comps = [2, 3, 4, 5, 6]
+        down_res = []
+        up_res = [2]
+        info = {'path': [[2], [3, 1]],
+                'path_time': np.array([0.0901, 0.2401]),
+                'arcs': np.array([1, 2, 3, 4, 5, 6]),
+                }
+
+        next_comp = bnb_next_comp(cand_comps, down_res, up_res, info)
+
+        self.assertEqual(next_comp, 2)
+
+    def test_bnb_next_comp3(self):
+
+        cand_comps = [3, 4, 5, 6]
+        down_res = []
+        up_res = [3, 1]
+        info = {'path': [[2], [3, 1]],
+                'path_time': np.array([0.0901, 0.2401]),
+                'arcs': np.array([1, 2, 3, 4, 5, 6]),
+                }
+
+        next_comp = bnb_next_comp(cand_comps, down_res, up_res, info)
+
+        self.assertEqual(next_comp, 3)
+
 
 
 if __name__=='__main__':

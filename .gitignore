@@ -1,0 +1,11 @@
+*.so
+*.pyc
+
+.DS_Store
+*.ipynb
+*.coverage
+*.swp
+__pycache__
+# pycharm
+.idea
+.vscode

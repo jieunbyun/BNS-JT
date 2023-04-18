@@ -446,9 +446,9 @@ def ismember(A, B):
         res  = [np.where(np.array(B) == x)[0].min()
                 if x in B else False for x in A]
 
-    ria = [False if x == False else True for x in res]
+    lia = [False if x is False else True for x in res]
 
-    return ria, res
+    return lia, res
 
 def setdiff(A, B):
     """
@@ -808,3 +808,22 @@ def isinscope(idx, Ms):
         isin = isin | np.array(flag)
 
     return isin
+
+def append(cpm1, cpm2):
+    """
+    return a list of combined cpm1 and cpm2
+    cpm1 should be a list or dict
+    cpm2 should be a list or dict
+    """
+
+    assert isinstance(cpm1, (list, dict)), 'cpm1 should be a list or dict'
+    assert isinstance(cpm2, (list, dict)), 'cpm2 should be a list or dict'
+
+    if isinstance(cpm1, dict):
+        cpm1 = list(cpm1.values())
+
+    if isinstance(cpm2, dict):
+        cpm2 = list(cpm2.values())
+
+    assert len(cpm1) == len(cpm2), 'Given CPMs have different lengths'
+
