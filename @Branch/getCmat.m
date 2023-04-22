@@ -45,7 +45,7 @@ for iRowInd = 1:nRow
                 iC(1+jCompInd) = ijLoc;
             else
                 jB = [jB; ijB];
-                vars( compVarInds(jCompind) ).B = jB;
+                vars( compVarInds(jCompInd) ).B = jB;
                 iC(1+jCompInd) = size(jB,1);
             end
         else

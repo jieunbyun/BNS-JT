@@ -23,13 +23,16 @@ def bnb_sys(comp_states, info):
 
     assert isinstance(info, dict), 'info should be a dict'
     assert isinstance(info['path'], list), 'path should be a list'
-    assert isinstance(info['path_time'], (list, np.ndarray)), 'path_time should be a list-like'
+    assert isinstance(info['time'], (list, np.ndarray)), 'path_time should be a list-like'
     assert isinstance(info['arcs'], (list, np.ndarray)), 'arcs should be a list-like'
 
     if isinstance(comp_states, list):
         comp_states = np.array(comp_states)
 
-    path_time = info['path_time']
+    if isinstance(info['time'], list):
+        info['time'] = np.array(info['time'])
+
+    path_time = info['time']
 
     # Ensure shorter paths to be considered first
     path_time = np.sort(path_time)
@@ -71,9 +74,15 @@ def bnb_next_comp(cand_comps, down_res, up_res, info):
     "val": any value that shows what the "state" means if unnecessary, can be left empty
     "result": a structure with any field that is required for the functions "nextComp" and "nextState"
     """
+    assert isinstance(info['path'], list), 'path should be a list'
+    assert isinstance(info['time'], (list, np.ndarray)), 'path_time should be a list-like'
+    assert isinstance(info['arcs'], (list, np.ndarray)), 'arcs should be a list-like'
+
+    if isinstance(info['time'], list):
+        info['time'] = np.array(info['time'])
 
     path = info['path']
-    path_time = info['path_time']
+    path_time = info['time']
 
     path_sort_idx = path_time.argsort()
     path_time = np.sort(path_time)

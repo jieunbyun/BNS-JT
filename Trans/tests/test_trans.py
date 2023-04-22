@@ -6,8 +6,10 @@ import pdb
 
 #from BNS_JT.variable import Variable
 from Trans.trans import get_arcs_length, do_branch, get_all_paths_and_times
-
 from Trans.bnb_fns import bnb_sys, bnb_next_comp, bnb_next_state
+from BNS_JT.branch import get_cmat
+from BNS_JT import variable
+from run_bnb import run_bnb
 
 np.set_printoptions(precision=3)
 #pd.set_option.display_precision = 3
@@ -199,7 +201,7 @@ class Test(unittest.TestCase):
 
         comp_states = [1, 1, 1, 1, 1, 1]
         info = {'path': [[2], [3, 1]],
-                'path_time': np.array([0.0901, 0.2401]),
+                'time': np.array([0.0901, 0.2401]),
                 'arcs': np.array([1, 2, 3, 4, 5, 6]),
                 }
         #pdb.set_trace()
@@ -213,7 +215,7 @@ class Test(unittest.TestCase):
 
         comp_states = [1, 2, 1, 1, 1, 1]
         info = {'path': [[2], [3, 1]],
-                'path_time': np.array([0.0901, 0.2401]),
+                'time': np.array([0.0901, 0.2401]),
                 'arcs': np.array([1, 2, 3, 4, 5, 6]),
                 }
         state, val, result = bnb_sys(comp_states, info)
@@ -226,7 +228,7 @@ class Test(unittest.TestCase):
 
         comp_states = [2, 2, 2, 2, 2, 2]
         info = {'path': [[2], [3, 1]],
-                'path_time': np.array([0.0901, 0.2401]),
+                'time': np.array([0.0901, 0.2401]),
                 'arcs': np.array([1, 2, 3, 4, 5, 6]),
                 }
         #pdb.set_trace()
@@ -240,7 +242,7 @@ class Test(unittest.TestCase):
 
         comp_states = [1, 2, 2, 2, 2, 2]
         info = {'path': [[2], [3, 1]],
-                'path_time': np.array([0.0901, 0.2401]),
+                'time': np.array([0.0901, 0.2401]),
                 'arcs': np.array([1, 2, 3, 4, 5, 6]),
                 }
         #pdb.set_trace()
@@ -254,7 +256,7 @@ class Test(unittest.TestCase):
 
         comp_states = [1, 1, 2, 2, 2, 2]
         info = {'path': [[2], [3, 1]],
-                'path_time': np.array([0.0901, 0.2401]),
+                'time': np.array([0.0901, 0.2401]),
                 'arcs': np.array([1, 2, 3, 4, 5, 6]),
                 }
         #pdb.set_trace()
@@ -270,7 +272,7 @@ class Test(unittest.TestCase):
         down_res = []
         up_res = [3, 1]
         info = {'path': [[2], [3, 1]],
-                'path_time': np.array([0.0901, 0.2401]),
+                'time': np.array([0.0901, 0.2401]),
                 'arcs': np.array([1, 2, 3, 4, 5, 6]),
                 }
 
@@ -284,7 +286,7 @@ class Test(unittest.TestCase):
         down_res = []
         up_res = [2]
         info = {'path': [[2], [3, 1]],
-                'path_time': np.array([0.0901, 0.2401]),
+                'time': np.array([0.0901, 0.2401]),
                 'arcs': np.array([1, 2, 3, 4, 5, 6]),
                 }
 
@@ -298,13 +300,117 @@ class Test(unittest.TestCase):
         down_res = []
         up_res = [3, 1]
         info = {'path': [[2], [3, 1]],
-                'path_time': np.array([0.0901, 0.2401]),
+                'time': np.array([0.0901, 0.2401]),
                 'arcs': np.array([1, 2, 3, 4, 5, 6]),
                 }
 
         next_comp = bnb_next_comp(cand_comps, down_res, up_res, info)
 
         self.assertEqual(next_comp, 3)
+
+    def test_run_bnb(self):
+        info = {'path': [[2], [3, 1]],
+                'time': np.array([0.0901, 0.2401]),
+                'arcs': np.array([1, 2, 3, 4, 5, 6])
+                }
+        max_state = 2
+        comp_max_states = (max_state*np.ones_like(info['arcs'])).tolist()
+
+        branches = run_bnb(sys_fn=bnb_sys,
+                           next_comp_fn=bnb_next_comp,
+                           next_state_fn=bnb_next_state,
+                           info=info,
+                           comp_max_states=comp_max_states)
+
+        self.assertEqual(len(branches), 5)
+
+        self.assertEqual(branches[0].down, [1, 1, 1, 1, 1, 1])
+        self.assertEqual(branches[0].up, [1, 1, 2, 2, 2, 2])
+        self.assertEqual(branches[0].is_complete, True)
+        self.assertEqual(branches[0].down_state, 3)
+        self.assertEqual(branches[0].up_state, 3)
+        self.assertEqual(branches[0].down_val, np.inf)
+        self.assertEqual(branches[0].up_val, np.inf)
+
+        self.assertEqual(branches[1].down, [1, 2, 1, 1, 1, 1])
+        self.assertEqual(branches[1].up, [1, 2, 2, 2, 2, 2])
+        self.assertEqual(branches[1].is_complete, True)
+        self.assertEqual(branches[1].down_state, 1)
+        self.assertEqual(branches[1].up_state, 1)
+        self.assertEqual(branches[1].down_val, 0.0901)
+        self.assertEqual(branches[1].up_val, 0.0901)
+
+        self.assertEqual(branches[2].down, [2, 2, 1, 1, 1, 1])
+        self.assertEqual(branches[2].up, [2, 2, 2, 2, 2, 2])
+        self.assertEqual(branches[2].is_complete, True)
+        self.assertEqual(branches[2].down_state, 1)
+        self.assertEqual(branches[2].up_state, 1)
+        self.assertEqual(branches[2].down_val, 0.0901)
+        self.assertEqual(branches[2].up_val, 0.0901)
+
+        self.assertEqual(branches[3].down, [2, 1, 1, 1, 1, 1])
+        self.assertEqual(branches[3].up, [2, 1, 1, 2, 2, 2])
+        self.assertEqual(branches[3].is_complete, True)
+        self.assertEqual(branches[3].down_state, 3)
+        self.assertEqual(branches[3].up_state, 3)
+        self.assertEqual(branches[3].down_val, np.inf)
+        self.assertEqual(branches[3].up_val, np.inf)
+
+        self.assertEqual(branches[4].down, [2, 1, 2, 1, 1, 1])
+        self.assertEqual(branches[4].up, [2, 1, 2, 2, 2, 2])
+        self.assertEqual(branches[4].is_complete, True)
+        self.assertEqual(branches[4].down_state, 2)
+        self.assertEqual(branches[4].up_state, 2)
+        self.assertEqual(branches[4].down_val, 0.2401)
+        self.assertEqual(branches[4].up_val, 0.2401)
+
+    def test_get_cmat(self):
+
+        info = {'path': [[2], [3, 1]],
+                'time': np.array([0.0901, 0.2401]),
+                'arcs': np.array([1, 2, 3, 4, 5, 6])
+                }
+        max_state = 2
+        comp_max_states = (max_state*np.ones_like(info['arcs'])).tolist()
+
+        branches = run_bnb(sys_fn=bnb_sys,
+                           next_comp_fn=bnb_next_comp,
+                           next_state_fn=bnb_next_state,
+                           info=info,
+                           comp_max_states=comp_max_states)
+
+        varis = {}
+        B = np.array([[1, 0], [0, 1], [1, 1]])
+        for k in range(1, 7):
+            varis[k] = variable.Variable(B=B, value=['Surv', 'Fail'])
+
+        B_ = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
+        varis[7] = variable.Variable(B=B_,
+                value=[0.0901, 0.2401, np.inf])
+
+        varis[8] = variable.Variable(B=B_,
+                value=[0.0901, 0.2401, np.inf])
+
+        varis[9] = variable.Variable(B=B_,
+                value=[0.0943, 0.1761, np.inf])
+
+        varis[10] = variable.Variable(B=B_,
+                value=[0.0707, 0.1997, np.inf])
+
+        for i in range(11, 15):
+            varis[i] = variable.Variable(B=np.eye(2),
+                value=['No disruption', 'Disruption'])
+
+        C, varis = get_cmat(branches, info['arcs'], varis, False)
+
+        expected = np.array([[3,2,2,3,3,3,3],
+                             [1,2,1,3,3,3,3],
+                             [1,1,1,3,3,3,3],
+                             [3,1,2,2,3,3,3],
+                             [2,1,2,1,3,3,3]])
+
+        np.testing.assert_array_equal(C, expected)
+
 
 
 
