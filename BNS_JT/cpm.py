@@ -63,7 +63,7 @@ class Cpm(object):
         assert self.no_child <= len(self.variables), 'no_child must be less than or equal to the number of variables'
 
         assert isinstance(self.C, np.ndarray), 'Event matrix C must be a numeric matrix'
-        assert self.C.dtype in (np.dtype('int64'), np.dtype('int32')), 'Event matrix C must be a numeric matrix'
+        assert self.C.dtype in (np.dtype('int64'), np.dtype('int32')), f'Event matrix C must be a numeric matrix: {self.C}'
         if self.C.ndim == 1:
             self.C.shape = (len(self.C), 1)
         else:
@@ -169,7 +169,7 @@ class Cpm(object):
             else:
                 B = np.eye(np.max(C[:, i]))
 
-            x1 = [B[k - 1, :] for k in C[is_cmp, i]]
+            x1 = [B[int(k) - 1, :] for k in C[is_cmp, i]]
             x2 = B[state - 1,: ]
             check = (np.sum(x1 * x2, axis=1) >0)
 
@@ -188,6 +188,7 @@ class Cpm(object):
             1 (default) - sum out variables, 0 - leave only variables
         """
 
+        assert isinstance(variables, list), 'variables should be a list'
         if flag and any(set(self.variables[self.no_child:]).intersection(variables)):
             print('Parent nodes are NOT summed up')
 
@@ -371,7 +372,7 @@ class Cpm(object):
 
             Mprod = Cpm(variables=new_vars,
                         no_child = len(new_child),
-                        C = Cprod[:, idx_vars],
+                        C = Cprod[:, idx_vars].astype(int),
                         p = pprod)
 
             try:
@@ -446,9 +447,9 @@ def ismember(A, B):
         res  = [np.where(np.array(B) == x)[0].min()
                 if x in B else False for x in A]
 
-    ria = [False if x == False else True for x in res]
+    lia = [False if x is False else True for x in res]
 
-    return ria, res
+    return lia, res
 
 def setdiff(A, B):
     """
@@ -499,7 +500,7 @@ def iscompatible(C, variables, check_vars, check_states, var):
 
         B = var[variable].B
 
-        x1 = [B[k - 1, :] for k in C[is_cmp, i]]
+        x1 = [B[int(k) - 1, :] for k in C[is_cmp, i]]
         try:
             x2 = B[state - 1, :]
         except IndexError:
@@ -577,7 +578,7 @@ def condition(M, cnd_vars, cnd_states, var, sample_idx=[]):
             B = var[cnd_var].B.copy()
 
             if B.any():
-                C1 = C[:, idx].copy() - 1
+                C1 = (C[:, idx].copy() - 1).astype(int)
                 check = B[C1, :] * B[state - 1,:]
                 var[cnd_var].B = add_new_states(check, B)
                 Ccond[:, idx] = [x + 1 for x in ismember(check, B)[1]]
@@ -798,6 +799,8 @@ def isinscope(idx, Ms):
     idx: list of index
     Ms: list or dict of CPMs
     """
+    assert isinstance(idx, list), 'idx should be a list'
+
     if isinstance(Ms, dict):
         Ms = Ms.values()
 
@@ -808,3 +811,64 @@ def isinscope(idx, Ms):
         isin = isin | np.array(flag)
 
     return isin
+
+def append(cpm1, cpm2):
+    """
+    return a list of combined cpm1 and cpm2
+    cpm1 should be a list or dict
+    cpm2 should be a list or dict
+    """
+
+    assert isinstance(cpm1, (list, dict)), 'cpm1 should be a list or dict'
+    assert isinstance(cpm2, (list, dict)), 'cpm2 should be a list or dict'
+
+    if isinstance(cpm1, dict):
+        cpm1 = list(cpm1.values())
+
+    if isinstance(cpm2, dict):
+        cpm2 = list(cpm2.values())
+
+    assert len(cpm1) == len(cpm2), 'Given CPMs have different lengths'
+    #FIXME
+
+
+def variable_elim(cpms, var_elim_order, varis):
+
+    cpms = copy.deepcopy(cpms)
+    for var_id in var_elim_order:
+
+        isin = isinscope([var_id], cpms)
+
+        sel = [y for x,y in zip(isin, cpms) if x]
+        mult, varis = prod_cpms(sel, varis)
+        mult = mult.sum([var_id])
+
+        cpms = [y for x, y in zip(isin, cpms) if x == False]
+        cpms.insert(0, mult)
+
+    cpms, varis = prod_cpms(cpms, varis)
+
+    return cpms, varis
+
+
+def get_prob(M, var_inds, var_states, varis, flag=True):
+
+    assert isinstance(M, Cpm), 'Given CPM must be a single CPM'
+    assert isinstance(var_inds, list), 'var_inds should be a list'
+    assert isinstance(var_states, np.ndarray), 'var_states should be an array'
+
+    assert len(var_inds) == var_states.shape[0], '"var_inds" and "var_states" must have the same length.'
+
+    assert flag in (0, 1), 'Operation flag must be either 1 (keeping given row indices default) or 0 (deleting given indices)'
+
+    Mcompare = Cpm(variables=var_inds,
+                   no_child=len(var_inds),
+                   C=var_states,
+                   p=np.empty(shape=(var_states.shape[0], 1)))
+    is_compat = M.iscompatible(Mcompare, varis)
+    idx = np.where(is_compat)[0]
+    Msubset = M.get_subset(idx, flag )
+    prob = Msubset.p.sum()
+
+    return prob
+
