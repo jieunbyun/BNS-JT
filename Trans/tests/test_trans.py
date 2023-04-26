@@ -7,9 +7,8 @@ import pdb
 #from BNS_JT.variable import Variable
 from Trans.trans import get_arcs_length, do_branch, get_all_paths_and_times
 from Trans.bnb_fns import bnb_sys, bnb_next_comp, bnb_next_state
-from BNS_JT.branch import get_cmat
+from BNS_JT.branch import get_cmat, run_bnb
 from BNS_JT import variable
-from run_bnb import run_bnb
 
 np.set_printoptions(precision=3)
 #pd.set_option.display_precision = 3
