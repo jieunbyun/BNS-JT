@@ -412,8 +412,6 @@ class Test(unittest.TestCase):
         np.testing.assert_array_equal(C, expected)
 
 
-
-
 if __name__=='__main__':
     unittest.main()
 

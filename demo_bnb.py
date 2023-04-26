@@ -7,14 +7,13 @@ Generalise Branch-and-Bound (BnB) operation to build CPMs
 import numpy as np
 import pdb
 
-import demoTransport
+import demo_transport
 
 from Trans import bnb_fns
-from run_bnb import run_bnb
-from BNS_JT.branch import get_cmat
+from BNS_JT.branch import get_cmat, run_bnb
 from BNS_JT.cpm import variable_elim, Cpm, get_prob
 
-ODs_prob_delay, ODs_prob_disconn, _, cpms_arc, vars_arc = demoTransport.main()
+ODs_prob_delay, ODs_prob_disconn, _, cpms_arc, vars_arc = demo_transport.main()
 
 ## Problem
 odInd = 1
@@ -26,7 +25,6 @@ info = {'path': [[2], [3, 1]],
 
 max_state = 2
 comp_max_states = (max_state*np.ones_like(info['arcs'])).tolist()
-
 branches = run_bnb(sys_fn=bnb_fns.bnb_sys,
                    next_comp_fn=bnb_fns.bnb_next_comp,
                    next_state_fn=bnb_fns.bnb_next_state,

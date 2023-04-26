@@ -1,10 +1,6 @@
 import numpy as np
 import networkx as nx
 
-def get_cpm_of_travel_time():
-
-    pass
-
 
 def get_all_paths_and_times(ODs, G, key='time'):
     """
@@ -24,6 +20,7 @@ def get_all_paths_and_times(ODs, G, key='time'):
             path_time.setdefault((org, dest), []).append((edges_path, val))
 
     return path_time
+
 
 def get_match(a, b, complete, idx_any):
 
@@ -69,7 +66,6 @@ def do_branch(group, complete, id_any):
                 return group
 
     return group
-
 
 
 def get_arcs_length(arcs, node_coords):
