@@ -3,6 +3,7 @@ import textwrap
 import copy
 import collections
 
+from BNS_JT.utils import all_equal
 
 class Cpm(object):
     """
@@ -31,19 +32,37 @@ class Cpm(object):
 
     def __init__(self, variables, no_child, C, p, q=[], sample_idx=[]):
 
-        if isinstance(variables, list):
-            self.variables = np.array(variables)
+        assert len(variables), 'variables must be a vector'
+
+        assert all_equal(map(type, variables)), 'variables must consists of same type'
+
+        if isinstance(variables, np.ndarray):
+            self.variables = variables.tolist()
         else:
             self.variables = variables
 
+        assert isinstance(no_child, (int, np.int32, np.int64)), 'no_child must be a numeric scalar'
+        assert no_child <= len(self.variables), 'no_child must be less than or equal to the number of variables'
+
         self.no_child = no_child
 
+        assert isinstance(C, np.ndarray), 'Event matrix C must be a numeric matrix'
+        assert C.dtype in (np.dtype('int64'), np.dtype('int32')), f'Event matrix C must be a numeric matrix: {self.C}'
+
+        if C.ndim == 1:
+            C.shape = (len(C), 1)
+        else:
+            assert C.shape[1] == len(self.variables), 'C must have the same number of columns with that of variables'
         self.C = C
 
         if isinstance(p, list):
             self.p = np.array(p)[:, np.newaxis]
         else:
             self.p = p
+
+        assert isinstance(self.p, np.ndarray), 'p must be a numeric vector'
+
+        all(isinstance(y, (float, np.float32, np.float64, int, np.int32, np.int64)) for y in self.p), 'p must be a numeric vector'
 
         if isinstance(q, list):
             self.q = np.array(q)[:, np.newaxis]
@@ -54,23 +73,6 @@ class Cpm(object):
             self.sample_idx = np.array(sample_idx)[:, np.newaxis]
         else:
             self.sample_idx = sample_idx
-
-        assert len(self.variables), 'variables must be a numeric vector'
-
-        assert all(isinstance(x, (int, np.int32, np.int64)) for x in self.variables), 'variables must be a numeric vector'
-
-        assert isinstance(self.no_child, (int, np.int32, np.int64)), 'no_child must be a numeric scalar'
-        assert self.no_child <= len(self.variables), 'no_child must be less than or equal to the number of variables'
-
-        assert isinstance(self.C, np.ndarray), 'Event matrix C must be a numeric matrix'
-        assert self.C.dtype in (np.dtype('int64'), np.dtype('int32')), f'Event matrix C must be a numeric matrix: {self.C}'
-        if self.C.ndim == 1:
-            self.C.shape = (len(self.C), 1)
-        else:
-            assert self.C.shape[1] == len(self.variables), 'C must have the same number of columns with that of variables'
-
-        assert isinstance(self.p, np.ndarray), 'p must be a numeric vector'
-        all(isinstance(y, (float, np.float32, np.float64, int, np.int32, np.int64)) for y in self.p), 'p must be a numeric vector'
 
         if self.p.ndim == 1:
             self.p.shape = (len(self.p), 1)
@@ -97,6 +99,36 @@ class Cpm(object):
         return textwrap.dedent(f'''\
 {self.__class__.__name__}(variables={self.variables}, no_child={self.no_child}, C={self.C}, p={self.p}''')
 
+    def equal(self, M):
+
+        try:
+            self.C.shape==M.C.shape
+        except AssertionError:
+            print('shape')
+            return False
+
+        try:
+            set(self.variables) == set(M.variables)
+        except AssertionError:
+            print('variable')
+            return False
+
+        idx_vars = [M.variables.index(x) for x in self.variables]
+
+        try:
+            np.testing.assert_array_equal(self.C, M.C[:, idx_vars])
+        except AssertionError:
+            print('C')
+            return False
+
+        try:
+            np.testing.assert_array_almost_equal(self.p, M.p[idx_vars])
+        except AssertionError:
+            print('p')
+            return False
+
+        return True
+
     def get_subset(self, row_idx, flag=True):
         """
         Returns the subset of Cpm
@@ -114,7 +146,7 @@ class Cpm(object):
             assert set(row_idx).issubset(range(self.C.shape[0]))
         else:
             # select row excluding the row_index
-            row_idx = np.setdiff1d(range(self.C.shape[0]), row_idx)
+            row_idx, _ = setdiff(range(self.C.shape[0]), row_idx)
 
         if any(self.p):
             p_sub = self.p[row_idx]
@@ -189,25 +221,29 @@ class Cpm(object):
         """
 
         assert isinstance(variables, list), 'variables should be a list'
+
         if flag and any(set(self.variables[self.no_child:]).intersection(variables)):
             print('Parent nodes are NOT summed up')
 
         if flag:
             vars_rem, vars_rem_idx = setdiff(self.variables[:self.no_child], variables)
+
         else:
             # FIXME
             _, vars_rem_idx = ismember(variables, self.variables[:self.no_child])
             vars_rem_idx = get_value_given_condn(vars_rem_idx, vars_rem_idx)
-            vars_rem_idx = np.sort(vars_rem_idx)
-            vars_rem = self.variables[vars_rem_idx]
+            vars_rem_idx = sorted(vars_rem_idx)
+            vars_rem = [self.variables[x] for x in vars_rem_idx]
 
         no_child_sum = len(vars_rem)
 
         if any(self.variables[self.no_child:]):
-            vars_rem = np.append(vars_rem, self.variables[self.no_child:])
-            vars_rem_idx = np.append(vars_rem_idx, range(self.no_child, len(self.variables)))
+            vars_rem += self.variables[self.no_child:]
+            vars_rem_idx = vars_rem_idx + list(range(self.no_child, len(self.variables)))
 
-        M = Cpm(variables=self.variables[vars_rem_idx],
+        _variables = [self.variables[i] for i in vars_rem_idx]
+
+        M = Cpm(variables=_variables,
                 C=self.C[:, vars_rem_idx],
                 no_child=len(vars_rem_idx),
                 p=self.p,
@@ -361,7 +397,7 @@ class Cpm(object):
             new_child = np.sort(new_child)
 
             new_parent = np.append(self.variables[self.no_child:], M.variables[M.no_child:])
-            new_parent = list(set(new_parent).difference(new_child))
+            new_parent, _ = setdiff(new_parent, new_child)
 
             if new_parent:
                 new_vars = np.concatenate((new_child, new_parent), axis=0)
@@ -451,13 +487,15 @@ def ismember(A, B):
 
     return lia, res
 
-def setdiff(A, B):
+def setdiff(first, second):
     """
     matlab setdiff equivalent
     """
-    C = list(set(A).difference(B))
-    ia = [list(A).index(x) for x in C]
-    return C, ia
+    second = set(second)
+    first = list(dict.fromkeys(first))
+    val = [item for item in first if item not in second]
+    iv = [first.index(x) for x in val]
+    return val, iv
 
 
 def get_value_given_condn(A, condn):
@@ -625,7 +663,7 @@ def prod_cpms(cpms, var):
         cpms = list(cpms.values())
 
     prod = cpms[0]
-    for i, c in enumerate(cpms[1:], 2):
+    for c in cpms[1:]:
         prod, var = prod.product(c, var)
 
     return prod, var
@@ -660,7 +698,7 @@ def get_prod_idx(cpms, varis):
 
     idx = []
     for cpm in cpms:
-        val = cpm.variables[cpm.no_child:].tolist()
+        val = cpm.variables[cpm.no_child:]
         val = not any(set(val).difference(varis))
         idx.append(val)
 
@@ -692,7 +730,7 @@ def get_sample_order(cpms):
         sample_order.append(cpms_idx[cpm_prod_idx])
         cpm_prod = cpms_[cpm_prod_idx]
 
-        vars_prod = cpm_prod.variables[:cpm_prod.no_child].tolist()
+        vars_prod = cpm_prod.variables[:cpm_prod.no_child]
 
         if any(set(sample_vars).intersection(vars_prod)):
             print('Given Cpms must not have common child nodes')

@@ -19,18 +19,18 @@ from Trans.trans import get_arcs_length, get_all_paths_and_times
 
 ## Data
 # Network
-node_coords = {1: (-2, 3),
-               2: (-2, -3),
-               3: (2, -2),
-               4: (1, 1),
-               5: (0, 0)}
+node_coords = {'1': (-2, 3),
+               '2': (-2, -3),
+               '3': (2, -2),
+               '4': (1, 1),
+               '5': (0, 0)}
 
-arcs = {1: [1, 2],
-	2: [1, 5],
-	3: [2, 5],
-	4: [3, 4],
-	5: [3, 5],
-	6: [4, 5]}
+arcs = {'1': ['1', '2'],
+	'2': ['1', '5'],
+	'3': ['2', '5'],
+	'4': ['3', '4'],
+	'5': ['3', '5'],
+	'6': ['4', '5']}
 
 # Fragility curves -- From HAZUS-EQ model (roads are regarded as disconnected when being extensively or completely damaged)
 
@@ -39,29 +39,29 @@ frag = {'major': {'med': 60.0, 'std': 0.7},
         'bridge': {'med': 1.1, 'std': 3.9},
         }
 
-arcs_type = {1: 'major',
-             2: 'major',
-             3: 'major',
-             4: 'urban',
-             5: 'bridge',
-             6: 'bridge'}
+arcs_type = {'1': 'major',
+             '2': 'major',
+             '3': 'major',
+             '4': 'urban',
+             '5': 'bridge',
+             '6': 'bridge'}
 
-arcs_avg_kmh = {1: 40,
-                2: 40,
-                3: 40,
-                4: 30,
-                5: 30,
-                6: 20}
+arcs_avg_kmh = {'1': 40,
+                '2': 40,
+                '3': 40,
+                '4': 30,
+                '5': 30,
+                '6': 20}
 
-ODs = [(5, 1), (5, 2), (5, 3), (5, 4)]
+ODs = [('5', '1'), ('5', '2'), ('5', '3'), ('5', '4')]
 
 # For the moment, we assume that ground motions are observed. Later, hazard nodes will be added.
-GM_obs = {1: 30.0,
-          2: 20.0,
-          3: 10.0,
-          4: 2.0,
-          5: 0.9,
-          6: 0.6}
+GM_obs = {'1': 30.0,
+          '2': 20.0,
+          '3': 10.0,
+          '4': 2.0,
+          '5': 0.9,
+          '6': 0.6}
 
 # Arcs' states index
 arc_surv = 1
@@ -137,41 +137,41 @@ def main():
     [3,3,3,3,1,2,2],
     [3,3,3,3,2,3,2]])
 
-    cpms_arc[7] = cpm.Cpm(variables= [7, 1, 2, 3, 4, 5, 6],
+    cpms_arc['7'] = cpm.Cpm(variables= ['7', '1', '2', '3', '4', '5', '6'],
                            no_child = 1,
                            C = c7,
                            p = [1, 1, 1, 1],
                            )
 
-    cpms_arc[8] = cpm.Cpm(variables= [8, 1, 2, 3, 4, 5, 6],
+    cpms_arc['8'] = cpm.Cpm(variables= ['8', '1', '2', '3', '4', '5', '6'],
                            no_child = 1,
                            C = c8,
                            p = [1, 1, 1, 1],
                            )
 
-    cpms_arc[9] = cpm.Cpm(variables= [9, 1, 2, 3, 4, 5, 6],
+    cpms_arc['9'] = cpm.Cpm(variables= ['9', '1', '2', '3', '4', '5', '6'],
                            no_child = 1,
                            C = c9,
                            p = [1, 1, 1, 1],
                            )
 
-    cpms_arc[10] = cpm.Cpm(variables= [10, 1, 2, 3, 4, 5, 6],
+    cpms_arc['10'] = cpm.Cpm(variables= ['10', '1', '2', '3', '4', '5', '6'],
                            no_child = 1,
                            C = c10,
                            p = [1, 1, 1, 1],
                            )
 
     B_ = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
-    vars_arc[7] = variable.Variable(B=B_,
+    vars_arc['7'] = variable.Variable(B=B_,
             value=[0.0901, 0.2401, np.inf])
 
-    vars_arc[8] = variable.Variable(B=B_,
+    vars_arc['8'] = variable.Variable(B=B_,
             value=[0.0901, 0.2401, np.inf])
 
-    vars_arc[9] = variable.Variable(B=B_,
+    vars_arc['9'] = variable.Variable(B=B_,
             value=[0.0943, 0.1761, np.inf])
 
-    vars_arc[10] = variable.Variable(B=B_,
+    vars_arc['10'] = variable.Variable(B=B_,
             value=[0.0707, 0.1997, np.inf])
 
     ## Inference - by variable elimination (would not work for large-scale systems)
@@ -179,6 +179,10 @@ def main():
     # Becomes P(OD_1, ..., OD_M) since X_1, ..., X_N are eliminated
     cpms_arc_cp = cpms_arc.values()
 
+    #pdb.set_trace()
+
+    # prod_cpms
+    # get different variables order
     for i in arcs.keys():
 
         is_inscope = cpm.isinscope([i], cpms_arc_cp)
@@ -195,7 +199,7 @@ def main():
     # P( (OD_j = 2) U (OD_j = 2) ), j = 1, ..., M, where State 2 indicates the use of the second shortest path (or equivalently, P( (OD_j = 1)^c ), where State 1 indicates the use of the shortest path)
     ODs_prob_delay = np.zeros(len(ODs))
 
-    var_OD = [7, 8, 9, 10]
+    var_OD = ['7', '8', '9', '10']
     for j, idx in enumerate(var_OD):
 
         # Prob. of disconnection
@@ -223,16 +227,16 @@ def main():
 
         #iPaths = arcPaths[iOdInd]
         #iTimes = arcPaths_time[iOdInd]
-        cpms_arc[j]= cpm.Cpm(variables=[j, idx],
+        cpms_arc[str(j)]= cpm.Cpm(variables=[str(j), idx],
                                no_child=1,
                                C= np.array([[1, 1], [2, 2], [2, 3]]),
                                p= [1, 1, 1])
-        vars_arc[j] = variable.Variable(B=np.eye(2, dtype=int), value=['No disruption', 'Disruption'])
+        vars_arc[str(j)] = variable.Variable(B=np.eye(2, dtype=int), value=['No disruption', 'Disruption'])
 
-        var_OD_obs.append(j)
+        var_OD_obs.append(str(j))
 
     cpm_ve, vars_arc = cpm.condition(cpms_arc,
-                                     cnd_vars=[11, 12, 13],
+                                     cnd_vars=['11', '12', '13'],
                                      cnd_states=[2, 2, 1],
                                      var=vars_arc)
 
@@ -252,12 +256,12 @@ def main():
         if fail_prob.any():
             arcs_prob_damage[j] = fail_prob
 
+
     ## Repeat inferences again using new functions -- the results must be the same.
     # Probability of delay and disconnection
 
-
     M = list(cpms_arc.values())[:10]
-    var_elim_order = list(range(1, 7))
+    var_elim_order = [str(i) for i in range(1, 7)]
     M_VE2, vars_arc = cpm.variable_elim(M, var_elim_order, vars_arc)
 
     # "M_VE2" same as "M_VE"
@@ -289,8 +293,7 @@ def main():
         print(ODs_prob_delay)
         print(ODs_prob_delay2)
 
-    return ODs_prob_delay2, ODs_prob_disconn, arcs_prob_damage, cpms_arc, vars_arc
-
+    return ODs_prob_delay2, ODs_prob_disconn2, arcs_prob_damage, cpms_arc, vars_arc
 
 def plot_figs(ODs_prob_delay, ODs_prob_disconn, arcs_prob_damage):
 
@@ -314,12 +317,11 @@ def plot_figs(ODs_prob_delay, ODs_prob_disconn, arcs_prob_damage):
 
     # Create legend & Show graphic
     plt.legend()
-    plt.savefig('./figure1.png', dpi=200)
+    plt.savefig('./figure1s.png', dpi=200)
     plt.close()
 
     plt.figure()
-
-    r1 = list(arcs.keys())
+    r1 = np.arange(len(arcs))
     r2 = [x + barWidth for x in r1]
 
     plt.bar(r1, 1-arcs_prob_damage, color='#7f6d5f', width=barWidth, edgecolor='white', label='Survival')
@@ -328,7 +330,7 @@ def plot_figs(ODs_prob_delay, ODs_prob_disconn, arcs_prob_damage):
     plt.xlabel( 'Arc' )
     plt.ylabel( 'Probability' )
     plt.legend()
-    plt.savefig('./figure2.png', dpi=200)
+    plt.savefig('./figure2s.png', dpi=200)
     plt.close()
 
 
