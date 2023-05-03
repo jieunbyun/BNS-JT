@@ -24,7 +24,7 @@ for k, v in cpms_arcs.items():
 vars_arc = {int(k): v for k, v in vars_arc.items()}
 
 ## Problem
-odInd = 1
+#odInd = 1
 
 info = {'path': [[2], [3, 1]],
         'time': np.array([0.0901, 0.2401]),

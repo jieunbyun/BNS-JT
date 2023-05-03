@@ -350,6 +350,62 @@ def test_run_bnb():
     assert branches[4].down_val==0.2401
     assert branches[4].up_val, 0.2401
 
+def test_run_bnbs():
+    info = {'path': [['2'], ['3', '1']],
+            'time': np.array([0.0901, 0.2401]),
+            'arcs': np.array(['1', '2', '3', '4', '5', '6'])
+            }
+    max_state = 2
+    comp_max_states = (max_state*np.ones(len(info['arcs']))).tolist()
+
+    #pdb.set_trace()
+    branches = run_bnb(sys_fn=bnb_sys,
+                       next_comp_fn=bnb_next_comp,
+                       next_state_fn=bnb_next_state,
+                       info=info,
+                       comp_max_states=comp_max_states)
+
+    assert branches[0].down==[1, 1, 1, 1, 1, 1]
+    assert branches[0].up==[1, 1, 2, 2, 2, 2]
+    assert branches[0].is_complete==True
+    assert branches[0].down_state==3
+    assert branches[0].up_state==3
+    assert branches[0].down_val==np.inf
+    assert branches[0].up_val==np.inf
+
+    assert branches[1].down==[1, 2, 1, 1, 1, 1]
+    assert branches[1].up==[1, 2, 2, 2, 2, 2]
+    assert branches[1].is_complete==True
+    assert branches[1].down_state==1
+    assert branches[1].up_state==1
+    assert branches[1].down_val==0.0901
+    assert branches[1].up_val==0.0901
+
+    assert branches[2].down==[2, 2, 1, 1, 1, 1]
+    assert branches[2].up, [2, 2, 2, 2, 2, 2]
+    assert branches[2].is_complete==True
+    assert branches[2].down_state==1
+    assert branches[2].up_state==1
+    assert branches[2].down_val==0.0901
+    assert branches[2].up_val==0.0901
+
+    assert branches[3].down==[2, 1, 1, 1, 1, 1]
+    assert branches[3].up==[2, 1, 1, 2, 2, 2]
+    assert branches[3].is_complete==True
+    assert branches[3].down_state==3
+    assert branches[3].up_state==3
+    assert branches[3].down_val==np.inf
+    assert branches[3].up_val==np.inf
+
+    assert branches[4].down==[2, 1, 2, 1, 1, 1]
+    assert branches[4].up==[2, 1, 2, 2, 2, 2]
+    assert branches[4].is_complete==True
+    assert branches[4].down_state==2
+    assert branches[4].up_state==2
+    assert branches[4].down_val==0.2401
+    assert branches[4].up_val, 0.2401
+
+
 def test_get_cmat():
 
     info = {'path': [[2], [3, 1]],
@@ -387,6 +443,53 @@ def test_get_cmat():
         varis[i] = variable.Variable(B=np.eye(2),
             value=['No disruption', 'Disruption'])
 
+    C, varis = get_cmat(branches, info['arcs'], varis, False)
+
+    expected = np.array([[3,2,2,3,3,3,3],
+                         [1,2,1,3,3,3,3],
+                         [1,1,1,3,3,3,3],
+                         [3,1,2,2,3,3,3],
+                         [2,1,2,1,3,3,3]])
+
+    np.testing.assert_array_equal(C, expected)
+
+def test_get_cmat_s():
+
+    info = {'path': [['2'], ['3', '1']],
+            'time': np.array([0.0901, 0.2401]),
+            'arcs': np.array(['1', '2', '3', '4', '5', '6'])
+            }
+    max_state = 2
+    comp_max_states = (max_state*np.ones(len(info['arcs']))).tolist()
+
+    branches = run_bnb(sys_fn=bnb_sys,
+                       next_comp_fn=bnb_next_comp,
+                       next_state_fn=bnb_next_state,
+                       info=info,
+                       comp_max_states=comp_max_states)
+
+    varis = {}
+    B = np.array([[1, 0], [0, 1], [1, 1]])
+    for k in range(1, 7):
+        varis[str(k)] = variable.Variable(B=B, value=['Surv', 'Fail'])
+
+    B_ = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
+    varis['7'] = variable.Variable(B=B_,
+            value=[0.0901, 0.2401, np.inf])
+
+    varis['8'] = variable.Variable(B=B_,
+            value=[0.0901, 0.2401, np.inf])
+
+    varis['9'] = variable.Variable(B=B_,
+            value=[0.0943, 0.1761, np.inf])
+
+    varis['10'] = variable.Variable(B=B_,
+            value=[0.0707, 0.1997, np.inf])
+
+    for i in range(11, 15):
+        varis[str(i)] = variable.Variable(B=np.eye(2),
+            value=['No disruption', 'Disruption'])
+    #pdb.set_trace()
     C, varis = get_cmat(branches, info['arcs'], varis, False)
 
     expected = np.array([[3,2,2,3,3,3,3],

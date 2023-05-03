@@ -16,8 +16,8 @@ class Branch(object):
     isComplete=false # 0 unknown, 1 confirmed
     down_state # associated system state on the lower bound (if 0, unknown)
     up_state # associated system state on the upper bound (if 0, unknown)
-    down_val # (optional) a representative value of an associated state 
-    up_val # (optional) a representative value of an associated state 
+    down_val # (optional) a representative value of an associated state
+    up_val # (optional) a representative value of an associated state
     """
 
     def __init__(self, down, up, is_complete=False, down_state=1, up_state=1, down_val=None, up_val=None):
@@ -44,7 +44,7 @@ class Branch(object):
 
     def __repr__(self):
         return textwrap.dedent(f'''\
-{self.__class__.__name__}(down={self.down}, up={self.up}, is_complete={self.is_complete}''')
+{self.__class__.__name__}(down={self.down}, up={self.up}, is_complete={self.is_complete}, down_state={self.down_state}, up_state={self.up_state}, down_val={self.down_val}, up_val={self.up_val}''')
 
 
 def get_cmat(branches, comp_var_idx, varis, flag_comp_state_order=True):
@@ -94,7 +94,7 @@ def get_cmat(branches, comp_var_idx, varis, flag_comp_state_order=True):
 
             if up_state != down_state:
                 b1 = np.zeros((1, b.shape[1]))
-                b1[down_state - 1:up_state - 1] = 1
+                b1[int(down_state)-1:int(up_state)-1] = 1
 
                 _, loc = ismember(b1, b)
 
@@ -166,20 +166,23 @@ def run_bnb(sys_fn, next_comp_fn, next_state_fn, info, comp_max_states):
 
         else:
             # matlab vs python index or not
+            #FIXME
             cand_next_comp = [info['arcs'][i] for i, (x, y) in enumerate(zip(up, down)) if x > y]
+            #cand_next_comp = [i+1 for i, (x, y) in enumerate(zip(up, down)) if x > y]
 
             next_comp = next_comp_fn(cand_next_comp, down_res, up_res, info)
-
+            #FIXME
+            next_comp_idx = np.where(info['arcs']==next_comp)[0][0] + 1
             next_state = next_state_fn(next_comp,
-                                       [_branch.down[next_comp], _branch.up[next_comp]],
+                                       [_branch.down[next_comp_idx], _branch.up[next_comp_idx]],
                                        down_res,
                                        up_res,
                                        info)
             branch_down = copy.deepcopy(_branch)
-            branch_down.up[next_comp-1] = next_state
+            branch_down.up[next_comp_idx - 1] = next_state
 
             branch_up = copy.deepcopy(_branch)
-            branch_up.down[next_comp-1] = next_state + 1
+            branch_up.down[next_comp_idx - 1] = next_state + 1
 
             del branches[branch_id]
 

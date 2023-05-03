@@ -295,6 +295,7 @@ def main():
 
     return ODs_prob_delay, ODs_prob_disconn, arcs_prob_damage, cpms_arc, vars_arc
 
+
 def plot_figs(ODs_prob_delay, ODs_prob_disconn, arcs_prob_damage):
 
     # plot

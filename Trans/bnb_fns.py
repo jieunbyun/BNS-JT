@@ -47,10 +47,12 @@ def bnb_sys(comp_states, info):
     # Result
     if is_path_conn:
         is_path_conn = is_path_conn[0] # take the first
-        state = info['arcs'][path_sort_idx[is_path_conn]]
+        #FIXME
+        state = int(info['arcs'][path_sort_idx[is_path_conn]])
         val = path_time[is_path_conn]
         result['path'] = path[is_path_conn]
     else:
+        #FIXME
         state = len(path_time) + 1 # there is no path available
         val = np.inf
         result['path'] = []
