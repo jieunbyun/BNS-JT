@@ -193,9 +193,9 @@ def test_bnb_sys1():
     #pdb.set_trace()
     state, val, result = bnb_sys(comp_states, info)
 
-    assert state, 3
-    assert val, np.inf
-    assert result, {'path': []}
+    assert state== 3
+    assert val== np.inf
+    assert result== {'path': []}
 
 def test_bnb_sys2():
 
@@ -206,8 +206,8 @@ def test_bnb_sys2():
             }
     state, val, result = bnb_sys(comp_states, info)
 
-    assert state, 1
-    assert val, 0.0901
+    assert state== 1
+    assert val== 0.0901
     assert result=={'path': [2]}
 
 def test_bnb_sys3():

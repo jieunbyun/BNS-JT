@@ -173,6 +173,26 @@ def test_ismember2():
     assert result==[3, 2, 2, 2, False, False]
     assert lia==[True, True, True, True, False, False]
 
+def test_ismember2s():
+
+    A = ['5', '3', '4', '2']
+    B = ['2', '4', '4', '4', '6', '8']
+
+    # MATLAB: [0, 0, 2, 1] => [False, False, 1, 0]
+    lia, result = ismember(A, B)
+    assert result==[False, False, 1, 0]
+    assert lia==[False, False, True, True]
+
+    lia, result = ismember(B, A)
+    assert result==[3, 2, 2, 2, False, False]
+    assert lia==[True, True, True, True, False, False]
+
+    lia, result = ismember(A, B)
+    expected = [False, False, 1, 0]
+
+    assert result==expected
+    assert lia==[False, False, True, True]
+
 def test_ismember3():
 
     A = np.array([5, 3, 4, 2])
@@ -187,7 +207,10 @@ def test_ismember3():
 
 def test_ismember4():
     # row by row checking
-    A = np.array([np.ones(4), np.zeros(4)]).T
+    A = np.array([[1, 0],
+                  [1, 0],
+                  [1, 0],
+                  [1, 0]])
     B = np.array([[1, 0], [0, 1], [1, 1]])
 
     expected = [0, 0, 0, 0]

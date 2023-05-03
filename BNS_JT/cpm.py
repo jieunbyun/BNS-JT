@@ -2,6 +2,7 @@ import numpy as np
 import textwrap
 import copy
 import collections
+import warnings
 
 from BNS_JT.utils import all_equal
 
@@ -391,16 +392,16 @@ class Cpm(object):
                     except NameError:
                         sample_idx_prod = Mc.sample_idx
 
-            prod_vars = np.append(M.variables, get_value_given_condn(self.variables, flip(idx_vars)))
+            prod_vars = M.variables + get_value_given_condn(self.variables, flip(idx_vars))
 
-            new_child = np.append(self.variables[:self.no_child], M.variables[:M.no_child])
-            new_child = np.sort(new_child)
+            new_child = self.variables[:self.no_child] + M.variables[:M.no_child]
+            new_child = sorted(new_child)
 
-            new_parent = np.append(self.variables[self.no_child:], M.variables[M.no_child:])
+            new_parent = self.variables[self.no_child:] + M.variables[M.no_child:]
             new_parent, _ = setdiff(new_parent, new_child)
 
             if new_parent:
-                new_vars = np.concatenate((new_child, new_parent), axis=0)
+                new_vars = new_child + new_parent
             else:
                 new_vars = new_child
 
@@ -475,13 +476,20 @@ def ismember(A, B):
                 res.append(v[0])
             else:
                 res.append(False)
+
+    elif isinstance(A, list) and isinstance(B, list):
+
+        res  = [B.index(x) if x in B else False for x in A]
+
     else:
 
         if isinstance(B, np.ndarray) and (B.ndim > 1):
             assert len(A) == B.shape[1]
 
-        res  = [np.where(np.array(B) == x)[0].min()
-                if x in B else False for x in A]
+        with warnings.catch_warnings():
+            warnings.simplefilter(action='ignore', category=FutureWarning)
+            res  = [np.where(np.array(B)==x)[0].min()
+                 if x in B else False for x in A]
 
     lia = [False if x is False else True for x in res]
 

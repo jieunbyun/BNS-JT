@@ -1,45 +1,34 @@
-import unittest
-import importlib
 import numpy as np
+import pytest
 
 from BNS_JT.variable import Variable
 
 np.set_printoptions(precision=3)
 #pd.set_option.display_precision = 3
 
-class Test_Varaible(unittest.TestCase):
+def test_init():
+    B = np.array([[1, 0], [0, 1], [1, 1]])
+    value = ['survival', 'fail']
 
-    @classmethod
-    def setUpClass(cls):
+    var = {'B': B, 'value': value}
+    a = Variable(**var)
 
-        B = np.array([[1, 0], [0, 1], [1, 1]])
-        value = ['survival', 'fail']
+    assert isinstance(a, Variable)
+    np.testing.assert_array_equal(a.B, var['B'])
+    np.testing.assert_array_equal(a.value, var['value'])
 
-        cls.kwargs = {'B': B,
-                      'value': value,
-                      }
+def test_B1():
 
-    def test_init(self):
-        a = Variable(**self.kwargs)
+    f_B = [[1, 2], [0, 1], [1, 1]]
+    with pytest.raises(AssertionError):
+        _ = Variable(**{'B': f_B,
+                        'value': ['T', 'F']})
 
-        self.assertTrue(isinstance(a, Variable))
-        np.testing.assert_array_equal(a.B, self.kwargs['B'])
-        np.testing.assert_array_equal(a.value, self.kwargs['value'])
+def test_B2():
 
-    def test_B1(self):
+    f_B = [[1, 2]]
+    with pytest.raises(AssertionError):
+        _ = Variable(**{'B': f_B,
+                     'value': ['T', 'F']})
 
-        f_B = [[1, 2], [0, 1], [1, 1]]
-        with self.assertRaises(AssertionError):
-            _ = Variable(**{'B': f_B,
-                         'value': self.kwargs['value']})
-
-    def test_B2(self):
-
-        f_B = [[1, 2]]
-        with self.assertRaises(AssertionError):
-            _ = Variable(**{'B': f_B,
-                         'value': self.kwargs['value']})
-
-if __name__=='__main__':
-    unittest.main()
 

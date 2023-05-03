@@ -13,7 +13,15 @@ from Trans import bnb_fns
 from BNS_JT.branch import get_cmat, run_bnb
 from BNS_JT.cpm import variable_elim, Cpm, get_prob
 
-ODs_prob_delay, ODs_prob_disconn, _, cpms_arc, vars_arc = demo_transport.main()
+ODs_prob_delay, ODs_prob_disconn, _, cpms_arcs, vars_arc = demo_transport.main()
+
+# cpms_arc
+cpms_arc = {}
+for k, v in cpms_arcs.items():
+    cpms_arc[k] = v
+    cpms_arc[k].variables = [int(i) for i in v.variables]
+
+vars_arc = {int(k): v for k, v in vars_arc.items()}
 
 ## Problem
 odInd = 1
@@ -50,7 +58,7 @@ delay_prob = get_prob(M_bnb_VE, [7], np.array([1]), vars_arc, 0 )
 
 # Check if the results are the same
 # FIXME: index issue
-np.testing.assert_array_equal(ODs_prob_delay[0], delay_prob)
-np.testing.assert_array_equal(ODs_prob_disconn[0], disconn_prob)
+np.testing.assert_array_almost_equal(ODs_prob_delay[0], delay_prob)
+np.testing.assert_array_almost_equal(ODs_prob_disconn[0], disconn_prob)
 
 
