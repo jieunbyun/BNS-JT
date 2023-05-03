@@ -4,8 +4,9 @@ Created: 27 Mar 2023
 
 A small, hypothetical bridge system
 '''
-
+import pytest
 import numpy as np
+import copy
 import networkx as nx
 from scipy.stats import lognorm
 import matplotlib
@@ -68,8 +69,8 @@ arc_surv = 1
 arc_fail = 2
 arc_either = 3
 
-
-def main():
+@pytest.fixture(scope='package')
+def main_bridge():
 
     arc_lens_km = get_arcs_length(arcs, node_coords)
 
@@ -239,7 +240,6 @@ def main():
                                      cnd_vars=['11', '12', '13'],
                                      cnd_states=[2, 2, 1],
                                      var=vars_arc)
-
     Mcond_mult, vars_arc = cpm.prod_cpms(cpm_ve, vars_arc)
     Mcond_mult_sum = Mcond_mult.sum(var_OD + var_OD_obs)
 
@@ -260,6 +260,7 @@ def main():
     ## Repeat inferences again using new functions -- the results must be the same.
     # Probability of delay and disconnection
 
+
     M = list(cpms_arc.values())[:10]
     var_elim_order = [str(i) for i in range(1, 7)]
     M_VE2, vars_arc = cpm.variable_elim(M, var_elim_order, vars_arc)
@@ -279,6 +280,13 @@ def main():
         # Prob. of delay
         ODs_prob_delay2[j] = cpm.get_prob(M_VE2, [idx], np.array([[1]]), vars_arc, 0) # Any state greater than 1 means delay.
 
+    return ODs_prob_delay, ODs_prob_disconn, ODs_prob_delay2, ODs_prob_disconn2, arcs_prob_damage, cpms_arc, vars_arc
+
+
+def test_prob(main_bridge):
+
+    ODs_prob_delay, ODs_prob_disconn, ODs_prob_delay2, ODs_prob_disconn2, _, _, _ = main_bridge
+
     # Check if the results are the same
     try:
         np.testing.assert_array_equal(ODs_prob_disconn, ODs_prob_disconn2)
@@ -292,8 +300,6 @@ def main():
         print('Prob_delay')
         print(ODs_prob_delay)
         print(ODs_prob_delay2)
-
-    return ODs_prob_delay, ODs_prob_disconn, arcs_prob_damage, cpms_arc, vars_arc
 
 
 def plot_figs(ODs_prob_delay, ODs_prob_disconn, arcs_prob_damage):
@@ -336,5 +342,5 @@ def plot_figs(ODs_prob_delay, ODs_prob_disconn, arcs_prob_damage):
 
 
 if __name__=='__main__':
-    ODs_prob_delay, ODs_prob_disconn, arcs_prob_damage, cpms_arc, vars_arc = main()
+    ODs_prob_delay, ODs_prob_disconn, _, _, arcs_prob_damage, _, _ = main_bridge()
     plot_figs(ODs_prob_delay, ODs_prob_disconn, arcs_prob_damage)
