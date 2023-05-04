@@ -113,7 +113,7 @@ def main_bridge():
                               p = p)
 
         B = np.array([[1, 0], [0, 1], [1, 1]])
-        vars_arc[k] = variable.Variable(B=B, value=['Surv', 'Fail'])
+        vars_arc[k] = variable.Variable(B=B, values=['Surv', 'Fail'])
 
     # Travel times (systems): P(OD_j | X1, ... Xn) j = 1 ... nOD
     c7 = np.array([
@@ -166,16 +166,16 @@ def main_bridge():
 
     B_ = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
     vars_arc['7'] = variable.Variable(B=B_,
-            value=[0.0901, 0.2401, np.inf])
+            values=[0.0901, 0.2401, np.inf])
 
     vars_arc['8'] = variable.Variable(B=B_,
-            value=[0.0901, 0.2401, np.inf])
+            values=[0.0901, 0.2401, np.inf])
 
     vars_arc['9'] = variable.Variable(B=B_,
-            value=[0.0943, 0.1761, np.inf])
+            values=[0.0943, 0.1761, np.inf])
 
     vars_arc['10'] = variable.Variable(B=B_,
-            value=[0.0707, 0.1997, np.inf])
+            values=[0.0707, 0.1997, np.inf])
 
     ## Inference - by variable elimination (would not work for large-scale systems)
     # Probability of delay and disconnection
@@ -234,7 +234,7 @@ def main_bridge():
                                no_child=1,
                                C= np.array([[1, 1], [2, 2], [2, 3]]),
                                p= [1, 1, 1])
-        vars_arc[str(j)] = variable.Variable(B=np.eye(2, dtype=int), value=['No disruption', 'Disruption'])
+        vars_arc[str(j)] = variable.Variable(B=np.eye(2, dtype=int), values=['No disruption', 'Disruption'])
 
         var_OD_obs.append(str(j))
 
@@ -276,7 +276,7 @@ def main_bridge():
 
         # Prob. of disconnection
         # FIXME 2 -> 3?? 
-        disconn_state = np.where(vars_arc[idx].value == np.inf)[0] + 1
+        disconn_state = np.where(vars_arc[idx].values == np.inf)[0] + 1
         # the state of disconnection is assigned an arbitrarily large number 100
         ODs_prob_disconn2[j] = cpm.get_prob(M_VE2, [idx], disconn_state, vars_arc )
         # Prob. of delay

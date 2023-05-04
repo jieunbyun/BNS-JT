@@ -435,11 +435,11 @@ def setup_iscompatible():
     M[4] = Cpm(variables=[4, 1], no_child=1, C = np.array([[1, 1], [2, 1], [1, 2], [2, 2]]), p = np.array([0.99, 0.01, 0.9, 0.1]).T)
     M[5] = Cpm(variables=[5, 2, 3, 4], no_child=1, C = np.array([[2, 3, 3, 2], [1, 1, 3, 1], [1, 2, 1, 1], [2, 2, 2, 1]]), p = np.array([1, 1, 1, 1]).T)
 
-    vars_[1] = Variable(B=np.eye(2), value=['Mild', 'Severe'])
-    vars_[2] = Variable(B=np.array([[1, 0], [0, 1], [1, 1]]), value=['Survive', 'Fail'])
-    vars_[3] = Variable(B=np.array([[1, 0], [0, 1], [1, 1]]), value=['Survive', 'Fail'])
-    vars_[4] = Variable(B=np.array([[1, 0], [0, 1], [1, 1]]), value=['Survive', 'Fail'])
-    vars_[5] = Variable(B=np.array([[1, 0], [0, 1]]), value=['Survive', 'Fail'])
+    vars_[1] = Variable(B=np.eye(2), values=['Mild', 'Severe'])
+    vars_[2] = Variable(B=np.array([[1, 0], [0, 1], [1, 1]]), values=['Survive', 'Fail'])
+    vars_[3] = Variable(B=np.array([[1, 0], [0, 1], [1, 1]]), values=['Survive', 'Fail'])
+    vars_[4] = Variable(B=np.array([[1, 0], [0, 1], [1, 1]]), values=['Survive', 'Fail'])
+    vars_[5] = Variable(B=np.array([[1, 0], [0, 1]]), values=['Survive', 'Fail'])
 
     return M, vars_
 
@@ -702,11 +702,11 @@ def setup_product():
     M[3] = Cpm(variables=[3, 1], no_child=1, C = np.array([[1, 1], [2, 1], [1, 2], [2, 2]]), p = np.array([0.95, 0.05, 0.85, 0.15]).T)
     M[5] = Cpm(variables=[5, 2, 3, 4], no_child=1, C = np.array([[2, 3, 3, 2], [1, 1, 3, 1], [1, 2, 1, 1], [2, 2, 2, 1]]), p = np.array([1, 1, 1, 1]).T)
 
-    vars_[1] = Variable(B=np.eye(2), value=['Mild', 'Severe'])
-    vars_[2] = Variable(B=np.array([[1, 0], [0, 1], [1, 1]]), value=['Survive', 'Fail'])
-    vars_[3] = Variable(B=np.array([[1, 0], [0, 1], [1, 1]]), value=['Survive', 'Fail'])
-    vars_[4] = Variable(B=np.array([[1, 0], [0, 1], [1, 1]]), value=['Survive', 'Fail'])
-    vars_[5] = Variable(B=np.array([[1, 0], [0, 1]]), value=['Survive', 'Fail'])
+    vars_[1] = Variable(B=np.eye(2), values=['Mild', 'Severe'])
+    vars_[2] = Variable(B=np.array([[1, 0], [0, 1], [1, 1]]), values=['Survive', 'Fail'])
+    vars_[3] = Variable(B=np.array([[1, 0], [0, 1], [1, 1]]), values=['Survive', 'Fail'])
+    vars_[4] = Variable(B=np.array([[1, 0], [0, 1], [1, 1]]), values=['Survive', 'Fail'])
+    vars_[5] = Variable(B=np.array([[1, 0], [0, 1]]), values=['Survive', 'Fail'])
 
     return M, vars_
 
@@ -950,11 +950,11 @@ def setup_condition():
     p = np.array([[0.9405, 0.0095, 0.0495, 0.0005, 0.7650, 0.0850, 0.1350, 0.0150, 0.9405, 0.0095, 0.0495, 0.0005, 0.7650, 0.0850, 0.1350, 0.0150]]).T
 
     vars_ = {}
-    vars_[1] = Variable(B=np.eye(2), value=['Mild', 'Severe'])
-    vars_[2] = Variable(B=np.array([[1, 0], [0, 1], [1, 1]]), value=['Survive', 'Fail'])
-    vars_[3] = Variable(B=np.array([[1, 0], [0, 1], [1, 1]]), value=['Survive', 'Fail'])
-    vars_[4] = Variable(B=np.array([[1, 0], [0, 1], [1, 1]]), value=['Survive', 'Fail'])
-    vars_[5] = Variable(B=np.array([[1, 0], [0, 1]]), value=['Survive', 'Fail'])
+    vars_[1] = Variable(B=np.eye(2), values=['Mild', 'Severe'])
+    vars_[2] = Variable(B=np.array([[1, 0], [0, 1], [1, 1]]), values=['Survive', 'Fail'])
+    vars_[3] = Variable(B=np.array([[1, 0], [0, 1], [1, 1]]), values=['Survive', 'Fail'])
+    vars_[4] = Variable(B=np.array([[1, 0], [0, 1], [1, 1]]), values=['Survive', 'Fail'])
+    vars_[5] = Variable(B=np.array([[1, 0], [0, 1]]), values=['Survive', 'Fail'])
 
     Mx = Cpm(variables=[2, 3, 5, 1, 4], no_child=3, C = C, p = p)
 
@@ -1547,11 +1547,11 @@ def setup_mcs_product():
                    p = np.array([1, 1, 1, 1]).T)
 
     vars_ = {}
-    vars_[1] = Variable(B=np.eye(2), value=['Mild', 'Severe'])
-    vars_[2] = Variable(B=np.array([[1, 0], [0, 1], [1, 1]]), value=['Survive', 'Fail'])
-    vars_[3] = Variable(B=np.array([[1, 0], [0, 1], [1, 1]]), value=['Survive', 'Fail'])
-    vars_[4] = Variable(B=np.array([[1, 0], [0, 1], [1, 1]]), value=['Survive', 'Fail'])
-    vars_[5] = Variable(B=np.array([[1, 0], [0, 1]]), value=['Survive', 'Fail'])
+    vars_[1] = Variable(B=np.eye(2), values=['Mild', 'Severe'])
+    vars_[2] = Variable(B=np.array([[1, 0], [0, 1], [1, 1]]), values=['Survive', 'Fail'])
+    vars_[3] = Variable(B=np.array([[1, 0], [0, 1], [1, 1]]), values=['Survive', 'Fail'])
+    vars_[4] = Variable(B=np.array([[1, 0], [0, 1], [1, 1]]), values=['Survive', 'Fail'])
+    vars_[5] = Variable(B=np.array([[1, 0], [0, 1]]), values=['Survive', 'Fail'])
 
     return M, vars_
 
@@ -1803,9 +1803,9 @@ def setup_prod_cms():
                    C = np.array([[1, 1], [2, 1], [1, 2], [2, 2]]),
                    p = np.array([0.95, 0.05, 0.85, 0.15]).T)
     vars_ = {}
-    vars_[1] = Variable(B=np.eye(3), value=['Sunny', 'Cloudy', 'Rainy'])
-    vars_[2] = Variable(B=np.array([[1, 0], [0, 1]]), value=['Good', 'Bad'])
-    vars_[3] = Variable(B=np.array([[1, 0], [0, 1]]), value=['Below 0', 'Above 0'])
+    vars_[1] = Variable(B=np.eye(3), values=['Sunny', 'Cloudy', 'Rainy'])
+    vars_[2] = Variable(B=np.array([[1, 0], [0, 1]]), values=['Good', 'Bad'])
+    vars_[3] = Variable(B=np.array([[1, 0], [0, 1]]), values=['Below 0', 'Above 0'])
 
     return M, vars_
 

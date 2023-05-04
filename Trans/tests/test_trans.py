@@ -173,14 +173,14 @@ def test_B1():
     f_B = [[1, 2], [0, 1], [1, 1]]
     with self.assertRaises(AssertionError):
         _ = Variable(**{'B': f_B,
-                     'value': self.kwargs['value']})
+                     'values': self.kwargs['value']})
 
 def test_B2(self):
 
     f_B = [[1, 2]]
     with self.assertRaises(AssertionError):
         _ = Variable(**{'B': f_B,
-                     'value': self.kwargs['value']})
+                     'values': self.kwargs['value']})
 """
 
 def test_bnb_sys1():
@@ -424,24 +424,24 @@ def test_get_cmat():
     varis = {}
     B = np.array([[1, 0], [0, 1], [1, 1]])
     for k in range(1, 7):
-        varis[k] = variable.Variable(B=B, value=['Surv', 'Fail'])
+        varis[k] = variable.Variable(B=B, values=['Surv', 'Fail'])
 
     B_ = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
     varis[7] = variable.Variable(B=B_,
-            value=[0.0901, 0.2401, np.inf])
+            values=[0.0901, 0.2401, np.inf])
 
     varis[8] = variable.Variable(B=B_,
-            value=[0.0901, 0.2401, np.inf])
+            values=[0.0901, 0.2401, np.inf])
 
     varis[9] = variable.Variable(B=B_,
-            value=[0.0943, 0.1761, np.inf])
+            values=[0.0943, 0.1761, np.inf])
 
     varis[10] = variable.Variable(B=B_,
-            value=[0.0707, 0.1997, np.inf])
+            values=[0.0707, 0.1997, np.inf])
 
     for i in range(11, 15):
         varis[i] = variable.Variable(B=np.eye(2),
-            value=['No disruption', 'Disruption'])
+            values=['No disruption', 'Disruption'])
 
     C, varis = get_cmat(branches, info['arcs'], varis, False)
 
@@ -471,24 +471,24 @@ def test_get_cmat_s():
     varis = {}
     B = np.array([[1, 0], [0, 1], [1, 1]])
     for k in range(1, 7):
-        varis[str(k)] = variable.Variable(B=B, value=['Surv', 'Fail'])
+        varis[str(k)] = variable.Variable(B=B, values=['Surv', 'Fail'])
 
     B_ = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
     varis['7'] = variable.Variable(B=B_,
-            value=[0.0901, 0.2401, np.inf])
+            values=[0.0901, 0.2401, np.inf])
 
     varis['8'] = variable.Variable(B=B_,
-            value=[0.0901, 0.2401, np.inf])
+            values=[0.0901, 0.2401, np.inf])
 
     varis['9'] = variable.Variable(B=B_,
-            value=[0.0943, 0.1761, np.inf])
+            values=[0.0943, 0.1761, np.inf])
 
     varis['10'] = variable.Variable(B=B_,
-            value=[0.0707, 0.1997, np.inf])
+            values=[0.0707, 0.1997, np.inf])
 
     for i in range(11, 15):
         varis[str(i)] = variable.Variable(B=np.eye(2),
-            value=['No disruption', 'Disruption'])
+            values=['No disruption', 'Disruption'])
     #pdb.set_trace()
     C, varis = get_cmat(branches, info['arcs'], varis, False)
 

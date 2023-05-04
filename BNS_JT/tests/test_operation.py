@@ -33,10 +33,10 @@ def setup_bridge():
                       'C': C,
                       'p': p})
     vars_ = {}
-    vars_[1] = Variable(**{'B': B, 'value': value})
-    vars_[2] = Variable(**{'B': B, 'value': value})
-    vars_[3] = Variable(**{'B': B, 'value': value})
-    vars_[4] = Variable(**{'B': B, 'value': value})
+    vars_[1] = Variable(**{'B': B, 'values': value})
+    vars_[2] = Variable(**{'B': B, 'values': value})
+    vars_[3] = Variable(**{'B': B, 'values': value})
+    vars_[4] = Variable(**{'B': B, 'values': value})
 
     return cpms, vars_
 
