@@ -25,8 +25,6 @@ def test_bnb(main_bridge):
     vars_arc = {int(k): v for k, v in vars_arc.items()}
 
     ## Problem
-    #odInd = 1
-
     info = {'path': [[2], [3, 1]],
             'time': np.array([0.0901, 0.2401]),
             'arcs': np.array([1, 2, 3, 4, 5, 6])
@@ -34,6 +32,7 @@ def test_bnb(main_bridge):
 
     max_state = 2
     comp_max_states = (max_state*np.ones_like(info['arcs'])).tolist()
+
     branches = run_bnb(sys_fn=bnb_fns.bnb_sys,
                        next_comp_fn=bnb_fns.bnb_next_comp,
                        next_state_fn=bnb_fns.bnb_next_state,
@@ -49,7 +48,7 @@ def test_bnb(main_bridge):
 
     M_bnb = list(cpms_arc.values())[:10]
     M_bnb[od_var_id].C = C_od
-    M_bnb[od_var_id].p = np.ones(shape=(C_od.shape[0],1))
+    M_bnb[od_var_id].p = np.ones(shape=(C_od.shape[0], 1))
     M_bnb_VE, vars_arc = variable_elim(M_bnb, var_elim_order, vars_arc)
 
     # FIXME: index issue

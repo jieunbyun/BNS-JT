@@ -6,9 +6,9 @@ A small, hypothetical bridge system
 '''
 import pytest
 import numpy as np
-import copy
 import networkx as nx
 from scipy.stats import lognorm
+from pathlib import Path
 import matplotlib
 import pdb
 
@@ -17,6 +17,8 @@ import matplotlib.pyplot as plt
 
 from BNS_JT import cpm, variable
 from Trans.trans import get_arcs_length, get_all_paths_and_times
+
+HOME = Path(__file__).absolute().parent
 
 ## Data
 # Network
@@ -95,7 +97,7 @@ def main_bridge():
     ax = fig.add_subplot()
     nx.draw(G, pos, with_labels=True, ax=ax)
     nx.draw_networkx_edge_labels(G, pos, edge_labels=edge_labels, ax=ax)
-    fig.savefig("graph.png", dpi=200)
+    fig.savefig(HOME.joinpath('graph.png'), dpi=200)
 
     # Arcs (components): P(X_i | GM = GM_ob ), i = 1 .. N (= nArc)
     cpms_arc = {}
@@ -280,6 +282,8 @@ def main_bridge():
         # Prob. of delay
         ODs_prob_delay2[j] = cpm.get_prob(M_VE2, [idx], np.array([[1]]), vars_arc, 0) # Any state greater than 1 means delay.
 
+    plot_figs(ODs_prob_delay, ODs_prob_disconn, arcs_prob_damage)
+
     return ODs_prob_delay, ODs_prob_disconn, ODs_prob_delay2, ODs_prob_disconn2, arcs_prob_damage, cpms_arc, vars_arc
 
 
@@ -324,7 +328,7 @@ def plot_figs(ODs_prob_delay, ODs_prob_disconn, arcs_prob_damage):
 
     # Create legend & Show graphic
     plt.legend()
-    plt.savefig('./figure1s.png', dpi=200)
+    plt.savefig(HOME.joinpath('figure1s.png'), dpi=200)
     plt.close()
 
     plt.figure()
@@ -337,10 +341,7 @@ def plot_figs(ODs_prob_delay, ODs_prob_disconn, arcs_prob_damage):
     plt.xlabel( 'Arc' )
     plt.ylabel( 'Probability' )
     plt.legend()
-    plt.savefig('./figure2s.png', dpi=200)
+    plt.savefig(HOME.joinpath('figure2s.png'), dpi=200)
     plt.close()
 
 
-if __name__=='__main__':
-    ODs_prob_delay, ODs_prob_disconn, _, _, arcs_prob_damage, _, _ = main_bridge()
-    plot_figs(ODs_prob_delay, ODs_prob_disconn, arcs_prob_damage)

@@ -35,7 +35,6 @@ def test_bnbs(main_bridge):
 
     ## Problem
     #odInd = 1
-
     info = {'path': [['2'], ['3', '1']],
             'time': np.array([0.0901, 0.2401]),
             'arcs': np.array(['1', '2', '3', '4', '5', '6'])
@@ -59,7 +58,7 @@ def test_bnbs(main_bridge):
 
     M_bnb = list(cpms_arc.values())[:10]
     M_bnb[od_var_id].C = C_od
-    M_bnb[od_var_id].p = np.ones(shape=(C_od.shape[0],1))
+    M_bnb[od_var_id].p = np.ones(shape=(C_od.shape[0], 1))
     M_bnb_VE, vars_arc = variable_elim(M_bnb, var_elim_order, vars_arc)
 
     # FIXME: index issue
