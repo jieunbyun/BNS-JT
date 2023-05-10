@@ -283,7 +283,7 @@ def main_bridge():
 
         # Prob. of disconnection
         # FIXME 2 -> 3?? 
-        disconn_state = np.where(vars_arc[idx].values == np.inf)[0] + 1
+        disconn_state = vars_arc[idx].values.index(np.inf) + 1
         # the state of disconnection is assigned an arbitrarily large number 100
         ODs_prob_disconn2[j] = cpm.get_prob(M_VE2, [vars_arc[idx]], np.array([[3]]))
         # Prob. of delay
