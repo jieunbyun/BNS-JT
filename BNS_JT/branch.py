@@ -4,7 +4,7 @@ import copy
 
 
 from BNS_JT.cpm import ismember
-
+from BNS_JT.variable import Variable
 
 class Branch(object):
     """
@@ -86,27 +86,27 @@ def get_cmat(branches, comp_var, flag=True):
             no_state = b.shape[1]
 
             if flag:
-                down_state = down
-                up_state = up
+                down_state = down - 1
+                up_state = up - 1
             else:
-                down_state = no_state + 1 - up
-                up_state = no_state + 1 - down
+                down_state = no_state - up
+                up_state = no_state - down
 
             if up_state != down_state:
                 b1 = np.zeros((1, b.shape[1]))
-                b1[int(down_state)-1:int(up_state)-1] = 1
+                b1[int(down_state):int(up_state)] = 1
 
                 _, loc = ismember(b1, b)
 
                 if any(loc):
                     # conversion to python index
-                    c[j + 1] = loc[0] + 1
+                    c[j + 1] = loc[0]
                 else:
-                    print(f'B of {comp_var_idx[j].name} is updated')
+                    print(f'B of {comp_var[j].name} is updated')
                     b = np.vstack((b, b1))
-                    comp_var_idx[j] = Variable(name= comp_var_idx[j].name,
-                                               B=b,
-                                               variables=compvar_idx[j].variables)
+                    comp_var[j] = Variable(name= comp_var[j].name,
+                                           B=b,
+                                           values=comp_var[j].values)
                     c[j + 1] = b.shape[1]
             else:
                 c[j + 1] = up_state
@@ -174,17 +174,17 @@ def run_bnb(sys_fn, next_comp_fn, next_state_fn, info, comp_max_states):
 
             next_comp = next_comp_fn(cand_next_comp, down_res, up_res, info)
             #FIXME
-            next_comp_idx = np.where(info['arcs']==next_comp)[0][0] + 1
+            next_comp_idx = info['arcs'].index(next_comp)
             next_state = next_state_fn(next_comp,
                                        [_branch.down[next_comp_idx], _branch.up[next_comp_idx]],
                                        down_res,
                                        up_res,
                                        info)
             branch_down = copy.deepcopy(_branch)
-            branch_down.up[next_comp_idx - 1] = next_state
+            branch_down.up[next_comp_idx] = next_state
 
             branch_up = copy.deepcopy(_branch)
-            branch_up.down[next_comp_idx - 1] = next_state + 1
+            branch_up.down[next_comp_idx] = next_state + 1
 
             del branches[branch_id]
 

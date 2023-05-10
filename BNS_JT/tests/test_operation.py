@@ -30,7 +30,7 @@ def setup_bridge():
 
     variables = [x4, x1, x2, x3]
     no_child = 1
-    C = np.array([[2, 3, 3, 2], [1, 1, 3, 1], [1, 2, 1, 1], [2, 2, 2, 1]])
+    C = np.array([[2, 3, 3, 2], [1, 1, 3, 1], [1, 2, 1, 1], [2, 2, 2, 1]]) - 1
     p = [1, 1, 1, 1]
 
     cpms = Cpm(**{'variables': variables,

@@ -53,6 +53,8 @@ class Cpm(object):
             C.shape = (len(C), 1)
         else:
             assert C.shape[1] == len(self.variables), 'C must have the same number of columns with that of variables'
+        assert all(np.max(C, initial=0) <= [x.B.shape[1] for x in self.variables]), 'check C matrix'
+
         self.C = C
 
         if isinstance(p, list):
@@ -209,8 +211,8 @@ class Cpm(object):
             except NameError:
                 B = np.eye(np.max(C[:, i]))
 
-            x1 = [B[int(k) - 1, :] for k in C[is_cmp, i]]
-            x2 = B[state - 1,: ]
+            x1 = [B[int(k), :] for k in C[is_cmp, i]]
+            x2 = B[state,: ]
             check = (np.sum(x1 * x2, axis=1) >0)
 
             is_cmp[np.where(is_cmp > 0)[0][:len(check)]] = check
@@ -557,9 +559,9 @@ def iscompatible(C, variables, check_vars, check_states):
         except NameError:
             print(f'{variable} is not defined')
         else:
-            x1 = [B[int(k) - 1, :] for k in C[is_cmp, i]]
+            x1 = [B[int(k), :] for k in C[is_cmp, i]]
             try:
-                x2 = B[state - 1, :]
+                x2 = B[state, :]
             except IndexError:
                 print('IndexError: {state}')
             check = (np.sum(x1 * x2, axis=1) > 0)
@@ -636,13 +638,13 @@ def condition(M, cnd_vars, cnd_states, sample_idx=[]):
                 print(f'{cnd_var} is not defined')
             else:
                 if B.any():
-                    C1 = (C[:, idx].copy() - 1).astype(int)
-                    check = B[C1, :] * B[state - 1,:]
+                    C1 = C[:, idx].copy().astype(int)
+                    check = B[C1, :] * B[state, :]
                     #B = add_new_states(check, B)
                     cnd_var = Variable(name=cnd_var.name,
                                        B=add_new_states(check, B),
                                        values=cnd_var.values)
-                    Ccond[:, idx] = [x + 1 for x in ismember(check, B)[1]]
+                    Ccond[:, idx] = [x for x in ismember(check, B)[1]]
 
         Mx.C = Ccond.copy()
 

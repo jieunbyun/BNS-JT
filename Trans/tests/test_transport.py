@@ -110,7 +110,7 @@ def main_bridge():
 
         _type = arcs_type[k]
         prob = lognorm.cdf(GM_obs[k], frag[_type]['std'], scale=frag[_type]['med'])
-        C = np.array([[arc_surv, arc_fail]]).T
+        C = np.array([[arc_surv, arc_fail]]).T - 1
         p = np.array([1-prob, prob])
         cpms_arc[k] = cpm.Cpm(variables = [vars_arc[k]],
                               no_child = 1,
@@ -135,25 +135,25 @@ def main_bridge():
     [1,3,1,3,3,3,3],
     [2,1,2,1,3,3,3],
     [3,1,2,2,3,3,3],
-    [3,2,2,3,3,3,3]])
+    [3,2,2,3,3,3,3]]) - 1
 
     c8 = np.array([
     [1,3,3,1,3,3,3],
     [2,1,1,2,3,3,3],
     [3,1,2,2,3,3,3],
-    [3,2,3,2,3,3,3]])
+    [3,2,3,2,3,3,3]]) - 1
 
     c9 = np.array([
     [1,3,3,3,3,1,3],
     [2,3,3,3,1,2,1],
     [3,3,3,3,1,2,2],
-    [3,3,3,3,2,2,3]])
+    [3,3,3,3,2,2,3]]) - 1
 
     c10 = np.array([
     [1,3,3,3,3,3,1],
     [2,3,3,3,1,1,2],
     [3,3,3,3,1,2,2],
-    [3,3,3,3,2,3,2]])
+    [3,3,3,3,2,3,2]]) - 1
 
     _variables = [vars_arc[k] for k in ['7', '1', '2', '3', '4', '5', '6']]
     cpms_arc['7'] = cpm.Cpm(variables= _variables,
@@ -212,7 +212,7 @@ def main_bridge():
     for j, idx in enumerate(var_OD):
 
         # Prob. of disconnection
-        disconn_state = vars_arc[idx].B.shape[0]
+        disconn_state = vars_arc[idx].B.shape[0] - 1
         [cpm_ve] = cpm.condition(cpms_arc_cp,
                                cnd_vars=[vars_arc[idx]],
                                cnd_states=[disconn_state])
@@ -220,7 +220,7 @@ def main_bridge():
 
         # Prob. of delay
         var_loc = cpms_arc_cp[0].variables.index(vars_arc[idx])
-        rows_to_keep = np.where(cpms_arc_cp[0].C[:, var_loc] > 1)[0]
+        rows_to_keep = np.where(cpms_arc_cp[0].C[:, var_loc] > 0)[0]
         cpm_ve = cpms_arc_cp[0].get_subset(rows_to_keep)
         ODs_prob_delay[j] = cpm_ve.p.sum(axis=0)
 
@@ -244,13 +244,13 @@ def main_bridge():
         _variables = [vars_arc[k] for k in [str(j), idx]]
         cpms_arc[str(j)]= cpm.Cpm(variables=_variables,
                                no_child=1,
-                               C= np.array([[1, 1], [2, 2], [2, 3]]),
+                               C= np.array([[1, 1], [2, 2], [2, 3]]) - 1,
                                p= [1, 1, 1])
         var_OD_obs.append(str(j))
 
     cpm_ve = cpm.condition(cpms_arc,
                                      cnd_vars=[vars_arc[k] for k in ['11', '12', '13']],
-                                     cnd_states=[2, 2, 1])
+                                     cnd_states=[1, 1, 0])
     Mcond_mult = cpm.prod_cpms(cpm_ve)
     Mcond_mult_sum = Mcond_mult.sum([vars_arc[k] for k in var_OD + var_OD_obs])
 
@@ -261,7 +261,7 @@ def main_bridge():
         iM = Mcond_mult_sum.sum([vars_arc[i]], 0)
         [iM_fail] = cpm.condition(iM,
                                cnd_vars=[vars_arc[i]],
-                               cnd_states=[arc_fail],
+                               cnd_states=[arc_fail - 1],
                                )
         fail_prob = iM_fail.p / iM.p.sum(axis=0)
         if fail_prob.any():
@@ -285,9 +285,9 @@ def main_bridge():
         # FIXME 2 -> 3?? 
         disconn_state = vars_arc[idx].values.index(np.inf) + 1
         # the state of disconnection is assigned an arbitrarily large number 100
-        ODs_prob_disconn2[j] = cpm.get_prob(M_VE2, [vars_arc[idx]], np.array([[3]]))
+        ODs_prob_disconn2[j] = cpm.get_prob(M_VE2, [vars_arc[idx]], np.array([[3-1]]))
         # Prob. of delay
-        ODs_prob_delay2[j] = cpm.get_prob(M_VE2, [vars_arc[idx]], np.array([[1]]), flag=False) # Any state greater than 1 means delay.
+        ODs_prob_delay2[j] = cpm.get_prob(M_VE2, [vars_arc[idx]], np.array([[1-1]]), flag=False) # Any state greater than 1 means delay.
 
     plot_figs(ODs_prob_delay, ODs_prob_disconn, arcs_prob_damage)
 
@@ -298,19 +298,15 @@ def test_prob(main_bridge):
 
     ODs_prob_delay, ODs_prob_disconn, ODs_prob_delay2, ODs_prob_disconn2, _, _, _ = main_bridge
 
+    expected_disconn = np.array([0.0096, 0.0011, 0.2102, 0.2102])
+    expected_delay = np.array([0.0583, 0.0052, 0.4795, 0.4382])
+
     # Check if the results are the same
-    try:
-        np.testing.assert_array_equal(ODs_prob_disconn, ODs_prob_disconn2)
-    except AssertionError:
-        print('Prob_disconn')
-        print(ODs_prob_disconn)
-        print(ODs_prob_disconn2)
-    try:
-        np.testing.assert_array_equal(ODs_prob_delay, ODs_prob_delay2)
-    except AssertionError:
-        print('Prob_delay')
-        print(ODs_prob_delay)
-        print(ODs_prob_delay2)
+    np.testing.assert_array_almost_equal(ODs_prob_disconn, expected_disconn, decimal=4)
+    np.testing.assert_array_almost_equal(ODs_prob_disconn2, expected_disconn, decimal=4)
+    np.testing.assert_array_almost_equal(ODs_prob_delay, expected_delay, decimal=4)
+    np.testing.assert_array_almost_equal(ODs_prob_delay2, expected_delay, decimal=4)
+
 
 
 def plot_figs(ODs_prob_delay, ODs_prob_disconn, arcs_prob_damage):

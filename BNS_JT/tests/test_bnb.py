@@ -7,6 +7,7 @@ Generalise Branch-and-Bound (BnB) operation to build CPMs
 import numpy as np
 import pdb
 import warnings
+import pytest
 
 from Trans import bnb_fns
 from BNS_JT.branch import get_cmat, run_bnb
@@ -28,7 +29,8 @@ def test_bnb(main_bridge):
     ## Problem
     info = {'path': [[2], [3, 1]],
             'time': np.array([0.0901, 0.2401]),
-            'arcs': np.array([1, 2, 3, 4, 5, 6])
+            'arcs': [1, 2, 3, 4, 5, 6],
+            'max_state': 2
             }
 
     max_state = 2
@@ -53,13 +55,13 @@ def test_bnb(main_bridge):
     M_bnb_VE= variable_elim(M_bnb, var_elim_order)
 
     # FIXME: index issue
-    disconn_state = 3 # max basic state
+    disconn_state = 3-1 # max basic state
     disconn_prob = get_prob(M_bnb_VE, [vars_arc[7]], np.array([disconn_state]))
-    delay_prob = get_prob(M_bnb_VE, [vars_arc[7]], np.array([1]), 0)
+    delay_prob = get_prob(M_bnb_VE, [vars_arc[7]], np.array([1-1]), 0)
 
     # Check if the results are the same
     # FIXME: index issue
-    np.testing.assert_array_almost_equal(ODs_prob_delay[0], delay_prob)
     np.testing.assert_array_almost_equal(ODs_prob_disconn[0], disconn_prob)
+    np.testing.assert_array_almost_equal(ODs_prob_delay[0], delay_prob)
 
 

@@ -9,6 +9,7 @@ import networkx as nx
 import pdb
 from scipy.stats import lognorm
 import matplotlib
+import pytest
 
 matplotlib.use("TKAgg")
 import matplotlib.pyplot as plt
@@ -33,12 +34,12 @@ def test_bnbs(main_bridge):
         cpms_arc[str(k)] = v
         #cpms_arc[str(k)].variables = [str(i) for i in v.variables]
 
-
     ## Problem
     #odInd = 1
     info = {'path': [['2'], ['3', '1']],
             'time': np.array([0.0901, 0.2401]),
-            'arcs': np.array(['1', '2', '3', '4', '5', '6'])
+            'arcs': np.array(['1', '2', '3', '4', '5', '6']),
+            'max_state': 2
             }
 
     max_state = 2
@@ -64,9 +65,9 @@ def test_bnbs(main_bridge):
     M_bnb_VE = variable_elim(M_bnb, var_elim_order)
 
     # FIXME: index issue
-    disconn_state = 3 # max basic state
+    disconn_state = 3-1 # max basic state
     disconn_prob = get_prob(M_bnb_VE, [vars_arc['7']], np.array([disconn_state]))
-    delay_prob = get_prob(M_bnb_VE, [vars_arc['7']], np.array([1]), 0 )
+    delay_prob = get_prob(M_bnb_VE, [vars_arc['7']], np.array([1-1]), 0 )
 
     # Check if the results are the same
     # FIXME: index issue
