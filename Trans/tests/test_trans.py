@@ -406,7 +406,7 @@ def test_run_bnbs():
     assert branches[4].up_val, 0.2401
 
 
-def test_get_cmat():
+def test_get_cmat1():
 
     info = {'path': [[2], [3, 1]],
             'time': np.array([0.0901, 0.2401]),
@@ -424,26 +424,26 @@ def test_get_cmat():
     varis = {}
     B = np.array([[1, 0], [0, 1], [1, 1]])
     for k in range(1, 7):
-        varis[k] = variable.Variable(B=B, values=['Surv', 'Fail'])
+        varis[k] = variable.Variable(name=str(k), B=B, values=['Surv', 'Fail'])
 
     B_ = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
-    varis[7] = variable.Variable(B=B_,
+    varis[7] = variable.Variable(name='7', B=B_,
             values=[0.0901, 0.2401, np.inf])
 
-    varis[8] = variable.Variable(B=B_,
+    varis[8] = variable.Variable(name='8', B=B_,
             values=[0.0901, 0.2401, np.inf])
 
-    varis[9] = variable.Variable(B=B_,
+    varis[9] = variable.Variable(name='9', B=B_,
             values=[0.0943, 0.1761, np.inf])
 
-    varis[10] = variable.Variable(B=B_,
+    varis[10] = variable.Variable(name='10', B=B_,
             values=[0.0707, 0.1997, np.inf])
 
     for i in range(11, 15):
-        varis[i] = variable.Variable(B=np.eye(2),
+        varis[i] = variable.Variable(name=str(i), B=np.eye(2),
             values=['No disruption', 'Disruption'])
 
-    C, varis = get_cmat(branches, info['arcs'], varis, False)
+    C = get_cmat(branches, [varis[i] for i in info['arcs']], False)
 
     expected = np.array([[3,2,2,3,3,3,3],
                          [1,2,1,3,3,3,3],
@@ -453,7 +453,57 @@ def test_get_cmat():
 
     np.testing.assert_array_equal(C, expected)
 
-def test_get_cmat_s():
+
+def test_get_cmat2():
+    #FIXME: test get_cmat with True flag
+
+    info = {'path': [[2], [3, 1]],
+            'time': np.array([0.0901, 0.2401]),
+            'arcs': np.array([1, 2, 3, 4, 5, 6])
+            }
+    max_state = 2
+    comp_max_states = (max_state*np.ones_like(info['arcs'])).tolist()
+
+    branches = run_bnb(sys_fn=bnb_sys,
+                       next_comp_fn=bnb_next_comp,
+                       next_state_fn=bnb_next_state,
+                       info=info,
+                       comp_max_states=comp_max_states)
+
+    varis = {}
+    B = np.array([[1, 0], [0, 1], [1, 1]])
+    for k in range(1, 7):
+        varis[k] = variable.Variable(name=str(k), B=B, values=['Surv', 'Fail'])
+
+    B_ = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
+    varis[7] = variable.Variable(name='7', B=B_,
+            values=[0.0901, 0.2401, np.inf])
+
+    varis[8] = variable.Variable(name='8', B=B_,
+            values=[0.0901, 0.2401, np.inf])
+
+    varis[9] = variable.Variable(name='9', B=B_,
+            values=[0.0943, 0.1761, np.inf])
+
+    varis[10] = variable.Variable(name='10', B=B_,
+            values=[0.0707, 0.1997, np.inf])
+
+    for i in range(11, 15):
+        varis[i] = variable.Variable(name=str(i), B=np.eye(2),
+            values=['No disruption', 'Disruption'])
+
+    C = get_cmat(branches, [varis[i] for i in info['arcs']], True)
+
+    expected = np.array([[3,1,1,3,3,3,3],
+                         [1,1,2,3,3,3,3],
+                         [1,2,2,3,3,3,3],
+                         [3,2,1,1,3,3,3],
+                         [2,2,1,2,3,3,3]])
+
+    np.testing.assert_array_equal(C, expected)
+
+
+def test_get_cmat1s():
 
     info = {'path': [['2'], ['3', '1']],
             'time': np.array([0.0901, 0.2401]),
@@ -471,26 +521,26 @@ def test_get_cmat_s():
     varis = {}
     B = np.array([[1, 0], [0, 1], [1, 1]])
     for k in range(1, 7):
-        varis[str(k)] = variable.Variable(B=B, values=['Surv', 'Fail'])
+        varis[str(k)] = variable.Variable(name=str(k), B=B, values=['Surv', 'Fail'])
 
     B_ = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
-    varis['7'] = variable.Variable(B=B_,
+    varis['7'] = variable.Variable(name='7', B=B_,
             values=[0.0901, 0.2401, np.inf])
 
-    varis['8'] = variable.Variable(B=B_,
+    varis['8'] = variable.Variable(name='8', B=B_,
             values=[0.0901, 0.2401, np.inf])
 
-    varis['9'] = variable.Variable(B=B_,
+    varis['9'] = variable.Variable(name='9', B=B_,
             values=[0.0943, 0.1761, np.inf])
 
-    varis['10'] = variable.Variable(B=B_,
+    varis['10'] = variable.Variable(name='10', B=B_,
             values=[0.0707, 0.1997, np.inf])
 
     for i in range(11, 15):
-        varis[str(i)] = variable.Variable(B=np.eye(2),
+        varis[str(i)] = variable.Variable(name=str(i), B=np.eye(2),
             values=['No disruption', 'Disruption'])
     #pdb.set_trace()
-    C, varis = get_cmat(branches, info['arcs'], varis, False)
+    C= get_cmat(branches, [varis[i] for i in info['arcs']], False)
 
     expected = np.array([[3,2,2,3,3,3,3],
                          [1,2,1,3,3,3,3],

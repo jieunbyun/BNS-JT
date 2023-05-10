@@ -47,25 +47,25 @@ class Branch(object):
 {self.__class__.__name__}(down={self.down}, up={self.up}, is_complete={self.is_complete}, down_state={self.down_state}, up_state={self.up_state}, down_val={self.down_val}, up_val={self.up_val}''')
 
 
-def get_cmat(branches, comp_var_idx, varis, flag_comp_state_order=True):
+def get_cmat(branches, comp_var, flag=True):
     """
     Parameters
     ----------
     branches:
-    comp_var_idx:
+    comp_var:
     varis:
-    flag_comp_state_order: 1 (default) if bnb and mbn have the same component states, 0 if bnb has a reverse ordering of components being better and worse
+    flag: 1 (default) if bnb and mbn have the same component states, 0 if bnb has a reverse ordering of components being better and worse
 
     """
     assert isinstance(branches, list), 'branches must be a list'
-    assert isinstance(comp_var_idx, (list, np.ndarray)), 'comp_var_idx must be a list-like'
-    assert isinstance(varis, dict), 'varis must be a dict'
-    assert isinstance(flag_comp_state_order, bool), 'flag_comp_state_order should be either 0 or 1'
-    assert set(comp_var_idx).difference(varis.keys()) == set(), 'varis should contain index of comp_var_idx: {comp_var_idx}'
+    assert isinstance(comp_var, (list, np.ndarray)), 'comp_var must be a list-like'
+    #assert isinstance(varis, dict), 'varis must be a dict'
+    assert isinstance(flag, bool), 'flag should be either 0 or 1'
+    #assert set(comp_var).difference(varis.keys()) == set(), 'varis should contain index of comp_var: {comp_var}'
 
     complete_brs = [x for x in branches if x.is_complete]
 
-    #FIXME: no_comp = len(comp_var_idx) instead?
+    #FIXME: no_comp = len(comp_var) instead?
     no_comp = len(complete_brs[0].down)
 
     C = np.zeros((len(complete_brs), no_comp + 1))
@@ -82,10 +82,10 @@ def get_cmat(branches, comp_var_idx, varis, flag_comp_state_order=True):
             down = br.down[j]
             up = br.up[j]
 
-            b = varis[comp_var_idx[j]].B
+            b = comp_var[j].B
             no_state = b.shape[1]
 
-            if flag_comp_state_order:
+            if flag:
                 down_state = down
                 up_state = up
             else:
@@ -102,16 +102,18 @@ def get_cmat(branches, comp_var_idx, varis, flag_comp_state_order=True):
                     # conversion to python index
                     c[j + 1] = loc[0] + 1
                 else:
-                    #print(f'B of varis[{comp_var_idx[j]}] is updated')
+                    print(f'B of {comp_var_idx[j].name} is updated')
                     b = np.vstack((b, b1))
-                    varis[comp_var_idx[j]].B = b
+                    comp_var_idx[j] = Variable(name= comp_var_idx[j].name,
+                                               B=b,
+                                               variables=compvar_idx[j].variables)
                     c[j + 1] = b.shape[1]
             else:
                 c[j + 1] = up_state
 
         C[irow, :] = c
 
-    return C, varis
+    return C
 
 
 def get_idx(x, flag=False):

@@ -21,33 +21,31 @@ def setup_bridge():
          -x2-
 
     '''
-    variables = [4, 1, 2, 3]
+    B = [[1, 0], [0, 1], [1, 1]]
+    values = ['survival', 'fail']
+    x1= Variable(**{'name': 'x1', 'B': B, 'values': values})
+    x2= Variable(**{'name': 'x2', 'B': B, 'values': values})
+    x3= Variable(**{'name': 'x3', 'B': B, 'values': values})
+    x4= Variable(**{'name': 'x4', 'B': B, 'values': values})
+
+    variables = [x4, x1, x2, x3]
     no_child = 1
     C = np.array([[2, 3, 3, 2], [1, 1, 3, 1], [1, 2, 1, 1], [2, 2, 2, 1]])
     p = [1, 1, 1, 1]
-    B = [[1, 0], [0, 1], [1, 1]]
-    value = ['survival', 'fail']
 
     cpms = Cpm(**{'variables': variables,
-                      'no_child': no_child,
-                      'C': C,
-                      'p': p})
+                  'no_child': no_child,
+                  'C': C,
+                  'p': p})
     vars_ = {}
-    vars_[1] = Variable(**{'B': B, 'values': value})
-    vars_[2] = Variable(**{'B': B, 'values': value})
-    vars_[3] = Variable(**{'B': B, 'values': value})
-    vars_[4] = Variable(**{'B': B, 'values': value})
-
     return cpms, vars_
 
 def test_init(setup_bridge):
 
     cpms, vars_ = setup_bridge
     assert isinstance(cpms, Cpm)
-    assert isinstance(vars_[1], Variable)
-    assert isinstance(vars_[2], Variable)
-    assert isinstance(vars_[3], Variable)
-    assert isinstance(vars_[4], Variable)
+    for x in cpms.variables:
+        assert isinstance(x, Variable)
 
 
 def test_read_nodes():

@@ -102,20 +102,35 @@ def main_bridge():
     # Arcs (components): P(X_i | GM = GM_ob ), i = 1 .. N (= nArc)
     cpms_arc = {}
     vars_arc = {}
+
+    B = np.array([[1, 0], [0, 1], [1, 1]])
+
     for k in arcs.keys():
+        vars_arc[k] = variable.Variable(name=str(k), B=B, values=['Surv', 'Fail'])
+
         _type = arcs_type[k]
         prob = lognorm.cdf(GM_obs[k], frag[_type]['std'], scale=frag[_type]['med'])
         C = np.array([[arc_surv, arc_fail]]).T
         p = np.array([1-prob, prob])
-        cpms_arc[k] = cpm.Cpm(variables = [k],
+        cpms_arc[k] = cpm.Cpm(variables = [vars_arc[k]],
                               no_child = 1,
                               C = C,
                               p = p)
 
-        B = np.array([[1, 0], [0, 1], [1, 1]])
-        vars_arc[k] = variable.Variable(B=B, values=['Surv', 'Fail'])
-
     # Travel times (systems): P(OD_j | X1, ... Xn) j = 1 ... nOD
+    B_ = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
+    vars_arc['7'] = variable.Variable(name='7', B=B_,
+            values=[0.0901, 0.2401, np.inf])
+
+    vars_arc['8'] = variable.Variable(name='8', B=B_,
+            values=[0.0901, 0.2401, np.inf])
+
+    vars_arc['9'] = variable.Variable(name='9', B=B_,
+            values=[0.0943, 0.1761, np.inf])
+
+    vars_arc['10'] = variable.Variable(name='10', B=B_,
+            values=[0.0707, 0.1997, np.inf])
+
     c7 = np.array([
     [1,3,1,3,3,3,3],
     [2,1,2,1,3,3,3],
@@ -140,42 +155,33 @@ def main_bridge():
     [3,3,3,3,1,2,2],
     [3,3,3,3,2,3,2]])
 
-    cpms_arc['7'] = cpm.Cpm(variables= ['7', '1', '2', '3', '4', '5', '6'],
+    _variables = [vars_arc[k] for k in ['7', '1', '2', '3', '4', '5', '6']]
+    cpms_arc['7'] = cpm.Cpm(variables= _variables,
                            no_child = 1,
                            C = c7,
                            p = [1, 1, 1, 1],
                            )
 
-    cpms_arc['8'] = cpm.Cpm(variables= ['8', '1', '2', '3', '4', '5', '6'],
+    _variables = [vars_arc[k] for k in ['8', '1', '2', '3', '4', '5', '6']]
+    cpms_arc['8'] = cpm.Cpm(variables= _variables,
                            no_child = 1,
                            C = c8,
                            p = [1, 1, 1, 1],
                            )
 
-    cpms_arc['9'] = cpm.Cpm(variables= ['9', '1', '2', '3', '4', '5', '6'],
+    _variables = [vars_arc[k] for k in ['9', '1', '2', '3', '4', '5', '6']]
+    cpms_arc['9'] = cpm.Cpm(variables= _variables,
                            no_child = 1,
                            C = c9,
                            p = [1, 1, 1, 1],
                            )
 
-    cpms_arc['10'] = cpm.Cpm(variables= ['10', '1', '2', '3', '4', '5', '6'],
+    _variables = [vars_arc[k] for k in ['10', '1', '2', '3', '4', '5', '6']]
+    cpms_arc['10'] = cpm.Cpm(variables= _variables,
                            no_child = 1,
                            C = c10,
                            p = [1, 1, 1, 1],
                            )
-
-    B_ = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
-    vars_arc['7'] = variable.Variable(B=B_,
-            values=[0.0901, 0.2401, np.inf])
-
-    vars_arc['8'] = variable.Variable(B=B_,
-            values=[0.0901, 0.2401, np.inf])
-
-    vars_arc['9'] = variable.Variable(B=B_,
-            values=[0.0943, 0.1761, np.inf])
-
-    vars_arc['10'] = variable.Variable(B=B_,
-            values=[0.0707, 0.1997, np.inf])
 
     ## Inference - by variable elimination (would not work for large-scale systems)
     # Probability of delay and disconnection
@@ -188,10 +194,10 @@ def main_bridge():
     # get different variables order
     for i in arcs.keys():
 
-        is_inscope = cpm.isinscope([i], cpms_arc_cp)
+        is_inscope = cpm.isinscope([vars_arc[i]], cpms_arc_cp)
         cpm_sel = [y for x, y in zip(is_inscope, cpms_arc_cp) if x]
-        cpm_mult, vars_arc = cpm.prod_cpms(cpm_sel, vars_arc)
-        cpm_mult = cpm_mult.sum([i])
+        cpm_mult = cpm.prod_cpms(cpm_sel)
+        cpm_mult = cpm_mult.sum([vars_arc[i]])
 
         cpms_arc_cp = [y for x, y in zip(is_inscope, cpms_arc_cp) if x == False]
         cpms_arc_cp.insert(0, cpm_mult)
@@ -207,14 +213,13 @@ def main_bridge():
 
         # Prob. of disconnection
         disconn_state = vars_arc[idx].B.shape[0]
-        [cpm_ve], vars_arc = cpm.condition(cpms_arc_cp,
-                               cnd_vars=[idx],
-                               cnd_states=[disconn_state],
-                               var=vars_arc)
+        [cpm_ve] = cpm.condition(cpms_arc_cp,
+                               cnd_vars=[vars_arc[idx]],
+                               cnd_states=[disconn_state])
         ODs_prob_disconn[j] = cpm_ve.p.sum(axis=0)
 
         # Prob. of delay
-        var_loc = cpms_arc_cp[0].variables.index(idx)
+        var_loc = cpms_arc_cp[0].variables.index(vars_arc[idx])
         rows_to_keep = np.where(cpms_arc_cp[0].C[:, var_loc] > 1)[0]
         cpm_ve = cpms_arc_cp[0].get_subset(rows_to_keep)
         ODs_prob_delay[j] = cpm_ve.p.sum(axis=0)
@@ -222,7 +227,11 @@ def main_bridge():
     # City 1 and 2 experienced a disruption in getting resources, City 3 was okay and 4 is unknown. Probability of damage of roads?
     # A composite state needs be created for City 1 and City 2
     for idx in var_OD:
-        vars_arc[idx].B = np.vstack([vars_arc[idx].B, [0, 1, 1]])
+        _B = np.vstack([vars_arc[idx].B, [0, 1, 1]])
+        vars_arc[idx] = variable.Variable(
+                name=str(idx),
+                B=_B,
+                values=vars_arc[idx].values)
 
     # # Add observation nodes P( O_j | OD_j ), j = 1, ..., M
     var_OD_obs = []
@@ -230,30 +239,30 @@ def main_bridge():
 
         #iPaths = arcPaths[iOdInd]
         #iTimes = arcPaths_time[iOdInd]
-        cpms_arc[str(j)]= cpm.Cpm(variables=[str(j), idx],
+        vars_arc[str(j)] = variable.Variable(name=str(j), B=np.eye(2, dtype=int), values=['No disruption', 'Disruption'])
+
+        _variables = [vars_arc[k] for k in [str(j), idx]]
+        cpms_arc[str(j)]= cpm.Cpm(variables=_variables,
                                no_child=1,
                                C= np.array([[1, 1], [2, 2], [2, 3]]),
                                p= [1, 1, 1])
-        vars_arc[str(j)] = variable.Variable(B=np.eye(2, dtype=int), values=['No disruption', 'Disruption'])
-
         var_OD_obs.append(str(j))
 
-    cpm_ve, vars_arc = cpm.condition(cpms_arc,
-                                     cnd_vars=['11', '12', '13'],
-                                     cnd_states=[2, 2, 1],
-                                     var=vars_arc)
-    Mcond_mult, vars_arc = cpm.prod_cpms(cpm_ve, vars_arc)
-    Mcond_mult_sum = Mcond_mult.sum(var_OD + var_OD_obs)
+    cpm_ve = cpm.condition(cpms_arc,
+                                     cnd_vars=[vars_arc[k] for k in ['11', '12', '13']],
+                                     cnd_states=[2, 2, 1])
+    Mcond_mult = cpm.prod_cpms(cpm_ve)
+    Mcond_mult_sum = Mcond_mult.sum([vars_arc[k] for k in var_OD + var_OD_obs])
 
     # P( X_i = 2 | OD_1 = 2, OD_2 = 2, OD_3 = 1 ), i = 1, ..., N
     arcs_prob_damage = np.zeros(len(arcs))
     for j, i in enumerate(arcs.keys()):
 
-        iM = Mcond_mult_sum.sum([i], 0)
-        [iM_fail], vars_arc = cpm.condition(iM,
-                               cnd_vars=[i],
+        iM = Mcond_mult_sum.sum([vars_arc[i]], 0)
+        [iM_fail] = cpm.condition(iM,
+                               cnd_vars=[vars_arc[i]],
                                cnd_states=[arc_fail],
-                               var=vars_arc)
+                               )
         fail_prob = iM_fail.p / iM.p.sum(axis=0)
         if fail_prob.any():
             arcs_prob_damage[j] = fail_prob
@@ -261,11 +270,9 @@ def main_bridge():
 
     ## Repeat inferences again using new functions -- the results must be the same.
     # Probability of delay and disconnection
-
-
     M = list(cpms_arc.values())[:10]
-    var_elim_order = [str(i) for i in range(1, 7)]
-    M_VE2, vars_arc = cpm.variable_elim(M, var_elim_order, vars_arc)
+    var_elim_order = [vars_arc[str(i)] for i in range(1, 7)]
+    M_VE2 = cpm.variable_elim(M, var_elim_order)
 
     # "M_VE2" same as "M_VE"
     # Retrieve example results
@@ -278,9 +285,9 @@ def main_bridge():
         # FIXME 2 -> 3?? 
         disconn_state = np.where(vars_arc[idx].values == np.inf)[0] + 1
         # the state of disconnection is assigned an arbitrarily large number 100
-        ODs_prob_disconn2[j] = cpm.get_prob(M_VE2, [idx], disconn_state, vars_arc )
+        ODs_prob_disconn2[j] = cpm.get_prob(M_VE2, [vars_arc[idx]], np.array([[3]]))
         # Prob. of delay
-        ODs_prob_delay2[j] = cpm.get_prob(M_VE2, [idx], np.array([[1]]), vars_arc, 0) # Any state greater than 1 means delay.
+        ODs_prob_delay2[j] = cpm.get_prob(M_VE2, [vars_arc[idx]], np.array([[1]]), flag=False) # Any state greater than 1 means delay.
 
     plot_figs(ODs_prob_delay, ODs_prob_disconn, arcs_prob_damage)
 

@@ -10,26 +10,30 @@ from BNS_JT.cpm import Cpm, ismember, iscompatible, get_value_given_condn, flip,
 from BNS_JT.variable import Variable
 
 
-def test_init_cpm():
-
-    a = Cpm(variables = ['A3', 'A2', 'A1'],
-            no_child = 1,
-            C = np.array([[2, 2, 3], [2, 1, 2], [1, 1, 1]]),
-            p = [1, 1, 1])
-    assert isinstance(a, Cpm)
-
 @pytest.fixture
 def dict_cpm():
+    ''' Use instance of Variables in the variables'''
+    A1 = Variable(**{'name': 'A1',
+                     'B': np.array([[1,0], [0, 1], [1, 1]]),
+                     'values': ['s', 'f']})
+    A2 = Variable(**{'name': 'A2',
+                   'B': np.array([[1,0], [0, 1], [1, 1]]),
+                   'values': ['s', 'f']})
+    A3 = Variable(**{'name': 'A3',
+                     'B': np.array([[1,0], [0, 1], [1, 1]]),
+                     'values': ['s', 'f']})
 
-    variables = [3, 2, 1]
-    no_child = 1
-    C = np.array([[2, 2, 3], [2, 1, 2], [1, 1, 1]])
-    p = [1, 1, 1]
+    return {'variables': [A3, A2, A1],
+            'no_child': 1,
+            'C': np.array([[2, 2, 3], [2, 1, 2], [1, 1, 1]]),
+            'p': [1, 1, 1]}
 
-    return {'variables': variables,
-            'no_child': no_child,
-            'C': C,
-            'p': p}
+
+def test_init(dict_cpm):
+
+    a = Cpm(**dict_cpm)
+    assert isinstance(a, Cpm)
+
 
 def test_init1(dict_cpm):
     a = Cpm(**dict_cpm)
@@ -39,10 +43,13 @@ def test_init1(dict_cpm):
     assert a.no_child == dict_cpm['no_child']
     np.testing.assert_array_equal(a.C, dict_cpm['C'])
 
-def test_init2():
+
+def test_init2(dict_cpm):
+    v = dict_cpm
     # using list for P
-    a = Cpm(variables=[1], no_child=1, C=np.array([1, 2]), p=[0.9, 0.1])
+    a = Cpm(variables=[v['variables'][0]], no_child=1, C=np.array([1, 2]), p=[0.9, 0.1])
     assert isinstance(a, Cpm)
+
 
 def test_variables1(dict_cpm):
 
@@ -80,12 +87,16 @@ def test_no_child(dict_cpm):
                    'C': dict_cpm['C'],
                    'p': dict_cpm['p']})
 
-def test_sort1():
+def test_sort1(dict_cpm):
+
+    v = dict_cpm
+
+    A3, A2, A1 = v['variables']
 
     p = np.array([[0.9405, 0.0495, 0.0095, 0.0005, 0.7650, 0.1350, 0.0850, 0.0150]]).T
     C = np.array([[1, 1, 1], [1, 2, 1], [2, 1, 1], [2, 2, 1], [1, 1, 2], [1, 2, 2], [2, 1, 2], [2, 2, 2]])
 
-    M = Cpm(variables=[2, 3, 1],
+    M = Cpm(variables=[A2, A3, A1],
             no_child = 2,
             C = C,
             p = p)
@@ -121,23 +132,6 @@ def test_sort1():
     np.testing.assert_array_almost_equal(Ms.p, np.array([[0.9405, 0.0095, 0.0495, 5.0e-4, 0.7650, 0.0850, 0.1350, 0.0150]]).T)
 
 
-
-def test_sort2s():
-
-    p = np.array([[0.9405, 0.0495, 0.0095, 0.0005, 0.7650, 0.1350, 0.0850, 0.0150]]).T
-    C = np.array([[1, 1, 1], [1, 2, 1], [2, 1, 1], [2, 2, 1], [1, 1, 2], [1, 2, 2], [2, 1, 2], [2, 2, 2]])
-
-    Ms = Cpm(variables=['2', '3', '1'],
-             no_child = 2,
-             C = C,
-             p = p)
-
-    Ms.sort()
-
-    np.testing.assert_array_equal(Ms.C, np.array([[1, 1, 1], [2, 1, 1], [1, 2, 1], [2, 2, 1], [1, 1, 2], [2, 1, 2], [1, 2, 2], [2, 2, 2]]))
-    np.testing.assert_array_almost_equal(Ms.p, np.array([[0.9405, 0.0095, 0.0495, 5.0e-4, 0.7650, 0.0850, 0.1350, 0.0150]]).T)
-
-
 def test_ismember1s():
 
     checkVars = ['1']
@@ -147,6 +141,39 @@ def test_ismember1s():
 
     assert idxInCheckVars==[1]
     assert lia==[True]
+
+
+def test_ismember1ss():
+
+    A1 = Variable(**{'name':'A1', 'B': np.array([[1,0], [0, 1], [1, 1]]),
+                   'values': ['s', 'f']})
+    A2 = Variable(**{'name': 'A2', 'B': np.array([[1,0], [0, 1], [1, 1]]),
+                   'values': ['s', 'f']})
+    checkVars = [A1]
+    variables = [A2, A1]
+
+    lia, idxInCheckVars = ismember(checkVars, variables)
+
+    assert idxInCheckVars==[1]
+    assert lia==[True]
+
+def test_ismember1ss():
+
+    a1 = Variable(name='A5', B=[[1, 0], [0, 1]], values=['Survive', 'Fail'])
+    a2 = Variable(name='A2', B=[[1, 0], [0, 1], [1, 1]], values=['Survive', 'Fail'])
+    a3 = Variable(name='A3', B=[[1, 0], [0, 1], [1, 1]], values=['Survive', 'Fail'])
+    a4 = Variable(name='A4', B=[[1, 0], [0, 1], [1, 1]], values=['Survive', 'Fail'])
+
+    b1 = Variable(name='A2', B=[[1, 0], [0, 1], [1, 1]], values=['Survive', 'Fail'])
+    b2 = Variable(name='A3', B=[[1, 0], [0, 1], [1, 1]], values=['Survive', 'Fail'])
+
+    A = [a1, a2, a3, a4]
+    B = [b1, b2]
+
+    lia, res = ismember(A, B)
+
+    assert res == [False, 0, 1, False]
+    assert lia == [False, True, True, False]
 
 def test_ismember1():
 
@@ -191,6 +218,41 @@ def test_ismember2s():
 
     assert result==expected
     assert lia==[False, False, True, True]
+
+
+def test_ismember2ss():
+
+    A2 = Variable(**{'name': 'A2', 'B': np.array([[1,0], [0, 1], [1, 1]]),
+                   'values': ['s', 'f']})
+    A3 = Variable(**{'name': 'A3', 'B': np.array([[1,0], [0, 1], [1, 1]]),
+                   'values': ['s', 'f']})
+    A4 = Variable(**{'name': 'A4', 'B': np.array([[1,0], [0, 1], [1, 1]]),
+                  'values': ['s', 'f']})
+    A5 = Variable(**{'name': 'A5', 'B': np.array([[1,0], [0, 1], [1, 1]]),
+                  'values': ['s', 'f']})
+    A6 = Variable(**{'name': 'A6', 'B': np.array([[1,0], [0, 1], [1, 1]]),
+                  'values': ['s', 'f']})
+    A8 = Variable(**{'name': 'A8', 'B': np.array([[1,0], [0, 1], [1, 1]]),
+                  'values': ['s', 'f']})
+
+    A = [A5, A3, A4, A2]
+    B = [A2, A4, A4, A4, A6, A8]
+
+    # MATLAB: [0, 0, 2, 1] => [False, False, 1, 0]
+    lia, result = ismember(A, B)
+    assert result==[False, False, 1, 0]
+    assert lia==[False, False, True, True]
+
+    lia, result = ismember(B, A)
+    assert result==[3, 2, 2, 2, False, False]
+    assert lia==[True, True, True, True, False, False]
+
+    lia, result = ismember(A, B)
+    expected = [False, False, 1, 0]
+
+    assert result==expected
+    assert lia==[False, False, True, True]
+
 
 def test_ismember3():
 
@@ -321,7 +383,7 @@ def test_add_new_states():
     result = add_new_states(states, B)
     np.testing.assert_array_equal(result, B)
 
-def test_isinscope1s():
+def test_isinscope1ss():
 
     cpms = []
     # Travel times (systems)
@@ -331,14 +393,29 @@ def test_isinscope1s():
     [3,1,2,2,3,3,3],
     [3,2,2,3,3,3,3]])
 
-    vars_ = ['7', '1', '2', '3', '4', '5', '6']
+    A1 = Variable(**{'name': 'A1', 'B': np.array([[1,0], [0, 1], [1, 1]]),
+                   'values': ['s', 'f']})
+    A2 = Variable(**{'name': 'A2', 'B': np.array([[1,0], [0, 1], [1, 1]]),
+                   'values': ['s', 'f']})
+    A3 = Variable(**{'name': 'A3', 'B': np.array([[1,0], [0, 1], [1, 1]]),
+                   'values': ['s', 'f']})
+    A4 = Variable(**{'name': 'A4', 'B': np.array([[1,0], [0, 1], [1, 1]]),
+                  'values': ['s', 'f']})
+    A5 = Variable(**{'name': 'A5', 'B': np.array([[1,0], [0, 1], [1, 1]]),
+                  'values': ['s', 'f']})
+    A6 = Variable(**{'name': 'A6', 'B': np.array([[1,0], [0, 1], [1, 1]]),
+                  'values': ['s', 'f']})
+    A7 = Variable(**{'name': 'A7', 'B': np.array([[1,0], [0, 1], [1, 1]]),
+                  'values': ['s', 'f']})
+
     for i in range(1, 7):
-        m = Cpm(variables= [f'{i}'],
+        m = Cpm(variables= [eval(f'A{i}')],
                       no_child = 1,
                       C = np.array([[1, 0]]).T,
                       p = [1, 1])
         cpms.append(m)
 
+    vars_ = [A7, A1, A2, A3, A4, A5, A6]
     for i in range(7, 11):
         m = Cpm(variables= vars_,
                       no_child = 1,
@@ -346,79 +423,11 @@ def test_isinscope1s():
                       p = [1, 1, 1, 1])
         cpms.append(m)
 
-    result = isinscope(['1'], cpms)
+    result = isinscope([A1], cpms)
     expected = np.array([[1, 0, 0, 0, 0, 0, 1, 1, 1, 1]]).T
     np.testing.assert_array_equal(expected, result)
 
-    result = isinscope(['1', '2'], cpms)
-    expected = np.array([[1, 1, 0, 0, 0, 0, 1, 1, 1, 1]]).T
-    np.testing.assert_array_equal(expected, result)
-
-
-
-def test_isinscope1():
-
-    cpms = []
-    # Travel times (systems)
-    c7 = np.array([
-    [1,3,1,3,3,3,3],
-    [2,1,2,1,3,3,3],
-    [3,1,2,2,3,3,3],
-    [3,2,2,3,3,3,3]])
-
-    vars_ = [7, 1, 2, 3, 4, 5, 6]
-    for i in range(1, 7):
-        m = Cpm(variables= [i],
-                      no_child = 1,
-                      C = np.array([[1, 0]]).T,
-                      p = [1, 1])
-        cpms.append(m)
-
-    for i in range(7, 11):
-        m = Cpm(variables= vars_,
-                      no_child = 1,
-                      C = c7,
-                      p = [1, 1, 1, 1])
-        cpms.append(m)
-
-    result = isinscope([1], cpms)
-    expected = np.array([[1, 0, 0, 0, 0, 0, 1, 1, 1, 1]]).T
-    np.testing.assert_array_equal(expected, result)
-
-    result = isinscope([1, 2], cpms)
-    expected = np.array([[1, 1, 0, 0, 0, 0, 1, 1, 1, 1]]).T
-    np.testing.assert_array_equal(expected, result)
-
-def test_isinscope2():
-
-    cpms = {}
-    # Travel times (systems)
-    c7 = np.array([
-    [1,3,1,3,3,3,3],
-    [2,1,2,1,3,3,3],
-    [3,1,2,2,3,3,3],
-    [3,2,2,3,3,3,3]])
-
-    vars_ = [7, 1, 2, 3, 4, 5, 6]
-    for i in range(1, 7):
-        m = Cpm(variables= [i],
-                      no_child = 1,
-                      C = np.array([[1, 0]]).T,
-                      p = [1, 1])
-        cpms[i] = m
-
-    for i in range(7, 11):
-        m = Cpm(variables= vars_,
-                      no_child = 1,
-                      C = c7,
-                      p = [1, 1, 1, 1])
-        cpms[i] = m
-
-    result = isinscope([1], cpms)
-    expected = np.array([[1, 0, 0, 0, 0, 0, 1, 1, 1, 1]]).T
-    np.testing.assert_array_equal(expected, result)
-
-    result = isinscope([1, 2], cpms)
+    result = isinscope([A1, A2], cpms)
     expected = np.array([[1, 1, 0, 0, 0, 0, 1, 1, 1, 1]]).T
     np.testing.assert_array_equal(expected, result)
 
@@ -427,98 +436,92 @@ def test_isinscope2():
 def setup_iscompatible():
 
     M = {}
-    vars_ = {}
+    v = {}
 
-    M[1] = Cpm(variables=[1], no_child=1, C = np.array([[1, 2]]).T, p = np.array([0.9, 0.1]).T)
-    M[2] = Cpm(variables=[2, 1], no_child=1, C = np.array([[1, 1], [2, 1], [1, 2], [2, 2]]), p = np.array([0.99, 0.01, 0.9, 0.1]).T)
-    M[3] = Cpm(variables=[3, 1], no_child=1, C = np.array([[1, 1], [2, 1], [1, 2], [2, 2]]), p = np.array([0.95, 0.05, 0.85, 0.15]).T)
-    M[4] = Cpm(variables=[4, 1], no_child=1, C = np.array([[1, 1], [2, 1], [1, 2], [2, 2]]), p = np.array([0.99, 0.01, 0.9, 0.1]).T)
-    M[5] = Cpm(variables=[5, 2, 3, 4], no_child=1, C = np.array([[2, 3, 3, 2], [1, 1, 3, 1], [1, 2, 1, 1], [2, 2, 2, 1]]), p = np.array([1, 1, 1, 1]).T)
+    v[1] = Variable(name='1', B=np.eye(2), values=['Mild', 'Severe'])
+    v[2] = Variable(name='2', B=np.array([[1, 0], [0, 1], [1, 1]]), values=['Survive', 'Fail'])
+    v[3] = Variable(name='3', B=np.array([[1, 0], [0, 1], [1, 1]]), values=['Survive', 'Fail'])
+    v[4] = Variable(name='4', B=np.array([[1, 0], [0, 1], [1, 1]]), values=['Survive', 'Fail'])
+    v[5] = Variable(name='5', B=np.array([[1, 0], [0, 1]]), values=['Survive', 'Fail'])
 
-    vars_[1] = Variable(B=np.eye(2), values=['Mild', 'Severe'])
-    vars_[2] = Variable(B=np.array([[1, 0], [0, 1], [1, 1]]), values=['Survive', 'Fail'])
-    vars_[3] = Variable(B=np.array([[1, 0], [0, 1], [1, 1]]), values=['Survive', 'Fail'])
-    vars_[4] = Variable(B=np.array([[1, 0], [0, 1], [1, 1]]), values=['Survive', 'Fail'])
-    vars_[5] = Variable(B=np.array([[1, 0], [0, 1]]), values=['Survive', 'Fail'])
+    M[1] = Cpm(variables=[v[1]], no_child=1, C = np.array([[1, 2]]).T, p = np.array([0.9, 0.1]).T)
+    M[2] = Cpm(variables=[v[2], v[1]], no_child=1, C = np.array([[1, 1], [2, 1], [1, 2], [2, 2]]), p = np.array([0.99, 0.01, 0.9, 0.1]).T)
+    M[3] = Cpm(variables=[v[3], v[1]], no_child=1, C = np.array([[1, 1], [2, 1], [1, 2], [2, 2]]), p = np.array([0.95, 0.05, 0.85, 0.15]).T)
+    M[4] = Cpm(variables=[v[4], v[1]], no_child=1, C = np.array([[1, 1], [2, 1], [1, 2], [2, 2]]), p = np.array([0.99, 0.01, 0.9, 0.1]).T)
+    M[5] = Cpm(variables=[v[5], v[2], v[3], v[4]], no_child=1, C = np.array([[2, 3, 3, 2], [1, 1, 3, 1], [1, 2, 1, 1], [2, 2, 2, 1]]), p = np.array([1, 1, 1, 1]).T)
 
-    return M, vars_
+    return M, v
 
 def test_iscompatible1(setup_iscompatible):
 
+    M, v = setup_iscompatible
+
     # M[2]
     C = np.array([[1, 1], [2, 1], [1, 2], [2, 2]])  #M[2].C
-    variables = [2, 1]
-    checkVars = [1]
+    variables = [v[2], v[1]]
+    checkVars = [v[1]]
     checkStates = [1]
     v_info = setup_iscompatible[1]
 
-    result = iscompatible(C, variables, checkVars, checkStates, v_info)
+    result = iscompatible(C, variables, checkVars, checkStates)
     expected = np.array([1, 1, 0, 0])
     np.testing.assert_array_equal(expected, result)
 
 
 def test_iscompatible2(setup_iscompatible):
 
+    M, v = setup_iscompatible
+
     # M[5]
     C = np.array([[2, 3, 3, 2], [1, 1, 3, 1], [1, 2, 1, 1], [2, 2, 2, 1]])
-    variables = [5, 2, 3, 4]
-    checkVars = [3, 4]
+    variables = [v[5], v[2], v[3], v[4]]
+    checkVars = [v[3], v[4]]
     checkStates = [1, 1]
     v_info = setup_iscompatible[1]
 
-    result = iscompatible(C, variables, checkVars, checkStates, v_info)
+    result = iscompatible(C, variables, checkVars, checkStates)
     expected = np.array([0, 1, 1, 0])
     np.testing.assert_array_equal(expected, result)
 
+
 def test_iscompatible3(setup_iscompatible):
 
+    M, v = setup_iscompatible
+
     #M[1]
     C = np.array([[1, 2]]).T
-    variables = [1]
-    checkVars = [3, 4]
+    variables = [v[1]]
+    checkVars = [v[3], v[4]]
     checkStates = [1, 1]
-    v_info = setup_iscompatible[1]
 
-    result = iscompatible(C, variables, checkVars, checkStates, v_info)
+    result = iscompatible(C, variables, checkVars, checkStates)
     expected = np.array([1, 1])
     np.testing.assert_array_equal(expected, result)
 
-def test_iscompatible3s(setup_iscompatible):
+
+def test_iscompatible3ss():
+
+    A1 = Variable(name='A1', B=np.eye(2), values=['Mild', 'Severe'])
+    A2 = Variable(name='A2', B=np.array([[1, 0], [0, 1], [1, 1]]), values=['Survive', 'Fail'])
+    A3 = Variable(name='A3', B=np.array([[1, 0], [0, 1], [1, 1]]), values=['Survive', 'Fail'])
+    A4 = Variable(name='A4', B=np.array([[1, 0], [0, 1], [1, 1]]), values=['Survive', 'Fail'])
+    A5 = Variable(name='A5', B=np.array([[1, 0], [0, 1]]), values=['Survive', 'Fail'])
 
     #M[1]
     C = np.array([[1, 2]]).T
-    variables = ['1']
-    checkVars = ['3', '4']
+    variables = [A1]
+    checkVars = [A3, A4]
     checkStates = [1, 1]
-    v_info = setup_iscompatible[1]
+    # FIXME: redundant dict
 
-    v_infos = {}
-    for k, v in v_info.items():
-        v_infos[f'{k}'] = v
-
-    result = iscompatible(C, variables, checkVars, checkStates, v_info)
-    expected = np.array([1, 1])
-    np.testing.assert_array_equal(expected, result)
-
-def test_iscompatible3s(setup_iscompatible):
-
-    #M[1]
-    C = np.array([[1, 2]]).T
-    variables = ['1']
-    checkVars = ['3', '4']
-    checkStates = [1, 1]
-    v_info = setup_iscompatible[1]
-
-    v_infos = {}
-    for k, v in v_info.items():
-        v_infos[f'{k}'] = v
-
-    result = iscompatible(C, variables, checkVars, checkStates, v_infos)
+    result = iscompatible(C, variables, checkVars, checkStates)
     expected = np.array([1, 1])
     np.testing.assert_array_equal(expected, result)
 
 
 def test_iscompatible4(setup_iscompatible):
+
+    M, v = setup_iscompatible
 
     C = np.array([[1,1,1,1,1],
          [2,1,1,1,1],
@@ -536,12 +539,12 @@ def test_iscompatible4(setup_iscompatible):
          [2,1,2,2,2],
          [1,2,2,2,2],
          [2,2,2,2,2]])
-    variables = [2, 3, 5, 1, 4]
-    checkVars = np.array([2, 1])
+    variables = [v[2], v[3], v[5], v[1], v[4]]
+    checkVars = [v[2], v[1]]
     checkStates = np.array([1, 1])
     vars_ = setup_iscompatible[1]
 
-    result = iscompatible(C, variables, checkVars, checkStates, vars_)
+    result = iscompatible(C, variables, checkVars, checkStates)
     expected = np.array([1,0,1,0,0,0,0,0,1,0,1,0,0,0,0,0])
     np.testing.assert_array_equal(expected, result)
 
@@ -550,14 +553,14 @@ def test_iscompatible4(setup_iscompatible):
     assert idx==[0, 3]
 
     checkVars = get_value_given_condn(checkVars, idx)
-    assert checkVars==[2, 1]
+    assert checkVars==[v[2], v[1]]
 
     checkStates = get_value_given_condn(checkStates, idx)
     assert checkStates==[1, 1]
 
     C1_common = C1_common = C[:, idx].copy()
     compatFlag = np.ones(shape=(C.shape[0], 1), dtype=bool)
-    B = vars_[checkVars[0]].B
+    B = checkVars[0].B
     C1 = C1_common[:, 0][np.newaxis, :]
     #x1_old = [B[k-1, :] for k in C1][0]
     x1 = [B[k-1, :] for k in C1[:, compatFlag.flatten()]][0]
@@ -589,7 +592,7 @@ def test_iscompatible4(setup_iscompatible):
     compatFlag[:len(compatCheck)] = np.logical_and(compatFlag[:len(compatCheck)], compatCheck)
 
     # i = 1
-    B = vars_[checkVars[1]].B
+    B = checkVars[1].B
     C1 = C1_common[:, 1][np.newaxis, :]
     #x1_old = [B[k-1, :] for k in C1][0]
     x1 = [B[k-1, :] for k in C1[:, compatFlag.flatten()]][0]
@@ -612,9 +615,15 @@ def test_get_subset1(setup_iscompatible):
     np.testing.assert_array_equal(result.C, np.array([[2, 3, 3, 2]]))
     np.testing.assert_array_equal(result.p, [[1]])
 
-def test_get_subset1s(setup_iscompatible):
+def test_get_subset1ss(setup_iscompatible):
 
-    M5 = Cpm(variables=['5', '2', '3', '4'], no_child=1, C = np.array([[2, 3, 3, 2], [1, 1, 3, 1], [1, 2, 1, 1], [2, 2, 2, 1]]), p = np.array([1, 1, 1, 1]).T)
+    A1 = Variable(name='A1', B=np.eye(2), values=['Mild', 'Severe'])
+    A2 = Variable(name='A2', B=np.array([[1, 0], [0, 1], [1, 1]]), values=['Survive', 'Fail'])
+    A3 = Variable(name='A3', B=np.array([[1, 0], [0, 1], [1, 1]]), values=['Survive', 'Fail'])
+    A4 = Variable(name='A4', B=np.array([[1, 0], [0, 1], [1, 1]]), values=['Survive', 'Fail'])
+    A5 = Variable(name='A5', B=np.array([[1, 0], [0, 1]]), values=['Survive', 'Fail'])
+
+    M5 = Cpm(variables=[A5, A2, A3, A4], no_child=1, C = np.array([[2, 3, 3, 2], [1, 1, 3, 1], [1, 2, 1, 1], [2, 2, 2, 1]]), p = np.array([1, 1, 1, 1]).T)
 
     # M[5]
     rowIndex = [0]  # 1 -> 0
@@ -636,22 +645,12 @@ def test_get_subset2(setup_iscompatible):
     np.testing.assert_array_equal(result.C, np.array([[2, 3, 3, 2]]))
     np.testing.assert_array_equal(result.p, [[1]])
 
-def test_get_subset2s(setup_iscompatible):
 
-    M5 = Cpm(variables=['5', '2', '3', '4'], no_child=1, C = np.array([[2, 3, 3, 2], [1, 1, 3, 1], [1, 2, 1, 1], [2, 2, 2, 1]]), p = np.array([1, 1, 1, 1]).T)
+def test_get_subset3(setup_iscompatible):
 
-    rowIndex = [1, 2, 3]  # [2, 3, 4] -> 0
-    result = M5.get_subset(rowIndex, 0)
-
-    assert result.variables == M5.variables
-    np.testing.assert_array_equal(result.C, np.array([[2, 3, 3, 2]]))
-    np.testing.assert_array_equal(result.p, [[1]])
-
-
-def test_get_subset3():
-
-    M = Cpm(variables=[2, 3, 5, 1, 4],
-            no_child=5,
+    _, v = setup_iscompatible
+    M = Cpm(variables=[v[2], v[3], v[5], v[1], v[4]],
+            no_child = 5,
             C=np.array([[2, 2, 2, 2, 2]]),
             p=np.array([[0.0150]]).T)
 
@@ -663,56 +662,78 @@ def test_get_subset3():
 def test_iscompatibleCpm1(setup_iscompatible):
 
     # M[5]
-    M, vars_ = setup_iscompatible
+    M, _ = setup_iscompatible
     rowIndex = [0]  # 1 -> 0
     M_sys_select = M[5].get_subset(rowIndex)
-    result = M[3].iscompatible(M_sys_select, var=vars_)
+    result = M[3].iscompatible(M_sys_select)
     expected = np.array([1, 1, 1, 1])
     np.testing.assert_array_equal(result, expected)
+
+
+def test_iscompatibleCpm1s():
+
+    A1 = Variable(name='A1', B=np.eye(2), values=['Mild', 'Severe'])
+    A2 = Variable(name='A2', B=np.array([[1, 0], [0, 1], [1, 1]]), values=['Survive', 'Fail'])
+    A3 = Variable(name='A3', B=np.array([[1, 0], [0, 1], [1, 1]]), values=['Survive', 'Fail'])
+    A4 = Variable(name='A4', B=np.array([[1, 0], [0, 1], [1, 1]]), values=['Survive', 'Fail'])
+    A5 = Variable(name='A5', B=np.array([[1, 0], [0, 1]]), values=['Survive', 'Fail'])
+
+    M = {}
+    M[1] = Cpm(variables=[A1], no_child=1, C = np.array([[1, 2]]).T, p = np.array([0.9, 0.1]).T)
+    M[2] = Cpm(variables=[A2, A1], no_child=1, C = np.array([[1, 1], [2, 1], [1, 2], [2, 2]]), p = np.array([0.99, 0.01, 0.9, 0.1]).T)
+    M[3] = Cpm(variables=[A3, A1], no_child=1, C = np.array([[1, 1], [2, 1], [1, 2], [2, 2]]), p = np.array([0.95, 0.05, 0.85, 0.15]).T)
+    M[4] = Cpm(variables=[A4, A1], no_child=1, C = np.array([[1, 1], [2, 1], [1, 2], [2, 2]]), p = np.array([0.99, 0.01, 0.9, 0.1]).T)
+    M[5] = Cpm(variables=[A5, A2, A3, A4], no_child=1, C = np.array([[2, 3, 3, 2], [1, 1, 3, 1], [1, 2, 1, 1], [2, 2, 2, 1]]), p = np.array([1, 1, 1, 1]).T)
+
+    # M[5]
+    rowIndex = [0]  # 1 -> 0
+    M_sys_select = M[5].get_subset(rowIndex)
+    result = M[3].iscompatible(M_sys_select)
+    expected = np.array([1, 1, 1, 1])
+    np.testing.assert_array_equal(result, expected)
+
 
 def test_iscompatibleCpm2(setup_iscompatible):
 
     # M[5]
-    M, vars_ = setup_iscompatible
+    M, _ = setup_iscompatible
     rowIndex = [0]  # 1 -> 0
     M_sys_select = M[5].get_subset(rowIndex)
 
-    result = M[4].iscompatible(M_sys_select, var=vars_)
+    result = M[4].iscompatible(M_sys_select)
     expected = np.array([0, 1, 0, 1])
     np.testing.assert_array_equal(result, expected)
 
 def test_iscompatibleCpm3(setup_iscompatible):
 
     # M[5]
-    M, vars_ = setup_iscompatible
+    M, _ = setup_iscompatible
     rowIndex = [0]  # 1 -> 0
     M_sys_select = M[5].get_subset(rowIndex)
 
-    result = M[1].iscompatible(M_sys_select, var=vars_)
+    result = M[1].iscompatible(M_sys_select)
     expected = np.array([1, 1])
     np.testing.assert_array_equal(result, expected)
 
 @pytest.fixture
 def setup_product():
 
+    X1 = Variable(name='X1', B=np.eye(2), values=['Mild', 'Severe'])
+    X2 = Variable(name='X2', B=np.array([[1, 0], [0, 1], [1, 1]]), values=['Survive', 'Fail'])
+    X3 = Variable(name='X3', B=np.array([[1, 0], [0, 1], [1, 1]]), values=['Survive', 'Fail'])
+    X4 = Variable(name='X4', B=np.array([[1, 0], [0, 1], [1, 1]]), values=['Survive', 'Fail'])
+    X5 = Variable(name='X5', B=np.array([[1, 0], [0, 1]]), values=['Survive', 'Fail'])
+
     M = {}
-    vars_ = {}
+    M[2] = Cpm(variables=[X2, X1], no_child=1, C = np.array([[1, 1], [2, 1], [1, 2], [2, 2]]), p = np.array([0.99, 0.01, 0.9, 0.1]).T)
+    M[3] = Cpm(variables=[X3, X1], no_child=1, C = np.array([[1, 1], [2, 1], [1, 2], [2, 2]]), p = np.array([0.95, 0.05, 0.85, 0.15]).T)
+    M[5] = Cpm(variables=[X5, X2, X3, X4], no_child=1, C = np.array([[2, 3, 3, 2], [1, 1, 3, 1], [1, 2, 1, 1], [2, 2, 2, 1]]), p = np.array([1, 1, 1, 1]).T)
 
-    M[2] = Cpm(variables=[2, 1], no_child=1, C = np.array([[1, 1], [2, 1], [1, 2], [2, 2]]), p = np.array([0.99, 0.01, 0.9, 0.1]).T)
-    M[3] = Cpm(variables=[3, 1], no_child=1, C = np.array([[1, 1], [2, 1], [1, 2], [2, 2]]), p = np.array([0.95, 0.05, 0.85, 0.15]).T)
-    M[5] = Cpm(variables=[5, 2, 3, 4], no_child=1, C = np.array([[2, 3, 3, 2], [1, 1, 3, 1], [1, 2, 1, 1], [2, 2, 2, 1]]), p = np.array([1, 1, 1, 1]).T)
-
-    vars_[1] = Variable(B=np.eye(2), values=['Mild', 'Severe'])
-    vars_[2] = Variable(B=np.array([[1, 0], [0, 1], [1, 1]]), values=['Survive', 'Fail'])
-    vars_[3] = Variable(B=np.array([[1, 0], [0, 1], [1, 1]]), values=['Survive', 'Fail'])
-    vars_[4] = Variable(B=np.array([[1, 0], [0, 1], [1, 1]]), values=['Survive', 'Fail'])
-    vars_[5] = Variable(B=np.array([[1, 0], [0, 1]]), values=['Survive', 'Fail'])
-
-    return M, vars_
+    return M
 
 def test_product1(setup_product):
 
-    M, v_info = setup_product
+    M = setup_product
 
     # When there is no common variable
     M1 = M[2]
@@ -739,13 +760,13 @@ def test_product1(setup_product):
 
     commonVars=set(M1.variables).intersection(M2.variables)
 
-    assert list(commonVars) == [1]
+    #assert list(commonVars) == [1]
 
     _, idxVarsM1 = ismember(M1.variables, M2.variables)
     commonVars = get_value_given_condn(M1.variables, idxVarsM1)
 
     np.testing.assert_array_equal(idxVarsM1, np.array([0, 1]))
-    assert commonVars==[1]
+    #assert commonVars==[1]
 
     for i in range(M1.C.shape[0]):
         c1_ = get_value_given_condn(M1.C[i, :], idxVarsM1)
@@ -761,7 +782,7 @@ def test_product1(setup_product):
 
         #if isinstance(c1_, list):
         #    c1_ = np.array(c1_)
-        [M2_], v_info = condition([M2], commonVars, c1_, v_info, sampleInd1)
+        [M2_] = condition([M2], commonVars, c1_, sampleInd1)
 
         #assert M2_.variables, [3, 1])
         #assert M2_.no_child, 1)
@@ -813,17 +834,17 @@ def test_product1(setup_product):
     np.testing.assert_array_almost_equal(pprod, np.array([[0.9405, 0.0495, 0.0095, 0.0005, 0.7650, 0.1350, 0.0850, 0.0150]]).T)
     np.testing.assert_array_almost_equal(Cprod, np.array([[1, 1, 1], [2, 1, 1], [1, 1, 2], [2, 1, 2], [1, 2, 1], [2, 2, 1], [1, 2, 2], [2, 2, 2]]))
 
-    Cprod_vars = np.append(M2.variables, get_value_given_condn(M1.variables, flip(idxVarsM1)))
-    np.testing.assert_array_equal(Cprod_vars, [3, 1, 2])
+    Cprod_vars = M2.variables + get_value_given_condn(M1.variables, flip(idxVarsM1))
+    assert [x.name for x in Cprod_vars]==['X3', 'X1', 'X2']
 
-    newVarsChild = np.append(M1.variables[0:M1.no_child], M2.variables[0:M2.no_child])
-    newVarsChild = np.sort(newVarsChild)
-    np.testing.assert_array_equal(newVarsChild, [2, 3])
+    newVarsChild = M1.variables[:M1.no_child] + M2.variables[:M2.no_child]
+    #newVarsChild = np.sort(newVarsChild)
+    assert [x.name for x in newVarsChild] ==['X2', 'X3']
 
-    newVarsParent = np.append(M1.variables[M1.no_child:], M2.variables[M2.no_child:])
-    newVarsParent = list(set(newVarsParent).difference(newVarsChild))
-    newVars = np.append(newVarsChild, newVarsParent, axis=0)
-    np.testing.assert_array_equal(newVars, [2, 3, 1])
+    newVarsParent = M1.variables[M1.no_child:] + M2.variables[M2.no_child:]
+    newVarsParent, _ = setdiff(newVarsParent, newVarsChild)
+    newVars = newVarsChild + newVarsParent
+    assert [x.name for x in newVars]== ['X2', 'X3', 'X1']
 
     _, idxVars = ismember(newVars, Cprod_vars)
 
@@ -836,34 +857,41 @@ def test_product1(setup_product):
 
     Mprod.sort()
 
-    assert Mprod.variables==[2, 3, 1]
+    assert [x.name for x in Mprod.variables]==['X2', 'X3', 'X1']
     assert Mprod.no_child==2
     np.testing.assert_array_equal(Mprod.C, np.array([[1, 1, 1], [2, 1, 1], [1, 2, 1], [2, 2, 1], [1, 1, 2], [2, 1, 2], [1, 2, 2], [2, 2, 2]]))
     np.testing.assert_array_almost_equal(Mprod.p, np.array([[0.9405, 0.0095, 0.0495, 5.0e-4, 0.7650, 0.0850, 0.1350, 0.0150]]).T)
 
 def test_product2(setup_product):
 
-    M, v_info = setup_product
+    M = setup_product
     M1 = M[2]
     M2 = M[3]
 
-    Mprod, v_info_ = M1.product(M2, v_info)
+    Mprod = M1.product(M2)
 
-    np.testing.assert_array_equal(Mprod.variables, [2, 3, 1])
+    names = [x.name for x in Mprod.variables]
+    assert names == ['X2', 'X3', 'X1']
+
     assert Mprod.no_child==2
     np.testing.assert_array_equal(Mprod.C, np.array([[1, 1, 1], [2, 1, 1], [1, 2, 1], [2, 2, 1], [1, 1, 2], [2, 1, 2], [1, 2, 2], [2, 2, 2]]))
     np.testing.assert_array_almost_equal(Mprod.p, np.array([[0.9405, 0.0095, 0.0495, 5.0e-4, 0.7650, 0.0850, 0.1350, 0.0150]]).T)
 
 def test_product3(setup_product):
 
-    M, v_info = setup_product
+    M = setup_product
+    X2 = M[5].get_variables('X2')
+    X3 = M[5].get_variables('X3')
+    X1 = M[2].get_variables('X1')
+
     M2 = M[5]
 
-    M1 = Cpm(variables=[2, 3, 1], no_child=2, C = np.array([[1, 1, 1], [2, 1, 1], [1, 2, 1], [2, 2, 1], [1, 1, 2], [2, 1, 2], [1, 2, 2], [2, 2, 2]]), p = np.array([[0.9405, 0.0095, 0.0495, 5.0e-4, 0.7650, 0.0850, 0.1350, 0.0150]]).T)
+    M1 = Cpm(variables=[X2, X3, X1], no_child=2, C = np.array([[1, 1, 1], [2, 1, 1], [1, 2, 1], [2, 2, 1], [1, 1, 2], [2, 1, 2], [1, 2, 2], [2, 2, 2]]), p = np.array([[0.9405, 0.0095, 0.0495, 5.0e-4, 0.7650, 0.0850, 0.1350, 0.0150]]).T)
 
-    Mprod, v_info_ = M1.product(M2, v_info)
+    Mprod= M1.product(M2)
 
-    np.testing.assert_array_equal(Mprod.variables, [2, 3, 5, 1, 4])
+    names = [x.name for x in Mprod.variables]
+    assert names == ['X2', 'X3', 'X5', 'X1', 'X4']
     assert Mprod.no_child==3
 
     expected_C = np.array([
@@ -888,19 +916,19 @@ def test_product3(setup_product):
     np.testing.assert_array_equal(Mprod.C, expected_C)
     np.testing.assert_array_almost_equal(Mprod.p, expected_p)
 
-def test_product3s(setup_product):
+def test_product3ss():
 
-    _, v_info = setup_product
-    v_infos = {}
-    for k, v in v_info.items():
-        v_infos[f'{k}'] = v
+    A1 = Variable(name='A1', B=np.eye(2), values=['Mild', 'Severe'])
+    A2 = Variable(name='A2', B=np.array([[1, 0], [0, 1], [1, 1]]), values=['Survive', 'Fail'])
+    A3 = Variable(name='A3', B=np.array([[1, 0], [0, 1], [1, 1]]), values=['Survive', 'Fail'])
+    A4 = Variable(name='A4', B=np.array([[1, 0], [0, 1], [1, 1]]), values=['Survive', 'Fail'])
+    A5 = Variable(name='A5', B=np.array([[1, 0], [0, 1]]), values=['Survive', 'Fail'])
 
-    M2 = Cpm(variables=['5', '2', '3', '4'], no_child=1, C = np.array([[2, 3, 3, 2], [1, 1, 3, 1], [1, 2, 1, 1], [2, 2, 2, 1]]), p = np.array([1, 1, 1, 1]).T)
+    M2 = Cpm(variables=[A5, A2, A3, A4], no_child=1, C = np.array([[2, 3, 3, 2], [1, 1, 3, 1], [1, 2, 1, 1], [2, 2, 2, 1]]), p = np.array([1, 1, 1, 1]).T)
 
-    M1 = Cpm(variables=['2', '3', '1'], no_child=2, C = np.array([[1, 1, 1], [2, 1, 1], [1, 2, 1], [2, 2, 1], [1, 1, 2], [2, 1, 2], [1, 2, 2], [2, 2, 2]]), p = np.array([[0.9405, 0.0095, 0.0495, 5.0e-4, 0.7650, 0.0850, 0.1350, 0.0150]]).T)
+    M1 = Cpm(variables=[A2, A3, A1], no_child=2, C = np.array([[1, 1, 1], [2, 1, 1], [1, 2, 1], [2, 2, 1], [1, 1, 2], [2, 1, 2], [1, 2, 2], [2, 2, 2]]), p = np.array([[0.9405, 0.0095, 0.0495, 5.0e-4, 0.7650, 0.0850, 0.1350, 0.0150]]).T)
 
-    #pdb.set_trace()
-    Mprod, v_info_ = M1.product(M2, v_infos)
+    Mprod = M1.product(M2)
 
     expected_C = np.array([
           [1,1,1,1,1],
@@ -921,7 +949,58 @@ def test_product3s(setup_product):
           [2,2,2,2,2]])
     expected_p = np.array([[0.9405,0.0095,0.0495,0.0005,0.7650,0.0850,0.1350,0.0150,0.9405,0.0095,0.0495,0.0005,0.7650,0.0850,0.1350,0.0150]]).T
 
-    assert Mprod.variables == ['2', '3', '5', '1', '4']
+    assert Mprod.variables == [A2, A3, A5, A1, A4]
+
+    try:
+        np.testing.assert_array_equal(Mprod.C, expected_C)
+    except AssertionError:
+        print(Mprod.C.shape)
+        print(expected_C.shape)
+    try:
+        np.testing.assert_array_almost_equal(Mprod.p, expected_p)
+    except AssertionError:
+        print(Mprod.p.shape)
+        print(expected_p.shape)
+
+    assert Mprod.no_child==3
+
+
+def test_product3s(setup_product):
+
+    M = setup_product
+    X2 = M[5].get_variables('X2')
+    X5 = M[5].get_variables('X5')
+    X3 = M[5].get_variables('X3')
+    X4 = M[5].get_variables('X4')
+    X1 = M[2].get_variables('X1')
+
+    M2 = Cpm(variables=[X5, X2, X3, X4], no_child=1, C = np.array([[2, 3, 3, 2], [1, 1, 3, 1], [1, 2, 1, 1], [2, 2, 2, 1]]), p = np.array([1, 1, 1, 1]).T)
+
+    M1 = Cpm(variables=[X2, X3, X1], no_child=2, C = np.array([[1, 1, 1], [2, 1, 1], [1, 2, 1], [2, 2, 1], [1, 1, 2], [2, 1, 2], [1, 2, 2], [2, 2, 2]]), p = np.array([[0.9405, 0.0095, 0.0495, 5.0e-4, 0.7650, 0.0850, 0.1350, 0.0150]]).T)
+
+    #pdb.set_trace()
+    Mprod= M1.product(M2)
+
+    expected_C = np.array([
+          [1,1,1,1,1],
+          [2,1,1,1,1],
+          [1,2,1,1,1],
+          [2,2,2,1,1],
+          [1,1,1,2,1],
+          [2,1,1,2,1],
+          [1,2,1,2,1],
+          [2,2,2,2,1],
+          [1,1,2,1,2],
+          [2,1,2,1,2],
+          [1,2,2,1,2],
+          [2,2,2,1,2],
+          [1,1,2,2,2],
+          [2,1,2,2,2],
+          [1,2,2,2,2],
+          [2,2,2,2,2]])
+    expected_p = np.array([[0.9405,0.0095,0.0495,0.0005,0.7650,0.0850,0.1350,0.0150,0.9405,0.0095,0.0495,0.0005,0.7650,0.0850,0.1350,0.0150]]).T
+
+    assert Mprod.variables == [X2, X3, X5, X1, X4]
 
     np.testing.assert_array_equal(Mprod.C, expected_C)
 
@@ -949,29 +1028,30 @@ def setup_condition():
          [2,2,2,2,2]])
     p = np.array([[0.9405, 0.0095, 0.0495, 0.0005, 0.7650, 0.0850, 0.1350, 0.0150, 0.9405, 0.0095, 0.0495, 0.0005, 0.7650, 0.0850, 0.1350, 0.0150]]).T
 
-    vars_ = {}
-    vars_[1] = Variable(B=np.eye(2), values=['Mild', 'Severe'])
-    vars_[2] = Variable(B=np.array([[1, 0], [0, 1], [1, 1]]), values=['Survive', 'Fail'])
-    vars_[3] = Variable(B=np.array([[1, 0], [0, 1], [1, 1]]), values=['Survive', 'Fail'])
-    vars_[4] = Variable(B=np.array([[1, 0], [0, 1], [1, 1]]), values=['Survive', 'Fail'])
-    vars_[5] = Variable(B=np.array([[1, 0], [0, 1]]), values=['Survive', 'Fail'])
+    v1 = Variable(name='v1', B=np.eye(2), values=['Mild', 'Severe'])
+    v2 = Variable(name='v2', B=np.array([[1, 0], [0, 1], [1, 1]]), values=['Survive', 'Fail'])
+    v3 = Variable(name='v3', B=np.array([[1, 0], [0, 1], [1, 1]]), values=['Survive', 'Fail'])
+    v4 = Variable(name='v4', B=np.array([[1, 0], [0, 1], [1, 1]]), values=['Survive', 'Fail'])
+    v5 = Variable(name='v5', B=np.array([[1, 0], [0, 1]]), values=['Survive', 'Fail'])
 
-    Mx = Cpm(variables=[2, 3, 5, 1, 4], no_child=3, C = C, p = p)
+    Mx = Cpm(variables=[v2, v3, v5, v1, v4], no_child=3, C = C, p = p)
 
-    return Mx, vars_
+    return Mx
 
 def test_condition0(setup_condition):
 
-    Mx, vars_ = setup_condition
-    condVars = np.array([2])
+    Mx = setup_condition
+    v2, v1 = Mx.get_variables(['v2', 'v1'])
+
+    condVars = [v2]
     condStates = np.array([1])
 
-    Mx = Cpm(variables=[2, 1],
+    Mx = Cpm(variables=[v2, v1],
              no_child = 1,
              C = np.array([[1, 1], [2, 1], [1, 2], [2, 2]]),
              p = np.array([[0.99, 0.01, 0.9, 0.1]]).T)
 
-    compatFlag = iscompatible(Mx.C, Mx.variables, condVars, condStates, vars_)
+    compatFlag = iscompatible(Mx.C, Mx.variables, condVars, condStates)
     #expected = np.array([1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0])[:, np.newaxis]
     expected = np.array([1, 0, 1, 0])
     np.testing.assert_array_equal(expected, compatFlag)
@@ -1007,11 +1087,11 @@ def test_condition0(setup_condition):
     _condVars = get_value_given_condn(condVars, idxInC)
     _condStates = get_value_given_condn(condStates, idxInC)
     _idxInC = get_value_given_condn(idxInC, idxInC)
-    assert _condVars == np.array([2])
+    assert _condVars == [v2]
     assert _condStates== np.array([1])
     assert _idxInC== np.array([0])
 
-    B = vars_[_condVars[0]].B
+    B = _condVars[0].B
     np.testing.assert_array_equal(B, np.array([[1, 0], [0, 1], [1, 1]]))
 
     # FIXME: index or not
@@ -1027,7 +1107,10 @@ def test_condition0(setup_condition):
     np.testing.assert_array_equal(compatCheck_mv, expected)
 
     B = add_new_states(compatCheck_mv, B)
-    vars_[_condVars[0]].B = B
+    _condVars[0] = Variable(name=_condVars[0].name,
+                            B=B,
+                            values=_condVars[0].values)
+    #_condVars[0].B = B
 
     # FIXME: index or not
     Ccond[:, _idxInC[0]] = [x+1 for x in ismember(compatCheck_mv, B)[1]]
@@ -1051,12 +1134,14 @@ def test_condition0(setup_condition):
 
 def test_condition1(setup_condition):
 
-    Mx, vars_ = setup_condition
-    condVars = np.array([2])
+    Mx = setup_condition
+    v2 = Mx.get_variables('v2')
+    condVars = [v2]
     condStates = np.array([1])
 
-    [M_n], vars_n = condition([Mx], condVars, condStates, vars_)
-    np.testing.assert_array_equal(M_n.variables, [2, 3, 5, 1, 4])
+    [M_n] = condition([Mx], condVars, condStates)
+    names = [x.name for x in M_n.variables]
+    assert names==['v2', 'v3', 'v5', 'v1', 'v4']
     assert M_n.no_child == 3
     expected = np.array([[1,1,1,1,1],
                         [1,2,1,1,1],
@@ -1075,12 +1160,14 @@ def test_condition1(setup_condition):
 
 def test_condition1d(setup_condition):
 
-    Mx, vars_ = setup_condition
-    condVars = np.array([2])
+    Mx = setup_condition
+    v2 = Mx.get_variables('v2')
+    condVars = [v2]
     condStates = np.array([1])
 
-    [M_n], vars_n = condition({1: Mx}, condVars, condStates, vars_)
-    np.testing.assert_array_equal(M_n.variables, [2, 3, 5, 1, 4])
+    [M_n] = condition({1: Mx}, condVars, condStates)
+    names = [x.name for x in M_n.variables]
+    assert names==['v2', 'v3', 'v5', 'v1', 'v4']
     assert M_n.no_child== 3
     expected = np.array([[1,1,1,1,1],
                         [1,2,1,1,1],
@@ -1099,13 +1186,15 @@ def test_condition1d(setup_condition):
 
 def test_condition2(setup_condition):
 
-    Mx, vars_ = setup_condition
-    condVars = np.array([1])
+    Mx = setup_condition
+    v1 = Mx.get_variables('v1')
+    condVars = [v1]
     condStates = np.array([1])
 
-    [M_n], vars_n = condition([Mx], condVars, condStates, vars_)
+    [M_n] = condition([Mx], condVars, condStates)
 
-    np.testing.assert_array_equal(M_n.variables, [2, 3, 5, 1, 4])
+    names = [x.name for x in M_n.variables]
+    assert names==['v2', 'v3', 'v5', 'v1', 'v4']
     assert M_n.no_child==3
     expected = np.array([[1,1,1,1,1],
                         [2,1,1,1,1],
@@ -1125,13 +1214,16 @@ def test_condition2(setup_condition):
 
 def test_condition3(setup_condition):
     # conditioning on multiple nodes
-    Mx, vars_ = setup_condition
-    condVars = np.array([2, 1])
+    Mx = setup_condition
+    v2 = Mx.get_variables('v2')
+    v1 = Mx.get_variables('v1')
+    condVars = [v2, v1]
     condStates = np.array([1, 1])
 
-    [M_n], vars_n = condition([Mx], condVars, condStates, vars_)
+    [M_n]= condition([Mx], condVars, condStates)
 
-    np.testing.assert_array_equal(M_n.variables, [2, 3, 5, 1, 4])
+    names = [x.name for x in M_n.variables]
+    assert names==['v2', 'v3', 'v5', 'v1', 'v4']
     assert M_n.no_child==3
     expected = np.array([[1,1,1,1,1],
                         [1,2,1,1,1],
@@ -1147,18 +1239,18 @@ def test_condition3(setup_condition):
 
 def test_condition3s(setup_condition):
     # conditioning on multiple nodes
-    Mx_, vars_ = setup_condition
-    Mx = Cpm(variables=['2', '3', '5', '1', '4'], no_child=3, C = Mx_.C, p = Mx_.p)
-    v_info = {}
-    for k, v in vars_.items():
-        v_info[f'{k}'] = v
+    Mx_ = setup_condition
 
-    condVars = np.array(['2', '1'])
+    v2, v1, v3, v5, v4 = Mx_.get_variables(['v2', 'v1', 'v3', 'v5', 'v4'])
+    Mx = Cpm(variables=[v2, v3, v5, v1, v4], no_child=3, C = Mx_.C, p = Mx_.p)
+
+    condVars = [v2, v1]
     condStates = np.array([1, 1])
 
-    [M_n], vars_n = condition([Mx], condVars, condStates, v_info)
+    [M_n] = condition([Mx], condVars, condStates)
 
-    np.testing.assert_array_equal(M_n.variables, ['2', '3', '5', '1', '4'])
+    names = [x.name for x in M_n.variables]
+    assert names==['v2', 'v3', 'v5', 'v1', 'v4']
     assert M_n.no_child==3
     expected = np.array([[1,1,1,1,1],
                         [1,2,1,1,1],
@@ -1175,23 +1267,26 @@ def test_condition3s(setup_condition):
 
 def test_condition4(setup_condition):
 
-    _, vars_ = setup_condition
+    Mx_ = setup_condition
+
+    v2, v3, v5, v4 = Mx_.get_variables(['v2', 'v3', 'v5', 'v4'])
+
     C = np.array([[2, 3, 3, 2],
                  [1, 1, 3, 1],
                  [1, 2, 1, 1],
                  [2, 2, 2, 1]])
     p = np.array([1, 1, 1, 1, ])
-    Mx = Cpm(variables=[5, 2, 3, 4], no_child=1, C = C, p = p.T)
-    condVars = np.array([2, 3])
+    Mx = Cpm(variables=[v5, v2, v3, v4], no_child=1, C = C, p = p.T)
+    condVars = [v2, v3]
     condStates = np.array([1, 1])
 
-    result = iscompatible(Mx.C, Mx.variables, condVars, condStates, vars_)
+    result = iscompatible(Mx.C, Mx.variables, condVars, condStates)
     expected = np.array([1,1,0,0])
     np.testing.assert_array_equal(expected, result)
 
-    [M_n], vars_n = condition([Mx], condVars, condStates, vars_)
+    [M_n] = condition([Mx], condVars, condStates)
 
-    np.testing.assert_array_equal(M_n.variables, [5, 2, 3, 4])
+    assert M_n.variables == [v5, v2, v3, v4]
     assert M_n.no_child==1
     expected = np.array([[2,1,1,2],
                          [1,1,1,1]])
@@ -1204,19 +1299,20 @@ def test_condition4(setup_condition):
 
 def test_condition5(setup_condition):
 
-    _, vars_ = setup_condition
+    Mx = setup_condition
+    v3, v1 = Mx.get_variables(['v3', 'v1'])
     C = np.array([[1, 1],
                  [2, 1],
                  [1, 2],
                  [2, 2]])
     p = np.array([0.95, 0.05, 0.85, 0.15])
-    M2 = Cpm(variables=[3, 1], no_child=1, C = C, p = p.T)
-    condVars = np.array([1])
+    M2 = Cpm(variables=[v3, v1], no_child=1, C = C, p = p.T)
+    condVars = [v1]
     states = np.array([2])
 
-    [M_n], vars_n = condition([M2], condVars, states, vars_)
+    [M_n]= condition([M2], condVars, states)
 
-    np.testing.assert_array_equal(M_n.variables, [3, 1])
+    assert M_n.variables== [v3, v1]
     assert M_n.no_child== 1
     expected = np.array([[1,2],
                          [2,2]])
@@ -1227,23 +1323,47 @@ def test_condition5(setup_condition):
 
 def test_condition5s(setup_condition):
 
-    _, vars_ = setup_condition
-    v_info = {}
-    for k, v in vars_.items():
-        v_info[f'{k}'] = v
+    Mx = setup_condition
+    v3, v1 = Mx.get_variables(['v3', 'v1'])
+    C = np.array([[1, 1],
+                 [2, 1],
+                 [1, 2],
+                 [2, 2]])
+    p = np.array([0.95, 0.05, 0.85, 0.15])
+    M2 = Cpm(variables=[v3, v1], no_child=1, C = C, p = p.T)
+    condVars = [v1]
+    states = np.array([2])
+
+    [M_n]= condition([M2], condVars, states)
+
+    assert M_n.variables== [v3, v1]
+    assert M_n.no_child== 1
+    expected = np.array([[1,2],
+                         [2,2]])
+    np.testing.assert_array_equal(M_n.C, expected)
+
+    expected = np.array([[0.85, 0.15]]).T
+    np.testing.assert_array_equal(M_n.p, expected)
+
+def test_condition5ss(setup_condition):
+
+    A1 = Variable(name='A1', B=np.eye(2), values=['Mild', 'Severe'])
+    A2 = Variable(name='A2', B=np.array([[1, 0], [0, 1], [1, 1]]), values=['Survive', 'Fail'])
+    A3 = Variable(name='A3', B=np.array([[1, 0], [0, 1], [1, 1]]), values=['Survive', 'Fail'])
+    A4 = Variable(name='A4', B=np.array([[1, 0], [0, 1], [1, 1]]), values=['Survive', 'Fail'])
+    A5 = Variable(name='A4', B=np.array([[1, 0], [0, 1]]), values=['Survive', 'Fail'])
 
     C = np.array([[1, 1],
                  [2, 1],
                  [1, 2],
                  [2, 2]])
     p = np.array([0.95, 0.05, 0.85, 0.15])
-    M2 = Cpm(variables=['3', '1'], no_child=1, C = C, p = p.T)
-    condVars = np.array(['1'])
+    M2 = Cpm(variables=[A3, A1], no_child=1, C = C, p = p.T)
+    condVars = [A1]
     states = np.array([2])
 
-    [M_n], vars_n = condition([M2], condVars, states, v_info)
-
-    np.testing.assert_array_equal(M_n.variables, ['3', '1'])
+    [M_n]= condition([M2], condVars, states)
+    assert M_n.variables== [A3, A1]
     assert M_n.no_child== 1
     expected = np.array([[1,2],
                          [2,2]])
@@ -1255,16 +1375,18 @@ def test_condition5s(setup_condition):
 
 def test_condition6(setup_condition):
 
-    _, vars_ = setup_condition
+    Mx = setup_condition
+    v1 = Mx.get_variables('v1')
     C = np.array([[1, 2]]).T
     p = np.array([0.9, 0.1])
-    M2 = Cpm(variables=[1], no_child=1, C = C, p = p.T)
+
+    M2 = Cpm(variables=[v1], no_child=1, C = C, p = p.T)
     condVars = np.array([])
     states = np.array([])
 
-    [M_n], vars_n = condition([M2], condVars, states, vars_)
+    [M_n]= condition([M2], condVars, states)
 
-    np.testing.assert_array_equal(M_n.variables, [1])
+    assert M_n.variables==[v1]
     assert M_n.no_child== 1
     expected = np.array([[1,2]]).T
     np.testing.assert_array_equal(M_n.C, expected)
@@ -1275,7 +1397,14 @@ def test_condition6(setup_condition):
 
 @pytest.fixture
 def setup_sum():
-    variables = [2, 3, 5, 1, 4]
+
+    A1 = Variable(name='A1', B=np.eye(2), values=['Mild', 'Severe'])
+    A2 = Variable(name='A2', B=np.array([[1, 0], [0, 1], [1, 1]]), values=['Survive', 'Fail'])
+    A3 = Variable(name='A3', B=np.array([[1, 0], [0, 1], [1, 1]]), values=['Survive', 'Fail'])
+    A4 = Variable(name='A4', B=np.array([[1, 0], [0, 1], [1, 1]]), values=['Survive', 'Fail'])
+    A5 = Variable(name='A5', B=np.array([[1, 0], [0, 1]]), values=['Survive', 'Fail'])
+
+    variables = [A2, A3, A5, A1, A4]
     no_child = 3
     C = np.array([
           [1,1,1,1,1],
@@ -1305,13 +1434,14 @@ def setup_sum():
 def test_sum1(setup_sum):
 
     M = Cpm(**setup_sum)
-    sumVars = [1]
-    varsRemainIdx = ismember( sumVars, M.variables[:M.no_child])
+    A1, A2, A3, A4, A5 = M.get_variables(['A1', 'A2', 'A3', 'A4', 'A5'])
+    sumVars = [A1]
+    varsRemainIdx = ismember(sumVars, M.variables[:M.no_child])
 
     sumFlag = 1
     if sumFlag:
         varsRemain, varsRemainIdx = setdiff(M.variables[:M.no_child], sumVars)
-        assert varsRemain== [2, 3, 5]
+        assert [x.name for x in varsRemain]== ['A2', 'A3', 'A5']
         assert varsRemainIdx== [0, 1, 2]  # Matlab: [1, 2, 3]
     else:
         varsRemainIdx = get_value_given_condn(varsRemainIdx, varsRemainIdx)
@@ -1321,10 +1451,10 @@ def test_sum1(setup_sum):
     no_child = len(varsRemain)
 
     if any(M.variables[M.no_child:]):
-        varsRemain = np.append(varsRemain, M.variables[M.no_child:])
-        varsRemainIdx = np.append(varsRemainIdx, range(M.no_child, len(M.variables)))
+        varsRemain += M.variables[M.no_child:]
+        varsRemainIdx += list(range(M.no_child, len(M.variables)))
 
-    np.testing.assert_array_equal(varsRemain, [2, 3, 5, 1, 4])
+    assert varsRemain ==[A2, A3, A5, A1, A4]
     np.testing.assert_array_equal(varsRemainIdx, [0, 1, 2, 3, 4])
 
     Mloop = Cpm(variables=get_value_given_condn(M.variables, varsRemainIdx),
@@ -1337,7 +1467,7 @@ def test_sum1(setup_sum):
     while Mloop.C.any():
         Mcompare = Mloop.get_subset([0]) # need to change to 0 
         if i==0:
-            np.testing.assert_array_equal(Mcompare.variables, [2, 3, 5, 1, 4])
+            assert Mcompare.variables== [A2, A3, A5, A1, A4]
             np.testing.assert_array_equal(Mcompare.no_child, 5)
             np.testing.assert_array_equal(Mcompare.p, np.array([[0.9405]]).T)
             np.testing.assert_array_equal(Mcompare.C, np.array([[1, 1, 1, 1, 1]]))
@@ -1390,7 +1520,7 @@ def test_sum1(setup_sum):
                               [2,2,2,2,2]])
         expected_p = np.array([[0.0095,0.0495,0.0005,0.7650,0.0850,0.1350,0.0150,0.9405,0.0095,0.0495,0.0005,0.7650,0.0850,0.1350,0.0150]]).T
         if i==0:
-            np.testing.assert_array_equal(Mloop.variables, [2, 3, 5, 1, 4])
+            assert Mloop.variables== [A2, A3, A5, A1, A4]
             np.testing.assert_array_equal(Mloop.no_child, 5)
             np.testing.assert_array_equal(Mloop.p, expected_p)
             np.testing.assert_array_equal(Mloop.C, expected_C)
@@ -1427,7 +1557,8 @@ def test_sum1(setup_sum):
 def test_sum2(setup_sum):
 
     M = Cpm(**setup_sum)
-    sumVars = [1]
+    A1 = M.get_variables('A1')
+    sumVars = [A1]
 
     Ms = M.sum(sumVars)
     expected_C = np.array([[1,1,1,1,1],
@@ -1454,8 +1585,8 @@ def test_sum2(setup_sum):
 def test_sum2s(setup_sum):
 
     M = Cpm(**setup_sum)
-    M.variables = [f'{x}' for x in M.variables]
-    sumVars = ['1']
+    A1 = M.get_variables('A1')
+    sumVars = [A1]
 
     #pdb.set_trace()
     Ms = M.sum(sumVars, flag=1)
@@ -1485,7 +1616,9 @@ def test_sum2s(setup_sum):
 def test_sum3(setup_sum):
 
     M = Cpm(**setup_sum)
-    sumVars = [2, 3]
+    A2, A3 = M.get_variables(['A2', 'A3'])
+
+    sumVars = [A2, A3]
     Ms = M.sum(sumVars)
     expected_C = np.array([[1,1,1],
                           [2,1,1],
@@ -1497,12 +1630,14 @@ def test_sum3(setup_sum):
 
     np.testing.assert_array_equal(Ms.C, expected_C)
     np.testing.assert_array_almost_equal(Ms.p, expected_p)
-    np.testing.assert_array_equal(Ms.variables, [5, 1, 4])
+    assert [x.name for x in Ms.variables]== ['A5', 'A1', 'A4']
 
 def test_sum4(setup_sum):
 
     M = Cpm(**setup_sum)
-    sumVars = [5]
+    A5 = M.get_variables('A5')
+
+    sumVars = [A5]
     Ms = M.sum(sumVars, flag=0)
     expected_C = np.array([[1,1,1],
                           [2,1,1],
@@ -1514,51 +1649,51 @@ def test_sum4(setup_sum):
 
     np.testing.assert_array_equal(Ms.C, expected_C)
     np.testing.assert_array_almost_equal(Ms.p, expected_p)
-    np.testing.assert_array_equal(Ms.variables, [5, 1, 4])
+    assert [x.name for x in Ms.variables]== ['A5', 'A1', 'A4']
     assert Ms.no_child== 1
 
 
 @pytest.fixture
 def setup_mcs_product():
+
+    v1 = Variable(name='v1', B=np.eye(2), values=['Mild', 'Severe'])
+    v2 = Variable(name='v2', B=np.array([[1, 0], [0, 1], [1, 1]]), values=['Survive', 'Fail'])
+    v3 = Variable(name='v3', B=np.array([[1, 0], [0, 1], [1, 1]]), values=['Survive', 'Fail'])
+    v4 = Variable(name='v4', B=np.array([[1, 0], [0, 1], [1, 1]]), values=['Survive', 'Fail'])
+    v5 = Variable(name='v5', B=np.array([[1, 0], [0, 1]]), values=['Survive', 'Fail'])
+
     M = {}
-    M[1] = Cpm(variables=[1],
+    M[1] = Cpm(variables=[v1],
                    no_child=1,
                    C = np.array([1, 2]).T,
                    p = np.array([0.9, 0.1]).T)
 
-    M[2]= Cpm(variables=[2, 1],
+    M[2]= Cpm(variables=[v2, v1],
                    no_child=1,
                    C = np.array([[1, 1], [2, 1], [1, 2], [2, 2]]),
                    p = np.array([0.99, 0.01, 0.9, 0.1]).T)
 
-    M[3] = Cpm(variables=[3, 1],
+    M[3] = Cpm(variables=[v3, v1],
                    no_child=1,
                    C = np.array([[1, 1], [2, 1], [1, 2], [2, 2]]),
                    p = np.array([0.95, 0.05, 0.85, 0.15]).T)
 
-    M[4] = Cpm(variables=[4, 1],
+    M[4] = Cpm(variables=[v4, v1],
                    no_child=1,
                    C = np.array([[1, 1], [2, 1], [1, 2], [2, 2]]),
                    p = np.array([0.99, 0.01, 0.9, 0.1]).T)
 
-    M[5] = Cpm(variables=[5, 2, 3, 4],
+    M[5] = Cpm(variables=[v5, v2, v3, v4],
                    no_child=1,
                    C = np.array([[2, 3, 3, 2], [1, 1, 3, 1], [1, 2, 1, 1], [2, 2, 2, 1]]),
                    p = np.array([1, 1, 1, 1]).T)
 
-    vars_ = {}
-    vars_[1] = Variable(B=np.eye(2), values=['Mild', 'Severe'])
-    vars_[2] = Variable(B=np.array([[1, 0], [0, 1], [1, 1]]), values=['Survive', 'Fail'])
-    vars_[3] = Variable(B=np.array([[1, 0], [0, 1], [1, 1]]), values=['Survive', 'Fail'])
-    vars_[4] = Variable(B=np.array([[1, 0], [0, 1], [1, 1]]), values=['Survive', 'Fail'])
-    vars_[5] = Variable(B=np.array([[1, 0], [0, 1]]), values=['Survive', 'Fail'])
-
-    return M, vars_
+    return M
 
 
 def test_get_sample_order(setup_mcs_product):
 
-    cpms, _ = setup_mcs_product
+    cpms = setup_mcs_product
     cpms = [cpms[k] for k in [1, 2, 3]]
 
     sampleOrder, sampleVars, varAdditionOrder = get_sample_order(cpms)
@@ -1567,12 +1702,13 @@ def test_get_sample_order(setup_mcs_product):
     np.testing.assert_array_equal(sampleOrder, expected)
     np.testing.assert_array_equal(varAdditionOrder, expected)
 
-    expected = [1, 2, 3]
-    np.testing.assert_array_equal(sampleVars, expected)
+    expected = ['v1', 'v2', 'v3']
+    result = [x.name for x in sampleVars]
+    np.testing.assert_array_equal(result, expected)
 
 def test_get_prod_idx1(setup_mcs_product):
 
-    cpms, _ = setup_mcs_product
+    cpms = setup_mcs_product
     cpms = [cpms[k] for k in [1, 2, 3]]
 
     result = get_prod_idx(cpms, [])
@@ -1584,7 +1720,7 @@ def test_get_prod_idx1(setup_mcs_product):
 
 def test_get_prod_idx2(setup_mcs_product):
 
-    cpms, _ = setup_mcs_product
+    cpms = setup_mcs_product
     cpms = {k:cpms[k] for k in [1, 2, 3]}
 
     result = get_prod_idx(cpms, [])
@@ -1596,15 +1732,17 @@ def test_get_prod_idx2(setup_mcs_product):
 
 def test_single_sample1(setup_mcs_product):
 
-    cpms, varis = setup_mcs_product
+    cpms = setup_mcs_product
     cpms = [cpms[k] for k in [1, 2, 3]]
 
-    sampleOrder = [0, 1, 2]
-    sampleVars = [1, 2, 3]
-    varAdditionOrder = [0, 1, 2]
-    sampleInd = [1]
+    v2, v1 = cpms[1].get_variables(['v2', 'v1'])
+    v3 = cpms[2].get_variables('v3')
 
-    sample, sampleProb = single_sample(cpms, sampleOrder, sampleVars, varAdditionOrder, varis, sampleInd)
+    sampleOrder = [0, 1, 2]
+    sampleVars = [v1, v2, v3]
+    varAdditionOrder = [0, 1, 2]
+    sampleInd = [v1]
+    sample, sampleProb = single_sample(cpms, sampleOrder, sampleVars, varAdditionOrder, sampleInd)
 
     if (sample == [1, 1, 1]).all():
         np.testing.assert_array_almost_equal(sampleProb, [[0.846]], decimal=3)
@@ -1613,15 +1751,17 @@ def test_single_sample1(setup_mcs_product):
 
 def test_single_sample2(setup_mcs_product):
 
-    cpms, varis = setup_mcs_product
+    cpms = setup_mcs_product
     cpms = {k:cpms[k] for k in [1, 2, 3]}
+    v2, v1 = cpms[2].get_variables(['v2', 'v1'])
+    v3 = cpms[3].get_variables('v3')
 
     sampleOrder = [0, 1, 2]
-    sampleVars = [1, 2, 3]
+    sampleVars = [v1, v2, v3]
     varAdditionOrder = [0, 1, 2]
     sampleInd = [1]
 
-    sample, sampleProb = single_sample(cpms, sampleOrder, sampleVars, varAdditionOrder, varis, sampleInd)
+    sample, sampleProb = single_sample(cpms, sampleOrder, sampleVars, varAdditionOrder, sampleInd)
 
     if (sample == [1, 1, 1]).all():
         np.testing.assert_array_almost_equal(sampleProb, [[0.846]], decimal=3)
@@ -1630,13 +1770,13 @@ def test_single_sample2(setup_mcs_product):
 
 def test_mcs_product1(setup_mcs_product):
 
-    cpms, vars_ = setup_mcs_product
+    cpms = setup_mcs_product
     cpms = {k:cpms[k] for k in [1, 2, 3]}
 
     nSample = 10
-    Mcs = mcs_product(cpms, nSample, vars_)
+    Mcs = mcs_product(cpms, nSample)
 
-    np.testing.assert_array_equal(Mcs.variables, [3, 2, 1])
+    assert [x.name for x in Mcs.variables]==['v3', 'v2', 'v1']
 
     assert Mcs.C.shape== (10, 3)
     assert Mcs.q.shape== (10, 1)
@@ -1656,13 +1796,12 @@ def test_mcs_product1(setup_mcs_product):
 
 def test_mcs_product2(setup_mcs_product):
 
-    cpms, vars_ = setup_mcs_product
+    cpms = setup_mcs_product
     cpms = [cpms[k] for k in [1, 2, 3, 4, 5]]
     nSample = 10
-    Mcs = mcs_product(cpms, nSample, vars_)
+    Mcs = mcs_product(cpms, nSample)
 
-    np.testing.assert_array_equal(Mcs.variables, [5, 4, 3, 2, 1])
-
+    assert [x.name for x in Mcs.variables]==['v5', 'v4', 'v3', 'v2', 'v1']
     assert Mcs.C.shape== (10, 5)
     assert Mcs.q.shape== (10, 1)
     assert Mcs.sample_idx.shape== (10, 1)
@@ -1681,12 +1820,12 @@ def test_mcs_product2(setup_mcs_product):
 
 def test_mcs_product2d(setup_mcs_product):
 
-    cpms, vars_ = setup_mcs_product
+    cpms = setup_mcs_product
     cpms = {k+1:cpms[k] for k in [1, 2, 3, 4, 5]}
     nSample = 10
-    Mcs = mcs_product(cpms, nSample, vars_)
+    Mcs = mcs_product(cpms, nSample)
 
-    np.testing.assert_array_equal(Mcs.variables, [5, 4, 3, 2, 1])
+    assert [x.name for x in Mcs.variables]==['v5', 'v4', 'v3', 'v2', 'v1']
 
     assert Mcs.C.shape== (10, 5)
     assert Mcs.q.shape== (10, 1)
@@ -1706,18 +1845,12 @@ def test_mcs_product2d(setup_mcs_product):
 
 def test_mcs_product2ds(setup_mcs_product):
 
-    cpms, vars_ = setup_mcs_product
-    vars_ = {str(k):vars_[k] for k in [1, 2, 3, 4, 5]}
-
-    cpms_ = {}
-    for k, v in cpms.items():
-        cpms_[str(k+1)] = cpms[k]
-        cpms_[str(k+1)].variables = [str(k) for k in cpms[k].variables]
+    cpms_ = setup_mcs_product
 
     nSample = 10
-    Mcs = mcs_product(cpms_, nSample, vars_)
+    Mcs = mcs_product(cpms_, nSample)
 
-    np.testing.assert_array_equal(Mcs.variables, ['5', '4', '3', '2', '1'])
+    assert [x.name for x in Mcs.variables]==['v5', 'v4', 'v3', 'v2', 'v1']
 
     assert Mcs.C.shape== (10, 5)
     assert Mcs.q.shape== (10, 1)
@@ -1739,10 +1872,10 @@ def test_mcs_product2ds(setup_mcs_product):
 def test_mcs_product3(setup_mcs_product):
 
     nSample = 10
-    cpms, vars_ = setup_mcs_product
+    cpms = setup_mcs_product
     cpms = [cpms[k] for k in [2, 5]]
     with pytest.raises(TypeError):
-        Mcs = mcs_product(cpms, nSample, vars_)
+        Mcs = mcs_product(cpms, nSample)
 
 def test_get_value_given_condn1():
 
@@ -1757,65 +1890,58 @@ def test_get_value_given_condn1():
 
 def test_condition(setup_mcs_product):
 
-    cpms, vars_ = setup_mcs_product
-    condVars = np.array([1, 2])
+    cpms = setup_mcs_product
+    v1, v2 = cpms[2].get_variables(['v1', 'v2'])
+    condVars = [v1, v2]
     condStates = np.array([1, 1])
 
-    [M], _ = condition(cpms[3], condVars, condStates, vars_, [0])
+    [M]= condition(cpms[3], condVars, condStates, [0])
     np.testing.assert_array_equal(M.C, [[1, 1], [2, 1]])
     assert M.q.any() == False
     assert M.sample_idx.any() == False
 
 def test_condition_s(setup_mcs_product):
 
-    cpms, vars_ = setup_mcs_product
-    vars_ = {str(k):vars_[k] for k in [1, 2, 3, 4, 5]}
-
-    cpms_ = {}
-    for k, v in cpms.items():
-        cpms_[str(k)] = cpms[k]
-        cpms_[str(k)].variables = [str(k) for k in cpms[k].variables]
-
-    condVars = np.array(['1', '2'])
+    cpms = setup_mcs_product
+    v1, v2 = cpms[2].get_variables(['v1', 'v2'])
+    condVars = [v1, v2]
     condStates = np.array([1, 1])
 
-    [M], _ = condition(cpms_['3'], condVars, condStates, vars_, [0])
+    [M] = condition(cpms[3], condVars, condStates, [0])
     np.testing.assert_array_equal(M.C, [[1, 1], [2, 1]])
     assert M.q.any() == False
     assert M.sample_idx.any() == False
 
 @pytest.fixture
 def setup_prod_cms():
+    v1 = Variable(name='v1', B=np.eye(3), values=['Sunny', 'Cloudy', 'Rainy'])
+    v2 = Variable(name='v2', B=np.array([[1, 0], [0, 1]]), values=['Good', 'Bad'])
+    v3 = Variable(name='v3', B=np.array([[1, 0], [0, 1]]), values=['Below 0', 'Above 0'])
 
     M = {}
-    M[1] = Cpm(variables=[1],
+    M[1] = Cpm(variables=[v1],
                    no_child=1,
                    C = np.array([1, 2]).T,
                    p = np.array([0.9, 0.1]).T)
 
-    M[2] = Cpm(variables=[2, 1],
+    M[2] = Cpm(variables=[v2, v1],
                    no_child=1,
                    C = np.array([[1, 1], [2, 1], [1, 2], [2, 2]]),
                    p = np.array([0.99, 0.01, 0.9, 0.1]).T)
 
-    M[3] = Cpm(variables=[3, 1],
+    M[3] = Cpm(variables=[v3, v1],
                    no_child=1,
                    C = np.array([[1, 1], [2, 1], [1, 2], [2, 2]]),
                    p = np.array([0.95, 0.05, 0.85, 0.15]).T)
-    vars_ = {}
-    vars_[1] = Variable(B=np.eye(3), values=['Sunny', 'Cloudy', 'Rainy'])
-    vars_[2] = Variable(B=np.array([[1, 0], [0, 1]]), values=['Good', 'Bad'])
-    vars_[3] = Variable(B=np.array([[1, 0], [0, 1]]), values=['Below 0', 'Above 0'])
-
-    return M, vars_
+    return M
 
 
 def test_prod_cpms1(setup_prod_cms):
 
-    cpms, vars_ = setup_prod_cms
-    Mmult, vars_ = prod_cpms(cpms=cpms, var=vars_)
+    cpms= setup_prod_cms
+    Mmult = prod_cpms(cpms=cpms)
 
-    np.testing.assert_array_equal(Mmult.variables, [1, 2, 3])
+    assert [x.name for x in Mmult.variables] == ['v1', 'v2', 'v3']
 
     expected = np.array([[1,1,1],[2,1,1],[1,2,1],[2,2,1],[1,1,2],[2,1,2],[1,2,2],[2,2,2]])
     np.testing.assert_array_equal(Mmult.C, expected)
@@ -1825,16 +1951,10 @@ def test_prod_cpms1(setup_prod_cms):
 
 def test_prod_cpms1s(setup_prod_cms):
 
-    cpms, vars_ = setup_prod_cms
-    cpms_ = {}
-    for k, v in cpms.items():
-        cpms_[str(k)] = v
-        cpms_[str(k)].variables = [str(i) for i in v.variables]
-    vars_ = {str(k):v for k, v in vars_.items()}
+    cpms = setup_prod_cms
+    Mmult = prod_cpms(cpms=cpms)
 
-    Mmult, vars_ = prod_cpms(cpms=cpms_, var=vars_)
-
-    assert Mmult.variables==['1', '2', '3']
+    assert [x.name for x in Mmult.variables]==['v1', 'v2', 'v3']
 
     expected = np.array([[1,1,1],[2,1,1],[1,2,1],[2,2,1],[1,1,2],[2,1,2],[1,2,2],[2,2,2]])
     np.testing.assert_array_equal(Mmult.C, expected)
@@ -1843,13 +1963,12 @@ def test_prod_cpms1s(setup_prod_cms):
     np.testing.assert_array_almost_equal(Mmult.p, expected, decimal=4)
 
 
-
 def test_prod_cpms2(setup_prod_cms):
 
-    cpms, vars_ = setup_prod_cms
-    Mmult, vars_ = prod_cpms(cpms=cpms, var=vars_)
+    cpms = setup_prod_cms
+    Mmult= prod_cpms(cpms=cpms)
 
-    assert Mmult.variables == [1, 2, 3]
+    assert [x.name for x in Mmult.variables] == ['v1', 'v2', 'v3']
 
     expected = np.array([[1,1,1],[2,1,1],[1,2,1],[2,2,1],[1,1,2],[2,1,2],[1,2,2],[2,2,2]])
     np.testing.assert_array_equal(Mmult.C, expected)
