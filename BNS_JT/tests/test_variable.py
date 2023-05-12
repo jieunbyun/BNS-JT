@@ -36,7 +36,7 @@ def test_B2():
                         'B': f_B,
                         'values': ['T', 'F']})
 
-def test_contain1():
+def test_eq1():
     name = 'A'
     B = np.array([[1, 0], [0, 1], [1, 1]])
     value = ['survival', 'fail']
@@ -47,7 +47,7 @@ def test_contain1():
 
     assert a == b
 
-def test_contain2():
+def test_eq2():
     name = 'A'
     B = np.array([[1, 0], [0, 1], [1, 1]])
     value = ['survival', 'fail']
@@ -61,7 +61,7 @@ def test_contain2():
 
     assert a in _list
 
-def test_contain3():
+def test_eq3():
     name = 'A'
     B = np.array([[1, 0], [0, 1], [1, 1]])
     value = ['survival', 'fail']

@@ -915,7 +915,9 @@ def get_prob(M, var_inds, var_states, flag=True):
 
     assert isinstance(M, Cpm), 'Given CPM must be a single CPM'
     assert isinstance(var_inds, list), 'var_inds should be a list'
-    assert isinstance(var_states, np.ndarray), 'var_states should be an array'
+    assert isinstance(var_states, (list, np.ndarray)), 'var_states should be an array'
+    if isinstance(var_states, list):
+        var_states = np.array(var_states)
 
     assert len(var_inds) == var_states.shape[0], f'"var_inds" {var_inds} and "var_states" {var_states} must have the same length.'
 
