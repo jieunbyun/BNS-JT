@@ -60,10 +60,10 @@ arcs_avg_kmh = {'e1': 40,
                 'e5': 30,
                 'e6': 20}
 
-var_ODs = {'OD1': ('n5', 'n1'),
-           'OD2': ('n5', 'n2'),
-           'OD3': ('n5', 'n3'),
-           'OD4': ('n5', 'n4')}
+var_ODs = {'od1': ('n5', 'n1'),
+           'od2': ('n5', 'n2'),
+           'od3': ('n5', 'n3'),
+           'od4': ('n5', 'n4')}
 
 nODs = len(var_ODs)
 
@@ -128,61 +128,61 @@ def setup_bridge():
 
     # Travel times (systems): P(OD_j | X1, ... Xn) j = 1 ... nOD
     B_ = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
-    vars_arc['OD1'] = variable.Variable(name='OD1', B=B_,
+    vars_arc['od1'] = variable.Variable(name='od1', B=B_,
             values=[0.0901, 0.2401, np.inf])
 
-    vars_arc['OD2'] = variable.Variable(name='OD2', B=B_,
+    vars_arc['od2'] = variable.Variable(name='od2', B=B_,
             values=[0.0901, 0.2401, np.inf])
 
-    vars_arc['OD3'] = variable.Variable(name='OD3', B=B_,
+    vars_arc['od3'] = variable.Variable(name='od3', B=B_,
             values=[0.0943, 0.1761, np.inf])
 
-    vars_arc['OD4'] = variable.Variable(name='OD4', B=B_,
+    vars_arc['od4'] = variable.Variable(name='od4', B=B_,
             values=[0.0707, 0.1997, np.inf])
 
-    _variables = [vars_arc[k] for k in ['OD1', 'e1', 'e2', 'e3', 'e4', 'e5', 'e6']]
+    _variables = [vars_arc[k] for k in ['od1', 'e1', 'e2', 'e3', 'e4', 'e5', 'e6']]
     c7 = np.array([
     [1,3,1,3,3,3,3],
     [2,1,2,1,3,3,3],
     [3,1,2,2,3,3,3],
     [3,2,2,3,3,3,3]]) - 1
-    cpms_arc['OD1'] = cpm.Cpm(variables= _variables,
+    cpms_arc['od1'] = cpm.Cpm(variables= _variables,
                            no_child = 1,
                            C = c7,
                            p = [1, 1, 1, 1],
                            )
 
-    _variables = [vars_arc[k] for k in ['OD2', 'e1', 'e2', 'e3', 'e4', 'e5', 'e6']]
+    _variables = [vars_arc[k] for k in ['od2', 'e1', 'e2', 'e3', 'e4', 'e5', 'e6']]
     c8 = np.array([
     [1,3,3,1,3,3,3],
     [2,1,1,2,3,3,3],
     [3,1,2,2,3,3,3],
     [3,2,3,2,3,3,3]]) - 1
-    cpms_arc['OD2'] = cpm.Cpm(variables= _variables,
+    cpms_arc['od2'] = cpm.Cpm(variables= _variables,
                            no_child = 1,
                            C = c8,
                            p = [1, 1, 1, 1],
                            )
 
-    _variables = [vars_arc[k] for k in ['OD3', 'e1', 'e2', 'e3', 'e4', 'e5', 'e6']]
+    _variables = [vars_arc[k] for k in ['od3', 'e1', 'e2', 'e3', 'e4', 'e5', 'e6']]
     c9 = np.array([
     [1,3,3,3,3,1,3],
     [2,3,3,3,1,2,1],
     [3,3,3,3,1,2,2],
     [3,3,3,3,2,2,3]]) - 1
-    cpms_arc['OD3'] = cpm.Cpm(variables= _variables,
+    cpms_arc['od3'] = cpm.Cpm(variables= _variables,
                            no_child = 1,
                            C = c9,
                            p = [1, 1, 1, 1],
                            )
 
-    _variables = [vars_arc[k] for k in ['OD4', 'e1', 'e2', 'e3', 'e4', 'e5', 'e6']]
+    _variables = [vars_arc[k] for k in ['od4', 'e1', 'e2', 'e3', 'e4', 'e5', 'e6']]
     c10 = np.array([
     [1,3,3,3,3,3,1],
     [2,3,3,3,1,1,2],
     [3,3,3,3,1,2,2],
     [3,3,3,3,2,3,2]]) - 1
-    cpms_arc['OD4'] = cpm.Cpm(variables= _variables,
+    cpms_arc['od4'] = cpm.Cpm(variables= _variables,
                            no_child = 1,
                            C = c10,
                            p = [1, 1, 1, 1],
@@ -278,7 +278,6 @@ def test_prob_delay2(setup_bridge):
     np.testing.assert_array_almost_equal(ODs_prob_delay2, expected_delay, decimal=4)
 
 
-@pytest.mark.skip('FIXME')
 def test_prob_damage(setup_bridge):
 
     cpms_arc, vars_arc = setup_bridge
@@ -297,7 +296,7 @@ def test_prob_damage(setup_bridge):
                 values=vars_arc[idx].values)
 
     # # Add observation nodes P( O_j | OD_j ), j = 1, ..., M
-    var_ODs_obs = [f'{i}_obs' for i in var_ODs.keys()]
+    var_ODs_obs = [f'od_obs{i}' for i, _ in enumerate(var_ODs.keys(), 1)]
     # column 0: No disruption or Disruption
     # column 1: 0 (shortest), 1 (alternative), 2 (except the shortest path) 
     C = np.array([[1, 1], [2, 2], [2, 3]]) - 1
@@ -314,10 +313,61 @@ def test_prob_damage(setup_bridge):
                              p= [1, 1, 1])
 
     cpm_ve = cpm.condition(cpms_arc,
-                           cnd_vars=[vars_arc[k] for k in ['OD1_obs', 'OD2_obs', 'OD3_obs']],
+                           cnd_vars=[vars_arc[k] for k in ['od_obs1', 'od_obs2', 'od_obs3']],
                            cnd_states=[1, 1, 0])
+
+    assert len(cpm_ve) == 14
+    assert [x.name for x in cpm_ve[10].variables] == ['od_obs1', 'od1']
+    np.testing.assert_array_equal(cpm_ve[10].C, np.array([[2, 2], [2, 3]]) - 1)
+    np.testing.assert_array_almost_equal(cpm_ve[10].p, np.array([[1, 1]]).T)
+
+    assert [x.name for x in cpm_ve[11].variables] == ['od_obs2', 'od2']
+    np.testing.assert_array_equal(cpm_ve[11].C, np.array([[2, 2], [2, 3]]) - 1)
+    np.testing.assert_array_almost_equal(cpm_ve[11].p, np.array([[1, 1]]).T)
+
+    assert [x.name for x in cpm_ve[12].variables] == ['od_obs3', 'od3']
+    np.testing.assert_array_equal(cpm_ve[12].C, np.array([[1, 1]]) - 1)
+    np.testing.assert_array_almost_equal(cpm_ve[12].p, np.array([[1]]).T)
+
+    assert [x.name for x in cpm_ve[13].variables] == ['od_obs4', 'od4']
+    np.testing.assert_array_equal(cpm_ve[13].C, np.array([[1, 1], [2, 2], [2, 3]]) - 1)
+    np.testing.assert_array_almost_equal(cpm_ve[13].p, np.array([[1, 1, 1]]).T)
+
+    #Mcond_mult1to13 = cpm.prod_cpms(cpm_ve[:-2])
+
+    #Mcond_mult = Mcond_mult1to13.product(cpm_ve[-2])
+
     Mcond_mult = cpm.prod_cpms(cpm_ve)
+
+    assert Mcond_mult.C.shape == (8, 14)
+    assert [x.name for x in Mcond_mult.variables] == ['e1', 'e2', 'e3', 'e4', 'e5', 'e6', 'od1', 'od2', 'od3', 'od4', 'od_obs1', 'od_obs2', 'od_obs3', 'od_obs4']
+
+    expected_p = np.array([[7.48743285822800e-05,
+1.43718130993790e-05,
+1.44320505816953e-08,
+2.77017153313071e-09,
+5.84121979269559e-05,
+1.12119762170237e-05,
+1.12589696766821e-08,
+2.16111197186942e-09]]).T
+
+    np.testing.assert_array_almost_equal(Mcond_mult.p, expected_p)
+
     Mcond_mult_sum = Mcond_mult.sum([vars_arc[k] for k in list(var_ODs.keys()) + var_ODs_obs])
+
+    assert Mcond_mult_sum.C.shape == (8, 6)
+    assert [x.name for x in Mcond_mult_sum.variables] == ['e1', 'e2', 'e3', 'e4', 'e5', 'e6']
+
+    expected_p = np.array([[7.48743285822800e-05,
+1.43718130993790e-05,
+1.44320505816953e-08,
+2.77017153313071e-09,
+5.84121979269559e-05,
+1.12119762170237e-05,
+1.12589696766821e-08,
+2.16111197186942e-09]]).T
+
+    np.testing.assert_array_almost_equal(Mcond_mult_sum.p, expected_p)
 
     # P( X_i = 2 | OD_1 = 2, OD_2 = 2, OD_3 = 1 ), i = 1, ..., N
     arcs_prob_damage = np.zeros(len(arcs))
@@ -326,7 +376,7 @@ def test_prob_damage(setup_bridge):
         iM = Mcond_mult_sum.sum([vars_arc[i]], 0)
         [iM_fail] = cpm.condition(iM,
                                cnd_vars=[vars_arc[i]],
-                               cnd_states=[arc_fail - 1],
+                               cnd_states=[arc_fail],
                                )
         fail_prob = iM_fail.p / iM.p.sum(axis=0)
         if fail_prob.any():

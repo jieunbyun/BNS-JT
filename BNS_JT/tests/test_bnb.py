@@ -23,10 +23,10 @@ arcs = {'e1': ['n1', 'n2'],
 	'e5': ['n3', 'n5'],
 	'e6': ['n4', 'n5']}
 
-var_ODs = {'OD1': ('n5', 'n1'),
-           'OD2': ('n5', 'n2'),
-           'OD3': ('n5', 'n3'),
-           'OD4': ('n5', 'n4')}
+var_ODs = {'od1': ('n5', 'n1'),
+           'od2': ('n5', 'n2'),
+           'od3': ('n5', 'n3'),
+           'od4': ('n5', 'n4')}
 
 def test_bnb(setup_bridge):
 
@@ -70,8 +70,8 @@ def test_bnb(setup_bridge):
 
     # FIXME: index issue
     disconn_state = 3-1 # max basic state
-    disconn_prob = get_prob(M_bnb_VE, [vars_arc['OD1']], np.array([disconn_state]))
-    delay_prob = get_prob(M_bnb_VE, [vars_arc['OD1']], np.array([1-1]), 0)
+    disconn_prob = get_prob(M_bnb_VE, [vars_arc['od1']], np.array([disconn_state]))
+    delay_prob = get_prob(M_bnb_VE, [vars_arc['od1']], np.array([1-1]), 0)
 
     # Check if the results are the same
     # FIXME: index issue

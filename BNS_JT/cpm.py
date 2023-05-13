@@ -79,7 +79,7 @@ class Cpm(object):
         if self.p.ndim == 1:
             self.p.shape = (len(self.p), 1)
 
-        if any(self.q):
+        if self.q.size:
             assert isinstance(self.q, np.ndarray), 'q must be a numeric vector'
             all(isinstance(y, (float, np.float32, np.float64, int, np.int32, np.int64)) for y in self.q), 'p must be a numeric vector'
 
@@ -91,7 +91,7 @@ class Cpm(object):
         else:
             assert len(self.p) == self.C.shape[0], 'p must have the same length with the number of rows in C'
 
-        if any(self.sample_idx):
+        if self.sample_idx.size:
             assert len(self.sample_idx) == self.C.shape[0], 'sample_idx must have the same length with the number of rows in C'
 
             if self.sample_idx.ndim == 1:
@@ -159,17 +159,17 @@ class Cpm(object):
             # select row excluding the row_index
             row_idx, _ = setdiff(range(self.C.shape[0]), row_idx)
 
-        if any(self.p):
+        if self.p.size:
             p_sub = self.p[row_idx]
         else:
             p_sub = []
 
-        if any(self.q):
+        if self.q.size:
             q_sub = self.q[row_idx]
         else:
             q_sub = []
 
-        if any(self.sample_idx):
+        if self.sample_idx.size:
             sample_idx_sub = self.sample_idx[row_idx]
         else:
             sample_idx_sub = []
@@ -199,7 +199,7 @@ class Cpm(object):
 
         C = self.C[:, idx].copy()
 
-        if any(self.sample_idx) and any(M.sample_idx):
+        if self.sample_idx.size and M.sample_idx.size:
             is_cmp = (self.sample_idx == M.sample_idx)
         else:
             is_cmp = np.ones(shape=C.shape[0], dtype=bool)
@@ -232,7 +232,7 @@ class Cpm(object):
 
         assert isinstance(variables, list), 'variables should be a list'
 
-        if flag and any(set(self.variables[self.no_child:]).intersection(variables)):
+        if flag and set(self.variables[self.no_child:]).intersection(variables):
             print('Parent nodes are NOT summed up')
 
         if flag:
@@ -247,7 +247,7 @@ class Cpm(object):
 
         no_child_sum = len(vars_rem)
 
-        if any(self.variables[self.no_child:]):
+        if self.variables[self.no_child:]:
             vars_rem += self.variables[self.no_child:]
             vars_rem_idx += list(range(self.no_child, len(self.variables)))
 
@@ -260,7 +260,7 @@ class Cpm(object):
                 q=self.q,
                 sample_idx=self.sample_idx)
 
-        while M.C.any():
+        while M.C.size:
 
             Mc = M.get_subset([0]) # need to change to 0 
             is_cmp = M.iscompatible(Mc)
@@ -271,21 +271,21 @@ class Cpm(object):
             except NameError:
                 Csum = val
 
-            if any(M.p):
+            if M.p.size:
                 val = np.array([np.sum(M.p[is_cmp])])
                 try:
                     psum = np.append(psum, val, axis=0)
                 except NameError:
                     psum = val
 
-            if any(M.q):
+            if M.q.size:
                 val = M.q[0]
                 try:
                     qsum = np.append(qsum, val, axis=0)
                 except NameError:
                     qsum = val
 
-            if any(M.sample_idx):
+            if M.sample_idx.size:
                 val = M.sample_idx[0]
                 try:
                     sample_idx_sum = np.append(sample_idx_sum, val, axis=0)
@@ -328,21 +328,21 @@ class Cpm(object):
         check = set(first).intersection(second)
         assert not bool(check), 'PMFs must not have common child nodes'
 
-        if any(self.p):
-            if not any(M.p):
+        if self.p.size:
+            if not M.p.size:
                 M.p = np.ones(shape=(M.C.shape[0], 1))
         else:
-            if any(M.p):
+            if M.p.size:
                 self.p = np.ones(shape=(self.C.shape[0], 1))
 
-        if any(self.q):
-            if not any(M.q):
+        if self.q.size:
+            if not M.q.size:
                 M.q = np.ones(shape=(M.C.shape[0], 1))
         else:
-            if any(M.q):
+            if M.q.size:
                 self.q = np.ones(shape=(self.C.shape[0], 1))
 
-        if self.C.any():
+        if self.C.size:
             # FIXME: defined but not used
             #com_vars = list(set(self.variables).intersection(M.variables))
 
@@ -354,7 +354,7 @@ class Cpm(object):
                 c1 = get_value_given_condn(self.C[i, :], idx_vars)
                 c1_not_com = self.C[i, flip(idx_vars)]
 
-                if self.sample_idx.any():
+                if self.sample_idx.size:
                     sample_idx = self.sample_idx[i]
                 else:
                     sample_idx = []
@@ -364,38 +364,37 @@ class Cpm(object):
                                  cnd_states=c1,
                                  sample_idx=sample_idx)
 
-                _prod = np.append(Mc.C, np.tile(c1_not_com, (Mc.C.shape[0], 1)), axis=1)
+                _cprod = np.append(Mc.C, np.tile(c1_not_com, (Mc.C.shape[0], 1)), axis=1)
 
                 try:
-                    Cprod = np.append(Cprod, _prod, axis=0)
+                    Cprod = np.append(Cprod, _cprod, axis=0)
                 except NameError:
-                    Cprod = _prod
+                    Cprod = _cprod
 
-                if any(self.p):
-                    _prod = get_prod(Mc.p, self.p[i])
+                if self.p.size:
+                    _pprod = get_prod(Mc.p, self.p[i])
+                    try:
+                        pprod = np.append(pprod, _pprod, axis=0)
+                    except NameError:
+                        pprod = _pprod
+
+                if self.q.size:
+                    _qprod = get_prod(Mc.q, self.q[i])
 
                     try:
-                        pprod = np.append(pprod, _prod, axis=0)
+                        qprod = np.append(qprod, _qprod, axis=0)
                     except NameError:
-                        pprod = _prod
+                        qprod = _qprod
 
-                if any(self.q):
-                    _prod = get_prod(Mc.q, self.q[i])
+                if sample_idx:
+                    _sprod = np.tile(sample_idx, (Mc.C.shape[0], 1))
 
                     try:
-                        qprod = np.append(qprod, _prod, axis=0)
+                        sample_idx_prod = np.append(sample_idx_prod, _sprod, axis=0)
                     except NameError:
-                        qprod = _prod
+                        sample_idx_prod = _sprod
 
-                if any(sample_idx):
-                    _prod = np.tile(sample_idx, (Mc.C.shape[0], 1))
-
-                    try:
-                        sample_idx_prod = np.append(sample_idx_prod, _prod, axis=0)
-                    except NameError:
-                        sample_idx_prod = _prod
-
-                elif any(Mc.sample_idx):
+                elif Mc.sample_idx.size:
 
                     try:
                         sample_idx_prod = np.append(sample_idx_prod, Mc.sample_idx, axis=0)
@@ -406,7 +405,7 @@ class Cpm(object):
 
             new_child = self.variables[:self.no_child] + M.variables[:M.no_child]
             ##FIXME: sort required?
-            #new_child = sorted(new_child)
+            new_child = sorted(new_child)
 
             new_parent = self.variables[self.no_child:] + M.variables[M.no_child:]
             new_parent, _ = setdiff(new_parent, new_child)
@@ -443,20 +442,20 @@ class Cpm(object):
 
     def sort(self):
 
-        if any(self.sample_idx):
+        if self.sample_idx.size:
             idx = argsort(self.sample_idx)
         else:
             idx = argsort(list(map(tuple, self.C[:, ::-1])))
 
         self.C = self.C[idx, :]
 
-        if self.p.any():
+        if self.p.size:
             self.p = self.p[idx]
 
-        if self.q.any():
+        if self.q.size:
             self.q = self.q[idx]
 
-        if self.sample_idx.any():
+        if self.sample_idx.size:
             self.sample_idx = self.sample_idx[idx]
 
 
@@ -522,7 +521,7 @@ def get_value_given_condn(A, condn):
     if isinstance(A, np.ndarray) and A.ndim==2 and A.shape[1] == len(condn):
         A = A.T
         val = np.array([x for (i, x) in zip(condn, A) if i is not False])
-        if val.any():
+        if val.size:
             val = val.reshape(-1, A.shape[1]).T
     else:
         assert len(A) == len(condn), f'len of {A} is not equal to len of {condn}'
@@ -624,7 +623,7 @@ def condition(M, cnd_vars, cnd_states, sample_idx=[]):
         Ccond = np.zeros_like(C)
         not_idx_vars = flip(idx_vars)
 
-        if C.any():
+        if C.size:
             Ccond[:, not_idx_vars] = get_value_given_condn(C, not_idx_vars)
 
         cnd_vars_m = get_value_given_condn(cnd_vars, idx_cnd)
@@ -637,7 +636,7 @@ def condition(M, cnd_vars, cnd_states, sample_idx=[]):
             except NameError:
                 print(f'{cnd_var} is not defined')
             else:
-                if B.any():
+                if B.size:
                     C1 = C[:, idx].copy().astype(int)
                     check = B[C1, :] * B[state, :]
                     #B = add_new_states(check, B)
@@ -648,13 +647,13 @@ def condition(M, cnd_vars, cnd_states, sample_idx=[]):
 
         Mx.C = Ccond.copy()
 
-        if any(Mx.p):
+        if Mx.p.size:
             Mx.p = Mx.p[is_cmp]
 
-        if any(Mx.q):
+        if Mx.q.size:
             Mx.q = Mx.q[is_cmp]
 
-        if any(Mx.sample_idx):
+        if Mx.sample_idx.size:
             Mx.sample_idx = Mx.sample_idx[is_cmp]
 
     return Mc
@@ -669,7 +668,7 @@ def add_new_states(states, B):
 
     #FIXME 
     #newState = unique(newState,'rows')    
-    if any(new_state):
+    if len(new_state):
         B = np.append(B, new_state, axis=1)
 
     return B
@@ -723,7 +722,7 @@ def get_prod_idx(cpms, varis):
     idx = []
     for cpm in cpms:
         val = cpm.variables[cpm.no_child:]
-        val = not any(set(val).difference(varis))
+        val = not set(val).difference(varis)
         idx.append(val)
 
     try:
@@ -756,7 +755,7 @@ def get_sample_order(cpms):
 
         vars_prod = cpm_prod.variables[:cpm_prod.no_child]
 
-        if any(set(sample_vars).intersection(vars_prod)):
+        if set(sample_vars).intersection(vars_prod):
             print('Given Cpms must not have common child nodes')
         else:
             [sample_vars.append(x) for x in vars_prod]

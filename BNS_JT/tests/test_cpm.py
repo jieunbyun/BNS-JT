@@ -1681,31 +1681,76 @@ def test_prod_cpms1(setup_prod_cms):
     expected = np.array([[0.8464, 0.0765, 0.0086, 0.0085, 0.0446, 0.0135, 4.5e-4, 0.0015]]).T
     np.testing.assert_array_almost_equal(Mmult.p, expected, decimal=4)
 
-def test_prod_cpms1s(setup_prod_cms):
-
-    cpms = setup_prod_cms
-    Mmult = prod_cpms(cpms=cpms)
-
-    assert [x.name for x in Mmult.variables]==['v1', 'v2', 'v3']
-
-    expected = np.array([[1,1,1],[2,1,1],[1,2,1],[2,2,1],[1,1,2],[2,1,2],[1,2,2],[2,2,2]])
-    np.testing.assert_array_equal(Mmult.C, expected)
-
-    expected = np.array([[0.8464, 0.0765, 0.0086, 0.0085, 0.0446, 0.0135, 4.5e-4, 0.0015]]).T
-    np.testing.assert_array_almost_equal(Mmult.p, expected, decimal=4)
-
 
 def test_prod_cpms2(setup_prod_cms):
 
-    cpms = setup_prod_cms
-    Mmult= prod_cpms(cpms=cpms)
+    B = np.array([[1, 0], [0, 1], [1, 1]])
+    values = ['S', 'F']
+    v1 = Variable(name='v1', B=B, values=values)
+    v2 = Variable(name='v2', B=B, values=values)
+    v3 = Variable(name='v3', B=B, values=values)
 
-    assert [x.name for x in Mmult.variables] == ['v1', 'v2', 'v3']
+    M = {}
+    M[1] = Cpm(variables=[v1],
+                   no_child=1,
+                   C = np.array([1, 2]).T,
+                   p = np.array([0.8390, 0.1610]).T)
 
-    expected = np.array([[1,1,1],[2,1,1],[1,2,1],[2,2,1],[1,1,2],[2,1,2],[1,2,2],[2,2,2]])
+    M[2] = Cpm(variables=[v2],
+                   no_child=1,
+                   C = np.array([1, 2]).T,
+                   p = np.array([0.9417, 0.0583]).T)
+
+    M[3] = Cpm(variables=[v3],
+                   no_child=1,
+                   C = np.array([1, 2]).T,
+                   p = np.array([0.99948, 0.0052]).T)
+
+    Mmult = prod_cpms([M[k] for k in [1, 2]])
+
+    expected = np.array([[1, 1], [2, 1], [1, 2], [2, 2]])
+
     np.testing.assert_array_equal(Mmult.C, expected)
 
-    expected = np.array([[0.8464, 0.0765, 0.0086, 0.0085, 0.0446, 0.0135, 4.5e-4, 0.0015]]).T
+    np.testing.assert_array_equal(Mmult.C, expected)
+
+    expected = np.array([[0.7901, 0.1517, 0.0489, 0.0094]]).T
     np.testing.assert_array_almost_equal(Mmult.p, expected, decimal=4)
+    assert [x.name for x in Mmult.variables] == ['v1', 'v2']
+
+
+def test_prod_cpms3(setup_prod_cms):
+
+    B = np.array([[1, 0], [0, 1], [1, 1]])
+    values = ['S', 'F']
+    v1 = Variable(name='v1', B=B, values=values)
+    v2 = Variable(name='v2', B=B, values=values)
+    v3 = Variable(name='v3', B=B, values=values)
+
+    M = {}
+    M['e1'] = Cpm(variables=[v1],
+                   no_child=1,
+                   C = np.array([1, 2]).T - 1,
+                   p = np.array([0.83896, 0.16103]).T)
+
+    M['e2'] = Cpm(variables=[v2],
+                   no_child=1,
+                   C = np.array([1, 2]).T - 1,
+                   p = np.array([0.94173, 0.05827]).T)
+
+    M['e3'] = Cpm(variables=[v3],
+                   no_child=1,
+                   C = np.array([1, 2]).T - 1,
+                   p = np.array([0.99476, 0.00524]).T)
+
+    Mmult = prod_cpms(M)
+
+    expected = np.array([[1, 1, 1], [2, 1, 1], [1, 2, 1], [2, 2, 1], [1, 1, 2], [2, 1, 2], [1, 2, 2], [2, 2, 2]]) - 1
+    np.testing.assert_array_equal(Mmult.C, expected)
+
+    expected = np.array([[0.7859, 0.1509, 0.0486, 0.0093, 0.0041, 0.0008, 0.0003, 0.000]]).T
+    np.testing.assert_array_almost_equal(Mmult.p, expected, decimal=4)
+
+    assert [x.name for x in Mmult.variables] == ['v1', 'v2', 'v3']
 
 
