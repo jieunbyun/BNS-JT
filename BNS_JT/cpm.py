@@ -101,37 +101,7 @@ class Cpm(object):
         _variable = [x.name for x in self.variables]
         return textwrap.dedent(f'''\
 {self.__class__.__name__}(variables={_variable}, no_child={self.no_child}, C={self.C}, p={self.p}''')
-    '''
-    def equal(self, M):
-    # FIXME
-        try:
-            self.C.shape==M.C.shape
-        except AssertionError:
-            print('shape')
-            return False
 
-        try:
-            set(self.variables) == set(M.variables)
-        except AssertionError:
-            print('variable')
-            return False
-
-        idx_vars = [M.variables.index(x) for x in self.variables]
-
-        try:
-            np.testing.assert_array_equal(self.C, M.C[:, idx_vars])
-        except AssertionError:
-            print('C')
-            return False
-
-        try:
-            np.testing.assert_array_almost_equal(self.p, M.p[idx_vars])
-        except AssertionError:
-            print('p')
-            return False
-
-        return True
-    '''
 
     def get_variables(self, item):
 
@@ -181,6 +151,7 @@ class Cpm(object):
                    q=q_sub,
                    sample_idx=sample_idx_sub)
 
+
     def iscompatible(self, M):
         """
         Returns a boolean list (n,)
@@ -219,18 +190,21 @@ class Cpm(object):
 
         return is_cmp
 
+
     def sum(self, variables, flag=True):
         """
         Returns instance of Cpm with based on Sum over CPMs.
 
         Parameters
         ----------
-        variables: variables
+        variables: list of variables or names of variables
         flag: boolean
             1 (default) - sum out variables, 0 - leave only variables
         """
 
         assert isinstance(variables, list), 'variables should be a list'
+        if variables and isinstance(variables[0], str):
+            variables = self.get_variables(variables)
 
         if flag and set(self.variables[self.no_child:]).intersection(variables):
             print('Parent nodes are NOT summed up')
@@ -310,6 +284,7 @@ class Cpm(object):
             pass
 
         return Ms
+
 
     def product(self, M):
         """
@@ -505,6 +480,7 @@ def ismember(A, B):
 
     return lia, res
 
+
 def setdiff(first, second):
     """
     matlab setdiff equivalent
@@ -538,7 +514,7 @@ def iscompatible(C, variables, check_vars, check_states):
     ----------
     C: np.ndarray
     variables: array_like
-    check_vars: array_like
+    check_vars: array_like list of Variable or string
     check_sates: array_like
     var: dict of instance of Variable
     """
@@ -585,7 +561,7 @@ def condition(M, cnd_vars, cnd_states, sample_idx=[]):
     Parameters
     ----------
     M: a dict or list of instances of Cpm
-    cnd_vars: a list of indices of the variables to be conditioned
+    cnd_vars: a list of variables to be conditioned
     cnd_states: a list of the states to be conditioned
     sample_idx:
     """
@@ -601,6 +577,9 @@ def condition(M, cnd_vars, cnd_states, sample_idx=[]):
 
     if isinstance(cnd_vars, np.ndarray):
         cnd_vars = cnd_vars.tolist()
+
+    if cnd_vars and isinstance(cnd_vars[0], str):
+        cnd_vars = get_variables_from_cpms(M, cnd_vars)
 
     assert isinstance(cnd_states, (list, np.ndarray)), 'invalid cnd_vars'
 
@@ -657,6 +636,7 @@ def condition(M, cnd_vars, cnd_states, sample_idx=[]):
             Mx.sample_idx = Mx.sample_idx[is_cmp]
 
     return Mc
+
 
 def add_new_states(states, B):
     """
@@ -852,6 +832,7 @@ def single_sample(cpms, sample_order, sample_vars, var_add_order, sample_idx):
 
     return sample, sample_prob
 
+
 def isinscope(idx, Ms):
     """
     return list of boolean
@@ -870,25 +851,6 @@ def isinscope(idx, Ms):
         isin = isin | np.array(flag)
 
     return isin
-
-def append(cpm1, cpm2):
-    """
-    return a list of combined cpm1 and cpm2
-    cpm1 should be a list or dict
-    cpm2 should be a list or dict
-    """
-
-    assert isinstance(cpm1, (list, dict)), 'cpm1 should be a list or dict'
-    assert isinstance(cpm2, (list, dict)), 'cpm2 should be a list or dict'
-
-    if isinstance(cpm1, dict):
-        cpm1 = list(cpm1.values())
-
-    if isinstance(cpm2, dict):
-        cpm2 = list(cpm2.values())
-
-    assert len(cpm1) == len(cpm2), 'Given CPMs have different lengths'
-    #FIXME
 
 
 def variable_elim(cpms, var_elim_order):
@@ -914,7 +876,11 @@ def get_prob(M, var_inds, var_states, flag=True):
 
     assert isinstance(M, Cpm), 'Given CPM must be a single CPM'
     assert isinstance(var_inds, list), 'var_inds should be a list'
+    if var_inds and isinstance(var_inds[0], str):
+        var_inds = M.get_variables(var_inds)
+
     assert isinstance(var_states, (list, np.ndarray)), 'var_states should be an array'
+
     if isinstance(var_states, list):
         var_states = np.array(var_states)
 
@@ -932,4 +898,45 @@ def get_prob(M, var_inds, var_states, flag=True):
     prob = Msubset.p.sum()
 
     return prob
+
+
+def get_variables_from_cpms(M, variables):
+
+    res = []
+    remain = variables[:]
+
+    for Mx in M:
+        names = [x.name for x in Mx.variables]
+        i = 0
+        while i < len(remain):
+            if remain[i] in names:
+                res.append(Mx.get_variables(remain[i]))
+                remain.remove(remain[i])
+                #i -= 1
+            else:
+                i += 1
+    assert len(res) == len(variables), f'not all variables found in M: {set(variables).difference([x.name for x in res])}'
+    return sorted(res, key=lambda x: variables.index(x.name))
+
+#FIXME: NIY
+def append(cpm1, cpm2):
+    """
+    return a list of combined cpm1 and cpm2
+    cpm1 should be a list or dict
+    cpm2 should be a list or dict
+    """
+
+    assert isinstance(cpm1, (list, dict)), 'cpm1 should be a list or dict'
+    assert isinstance(cpm2, (list, dict)), 'cpm2 should be a list or dict'
+
+    if isinstance(cpm1, dict):
+        cpm1 = list(cpm1.values())
+
+    if isinstance(cpm2, dict):
+        cpm2 = list(cpm2.values())
+
+    assert len(cpm1) == len(cpm2), 'Given CPMs have different lengths'
+    #FIXME
+
+
 

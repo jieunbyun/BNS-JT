@@ -6,7 +6,7 @@ import pdb
 np.set_printoptions(precision=3)
 #pd.set_option.display_precision = 3
 
-from BNS_JT.cpm import Cpm, ismember, iscompatible, get_value_given_condn, flip, add_new_states, condition, get_prod, argsort, setdiff, get_sample_order, get_prod_idx, single_sample, mcs_product, prod_cpms, isinscope
+from BNS_JT.cpm import Cpm, ismember, iscompatible, get_value_given_condn, flip, add_new_states, condition, get_prod, argsort, setdiff, get_sample_order, get_prod_idx, single_sample, mcs_product, prod_cpms, isinscope, get_variables_from_cpms
 from BNS_JT.variable import Variable
 
 
@@ -925,6 +925,7 @@ def setup_condition():
 
     return Mx
 
+
 def test_condition0(setup_condition):
 
     Mx = setup_condition
@@ -1122,6 +1123,40 @@ def test_condition4(setup_condition):
     np.testing.assert_array_equal(M_n.p, expected)
     assert M_n.q.any() == False
     assert M_n.sample_idx.any() == False
+
+def test_condition4s(setup_condition):
+
+    Mx_ = setup_condition
+
+    v2, v3, v5, v4 = Mx_.get_variables(['v2', 'v3', 'v5', 'v4'])
+
+    C = np.array([[2, 3, 3, 2],
+                 [1, 1, 3, 1],
+                 [1, 2, 1, 1],
+                 [2, 2, 2, 1]]) - 1
+    p = np.array([1, 1, 1, 1, ])
+    Mx = Cpm(variables=[v5, v2, v3, v4], no_child=1, C = C, p = p.T)
+    condVars = [v2, v3]
+    condStates = np.array([1-1, 1-1])
+
+    result = iscompatible(Mx.C, Mx.variables, condVars, condStates)
+    expected = np.array([1,1,0,0])
+    np.testing.assert_array_equal(expected, result)
+
+    # using string instead of variables
+    [M_n] = condition([Mx], ['v2', 'v3'], condStates)
+
+    assert M_n.variables == [v5, v2, v3, v4]
+    assert M_n.no_child==1
+    expected = np.array([[2,1,1,2],
+                         [1,1,1,1]]) - 1
+    np.testing.assert_array_equal(M_n.C, expected)
+
+    expected = np.array([[1, 1]]).T
+    np.testing.assert_array_equal(M_n.p, expected)
+    assert M_n.q.any() == False
+    assert M_n.sample_idx.any() == False
+
 
 def test_condition5(setup_condition):
 
@@ -1381,6 +1416,26 @@ def test_sum4(setup_sum):
     A5 = M.get_variables('A5')
 
     sumVars = [A5]
+    Ms = M.sum(sumVars, flag=0)
+    expected_C = np.array([[1,1,1],
+                          [2,1,1],
+                          [1,2,1],
+                          [2,2,1],
+                          [2,1,2],
+                          [2,2,2]]) - 1
+    expected_p = np.array([[0.9995, 0.0005,0.985, 0.015, 1.00, 1.00]]).T
+
+    np.testing.assert_array_equal(Ms.C, expected_C)
+    np.testing.assert_array_almost_equal(Ms.p, expected_p)
+    assert [x.name for x in Ms.variables]== ['A5', 'A1', 'A4']
+    assert Ms.no_child== 1
+
+def test_sum5(setup_sum):
+
+    M = Cpm(**setup_sum)
+    #A5 = M.get_variables('A5')
+
+    sumVars = ['A5']
     Ms = M.sum(sumVars, flag=0)
     expected_C = np.array([[1,1,1],
                           [2,1,1],
@@ -1752,5 +1807,59 @@ def test_prod_cpms3(setup_prod_cms):
     np.testing.assert_array_almost_equal(Mmult.p, expected, decimal=4)
 
     assert [x.name for x in Mmult.variables] == ['v1', 'v2', 'v3']
+
+
+def test_get_variables_from_cpms():
+
+    B = np.array([[1, 0], [0, 1], [1, 1]])
+    values = ['S', 'F']
+    v1 = Variable(name='v1', B=B, values=values)
+    v2 = Variable(name='v2', B=B, values=values)
+    v3 = Variable(name='v3', B=B, values=values)
+
+
+    m1 = Cpm(variables=[v1, v2],
+             C = np.array([[1, 1], [2, 2]]) - 1,
+             p = np.array([[1.0, 1.0]]).T,
+             no_child=1,
+             )
+
+    m2 = Cpm(variables=[v2, v3],
+             C = np.array([[1, 1], [2, 2]]) - 1,
+             p = np.array([[1.0, 1.0]]).T,
+             no_child=1,
+             )
+
+    m3 = Cpm(variables=[v3],
+                   no_child=1,
+                   C = np.array([1, 2]).T - 1,
+                   p = np.array([0.99476, 0.00524]).T)
+
+    M = [m1, m2, m3]
+
+    [res] = get_variables_from_cpms(M, ['v1'])
+    assert res.name == 'v1'
+
+    res = get_variables_from_cpms(M, ['v1', 'v3', 'v2'])
+    assert [x.name for x in res] == ['v1', 'v3', 'v2']
+
+    with pytest.raises(AssertionError):
+        get_variables_from_cpms(M, ['v4', 'v1', 'v2'])
+
+def test_get_variables_from_cpms2(setup_condition):
+    Mx_ = setup_condition
+
+    v2, v3, v5, v4 = Mx_.get_variables(['v2', 'v3', 'v5', 'v4'])
+
+    C = np.array([[2, 3, 3, 2],
+                 [1, 1, 3, 1],
+                 [1, 2, 1, 1],
+                 [2, 2, 2, 1]]) - 1
+    p = np.array([1, 1, 1, 1, ])
+    Mx = Cpm(variables=[v5, v2, v3, v4], no_child=1, C = C, p = p.T)
+    condVars = ['v2', 'v3']
+
+    condVars = get_variables_from_cpms([Mx], condVars)
+    assert [x.name for x in condVars] == ['v2', 'v3']
 
 

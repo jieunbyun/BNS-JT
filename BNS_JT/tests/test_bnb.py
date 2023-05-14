@@ -78,4 +78,14 @@ def test_bnb(setup_bridge):
     np.testing.assert_array_almost_equal(expected_disconn[0], disconn_prob, decimal=4)
     np.testing.assert_array_almost_equal(expected_delay[0], delay_prob, decimal=4)
 
+    # using variable name instead
+    disconn_state = 3-1 # max basic state
+    disconn_prob = get_prob(M_bnb_VE, ['od1'], np.array([disconn_state]))
+    delay_prob = get_prob(M_bnb_VE, ['od1'], np.array([1-1]), 0)
+
+    np.testing.assert_array_almost_equal(expected_disconn[0], disconn_prob, decimal=4)
+    np.testing.assert_array_almost_equal(expected_delay[0], delay_prob, decimal=4)
+
+
+
 

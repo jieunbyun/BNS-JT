@@ -295,6 +295,7 @@ def test_prob_damage(setup_bridge):
                 B=_B,
                 values=vars_arc[idx].values)
 
+    # FIXME: sorting of variables in product
     # # Add observation nodes P( O_j | OD_j ), j = 1, ..., M
     var_ODs_obs = [f'od_obs{i}' for i, _ in enumerate(var_ODs.keys(), 1)]
     # column 0: No disruption or Disruption
