@@ -28,7 +28,7 @@ class Variable(BaseVariable):
         assert isinstance(B, (np.ndarray, list)), 'B must be a array'
 
         if isinstance(B, list):
-            B = np.array(B)
+            B = np.array(B, dtype=int)
 
         assert isinstance(values, list), 'values must be a list'
 
@@ -38,9 +38,14 @@ class Variable(BaseVariable):
 
         return super(Variable, cls).__new__(cls, name, B, values)
 
+    def B_times_values(self):
+
+        return [' '.join(x).strip(' ') for x in np.char.multiply(self.values, self.B.astype(int)).tolist()]
+
     def __hash__(self):
 
         return hash(self.name)
+
 
     def __eq__(self, other):
 

@@ -467,6 +467,20 @@ def test_iscompatible1(setup_iscompatible):
     np.testing.assert_array_equal(expected, result)
 
 
+def test_iscompatible1s(setup_iscompatible):
+    # using string for checkVars, checkStates
+    M, v = setup_iscompatible
+
+    # M[2]
+    C = np.array([[1, 1], [2, 1], [1, 2], [2, 2]]) - 1 #M[2].C
+    variables = [v[2], v[1]]
+    checkVars = ['1']
+    checkStates = ['Mild']
+    result = iscompatible(C, variables, checkVars, checkStates)
+    expected = np.array([1, 1, 0, 0])
+    np.testing.assert_array_equal(expected, result)
+
+
 def test_iscompatible2(setup_iscompatible):
 
     M, v = setup_iscompatible
@@ -1125,7 +1139,7 @@ def test_condition4(setup_condition):
     assert M_n.sample_idx.any() == False
 
 def test_condition4s(setup_condition):
-
+    # using string for cond vars, condstates
     Mx_ = setup_condition
 
     v2, v3, v5, v4 = Mx_.get_variables(['v2', 'v3', 'v5', 'v4'])
@@ -1136,9 +1150,11 @@ def test_condition4s(setup_condition):
                  [2, 2, 2, 1]]) - 1
     p = np.array([1, 1, 1, 1, ])
     Mx = Cpm(variables=[v5, v2, v3, v4], no_child=1, C = C, p = p.T)
-    condVars = [v2, v3]
-    condStates = np.array([1-1, 1-1])
 
+    #condVars = [v2, v3]
+    condVars = ['v2', 'v3']
+    #condStates = np.array([1-1, 1-1])
+    condStates = ['Survive', 'Survive']
     result = iscompatible(Mx.C, Mx.variables, condVars, condStates)
     expected = np.array([1,1,0,0])
     np.testing.assert_array_equal(expected, result)

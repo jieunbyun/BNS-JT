@@ -515,9 +515,11 @@ def iscompatible(C, variables, check_vars, check_states):
     C: np.ndarray
     variables: array_like
     check_vars: array_like list of Variable or string
-    check_sates: array_like
+    check_sates: array_like list of index or string
     var: dict of instance of Variable
     """
+    if check_vars and isinstance(check_vars[0], str):
+        check_vars = [x for x in variables for y in check_vars if x.name == y]
 
     _, idx = ismember(check_vars, variables)
     check_vars = get_value_given_condn(check_vars, idx)
@@ -529,6 +531,10 @@ def iscompatible(C, variables, check_vars, check_states):
     is_cmp = np.ones(shape=C.shape[0], dtype=bool)
 
     for i, (variable, state) in enumerate(zip(check_vars, check_states)):
+
+        if isinstance(state, str):
+            state = variable.B_times_values().index(state)
+
         try:
             B = variable.B
         except NameError:
@@ -585,6 +591,9 @@ def condition(M, cnd_vars, cnd_states, sample_idx=[]):
 
     if isinstance(cnd_states, np.ndarray):
         cnd_states = cnd_states.tolist()
+
+    if cnd_states and isinstance(cnd_states[0], str):
+        cnd_states = [x.B_times_values().index(y) for x, y in zip(cnd_vars, cnd_states)]
 
     assert isinstance(sample_idx, list), 'sample_idx should be a list'
 
