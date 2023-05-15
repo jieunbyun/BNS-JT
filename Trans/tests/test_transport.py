@@ -226,7 +226,6 @@ def test_prob_delay1(setup_bridge):
     for j, idx in enumerate(var_ODs):
 
         # Prob. of disconnection
-        #disconn_state = vars_arc[idx].B.shape[0] - 1
         [cpm_ve] = cpm.condition(cpms_arc_cp,
                                cnd_vars=[vars_arc[idx]],
                                cnd_states=[disconn_state])
@@ -282,7 +281,7 @@ def test_prob_damage(setup_bridge):
 
     cpms_arc, vars_arc = setup_bridge
 
-    # City 1 and 2 experienced a disruption in getting resources, City 3 was okay and 4 is unknown. Probability of damage of roads?
+    # City 1 (od1) and 2 (od2) experienced a disruption in getting resources, City 3 (od3) was okay and 4 (od4) is unknown. Probability of damage of roads?
     # A composite state needs be created for City 1 and City 2
     # cf. 
     #B_ = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
@@ -298,8 +297,8 @@ def test_prob_damage(setup_bridge):
     # FIXME: sorting of variables in product
     # # Add observation nodes P( O_j | OD_j ), j = 1, ..., M
     var_ODs_obs = [f'od_obs{i}' for i, _ in enumerate(var_ODs.keys(), 1)]
-    # column 0: No disruption or Disruption
-    # column 1: 0 (shortest), 1 (alternative), 2 (except the shortest path) 
+    # column 0 for od_obs: No disruption or Disruption
+    # column 1 for od: 0 (shortest), 1 (alternative), 2 (except the shortest path) 
     C = np.array([[1, 1], [2, 2], [2, 3]]) - 1
     for j, idx in zip(var_ODs_obs, var_ODs.keys()):
 
@@ -313,8 +312,9 @@ def test_prob_damage(setup_bridge):
                              C= C,
                              p= [1, 1, 1])
 
+    # using string
     cpm_ve = cpm.condition(cpms_arc,
-                           cnd_vars=[vars_arc[k] for k in ['od_obs1', 'od_obs2', 'od_obs3']],
+                           cnd_vars=['od_obs1', 'od_obs2', 'od_obs3'],
                            cnd_states=[1, 1, 0])
 
     assert len(cpm_ve) == 14
@@ -334,9 +334,6 @@ def test_prob_damage(setup_bridge):
     np.testing.assert_array_equal(cpm_ve[13].C, np.array([[1, 1], [2, 2], [2, 3]]) - 1)
     np.testing.assert_array_almost_equal(cpm_ve[13].p, np.array([[1, 1, 1]]).T)
 
-    #Mcond_mult1to13 = cpm.prod_cpms(cpm_ve[:-2])
-
-    #Mcond_mult = Mcond_mult1to13.product(cpm_ve[-2])
 
     Mcond_mult = cpm.prod_cpms(cpm_ve)
 
@@ -354,7 +351,8 @@ def test_prob_damage(setup_bridge):
 
     np.testing.assert_array_almost_equal(Mcond_mult.p, expected_p)
 
-    Mcond_mult_sum = Mcond_mult.sum([vars_arc[k] for k in list(var_ODs.keys()) + var_ODs_obs])
+    # using string
+    Mcond_mult_sum = Mcond_mult.sum(list(var_ODs.keys()) + var_ODs_obs)
 
     assert Mcond_mult_sum.C.shape == (8, 6)
     assert [x.name for x in Mcond_mult_sum.variables] == ['e1', 'e2', 'e3', 'e4', 'e5', 'e6']
@@ -380,7 +378,7 @@ def test_prob_damage(setup_bridge):
                                cnd_states=[arc_fail],
                                )
         fail_prob = iM_fail.p / iM.p.sum(axis=0)
-        if fail_prob.any():
+        if fail_prob.size:
             arcs_prob_damage[j] = fail_prob
 
     # Check if the results are the same
