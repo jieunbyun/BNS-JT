@@ -1,35 +1,56 @@
 import numpy as np
+from collections import namedtuple
+from typing import NamedTuple
 
-class Variable(object):
+
+BaseVariable = namedtuple('BaseVariable', [
+    'name',
+    'B',
+    'values'
+    ])
+
+class Variable(BaseVariable):
     '''
+    A namedtuple subclass to hold Variable
 
+    name: str
     B: basis set
-    value: description of states
+    values: description of states
 
     B may be replaced by a dictionary something like "numBasicState = 3" and "compositeState = {'4':['1','2'], '5':['1','3'], '6': ['1','2','3']}"
     (A user does not have to enter composite states for all possible permutations but is enough define those being used).
-
     '''
+    __slots__ = ()
+    def __new__(cls, name, B, values):
 
-    def __init__(self, B, value):
+        assert isinstance(name, str), 'name should be a string'
 
         assert isinstance(B, (np.ndarray, list)), 'B must be a array'
 
         if isinstance(B, list):
-            self.B = np.array(B)
-        else:
-            self.B = B
+            B = np.array(B, dtype=int)
 
-        assert isinstance(value, (np.ndarray, list)), 'value must be a vector'
-        if isinstance(value, list):
-            self.value = np.array(value)
-        else:
-            self.value = value
+        assert isinstance(values, list), 'values must be a list'
 
-        numBasicState = self.B.shape[1]
+        numBasicState = B.shape[1]
 
-        assert (self.B[:numBasicState, :] == np.eye(numBasicState)).all(), 'The upper part corresponding to basic states must form an identity matrix'
+        assert (B[:numBasicState, :] == np.eye(numBasicState)).all(), 'The upper part corresponding to basic states must form an identity matrix'
+
+        return super(Variable, cls).__new__(cls, name, B, values)
+
+    def B_times_values(self):
+
+        return [' '.join(x).strip(' ') for x in np.char.multiply(self.values, self.B.astype(int)).tolist()]
+
+    def __hash__(self):
+
+        return hash(self.name)
+
+
+    def __eq__(self, other):
+
+        return self.name == other.name
 
     def __repr__(self):
-        return repr(f'Variable(B={self.B}, value={self.value})')
+        return repr(f'Variable(name={self.name}, B={self.B}, values={self.values})')
 

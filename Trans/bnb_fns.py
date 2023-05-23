@@ -11,7 +11,7 @@ def bnb_sys(comp_states, info):
         path
         path_time
         arcs
-
+        max_state
     comp_states: list-like
 
     Output:
@@ -32,15 +32,23 @@ def bnb_sys(comp_states, info):
     if isinstance(info['time'], list):
         info['time'] = np.array(info['time'])
 
+    if isinstance(info['arcs'], np.ndarray):
+        info['arcs'] = info['arcs'].tolist()
+
+
     path_time = info['time']
 
     # Ensure shorter paths to be considered first
     path_time = np.sort(path_time)
-    path_sort_idx = path_time.argsort()
+    path_sort_idx = path_time.argsort().tolist()
     path = [info['path'][i] for i in path_sort_idx]
 
     # Find the shortest path possible
-    surv_comps = info['arcs'][np.where(comp_states==2)[0]]
+    idx = np.where(comp_states==info['max_state'])[0]
+    try:
+        surv_comps = [info['arcs'][i] for i in idx]
+    except TypeError:
+        surv_comps = []
     is_path_conn = [all(ismember(x, surv_comps)[0]) for x in path]
     is_path_conn = np.where(is_path_conn)[0].tolist()
 
@@ -48,12 +56,12 @@ def bnb_sys(comp_states, info):
     if is_path_conn:
         is_path_conn = is_path_conn[0] # take the first
         #FIXME
-        state = int(info['arcs'][path_sort_idx[is_path_conn]])
+        state = path_sort_idx[is_path_conn]
         val = path_time[is_path_conn]
         result['path'] = path[is_path_conn]
     else:
         #FIXME
-        state = len(path_time) + 1 # there is no path available
+        state = len(path_time) # there is no path available
         val = np.inf
         result['path'] = []
 

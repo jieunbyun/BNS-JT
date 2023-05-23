@@ -5,6 +5,7 @@ import collections
 import warnings
 
 from BNS_JT.utils import all_equal
+from BNS_JT.variable import Variable
 
 class Cpm(object):
     """
@@ -12,12 +13,12 @@ class Cpm(object):
 
     Parameters
     ----------
-    variables: array_like
-        list of int or string (any hashable python object)
+    variables: list
+        list of instances of Variable
     no_child: int
         number of child nodes
     C: array_like
-        event matrix
+        event matrix (referencing row of Variable)
     p: array_like
         probability vector (n x 1)
     q: array_like
@@ -33,14 +34,12 @@ class Cpm(object):
 
     def __init__(self, variables, no_child, C, p, q=[], sample_idx=[]):
 
-        assert len(variables), 'variables must be a vector'
+        assert isinstance(variables, list), 'variables must be a list of Variable'
 
-        assert all_equal(map(type, variables)), 'variables must consists of same type'
+        # FIXME: needs to be instances of Variables
+        assert all([isinstance(x, Variable) for x in variables]), 'variables must be a list of Variable'
 
-        if isinstance(variables, np.ndarray):
-            self.variables = variables.tolist()
-        else:
-            self.variables = variables
+        self.variables = variables
 
         assert isinstance(no_child, (int, np.int32, np.int64)), 'no_child must be a numeric scalar'
         assert no_child <= len(self.variables), 'no_child must be less than or equal to the number of variables'
@@ -54,6 +53,8 @@ class Cpm(object):
             C.shape = (len(C), 1)
         else:
             assert C.shape[1] == len(self.variables), 'C must have the same number of columns with that of variables'
+        assert all(np.max(C, initial=0) <= [x.B.shape[1] for x in self.variables]), 'check C matrix'
+
         self.C = C
 
         if isinstance(p, list):
@@ -78,7 +79,7 @@ class Cpm(object):
         if self.p.ndim == 1:
             self.p.shape = (len(self.p), 1)
 
-        if any(self.q):
+        if self.q.size:
             assert isinstance(self.q, np.ndarray), 'q must be a numeric vector'
             all(isinstance(y, (float, np.float32, np.float64, int, np.int32, np.int64)) for y in self.q), 'p must be a numeric vector'
 
@@ -90,45 +91,24 @@ class Cpm(object):
         else:
             assert len(self.p) == self.C.shape[0], 'p must have the same length with the number of rows in C'
 
-        if any(self.sample_idx):
+        if self.sample_idx.size:
             assert len(self.sample_idx) == self.C.shape[0], 'sample_idx must have the same length with the number of rows in C'
 
             if self.sample_idx.ndim == 1:
                 self.sample_idx.shape = (len(self.sample_idx), 1)
 
     def __repr__(self):
+        _variable = [x.name for x in self.variables]
         return textwrap.dedent(f'''\
-{self.__class__.__name__}(variables={self.variables}, no_child={self.no_child}, C={self.C}, p={self.p}''')
+{self.__class__.__name__}(variables={_variable}, no_child={self.no_child}, C={self.C}, p={self.p}''')
 
-    def equal(self, M):
 
-        try:
-            self.C.shape==M.C.shape
-        except AssertionError:
-            print('shape')
-            return False
+    def get_variables(self, item):
 
-        try:
-            set(self.variables) == set(M.variables)
-        except AssertionError:
-            print('variable')
-            return False
-
-        idx_vars = [M.variables.index(x) for x in self.variables]
-
-        try:
-            np.testing.assert_array_equal(self.C, M.C[:, idx_vars])
-        except AssertionError:
-            print('C')
-            return False
-
-        try:
-            np.testing.assert_array_almost_equal(self.p, M.p[idx_vars])
-        except AssertionError:
-            print('p')
-            return False
-
-        return True
+        if isinstance(item, str):
+            return [x for x in self.variables if x.name == item][0]
+        elif isinstance(item, list):
+            return [self.get_variables(y) for y in item]
 
     def get_subset(self, row_idx, flag=True):
         """
@@ -149,17 +129,17 @@ class Cpm(object):
             # select row excluding the row_index
             row_idx, _ = setdiff(range(self.C.shape[0]), row_idx)
 
-        if any(self.p):
+        if self.p.size:
             p_sub = self.p[row_idx]
         else:
             p_sub = []
 
-        if any(self.q):
+        if self.q.size:
             q_sub = self.q[row_idx]
         else:
             q_sub = []
 
-        if any(self.sample_idx):
+        if self.sample_idx.size:
             sample_idx_sub = self.sample_idx[row_idx]
         else:
             sample_idx_sub = []
@@ -171,14 +151,14 @@ class Cpm(object):
                    q=q_sub,
                    sample_idx=sample_idx_sub)
 
-    def iscompatible(self, M, var={}):
+
+    def iscompatible(self, M):
         """
         Returns a boolean list (n,)
 
         Parameters
         ----------
         M: instance of Cpm for compatibility check
-        var: list or dict of instance of Variable (default: [])
         """
 
         assert M.C.shape[0] == 1, 'C must be a single row'
@@ -190,25 +170,26 @@ class Cpm(object):
 
         C = self.C[:, idx].copy()
 
-        if any(self.sample_idx) and any(M.sample_idx):
+        if self.sample_idx.size and M.sample_idx.size:
             is_cmp = (self.sample_idx == M.sample_idx)
         else:
             is_cmp = np.ones(shape=C.shape[0], dtype=bool)
 
         for i, (variable, state) in enumerate(zip(check_vars, check_states)):
 
-            if any(var):
-                B = var[variable].B
-            else:
+            try:
+                B = variable.B
+            except NameError:
                 B = np.eye(np.max(C[:, i]))
 
-            x1 = [B[int(k) - 1, :] for k in C[is_cmp, i]]
-            x2 = B[state - 1,: ]
+            x1 = [B[int(k), :] for k in C[is_cmp, i]]
+            x2 = B[state,: ]
             check = (np.sum(x1 * x2, axis=1) >0)
 
             is_cmp[np.where(is_cmp > 0)[0][:len(check)]] = check
 
         return is_cmp
+
 
     def sum(self, variables, flag=True):
         """
@@ -216,14 +197,16 @@ class Cpm(object):
 
         Parameters
         ----------
-        variables: variables
+        variables: list of variables or names of variables
         flag: boolean
             1 (default) - sum out variables, 0 - leave only variables
         """
 
         assert isinstance(variables, list), 'variables should be a list'
+        if variables and isinstance(variables[0], str):
+            variables = self.get_variables(variables)
 
-        if flag and any(set(self.variables[self.no_child:]).intersection(variables)):
+        if flag and set(self.variables[self.no_child:]).intersection(variables):
             print('Parent nodes are NOT summed up')
 
         if flag:
@@ -238,9 +221,9 @@ class Cpm(object):
 
         no_child_sum = len(vars_rem)
 
-        if any(self.variables[self.no_child:]):
+        if self.variables[self.no_child:]:
             vars_rem += self.variables[self.no_child:]
-            vars_rem_idx = vars_rem_idx + list(range(self.no_child, len(self.variables)))
+            vars_rem_idx += list(range(self.no_child, len(self.variables)))
 
         _variables = [self.variables[i] for i in vars_rem_idx]
 
@@ -251,7 +234,7 @@ class Cpm(object):
                 q=self.q,
                 sample_idx=self.sample_idx)
 
-        while M.C.any():
+        while M.C.size:
 
             Mc = M.get_subset([0]) # need to change to 0 
             is_cmp = M.iscompatible(Mc)
@@ -262,21 +245,21 @@ class Cpm(object):
             except NameError:
                 Csum = val
 
-            if any(M.p):
+            if M.p.size:
                 val = np.array([np.sum(M.p[is_cmp])])
                 try:
                     psum = np.append(psum, val, axis=0)
                 except NameError:
                     psum = val
 
-            if any(M.q):
+            if M.q.size:
                 val = M.q[0]
                 try:
                     qsum = np.append(qsum, val, axis=0)
                 except NameError:
                     qsum = val
 
-            if any(M.sample_idx):
+            if M.sample_idx.size:
                 val = M.sample_idx[0]
                 try:
                     sample_idx_sum = np.append(sample_idx_sum, val, axis=0)
@@ -302,7 +285,8 @@ class Cpm(object):
 
         return Ms
 
-    def product(self, M, var):
+
+    def product(self, M):
         """
         Returns an instance of Cpm
         M: instance of Cpm
@@ -312,26 +296,28 @@ class Cpm(object):
         assert isinstance(M, Cpm), f'M should be an instance of Cpm'
 
         if self.C.shape[1] > M.C.shape[1]:
-            return M.product(self, var)
+            return M.product(self)
 
-        check = set(self.variables[:self.no_child]).intersection(M.variables[:M.no_child])
+        first = [x.name for x in self.variables[:self.no_child]]
+        second = [x.name for x in M.variables[:M.no_child]]
+        check = set(first).intersection(second)
         assert not bool(check), 'PMFs must not have common child nodes'
 
-        if any(self.p):
-            if not any(M.p):
+        if self.p.size:
+            if not M.p.size:
                 M.p = np.ones(shape=(M.C.shape[0], 1))
         else:
-            if any(M.p):
+            if M.p.size:
                 self.p = np.ones(shape=(self.C.shape[0], 1))
 
-        if any(self.q):
-            if not any(M.q):
+        if self.q.size:
+            if not M.q.size:
                 M.q = np.ones(shape=(M.C.shape[0], 1))
         else:
-            if any(M.q):
+            if M.q.size:
                 self.q = np.ones(shape=(self.C.shape[0], 1))
 
-        if self.C.any():
+        if self.C.size:
             # FIXME: defined but not used
             #com_vars = list(set(self.variables).intersection(M.variables))
 
@@ -343,49 +329,47 @@ class Cpm(object):
                 c1 = get_value_given_condn(self.C[i, :], idx_vars)
                 c1_not_com = self.C[i, flip(idx_vars)]
 
-                if self.sample_idx.any():
+                if self.sample_idx.size:
                     sample_idx = self.sample_idx[i]
                 else:
                     sample_idx = []
 
-                [Mc], var = condition([M],
-                                        cnd_vars=com_vars,
-                                        cnd_states=c1,
-                                        var=var,
-                                        sample_idx=sample_idx)
+                [Mc] = condition([M],
+                                 cnd_vars=com_vars,
+                                 cnd_states=c1,
+                                 sample_idx=sample_idx)
 
-                _prod = np.append(Mc.C, np.tile(c1_not_com, (Mc.C.shape[0], 1)), axis=1)
+                _cprod = np.append(Mc.C, np.tile(c1_not_com, (Mc.C.shape[0], 1)), axis=1)
 
                 try:
-                    Cprod = np.append(Cprod, _prod, axis=0)
+                    Cprod = np.append(Cprod, _cprod, axis=0)
                 except NameError:
-                    Cprod = _prod
+                    Cprod = _cprod
 
-                if any(self.p):
-                    _prod = get_prod(Mc.p, self.p[i])
+                if self.p.size:
+                    _pprod = get_prod(Mc.p, self.p[i])
+                    try:
+                        pprod = np.append(pprod, _pprod, axis=0)
+                    except NameError:
+                        pprod = _pprod
+
+                if self.q.size:
+                    _qprod = get_prod(Mc.q, self.q[i])
 
                     try:
-                        pprod = np.append(pprod, _prod, axis=0)
+                        qprod = np.append(qprod, _qprod, axis=0)
                     except NameError:
-                        pprod = _prod
+                        qprod = _qprod
 
-                if any(self.q):
-                    _prod = get_prod(Mc.q, self.q[i])
+                if sample_idx:
+                    _sprod = np.tile(sample_idx, (Mc.C.shape[0], 1))
 
                     try:
-                        qprod = np.append(qprod, _prod, axis=0)
+                        sample_idx_prod = np.append(sample_idx_prod, _sprod, axis=0)
                     except NameError:
-                        qprod = _prod
+                        sample_idx_prod = _sprod
 
-                if any(sample_idx):
-                    _prod = np.tile(sample_idx, (Mc.C.shape[0], 1))
-
-                    try:
-                        sample_idx_prod = np.append(sample_idx_prod, _prod, axis=0)
-                    except NameError:
-                        sample_idx_prod = _prod
-
-                elif any(Mc.sample_idx):
+                elif Mc.sample_idx.size:
 
                     try:
                         sample_idx_prod = np.append(sample_idx_prod, Mc.sample_idx, axis=0)
@@ -395,6 +379,7 @@ class Cpm(object):
             prod_vars = M.variables + get_value_given_condn(self.variables, flip(idx_vars))
 
             new_child = self.variables[:self.no_child] + M.variables[:M.no_child]
+            ##FIXME: sort required?
             new_child = sorted(new_child)
 
             new_parent = self.variables[self.no_child:] + M.variables[M.no_child:]
@@ -427,25 +412,25 @@ class Cpm(object):
         else:
             Mprod = M
 
-        return  Mprod, var
+        return  Mprod
 
 
     def sort(self):
 
-        if any(self.sample_idx):
+        if self.sample_idx.size:
             idx = argsort(self.sample_idx)
         else:
             idx = argsort(list(map(tuple, self.C[:, ::-1])))
 
         self.C = self.C[idx, :]
 
-        if self.p.any():
+        if self.p.size:
             self.p = self.p[idx]
 
-        if self.q.any():
+        if self.q.size:
             self.q = self.q[idx]
 
-        if self.sample_idx.any():
+        if self.sample_idx.size:
             self.sample_idx = self.sample_idx[idx]
 
 
@@ -495,6 +480,7 @@ def ismember(A, B):
 
     return lia, res
 
+
 def setdiff(first, second):
     """
     matlab setdiff equivalent
@@ -511,7 +497,7 @@ def get_value_given_condn(A, condn):
     if isinstance(A, np.ndarray) and A.ndim==2 and A.shape[1] == len(condn):
         A = A.T
         val = np.array([x for (i, x) in zip(condn, A) if i is not False])
-        if val.any():
+        if val.size:
             val = val.reshape(-1, A.shape[1]).T
     else:
         assert len(A) == len(condn), f'len of {A} is not equal to len of {condn}'
@@ -520,7 +506,7 @@ def get_value_given_condn(A, condn):
     return val
 
 
-def iscompatible(C, variables, check_vars, check_states, var):
+def iscompatible(C, variables, check_vars, check_states):
     """
     Returns a boolean list
 
@@ -528,10 +514,12 @@ def iscompatible(C, variables, check_vars, check_states, var):
     ----------
     C: np.ndarray
     variables: array_like
-    check_vars: array_like
-    check_sates: array_like
+    check_vars: array_like list of Variable or string
+    check_sates: array_like list of index or string
     var: dict of instance of Variable
     """
+    if check_vars and isinstance(check_vars[0], str):
+        check_vars = [x for x in variables for y in check_vars if x.name == y]
 
     _, idx = ismember(check_vars, variables)
     check_vars = get_value_given_condn(check_vars, idx)
@@ -544,16 +532,22 @@ def iscompatible(C, variables, check_vars, check_states, var):
 
     for i, (variable, state) in enumerate(zip(check_vars, check_states)):
 
-        B = var[variable].B
+        if isinstance(state, str):
+            state = variable.B_times_values().index(state)
 
-        x1 = [B[int(k) - 1, :] for k in C[is_cmp, i]]
         try:
-            x2 = B[state - 1, :]
-        except IndexError:
-            print('IndexError: {state}')
-        check = (np.sum(x1 * x2, axis=1) > 0)
+            B = variable.B
+        except NameError:
+            print(f'{variable} is not defined')
+        else:
+            x1 = [B[int(k), :] for k in C[is_cmp, i]]
+            try:
+                x2 = B[state, :]
+            except IndexError:
+                print('IndexError: {state}')
+            check = (np.sum(x1 * x2, axis=1) > 0)
 
-        is_cmp[np.where(is_cmp > 0)[0][:len(check)]] = check
+            is_cmp[np.where(is_cmp > 0)[0][:len(check)]] = check
 
     return is_cmp
 
@@ -566,16 +560,15 @@ def flip(idx):
     return [True if x is False else False for x in idx]
 
 
-def condition(M, cnd_vars, cnd_states, var, sample_idx=[]):
+def condition(M, cnd_vars, cnd_states, sample_idx=[]):
     """
     Returns a list of instance of Cpm
 
     Parameters
     ----------
     M: a dict or list of instances of Cpm
-    cnd_vars: an array of indices of the variables to be conditioned
-    cnd_states: an array of the states to be conditioned
-    var: a dict of Variable
+    cnd_vars: a list of variables to be conditioned
+    cnd_states: a list of the states to be conditioned
     sample_idx:
     """
 
@@ -588,20 +581,26 @@ def condition(M, cnd_vars, cnd_states, var, sample_idx=[]):
 
     assert isinstance(cnd_vars, (list, np.ndarray)), 'invalid cnd_vars'
 
-    if isinstance(cnd_vars, list):
-        cnd_vars = np.array(cnd_vars)
+    if isinstance(cnd_vars, np.ndarray):
+        cnd_vars = cnd_vars.tolist()
+
+    if cnd_vars and isinstance(cnd_vars[0], str):
+        cnd_vars = get_variables_from_cpms(M, cnd_vars)
 
     assert isinstance(cnd_states, (list, np.ndarray)), 'invalid cnd_vars'
 
-    if isinstance(cnd_states, list):
-        cnd_states = np.array(cnd_states)
+    if isinstance(cnd_states, np.ndarray):
+        cnd_states = cnd_states.tolist()
+
+    if cnd_states and isinstance(cnd_states[0], str):
+        cnd_states = [x.B_times_values().index(y) for x, y in zip(cnd_vars, cnd_states)]
 
     assert isinstance(sample_idx, list), 'sample_idx should be a list'
 
     Mc = copy.deepcopy(M)
     for Mx in Mc:
 
-        is_cmp = iscompatible(Mx.C, Mx.variables, cnd_vars, cnd_states, var)
+        is_cmp = iscompatible(Mx.C, Mx.variables, cnd_vars, cnd_states)
         # FIXME
         #if any(sample_idx) and any(Mx.sample_idx):
         #    is_cmp = is_cmp & ( M.sample_idx == sample_idx )
@@ -612,7 +611,7 @@ def condition(M, cnd_vars, cnd_states, var, sample_idx=[]):
         Ccond = np.zeros_like(C)
         not_idx_vars = flip(idx_vars)
 
-        if C.any():
+        if C.size:
             Ccond[:, not_idx_vars] = get_value_given_condn(C, not_idx_vars)
 
         cnd_vars_m = get_value_given_condn(cnd_vars, idx_cnd)
@@ -620,27 +619,32 @@ def condition(M, cnd_vars, cnd_states, var, sample_idx=[]):
         idx_cnd = get_value_given_condn(idx_cnd, idx_cnd)
 
         for cnd_var, state, idx in zip(cnd_vars_m, cnd_states_m, idx_cnd):
-
-            B = var[cnd_var].B.copy()
-
-            if B.any():
-                C1 = (C[:, idx].copy() - 1).astype(int)
-                check = B[C1, :] * B[state - 1,:]
-                var[cnd_var].B = add_new_states(check, B)
-                Ccond[:, idx] = [x + 1 for x in ismember(check, B)[1]]
+            try:
+                B = cnd_var.B.copy()
+            except NameError:
+                print(f'{cnd_var} is not defined')
+            else:
+                if B.size:
+                    C1 = C[:, idx].copy().astype(int)
+                    check = B[C1, :] * B[state, :]
+                    #B = add_new_states(check, B)
+                    cnd_var = Variable(name=cnd_var.name,
+                                       B=add_new_states(check, B),
+                                       values=cnd_var.values)
+                    Ccond[:, idx] = [x for x in ismember(check, B)[1]]
 
         Mx.C = Ccond.copy()
 
-        if any(Mx.p):
+        if Mx.p.size:
             Mx.p = Mx.p[is_cmp]
 
-        if any(Mx.q):
+        if Mx.q.size:
             Mx.q = Mx.q[is_cmp]
 
-        if any(Mx.sample_idx):
+        if Mx.sample_idx.size:
             Mx.sample_idx = Mx.sample_idx[is_cmp]
 
-    return Mc, var
+    return Mc
 
 
 def add_new_states(states, B):
@@ -653,13 +657,13 @@ def add_new_states(states, B):
 
     #FIXME 
     #newState = unique(newState,'rows')    
-    if any(new_state):
+    if len(new_state):
         B = np.append(B, new_state, axis=1)
 
     return B
 
 
-def prod_cpms(cpms, var):
+def prod_cpms(cpms):
     """
     return an instance of Cpm
 
@@ -672,9 +676,9 @@ def prod_cpms(cpms, var):
 
     prod = cpms[0]
     for c in cpms[1:]:
-        prod, var = prod.product(c, var)
+        prod = prod.product(c)
 
-    return prod, var
+    return prod
 
 
 def get_prod(A, B):
@@ -707,7 +711,7 @@ def get_prod_idx(cpms, varis):
     idx = []
     for cpm in cpms:
         val = cpm.variables[cpm.no_child:]
-        val = not any(set(val).difference(varis))
+        val = not set(val).difference(varis)
         idx.append(val)
 
     try:
@@ -740,7 +744,7 @@ def get_sample_order(cpms):
 
         vars_prod = cpm_prod.variables[:cpm_prod.no_child]
 
-        if any(set(sample_vars).intersection(vars_prod)):
+        if set(sample_vars).intersection(vars_prod):
             print('Given Cpms must not have common child nodes')
         else:
             [sample_vars.append(x) for x in vars_prod]
@@ -758,7 +762,7 @@ def get_sample_order(cpms):
     return sample_order, sample_vars, var_add_order
 
 
-def mcs_product(cpms, nsample, varis):
+def mcs_product(cpms, nsample):
     """
     Returns an instance of Cpm by MC based product operation
 
@@ -777,7 +781,7 @@ def mcs_product(cpms, nsample, varis):
 
     for i in sample_idx_prod:
 
-        sample, sample_prob = single_sample(cpms, sample_order, sample_vars, var_add_order, varis, [i])
+        sample, sample_prob = single_sample(cpms, sample_order, sample_vars, var_add_order, [i])
         C_prod[i,:] = sample
         q_prod[i] = sample_prob
 
@@ -789,7 +793,7 @@ def mcs_product(cpms, nsample, varis):
                sample_idx=sample_idx_prod)
 
 
-def single_sample(cpms, sample_order, sample_vars, var_add_order, varis, sample_idx):
+def single_sample(cpms, sample_order, sample_vars, var_add_order, sample_idx):
     """
     sample from cpms
 
@@ -798,12 +802,10 @@ def single_sample(cpms, sample_order, sample_vars, var_add_order, varis, sample_
         sample_order: list-like
         sample_vars: list-like
         var_add_order: list-like
-        varis:
         sample_idx: list
 
     """
-    if isinstance(sample_vars, list):
-        sample_vars = np.array(sample_vars)
+    assert isinstance(sample_vars, list), 'should be a list'
 
     if isinstance(var_add_order, list):
         var_add_order = np.array(var_add_order)
@@ -816,18 +818,18 @@ def single_sample(cpms, sample_order, sample_vars, var_add_order, varis, sample_
 
     for i, (j, M) in enumerate(zip(sample_order, cpms)):
 
-        cnd_vars = sample_vars[sample > 0]
+        #FIXME
+        cnd_vars = [x for x, y in zip(sample_vars, sample) if y > 0]
         cnd_states = sample[sample > 0]
 
-        [M], _ = condition(
+        [M] = condition(
                     M=M,
                     cnd_vars=cnd_vars,
                     cnd_states=cnd_states,
-                    var=varis,
                     sample_idx=sample_idx)
 
-        if (sample_idx == [1]) and any(M.p.sum(axis=0) != 1):
-            print('Given probability vector does not sum to 1')
+        #if (sample_idx == [1]) and any(M.p.sum(axis=0) != 1):
+        #    print('Given probability vector does not sum to 1')
 
         weight = M.p.flatten()/M.p.sum(axis=0)
         irow = np.random.choice(range(len(M.p)), size=1, p=weight)[0]
@@ -838,6 +840,7 @@ def single_sample(cpms, sample_order, sample_vars, var_add_order, varis, sample_
     sample_prob = np.exp(sample_prob)
 
     return sample, sample_prob
+
 
 def isinscope(idx, Ms):
     """
@@ -858,6 +861,73 @@ def isinscope(idx, Ms):
 
     return isin
 
+
+def variable_elim(cpms, var_elim_order):
+
+    cpms = copy.deepcopy(cpms)
+    for var_id in var_elim_order:
+
+        isin = isinscope([var_id], cpms)
+
+        sel = [y for x,y in zip(isin, cpms) if x]
+        mult = prod_cpms(sel)
+        mult = mult.sum([var_id])
+
+        cpms = [y for x, y in zip(isin, cpms) if x == False]
+        cpms.insert(0, mult)
+
+    cpms = prod_cpms(cpms)
+
+    return cpms
+
+
+def get_prob(M, var_inds, var_states, flag=True):
+
+    assert isinstance(M, Cpm), 'Given CPM must be a single CPM'
+    assert isinstance(var_inds, list), 'var_inds should be a list'
+    if var_inds and isinstance(var_inds[0], str):
+        var_inds = M.get_variables(var_inds)
+
+    assert isinstance(var_states, (list, np.ndarray)), 'var_states should be an array'
+
+    if isinstance(var_states, list):
+        var_states = np.array(var_states)
+
+    assert len(var_inds) == var_states.shape[0], f'"var_inds" {var_inds} and "var_states" {var_states} must have the same length.'
+
+    assert flag in (0, 1), 'Operation flag must be either 1 (keeping given row indices default) or 0 (deleting given indices)'
+
+    Mcompare = Cpm(variables=var_inds,
+                   no_child=len(var_inds),
+                   C=var_states,
+                   p=np.empty(shape=(var_states.shape[0], 1)))
+    is_compat = M.iscompatible(Mcompare)
+    idx = np.where(is_compat)[0]
+    Msubset = M.get_subset(idx, flag )
+    prob = Msubset.p.sum()
+
+    return prob
+
+
+def get_variables_from_cpms(M, variables):
+
+    res = []
+    remain = variables[:]
+
+    for Mx in M:
+        names = [x.name for x in Mx.variables]
+        i = 0
+        while i < len(remain):
+            if remain[i] in names:
+                res.append(Mx.get_variables(remain[i]))
+                remain.remove(remain[i])
+                #i -= 1
+            else:
+                i += 1
+    assert len(res) == len(variables), f'not all variables found in M: {set(variables).difference([x.name for x in res])}'
+    return sorted(res, key=lambda x: variables.index(x.name))
+
+#FIXME: NIY
 def append(cpm1, cpm2):
     """
     return a list of combined cpm1 and cpm2
@@ -878,43 +948,4 @@ def append(cpm1, cpm2):
     #FIXME
 
 
-def variable_elim(cpms, var_elim_order, varis):
-
-    cpms = copy.deepcopy(cpms)
-    for var_id in var_elim_order:
-
-        isin = isinscope([var_id], cpms)
-
-        sel = [y for x,y in zip(isin, cpms) if x]
-        mult, varis = prod_cpms(sel, varis)
-        mult = mult.sum([var_id])
-
-        cpms = [y for x, y in zip(isin, cpms) if x == False]
-        cpms.insert(0, mult)
-
-    cpms, varis = prod_cpms(cpms, varis)
-
-    return cpms, varis
-
-
-def get_prob(M, var_inds, var_states, varis, flag=True):
-
-    assert isinstance(M, Cpm), 'Given CPM must be a single CPM'
-    assert isinstance(var_inds, list), 'var_inds should be a list'
-    assert isinstance(var_states, np.ndarray), 'var_states should be an array'
-
-    assert len(var_inds) == var_states.shape[0], '"var_inds" and "var_states" must have the same length.'
-
-    assert flag in (0, 1), 'Operation flag must be either 1 (keeping given row indices default) or 0 (deleting given indices)'
-
-    Mcompare = Cpm(variables=var_inds,
-                   no_child=len(var_inds),
-                   C=var_states,
-                   p=np.empty(shape=(var_states.shape[0], 1)))
-    is_compat = M.iscompatible(Mcompare, varis)
-    idx = np.where(is_compat)[0]
-    Msubset = M.get_subset(idx, flag )
-    prob = Msubset.p.sum()
-
-    return prob
 
