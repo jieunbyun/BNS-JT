@@ -2,6 +2,7 @@ import numpy as np
 import sys, os
 import pytest
 import pdb
+import copy
 
 np.set_printoptions(precision=3)
 #pd.set_option.display_precision = 3
@@ -657,7 +658,7 @@ def test_iscompatibleCpm1(setup_iscompatible):
     M, _ = setup_iscompatible
     rowIndex = [0]  # 1 -> 0
     M_sys_select = M[5].get_subset(rowIndex)
-    result = M[3].iscompatible(M_sys_select)
+    result = M[3].iscompatible(M_sys_select, flag=True)
     expected = np.array([1, 1, 1, 1])
     np.testing.assert_array_equal(result, expected)
 
@@ -680,7 +681,7 @@ def test_iscompatibleCpm1s():
     # M[5]
     rowIndex = [0]  # 1 -> 0
     M_sys_select = M[5].get_subset(rowIndex)
-    result = M[3].iscompatible(M_sys_select)
+    result = M[3].iscompatible(M_sys_select, flag=True)
     expected = np.array([1, 1, 1, 1])
     np.testing.assert_array_equal(result, expected)
 
@@ -692,7 +693,7 @@ def test_iscompatibleCpm2(setup_iscompatible):
     rowIndex = [0]  # 1 -> 0
     M_sys_select = M[5].get_subset(rowIndex)
 
-    result = M[4].iscompatible(M_sys_select)
+    result = M[4].iscompatible(M_sys_select, flag=True)
     expected = np.array([0, 1, 0, 1])
     np.testing.assert_array_equal(result, expected)
 
@@ -703,7 +704,7 @@ def test_iscompatibleCpm3(setup_iscompatible):
     rowIndex = [0]  # 1 -> 0
     M_sys_select = M[5].get_subset(rowIndex)
 
-    result = M[1].iscompatible(M_sys_select)
+    result = M[1].iscompatible(M_sys_select, flag=True)
     expected = np.array([1, 1])
     np.testing.assert_array_equal(result, expected)
 
@@ -1299,7 +1300,7 @@ def test_sum1(setup_sum):
             assert Mcompare.q.any()==False
             assert Mcompare.sample_idx.any() == False
 
-        flag = Mloop.iscompatible(Mcompare)
+        flag = Mloop.iscompatible(Mcompare, flag=True)
         expected = np.zeros(16)
         expected[0] = 1
         if i==0:
@@ -1384,7 +1385,6 @@ def test_sum2(setup_sum):
     M = Cpm(**setup_sum)
     A1 = M.get_variables('A1')
     sumVars = [A1]
-
     Ms = M.sum(sumVars)
     expected_C = np.array([[1,1,1,1,1],
                         [2,1,1,1,1],
@@ -1465,6 +1465,33 @@ def test_sum5(setup_sum):
     np.testing.assert_array_almost_equal(Ms.p, expected_p)
     assert [x.name for x in Ms.variables]== ['A5', 'A1', 'A4']
     assert Ms.no_child== 1
+
+
+def test_sum6(setup_bridge):
+
+    cpms_arc, vars_arc = setup_bridge
+    cpms_arc_cp = [cpms_arc[k] for k in ['e1', 'e2', 'e3', 'e4', 'e5', 'e6', 'od1']]
+
+    is_inscope = isinscope([vars_arc['e1']], cpms_arc_cp)
+    cpm_sel = [y for x, y in zip(is_inscope, cpms_arc_cp) if x]
+    cpm_mult = prod_cpms(cpm_sel)
+
+    assert [x.name for x in cpm_mult.variables] == ['e1', 'od1', 'e2', 'e3', 'e4', 'e5', 'e6']
+    expected_C = np.array([[1, 2, 2, 1, 3, 3, 3], [1, 3, 2, 2, 3, 3, 3],
+                           [1, 1, 1, 3, 3, 3, 3], [2, 1, 1, 3, 3, 3, 3],
+                           [2, 3, 2, 3, 3, 3, 3]]) - 1
+    np.testing.assert_array_equal(cpm_mult.C, expected_C)
+    np.testing.assert_array_almost_equal(cpm_mult.p, np.array([[0.8390, 0.8390, 0.8390, 0.1610, 0.1610]]).T, decimal=4)
+
+    a = cpm_mult.sum(['e1'])
+    assert [x.name for x in a.variables] == ['od1', 'e2', 'e3', 'e4', 'e5', 'e6']
+    expected_C = np.array([[2, 2, 1, 3, 3, 3],
+                           [3, 2, 2, 3, 3, 3],
+                           [1, 1, 3, 3, 3, 3],
+                           [3, 2, 3, 3, 3, 3]]) - 1
+    np.testing.assert_array_equal(a.C, expected_C)
+    np.testing.assert_array_almost_equal(a.p, np.array([[0.8390, 0.8390, 1.0, 0.1610]]).T, decimal=4)
+
 
 
 @pytest.fixture
