@@ -152,13 +152,14 @@ class Cpm(object):
                    sample_idx=sample_idx_sub)
 
 
-    def iscompatible(self, M):
+    def iscompatible(self, M, flag=True):
         """
         Returns a boolean list (n,)
 
         Parameters
         ----------
         M: instance of Cpm for compatibility check
+        flag: True if composite state considered
         """
 
         assert M.C.shape[0] == 1, 'C must be a single row'
@@ -177,12 +178,12 @@ class Cpm(object):
 
         for i, (variable, state) in enumerate(zip(check_vars, check_states)):
 
-            try:
+            if flag:
                 B = variable.B
-            except NameError:
-                B = np.eye(np.max(C[:, i]))
+            else:
+                B = np.eye(np.max(C[:, i]) + 1, dtype=int)
 
-            x1 = [B[int(k), :] for k in C[is_cmp, i]]
+            x1 = [B[int(k)] for k in C[is_cmp, i]]
             x2 = B[state,: ]
             check = (np.sum(x1 * x2, axis=1) >0)
 
@@ -234,54 +235,36 @@ class Cpm(object):
                 q=self.q,
                 sample_idx=self.sample_idx)
 
+        Csum, psum, qsum, sample_idx_sum = [], [], [], []
+
         while M.C.size:
 
             Mc = M.get_subset([0]) # need to change to 0 
-            is_cmp = M.iscompatible(Mc)
+            is_cmp = M.iscompatible(Mc, flag=False)
 
-            val = M.C[[0]]
-            try:
-                Csum = np.append(Csum, val, axis=0)
-            except NameError:
-                Csum = val
+            Csum.append(M.C[[0]])
 
             if M.p.size:
-                val = np.array([np.sum(M.p[is_cmp])])
-                try:
-                    psum = np.append(psum, val, axis=0)
-                except NameError:
-                    psum = val
+                psum.append(np.sum(M.p[is_cmp]))
 
             if M.q.size:
-                val = M.q[0]
-                try:
-                    qsum = np.append(qsum, val, axis=0)
-                except NameError:
-                    qsum = val
+                qsum.append(M.q[0])
 
             if M.sample_idx.size:
-                val = M.sample_idx[0]
-                try:
-                    sample_idx_sum = np.append(sample_idx_sum, val, axis=0)
-                except NameError:
-                    sample_idx_sum = val
+                sample_idx_sum.append(M.sample_idx[0])
 
             M = M.get_subset(np.where(is_cmp)[0], flag=0)
 
         Ms = Cpm(variables=vars_rem,
                  no_child=no_child_sum,
-                 C=Csum,
-                 p=psum)
+                 C=np.reshape(Csum, (-1, M.C.shape[1])),
+                 p=np.reshape(psum, (-1, 1)))
 
-        try:
-            Ms.q = qsum
-        except NameError:
-            pass
+        if qsum:
+            Ms.q = np.reshape(qsum, (-1, 1))
 
-        try:
-            Ms.sample_idx = sample_idx_sum
-        except NameError:
-            pass
+        if sample_idx_sum:
+            Ms.sample_idx = np.reshape(sample_idx_sum, (-1, 1))
 
         return Ms
 
@@ -317,6 +300,8 @@ class Cpm(object):
             if M.q.size:
                 self.q = np.ones(shape=(self.C.shape[0], 1))
 
+        Cprod, pprod, qprod, sample_idx_prod = [], [], [], []
+
         if self.C.size:
             # FIXME: defined but not used
             #com_vars = list(set(self.variables).intersection(M.variables))
@@ -341,40 +326,20 @@ class Cpm(object):
 
                 _cprod = np.append(Mc.C, np.tile(c1_not_com, (Mc.C.shape[0], 1)), axis=1)
 
-                try:
-                    Cprod = np.append(Cprod, _cprod, axis=0)
-                except NameError:
-                    Cprod = _cprod
+                Cprod.append(_cprod)
 
                 if self.p.size:
-                    _pprod = get_prod(Mc.p, self.p[i])
-                    try:
-                        pprod = np.append(pprod, _pprod, axis=0)
-                    except NameError:
-                        pprod = _pprod
+                    pprod.append(get_prod(Mc.p, self.p[i]))
 
                 if self.q.size:
-                    _qprod = get_prod(Mc.q, self.q[i])
-
-                    try:
-                        qprod = np.append(qprod, _qprod, axis=0)
-                    except NameError:
-                        qprod = _qprod
+                    qprod.append(get_prod(Mc.q, self.q[i]))
 
                 if sample_idx:
                     _sprod = np.tile(sample_idx, (Mc.C.shape[0], 1))
-
-                    try:
-                        sample_idx_prod = np.append(sample_idx_prod, _sprod, axis=0)
-                    except NameError:
-                        sample_idx_prod = _sprod
+                    sample_idx_prod.append(_sprod)
 
                 elif Mc.sample_idx.size:
-
-                    try:
-                        sample_idx_prod = np.append(sample_idx_prod, Mc.sample_idx, axis=0)
-                    except NameError:
-                        sample_idx_prod = Mc.sample_idx
+                    sample_idx_prod.append(Mc.sample_idx)
 
             prod_vars = M.variables + get_value_given_condn(self.variables, flip(idx_vars))
 
@@ -392,20 +357,19 @@ class Cpm(object):
 
             _, idx_vars = ismember(new_vars, prod_vars)
 
+            Cprod = np.concatenate(Cprod, axis=0)
+            pprod = np.concatenate(pprod, axis=0)
+
             Mprod = Cpm(variables=new_vars,
                         no_child = len(new_child),
                         C = Cprod[:, idx_vars].astype(int),
                         p = pprod)
 
-            try:
-                Mprod.q = qprod
-            except NameError:
-                pass
+            if qprod:
+                Mprod.q = np.concatenate(qprod, axis=0)
 
-            try:
-                Mprod.sample_idx = sample_idx_prod
-            except NameError:
-                pass
+            if sample_idx_prod:
+                Mprod.sample_idx = np.concatenate(sample_idx_prod, axis=0)
 
             Mprod.sort()
 
@@ -863,8 +827,16 @@ def isinscope(idx, Ms):
 
 
 def variable_elim(cpms, var_elim_order):
+    """
+    cpms: list or dict of cpms
 
-    cpms = copy.deepcopy(cpms)
+    var_elim_order:
+    """
+    if isinstance(cpms, dict):
+        cpms = list(cpms.values())
+    else:
+        cpms = copy.deepcopy(cpms)
+
     for var_id in var_elim_order:
 
         isin = isinscope([var_id], cpms)
@@ -901,7 +873,7 @@ def get_prob(M, var_inds, var_states, flag=True):
                    no_child=len(var_inds),
                    C=var_states,
                    p=np.empty(shape=(var_states.shape[0], 1)))
-    is_compat = M.iscompatible(Mcompare)
+    is_compat = M.iscompatible(Mcompare, flag=True)
     idx = np.where(is_compat)[0]
     Msubset = M.get_subset(idx, flag )
     prob = Msubset.p.sum()

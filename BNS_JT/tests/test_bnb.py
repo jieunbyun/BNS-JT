@@ -60,10 +60,13 @@ def test_bnb(setup_bridge):
 
     # Check if the results are correct
     # FIXME: index issue
-    od_var_id = 7 - 1
+    od_var_id = 'od1' #7 - 1
     var_elim_order = [vars_arc[i] for i in arcs.keys()]
 
-    M_bnb = [cpms_arc[i] for i in list(arcs.keys()) + list(var_ODs.keys())]
+    #M_bnb = {i: cpms_arc[i] for i in list(arcs.keys()) + list(var_ODs.keys())}
+    M_bnb = {i: cpms_arc[i] for i in list(arcs.keys()) + ['od1']}
+    # FIXME: why M_bnb requires cpms of od2, od3, and od4??? 
+    #M_bnb = [cpms_arc[i] for i in list(arcs.keys()) + ['od1']]
     M_bnb[od_var_id].C = C_od
     M_bnb[od_var_id].p = np.ones(shape=(C_od.shape[0], 1))
     M_bnb_VE= variable_elim(M_bnb, var_elim_order)

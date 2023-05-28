@@ -6,17 +6,22 @@ A small, hypothetical bridge system
 '''
 import pytest
 import numpy as np
+import pandas as pd
 import networkx as nx
 from scipy.stats import lognorm
 from pathlib import Path
 import matplotlib
 import pdb
 
+np.set_printoptions(precision=3)
+#pd.set_option.display_precision = 3
+
+
 matplotlib.use("TKAgg")
 import matplotlib.pyplot as plt
 
 from BNS_JT import cpm, variable
-from Trans.trans import get_arcs_length, get_all_paths_and_times
+from Trans.trans import get_arcs_length, do_branch, get_all_paths_and_times
 
 HOME = Path(__file__).absolute().parent
 
@@ -277,6 +282,40 @@ def test_prob_delay2(setup_bridge):
     np.testing.assert_array_almost_equal(ODs_prob_delay2, expected_delay, decimal=4)
 
 
+def test_prob_delay3(setup_bridge):
+    """ same as delay2 but only using one OD"""
+    cpms_arc, vars_arc = setup_bridge
+
+    #pdb.set_trace()
+    ## Repeat inferences again using new functions -- the results must be the same.
+    # Probability of delay and disconnection
+    #M = [cpms_arc[k] for k in list(arcs.keys()) + list(var_ODs.keys())]
+    M = [cpms_arc[k] for k in list(arcs.keys()) + ['od1']]
+    var_elim_order = [vars_arc[i] for i in arcs.keys()]
+    M_VE2 = cpm.variable_elim(M, var_elim_order)
+
+    # "M_VE2" same as "M_VE"
+    # Retrieve example results
+    ODs_prob_disconn2 = np.zeros(nODs)
+    ODs_prob_delay2 = np.zeros(nODs)
+
+    disconn_state = 2
+    for j, idx in enumerate(['od1']):
+
+        # Prob. of disconnection
+        # FIXME 2 -> 3?? 
+        #disconn_state = vars_arc[idx].values.index(np.inf) + 1
+        # the state of disconnection is assigned an arbitrarily large number 100
+        ODs_prob_disconn2[j] = cpm.get_prob(M_VE2, [vars_arc[idx]], [2])
+
+        # Prob. of delay
+        ODs_prob_delay2[j] = cpm.get_prob(M_VE2, [vars_arc[idx]], [1-1], flag=False) # Any state greater than 1 means delay.
+
+    # Check if the results are the same
+    np.testing.assert_array_almost_equal(ODs_prob_disconn2[0], expected_disconn[0], decimal=4)
+    np.testing.assert_array_almost_equal(ODs_prob_delay2[0], expected_delay[0], decimal=4)
+
+
 def test_prob_damage(setup_bridge):
 
     cpms_arc, vars_arc = setup_bridge
@@ -423,4 +462,129 @@ def plot_delay(ODs_prob_delay, ODs_prob_disconn):
     plt.legend()
     plt.savefig(HOME.joinpath('figure1s.png'), dpi=200)
     plt.close()
+
+
+def test_get_arcs_length():
+
+    node_coords = {1: [-2, 3],
+                   2: [-2, -3],
+                   3: [2, -2],
+                   4: [1, 1],
+                   5: [0, 0]}
+
+    arcs = {1: [1, 2],
+            2: [1,5],
+            3: [2,5],
+            4: [3,4],
+            5: [3,5],
+            6: [4,5]}
+
+    result = get_arcs_length(arcs, node_coords)
+
+    expected = {1: 6.0,
+                2: 3.6056,
+                3: 3.6056,
+                4: 3.1623,
+                5: 2.8284,
+                6: 1.4142}
+
+    pd.testing.assert_series_equal(pd.Series(result), pd.Series(expected), rtol=1.0e-3)
+
+
+def test_get_all_paths_and_times():
+
+    arcs = {1: [1, 2],
+            2: [1, 5],
+            3: [2, 5],
+            4: [3, 4],
+            5: [3, 5],
+            6: [4, 5]}
+
+    arc_times_h = {1: 0.15, 2: 0.0901, 3: 0.0901, 4: 0.1054,
+                   5: 0.0943, 6: 0.0707}
+
+    G = nx.Graph()
+    for k, x in arcs.items():
+        G.add_edge(x[0], x[1], time=arc_times_h[k], label=k)
+
+    ODs = [(5, 1), (5, 2), (5, 3), (5, 4)]
+
+    path_time = get_all_paths_and_times(ODs, G)
+
+    expected = {(5, 1): [([2], 0.0901),
+                         ([3, 1], 0.2401)],
+                (5, 2): [([2, 1], 0.2401),
+                         ([3], 0.0901)],
+                (5, 3): [([5], 0.0943),
+                         ([6, 4], 0.1761)],
+                (5, 4): [([5, 4], 0.1997),
+                         ([6], 0.0707)],
+                }
+
+
+def test_do_branch1():
+    # parallel system 
+    #    (1)   2 (3)
+    # 1              4
+    #    (2)  3  (4)   
+    # edge: 1: 1-2 (0.1)
+    #       2: 1-3 (0.2)
+    #       3: 2-4 (0.1)
+    #       4: 3-4 (0.2)
+    # 1: Ok, 2: Failure 3: Either     
+
+    # 0.2
+    group = [[1, 1, 1, 1],
+             [1, 1, 2, 1],
+             [1, 2, 1, 1],
+             [1, 2, 2, 1]]
+
+    complete = {x: (1, 2) for x in range(4)}
+
+    result = do_branch(group, complete, id_any=3)
+
+    assert result==[[1, 3, 3, 1]]
+
+    group = [[1, 1, 1, 1],
+             [1, 2, 1, 1],
+             [1, 2, 2, 1],
+             [1, 1, 2, 1]]
+
+    result = do_branch(group, complete, id_any=3)
+
+    assert result == [[1, 3, 3, 1]]
+
+
+def test_do_branch2():
+    # parallel system 
+    #    (1)   2 (3)
+    # 1              4
+    #    (2)  3  (4)   
+    # edge: 1: 1-2 (0.1)
+    #       2: 1-3 (0.2)
+    #       3: 2-4 (0.1)
+    #       4: 3-4 (0.2)
+    # 1: Ok, 2: Failure 3: Either     
+    # result varies by order
+    group = [[1, 1, 1, 2],
+             [2, 1, 1, 1],
+             [2, 1, 1, 2]]
+
+    complete = {x: (1, 2) for x in range(4)}
+
+    result = do_branch(group, complete, id_any=3)
+    expected = set(map(tuple,[[3, 1, 1, 2], [2, 1, 1, 1]]))
+    assert expected == set(map(tuple, result))
+
+
+    group = [[2, 1, 1, 1],
+             [2, 1, 1, 2],
+             [1, 1, 1, 2]]
+
+    result = do_branch(group, complete, id_any=3)
+    expected = set(map(tuple,[[2, 1, 1, 3], [1, 1, 1, 2]]))
+    assert expected==set(map(tuple, result))
+
+
+
 
