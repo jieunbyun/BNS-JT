@@ -8,6 +8,7 @@ def get_all_paths_and_times(ODs, G, key='time'):
     G: instance of networkx.Graph
     key: keyword for weight
     """
+
     path_time = {}
     for org, dest in ODs:
         for _path in nx.all_simple_paths(G, org, dest):
@@ -92,4 +93,20 @@ def do_branch(group, complete, id_any):
     return group
 
 
+def eval_sys_route(OD1,G, arcs_state1, arc_surv, arc_fail, key='time'):
 
+    
+    path_time = get_all_paths_and_times([OD1], G, key)
+    path_time[OD1].append(([], float('inf')))
+
+
+    for state in range(0, len(path_time[OD1])):
+
+        path_state = [arcs_state1[i-1] for i in path_time[OD1][state][0]]
+        path_is_surv = [path_state1 == arc_surv for path_state1 in path_state]
+
+        if all(path_is_surv):
+            sys_state = state
+            break
+
+    return sys_state
