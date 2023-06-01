@@ -93,17 +93,15 @@ def do_branch(group, complete, id_any):
     return group
 
 
-def eval_sys_route(OD1,G, arcs_state1, arc_surv, arc_fail, key='time'):
+def eval_sys_route(OD, G, arcs_state, arc_condn, key='time'):
 
-    
-    path_time = get_all_paths_and_times([OD1], G, key)
-    path_time[OD1].append(([], float('inf')))
+    path_time = get_all_paths_and_times([OD], G, key)
+    path_time[OD].append(([], np.inf))
+    path_time[OD] = sorted(path_time[OD], key=lambda x: x[1])
 
+    for state, (edges, _time) in enumerate(path_time[OD]):
 
-    for state in range(0, len(path_time[OD1])):
-
-        path_state = [arcs_state1[i-1] for i in path_time[OD1][state][0]]
-        path_is_surv = [path_state1 == arc_surv for path_state1 in path_state]
+        path_is_surv = [arcs_state[i]==arc_condn for i in edges]
 
         if all(path_is_surv):
             sys_state = state

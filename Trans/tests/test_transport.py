@@ -588,40 +588,54 @@ def test_do_branch2():
 
 def test_eval_sys_route():
 
-    ### Copied from "test_get_all_paths_and_times" ###
-    arcs = {1: [1, 2],
-            2: [1, 5],
-            3: [2, 5],
-            4: [3, 4],
-            5: [3, 5],
-            6: [4, 5]}
+    arcs = {'e1': ['n1', 'n2'],
+            'e2': ['n1', 'n5'],
+            'e3': ['n2', 'n5'],
+            'e4': ['n3', 'n4'],
+            'e5': ['n3', 'n5'],
+            'e6': ['n4', 'n5']}
 
-    arc_times_h = {1: 0.15, 2: 0.0901, 3: 0.0901, 4: 0.1054,
-                   5: 0.0943, 6: 0.0707}
+    arc_times_h = {'e1': 0.15, 'e2': 0.0901, 'e3': 0.0901, 'e4': 0.1054,
+                   'e5': 0.0943, 'e6': 0.0707}
 
     G = nx.Graph()
     for k, x in arcs.items():
         G.add_edge(x[0], x[1], time=arc_times_h[k], label=k)
 
-    ODs = [(5, 1), (5, 2), (5, 3), (5, 4)]
-    ###################################################
+    ODs = [('n5', 'n1'), ('n5', 'n2'), ('n5', 'n3'), ('n5', 'n4')]
 
+    arcs_state = {'e1': arc_surv,
+                  'e2': arc_fail,
+                  'e3': arc_surv,
+                  'e4': arc_surv,
+                  'e5': arc_surv,
+                  'e6': arc_surv}
 
-    arcs_state = [arc_surv, arc_fail, arc_surv, arc_surv, arc_surv, arc_surv]
-    sys_state = eval_sys_route(ODs[0],G, arcs_state, arc_surv, arc_fail, key='time')
+    sys_state = eval_sys_route(ODs[0], G, arcs_state, arc_surv, key='time')
     expected = 1 # The second shortest route (1,3) available
 
     assert sys_state == expected
 
+    arcs_state = {'e1': arc_surv,
+                  'e2': arc_surv,
+                  'e3': arc_surv,
+                  'e4': arc_surv,
+                  'e5': arc_surv,
+                  'e6': arc_surv}
 
-    arcs_state = [arc_surv, arc_surv, arc_surv, arc_surv, arc_surv, arc_surv]
-    sys_state = eval_sys_route(ODs[0],G, arcs_state, arc_surv, arc_fail, key='time')
+    sys_state = eval_sys_route(ODs[0],G, arcs_state, arc_surv, key='time')
     expected = 0 # The shortest route (2) available
 
     assert sys_state == expected
 
-    arcs_state = [arc_surv, arc_fail, arc_fail, arc_surv, arc_surv, arc_surv]
-    sys_state = eval_sys_route(ODs[0],G, arcs_state, arc_surv, arc_fail, key='time')
+    arcs_state = {'e1': arc_surv,
+                  'e2': arc_fail,
+                  'e3': arc_fail,
+                  'e4': arc_surv,
+                  'e5': arc_surv,
+                  'e6': arc_surv}
+
+    sys_state = eval_sys_route(ODs[0],G, arcs_state, arc_surv, key='time')
     expected = 2 # No path available
 
     assert sys_state == expected
