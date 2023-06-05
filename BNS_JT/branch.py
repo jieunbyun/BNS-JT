@@ -5,6 +5,7 @@ import copy
 
 from BNS_JT.cpm import ismember
 from BNS_JT.variable import Variable
+from Trans.trans import eval_sys_state
 
 class Branch(object):
     """
@@ -196,3 +197,81 @@ def run_bnb(sys_fn, next_comp_fn, next_state_fn, info, comp_max_states):
     return branches
 
 
+def get_branch_given_paths(path, lower, upper, path_time_idx, arc_condn):
+    """
+    path: list of edges
+    """
+    sb = []
+    for arc in path:
+
+        # set un = 0
+        upper = {k: 0 if k in arc else v for k, v in upper.items()}
+        fu = eval_sys_state(path_time_idx, upper, arc_condn)
+        fl = eval_sys_state(path_time_idx, lower, arc_condn)
+
+        sb.append((lower, upper, fl, fu))
+
+        # set un=1, ln = 1 
+        upper = {k: 1 if k in arc else v for k, v in upper.items()}
+        lower = {k: 1 if k in arc else v for k, v in lower.items()}
+
+        fu = eval_sys_state(path_time_idx, upper, arc_condn)
+        fl = eval_sys_state(path_time_idx, lower, arc_condn)
+
+        sb.append((lower, upper, fl, fu))
+
+    return sb
+
+
+def branch_and_bound(path_time_idx, lower, upper, arc_condn):
+    """
+    path_time_idx: a list of tuples consisting of path, time, and index (corresponding to row of B matrix)
+    lower:
+    upper:
+    arc_condn:
+    """
+
+    fl = eval_sys_state(path_time_idx, arcs_state=lower, arc_condn=1)
+    fu = eval_sys_state(path_time_idx, arcs_state=upper, arc_condn=1)
+
+    sb = [(lower, upper, fl, fu)]
+
+    for _path, _time, idx in path_time_idx:
+
+        if _path:
+
+            # select lower and upper branch from Sb
+            for c_lower, c_upper, c_fl, c_fu in sb:
+
+                upper_matched = [k for k, v in c_upper.items() if v == arc_condn]
+
+                # selecting a branch from sb such that fl /= fu
+                if (c_fl != c_fu) and set(_path).issubset(upper_matched):
+
+                    upper = c_upper
+                    lower = c_lower
+                    fl = c_fl
+                    chosen = (c_lower, c_upper, c_fl, c_fu)
+                    sb = [x for x in sb if not x == chosen]
+                    break
+
+            for arc in _path:
+
+                # set upper_n = 0
+                upper = {k: 0 if k in arc else v for k, v in upper.items()}
+                fu = eval_sys_state(path_time_idx, upper, arc_condn)
+
+                sb.append((lower, upper, fl, fu))
+
+                # set upper_n=1, lower_n = 1 
+                upper = {k: 1 if k in arc else v for k, v in upper.items()}
+                lower = {k: 1 if k in arc else v for k, v in lower.items()}
+
+                fu = eval_sys_state(path_time_idx, upper, arc_condn)
+                fl = eval_sys_state(path_time_idx, lower, arc_condn)
+
+                # FIXME!!  (different from the logic)
+                if fu==fl:
+                    sb.append((lower, upper, fl, fu))
+
+    return sb

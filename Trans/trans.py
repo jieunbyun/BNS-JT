@@ -93,18 +93,37 @@ def do_branch(group, complete, id_any):
     return group
 
 
-def eval_sys_route(OD, G, arcs_state, arc_condn, key='time'):
+def eval_sys_route_old(OD, G, arcs_state, arc_condn, key='time'):
 
-    path_time = get_all_paths_and_times([OD], G, key)
-    path_time[OD].append(([], np.inf))
-    path_time[OD] = sorted(path_time[OD], key=lambda x: x[1])
+    path_time = get_all_paths_and_times([OD], G, key)[OD]
+    path_time = sorted(path_time, key=lambda x: x[1])
 
-    for state, (edges, _time) in enumerate(path_time[OD]):
+    sys_state = 0  # no path available
+    for state, (edges, _time) in enumerate(path_time, 1):
 
         path_is_surv = [arcs_state[i]==arc_condn for i in edges]
-
         if all(path_is_surv):
+            sys_state = len(path_time) - state + 1
+            break
+
+    return sys_state
+
+
+def eval_sys_state(path_time_idx, arcs_state, arc_condn):
+    """
+    path_time_idx: a list of tuple (path, time, idx)
+    arcs_state: dict or frozenset
+    arc_condn: value for survival (row index)
+    """
+    sys_state = path_time_idx[0][2]  # no path available
+
+    for edges, _, state in path_time_idx:
+
+        path_is_surv = [arcs_state[i]==arc_condn for i in edges]
+        if path_is_surv and all(path_is_surv):
             sys_state = state
             break
 
     return sys_state
+
+

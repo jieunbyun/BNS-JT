@@ -12,6 +12,7 @@ from scipy.stats import lognorm
 from pathlib import Path
 import matplotlib
 import pdb
+from math import isclose
 
 np.set_printoptions(precision=3)
 #pd.set_option.display_precision = 3
@@ -21,7 +22,7 @@ matplotlib.use("TKAgg")
 import matplotlib.pyplot as plt
 
 from BNS_JT import cpm, variable
-from Trans.trans import get_arcs_length, do_branch, get_all_paths_and_times, eval_sys_route
+from Trans.trans import get_arcs_length, do_branch, get_all_paths_and_times, eval_sys_state
 
 HOME = Path(__file__).absolute().parent
 
@@ -80,13 +81,14 @@ GM_obs = {'e1': 30.0,
           'e5': 0.9,
           'e6': 0.6}
 
-# Arcs' states index compatible with variable B index, and C
-arc_surv = 1 - 1
-arc_fail = 2 - 1
-arc_either = 3 - 1
 
 @pytest.fixture(scope='package')
 def setup_bridge():
+
+    # Arcs' states index compatible with variable B index, and C
+    arc_surv = 1 - 1
+    arc_fail = 2 - 1
+    arc_either = 3 - 1
 
     arc_lens_km = get_arcs_length(arcs, node_coords)
 
@@ -196,6 +198,123 @@ def setup_bridge():
     return cpms_arc, vars_arc
 
 
+@pytest.fixture(scope='package')
+def setup_bridge_alt():
+
+    # Arcs' states index compatible with variable B index, and C
+    arc_fail = 0
+    arc_surv = 1
+    arc_either = 2
+
+    arc_lens_km = get_arcs_length(arcs, node_coords)
+
+    #arcTimes_h = arcLens_km ./ arcs_Vavg_kmh
+    arc_times_h = {k: v/arcs_avg_kmh[k] for k, v in arc_lens_km.items()}
+
+    # create a graph
+    G = nx.Graph()
+    for k, x in arcs.items():
+        G.add_edge(x[0], x[1], time=arc_times_h[k], label=k)
+
+    for k, v in node_coords.items():
+        G.add_node(k, pos=v)
+
+    path_time = get_all_paths_and_times(var_ODs.values(), G, key='time')
+
+    # plot graph
+    pos = nx.get_node_attributes(G, 'pos')
+    edge_labels = nx.get_edge_attributes(G, 'label')
+
+    fig = plt.figure()
+    ax = fig.add_subplot()
+    nx.draw(G, pos, with_labels=True, ax=ax)
+    nx.draw_networkx_edge_labels(G, pos, edge_labels=edge_labels, ax=ax)
+    fig.savefig(HOME.joinpath('graph.png'), dpi=200)
+
+    # Arcs (components): P(X_i | GM = GM_ob ), i = 1 .. N (= nArc)
+    cpms_arc = {}
+    vars_arc = {}
+
+    B = np.array([[1, 0], [0, 1], [1, 1]])
+
+    for k in arcs.keys():
+        vars_arc[k] = variable.Variable(name=str(k), B=B, values=['Fail', 'Surv'])
+
+        _type = arcs_type[k]
+        prob = lognorm.cdf(GM_obs[k], frag[_type]['std'], scale=frag[_type]['med'])
+        C = np.array([[arc_fail, arc_surv]]).T
+        p = np.array([prob, 1-prob])
+        cpms_arc[k] = cpm.Cpm(variables = [vars_arc[k]],
+                              no_child = 1,
+                              C = C,
+                              p = p)
+
+    # Travel times (systems): P(OD_j | X1, ... Xn) j = 1 ... nOD
+    B_ = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
+    vars_arc['od1'] = variable.Variable(name='od1', B=B_,
+            values=[0.0901, 0.2401, np.inf])
+
+    vars_arc['od2'] = variable.Variable(name='od2', B=B_,
+            values=[0.0901, 0.2401, np.inf])
+
+    vars_arc['od3'] = variable.Variable(name='od3', B=B_,
+            values=[0.0943, 0.1761, np.inf])
+
+    vars_arc['od4'] = variable.Variable(name='od4', B=B_,
+            values=[0.0707, 0.1997, np.inf])
+
+    _variables = [vars_arc[k] for k in ['od1', 'e1', 'e2', 'e3', 'e4', 'e5', 'e6']]
+    c7 = np.array([
+    [1,3,2,3,3,3,3],
+    [2,2,1,2,3,3,3],
+    [3,2,1,1,3,3,3],
+    [3,1,1,3,3,3,3]]) - 1
+
+    cpms_arc['od1'] = cpm.Cpm(variables= _variables,
+                           no_child = 1,
+                           C = c7,
+                           p = [1, 1, 1, 1],
+                           )
+
+    _variables = [vars_arc[k] for k in ['od2', 'e1', 'e2', 'e3', 'e4', 'e5', 'e6']]
+    c8 = np.array([
+    [1,3,3,2,3,3,3],
+    [2,2,2,1,3,3,3],
+    [3,2,1,1,3,3,3],
+    [3,1,3,1,3,3,3]]) - 1
+    cpms_arc['od2'] = cpm.Cpm(variables= _variables,
+                           no_child = 1,
+                           C = c8,
+                           p = [1, 1, 1, 1],
+                           )
+
+    _variables = [vars_arc[k] for k in ['od3', 'e1', 'e2', 'e3', 'e4', 'e5', 'e6']]
+    c9 = np.array([
+    [1,3,3,3,3,2,3],
+    [2,3,3,3,2,1,2],
+    [3,3,3,3,2,1,1],
+    [3,3,3,3,1,1,3]]) - 1
+    cpms_arc['od3'] = cpm.Cpm(variables= _variables,
+                           no_child = 1,
+                           C = c9,
+                           p = [1, 1, 1, 1],
+                           )
+
+    _variables = [vars_arc[k] for k in ['od4', 'e1', 'e2', 'e3', 'e4', 'e5', 'e6']]
+    c10 = np.array([
+    [1,3,3,3,3,3,2],
+    [2,3,3,3,2,2,1],
+    [3,3,3,3,2,1,1],
+    [3,3,3,3,1,3,1]]) - 1
+    cpms_arc['od4'] = cpm.Cpm(variables= _variables,
+                           no_child = 1,
+                           C = c10,
+                           p = [1, 1, 1, 1],
+                           )
+
+    return cpms_arc, vars_arc
+
+
 def test_prob_delay1(setup_bridge):
 
     ## Inference - by variable elimination (would not work for large-scale systems)
@@ -282,11 +401,10 @@ def test_prob_delay2(setup_bridge):
     np.testing.assert_array_almost_equal(ODs_prob_delay2, expected_delay, decimal=4)
 
 
-def test_prob_delay3(setup_bridge):
+def test_prob_delay3(setup_bridge_alt):
     """ same as delay2 but only using one OD"""
-    cpms_arc, vars_arc = setup_bridge
+    cpms_arc, vars_arc = setup_bridge_alt
 
-    #pdb.set_trace()
     ## Repeat inferences again using new functions -- the results must be the same.
     # Probability of delay and disconnection
     #M = [cpms_arc[k] for k in list(arcs.keys()) + list(var_ODs.keys())]
@@ -299,7 +417,7 @@ def test_prob_delay3(setup_bridge):
     ODs_prob_disconn2 = np.zeros(nODs)
     ODs_prob_delay2 = np.zeros(nODs)
 
-    disconn_state = 2
+    #disconn_state = 2
     for j, idx in enumerate(['od1']):
 
         # Prob. of disconnection
@@ -317,6 +435,9 @@ def test_prob_delay3(setup_bridge):
 
 
 def test_prob_damage(setup_bridge):
+
+    arc_fail = 1
+    arc_surv = 0
 
     cpms_arc, vars_arc = setup_bridge
 
@@ -586,7 +707,10 @@ def test_do_branch2():
     assert expected==set(map(tuple, result))
 
 
-def test_eval_sys_route():
+def test_eval_sys_state():
+
+    arc_surv = 1
+    arc_fail = 0
 
     arcs = {'e1': ['n1', 'n2'],
             'e2': ['n1', 'n5'],
@@ -605,28 +729,45 @@ def test_eval_sys_route():
     ODs = [('n5', 'n1'), ('n5', 'n2'), ('n5', 'n3'), ('n5', 'n4')]
 
     arcs_state = {'e1': arc_surv,
-                  'e2': arc_fail,
-                  'e3': arc_surv,
-                  'e4': arc_surv,
-                  'e5': arc_surv,
-                  'e6': arc_surv}
-
-    sys_state = eval_sys_route(ODs[0], G, arcs_state, arc_surv, key='time')
-    expected = 1 # The second shortest route (1,3) available
-
-    assert sys_state == expected
-
-    arcs_state = {'e1': arc_surv,
                   'e2': arc_surv,
                   'e3': arc_surv,
                   'e4': arc_surv,
                   'e5': arc_surv,
                   'e6': arc_surv}
 
-    sys_state = eval_sys_route(ODs[0],G, arcs_state, arc_surv, key='time')
-    expected = 0 # The shortest route (2) available
+    B_ = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
+    vars_od1 = variable.Variable(name='od1', B=B_,
+            values=[np.inf, 0.2401, 0.0901])
 
-    assert sys_state == expected
+    path_time = get_all_paths_and_times([ODs[0]], G, 'time')[ODs[0]]
+    path_time.append(([], np.inf))
+
+    # refering variable
+    path_time_idx = []
+    for x in path_time:
+        idx = [i for i, y in enumerate(vars_od1.values) if isclose(x[1], y)]
+        try:
+            path_time_idx.append((*x, idx[0]))
+        except IndexError:
+            print('path_time incompatible with variable')
+
+    # sort by increasing number of edges
+    path_time_idx = sorted(path_time_idx, key=lambda x: len(x[0]))
+
+    # The shortest route (2) available
+    sys_state = eval_sys_state(path_time_idx, arcs_state, arc_surv)
+    assert sys_state == 2
+
+    arcs_state = {'e1': arc_surv,
+                  'e2': arc_fail,
+                  'e3': arc_surv,
+                  'e4': arc_surv,
+                  'e5': arc_surv,
+                  'e6': arc_surv}
+
+    # The second shortest route (1,3) available
+    sys_state = eval_sys_state(path_time_idx, arcs_state, arc_surv)
+    assert sys_state == 1
 
     arcs_state = {'e1': arc_surv,
                   'e2': arc_fail,
@@ -635,7 +776,7 @@ def test_eval_sys_route():
                   'e5': arc_surv,
                   'e6': arc_surv}
 
-    sys_state = eval_sys_route(ODs[0],G, arcs_state, arc_surv, key='time')
-    expected = 2 # No path available
+    # No path available
+    sys_state = eval_sys_state(path_time_idx, arcs_state, arc_surv)
+    assert sys_state == 0
 
-    assert sys_state == expected

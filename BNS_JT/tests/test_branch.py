@@ -7,7 +7,7 @@ import pytest
 #from BNS_JT.variable import Variable
 from Trans.trans import get_arcs_length, do_branch, get_all_paths_and_times
 from Trans.bnb_fns import bnb_sys, bnb_next_comp, bnb_next_state
-from BNS_JT.branch import get_cmat, run_bnb, Branch
+from BNS_JT.branch import get_cmat, run_bnb, Branch, branch_and_bound
 from BNS_JT import variable
 
 np.set_printoptions(precision=3)
@@ -301,5 +301,46 @@ def test_get_cmat1s(setup_branch):
                          [2,1,2,1,3,3,3]]) - 1
 
     np.testing.assert_array_equal(C, expected)
+
+
+def test_branch_and_bound():
+
+    path_time_idx =[([], np.inf, 0), (['e2'], 0.0901, 2), (['e1', 'e3'], 0.2401, 1)]
+
+    # init
+    arcs = [f'e{i}' for i in range(1, 7)]
+
+    lower = {x: 0 for x in arcs}
+    upper = {x: 1 for x in arcs}
+    arc_condn = 1
+
+    sb = branch_and_bound(path_time_idx, lower, upper, arc_condn)
+
+    expected =[({'e1': 0, 'e2': 1, 'e3': 0, 'e4': 0, 'e5': 0, 'e6': 0}, {'e1': 1, 'e2': 1, 'e3': 1, 'e4': 1, 'e5': 1, 'e6': 1}, 2, 2),
+               ({'e1': 0, 'e2': 0, 'e3': 0, 'e4': 0, 'e5': 0, 'e6': 0}, {'e1': 0, 'e2': 0, 'e3': 1, 'e4': 1, 'e5': 1, 'e6': 1}, 0, 0),
+               ({'e1': 1, 'e2': 0, 'e3': 0, 'e4': 0, 'e5': 0, 'e6': 0}, {'e1': 1, 'e2': 0, 'e3': 0, 'e4': 1, 'e5': 1, 'e6': 1}, 0, 0),
+               ({'e1': 1, 'e2': 0, 'e3': 1, 'e4': 0, 'e5': 0, 'e6': 0}, {'e1': 1, 'e2': 0, 'e3': 1, 'e4': 1, 'e5': 1, 'e6': 1}, 1, 1)]
+
+    assert len(sb) == 4
+    assert all([x in sb for x in expected])
+
+    path_time_idx =[([], np.inf, 0), (['e2'], 0.0901, 2), (['e3', 'e1'], 0.2401, 1)]
+
+    # init
+    arcs = [f'e{i}' for i in range(1, 7)]
+
+    lower = {x: 0 for x in arcs}
+    upper = {x: 1 for x in arcs}
+    arc_condn = 1
+
+    sb = branch_and_bound(path_time_idx, lower, upper, arc_condn)
+
+    expected =[({'e1': 0, 'e2': 1, 'e3': 0, 'e4': 0, 'e5': 0, 'e6': 0}, {'e1': 1, 'e2': 1, 'e3': 1, 'e4': 1, 'e5': 1, 'e6': 1}, 2, 2),
+               ({'e1': 0, 'e2': 0, 'e3': 0, 'e4': 0, 'e5': 0, 'e6': 0}, {'e1': 1, 'e2': 0, 'e3': 0, 'e4': 1, 'e5': 1, 'e6': 1}, 0, 0),
+               ({'e1': 0, 'e2': 0, 'e3': 1, 'e4': 0, 'e5': 0, 'e6': 0}, {'e1': 0, 'e2': 0, 'e3': 1, 'e4': 1, 'e5': 1, 'e6': 1}, 0, 0),
+               ({'e1': 1, 'e2': 0, 'e3': 1, 'e4': 0, 'e5': 0, 'e6': 0}, {'e1': 1, 'e2': 0, 'e3': 1, 'e4': 1, 'e5': 1, 'e6': 1}, 1, 1)]
+
+    assert len(sb) == 4
+    assert all([x in sb for x in expected])
 
 
