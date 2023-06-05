@@ -7,7 +7,7 @@ import pytest
 #from BNS_JT.variable import Variable
 from Trans.trans import get_arcs_length, do_branch, get_all_paths_and_times
 from Trans.bnb_fns import bnb_sys, bnb_next_comp, bnb_next_state
-from BNS_JT.branch import get_cmat, run_bnb, Branch, branch_and_bound
+from BNS_JT.branch import get_cmat, run_bnb, Branch, branch_and_bound, get_cmat_from_branches
 from BNS_JT import variable
 
 np.set_printoptions(precision=3)
@@ -343,4 +343,47 @@ def test_branch_and_bound():
     assert len(sb) == 4
     assert all([x in sb for x in expected])
 
+def test_get_cmat_from_branches():
+
+    # variables
+    variables = {}
+    B = np.array([[1, 0], [0, 1], [1, 1]])
+    for i in range(1, 7):
+        variables[f'e{i}'] = variable.Variable(name=f'e{i}', B=B, values=['Surv', 'Fail'])
+
+    branches =[({'e1': 0, 'e2': 1, 'e3': 0, 'e4': 0, 'e5': 0, 'e6': 0},
+                {'e1': 1, 'e2': 1, 'e3': 1, 'e4': 1, 'e5': 1, 'e6': 1}, 2, 2),
+               ({'e1': 0, 'e2': 0, 'e3': 0, 'e4': 0, 'e5': 0, 'e6': 0},
+                {'e1': 0, 'e2': 0, 'e3': 1, 'e4': 1, 'e5': 1, 'e6': 1}, 0, 0),
+               ({'e1': 1, 'e2': 0, 'e3': 0, 'e4': 0, 'e5': 0, 'e6': 0},
+                {'e1': 1, 'e2': 0, 'e3': 0, 'e4': 1, 'e5': 1, 'e6': 1}, 0, 0),
+               ({'e1': 1, 'e2': 0, 'e3': 1, 'e4': 0, 'e5': 0, 'e6': 0},
+                {'e1': 1, 'e2': 0, 'e3': 1, 'e4': 1, 'e5': 1, 'e6': 1}, 1, 1)]
+
+    result = get_cmat_from_branches(branches, variables)
+
+    expected = np.array([[2,2,1,2,2,2,2],
+                         [0,0,0,2,2,2,2],
+                         [0,1,0,0,2,2,2],
+                         [1,1,0,1,2,2,2]])
+
+    np.testing.assert_array_equal(result, expected)
+
+    branches =[({'e1': 0, 'e2': 1, 'e3': 0, 'e4': 0, 'e5': 0, 'e6': 0},
+                {'e1': 1, 'e2': 1, 'e3': 1, 'e4': 1, 'e5': 1, 'e6': 1}, 2, 2),
+               ({'e1': 0, 'e2': 0, 'e3': 0, 'e4': 0, 'e5': 0, 'e6': 0},
+                {'e1': 1, 'e2': 0, 'e3': 0, 'e4': 1, 'e5': 1, 'e6': 1}, 0, 0),
+               ({'e1': 0, 'e2': 0, 'e3': 1, 'e4': 0, 'e5': 0, 'e6': 0},
+                {'e1': 0, 'e2': 0, 'e3': 1, 'e4': 1, 'e5': 1, 'e6': 1}, 0, 0),
+               ({'e1': 1, 'e2': 0, 'e3': 1, 'e4': 0, 'e5': 0, 'e6': 0},
+                {'e1': 1, 'e2': 0, 'e3': 1, 'e4': 1, 'e5': 1, 'e6': 1}, 1, 1)]
+
+    result = get_cmat_from_branches(branches, variables)
+
+    expected = np.array([[2,2,1,2,2,2,2],
+                         [0,2,0,0,2,2,2],
+                         [0,0,0,1,2,2,2],
+                         [1,1,0,1,2,2,2]])
+
+    np.testing.assert_array_equal(result, expected)
 

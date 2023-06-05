@@ -275,3 +275,25 @@ def branch_and_bound(path_time_idx, lower, upper, arc_condn):
                     sb.append((lower, upper, fl, fu))
 
     return sb
+
+def get_cmat_from_branches(branches, variables):
+    """
+    branches: list of tuples (lower, upper, fl, fu)
+    variables: dict of instances of Variable
+    """
+    C = np.zeros(shape=(len(branches), len(variables) + 1))
+
+    for i, (lower, upper, fl, fu) in enumerate(branches):
+
+        assert fl == fu
+
+        C[i, 0] = fl
+
+        for j, (k, v) in enumerate(variables.items(), 1):
+
+            joined = [x|y for x, y in zip(v.B[lower[k]], v.B[upper[k]])]
+            irow = np.where((v.B==joined).all(axis=1))[0]
+            if irow.size==1:
+                C[i, j] = irow
+
+    return C
