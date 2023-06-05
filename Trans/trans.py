@@ -93,20 +93,37 @@ def do_branch(group, complete, id_any):
     return group
 
 
-def eval_sys_route(OD1,G, arcs_state1, arc_surv, arc_fail, key='time'):
+def eval_sys_route_old(OD, G, arcs_state, arc_condn, key='time'):
 
-    
-    path_time = get_all_paths_and_times([OD1], G, key)
-    path_time[OD1].append(([], float('inf')))
+    path_time = get_all_paths_and_times([OD], G, key)[OD]
+    path_time = sorted(path_time, key=lambda x: x[1])
 
+    sys_state = 0  # no path available
+    for state, (edges, _time) in enumerate(path_time, 1):
 
-    for state in range(0, len(path_time[OD1])):
-
-        path_state = [arcs_state1[i-1] for i in path_time[OD1][state][0]]
-        path_is_surv = [path_state1 == arc_surv for path_state1 in path_state]
-
+        path_is_surv = [arcs_state[i]==arc_condn for i in edges]
         if all(path_is_surv):
+            sys_state = len(path_time) - state + 1
+            break
+
+    return sys_state
+
+
+def eval_sys_state(path_time_idx, arcs_state, arc_condn):
+    """
+    path_time_idx: a list of tuple (path, time, idx)
+    arcs_state: dict or frozenset
+    arc_condn: value for survival (row index)
+    """
+    sys_state = path_time_idx[0][2]  # no path available
+
+    for edges, _, state in path_time_idx:
+
+        path_is_surv = [arcs_state[i]==arc_condn for i in edges]
+        if path_is_surv and all(path_is_surv):
             sys_state = state
             break
 
     return sys_state
+
+
