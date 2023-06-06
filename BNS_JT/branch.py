@@ -223,6 +223,7 @@ def get_branch_given_paths(path, lower, upper, path_time_idx, arc_condn):
     return sb
 
 
+
 def branch_and_bound(path_time_idx, lower, upper, arc_condn):
     """
     path_time_idx: a list of tuples consisting of path, time, and index (corresponding to row of B matrix)
@@ -240,7 +241,7 @@ def branch_and_bound(path_time_idx, lower, upper, arc_condn):
 
         if _path:
 
-            # select lower and upper branch from Sb
+            # select lower and upper branch from b_star
             for c_lower, c_upper, c_fl, c_fu in sb:
 
                 upper_matched = [k for k, v in c_upper.items() if v == arc_condn]
@@ -276,11 +277,78 @@ def branch_and_bound(path_time_idx, lower, upper, arc_condn):
 
     return sb
 
+
+
+
+def branch_and_bound_new(path_time_idx, lower, upper, arc_condn):
+    """
+    path_time_idx: a list of tuples consisting of path, time, and index (corresponding to row of B matrix)
+    lower:
+    upper:
+    arc_condn:
+    """
+
+    fl = eval_sys_state(path_time_idx, arcs_state=lower, arc_condn=1)
+    fu = eval_sys_state(path_time_idx, arcs_state=upper, arc_condn=1)
+
+    sb = [(lower, upper, fl, fu)]
+
+    # selecting a branch from sb such that fl /= fu
+    b_star = [x for x in sb if x[2] != x[3]]
+
+    # make sure the paths are sorted by shortest
+    paths_avail = [x[0] for x in path_time_idx if x[0]]
+
+    while b_star:
+
+        # select path using upper branch of b_star
+        for c_lower, c_upper, c_fl, c_fu in b_star:
+
+            upper_matched = [k for k, v in c_upper.items() if v == arc_condn]
+
+            for _path in paths_avail:
+
+                if set(_path).issubset(upper_matched):
+
+                    upper = c_upper
+                    lower = c_lower
+                    fl = c_fl
+                    chosen = (c_lower, c_upper, c_fl, c_fu)
+                    sb = [x for x in sb if not x == chosen]
+
+                    paths_avail.remove(_path)
+                    break
+
+            for arc in _path:
+
+                # set upper_n = 0
+                upper = {k: 0 if k in arc else v for k, v in upper.items()}
+                fu = eval_sys_state(path_time_idx, upper, arc_condn)
+
+                sb.append((lower, upper, fl, fu))
+
+                # set upper_n=1, lower_n = 1 
+                upper = c_upper
+                lower = {k: 1 if k in arc else v for k, v in lower.items()}
+
+                fu = c_fu
+                fl = eval_sys_state(path_time_idx, lower, arc_condn)
+
+                # FIXME!!  (different from the logic)
+                if fl==fu:
+                    sb.append((lower, upper, fl, fu))
+
+        b_star = [x for x in sb if x[2] != x[3]]
+
+    return sb
+
+
 def get_cmat_from_branches(branches, variables):
     """
     branches: list of tuples (lower, upper, fl, fu)
     variables: dict of instances of Variable
     """
+
     C = np.zeros(shape=(len(branches), len(variables) + 1))
 
     for i, (lower, upper, fl, fu) in enumerate(branches):
@@ -292,8 +360,11 @@ def get_cmat_from_branches(branches, variables):
         for j, (k, v) in enumerate(variables.items(), 1):
 
             joined = [x|y for x, y in zip(v.B[lower[k]], v.B[upper[k]])]
+
             irow = np.where((v.B==joined).all(axis=1))[0]
-            if irow.size==1:
-                C[i, j] = irow
+
+            assert irow.size==1
+
+            C[i, j] = irow
 
     return C
