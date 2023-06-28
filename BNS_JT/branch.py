@@ -303,7 +303,7 @@ def branch_and_bound_new(path_time_idx, lower, upper, arc_condn):
 
         # select path using upper branch of b_star
         for c_lower, c_upper, c_fl, c_fu in b_star:
-
+            
             upper_matched = [k for k, v in c_upper.items() if v == arc_condn]
 
             for _path in paths_avail:
@@ -321,22 +321,32 @@ def branch_and_bound_new(path_time_idx, lower, upper, arc_condn):
 
             for arc in _path:
 
-                # set upper_n = 0
-                upper = {k: 0 if k in arc else v for k, v in upper.items()}
-                fu = eval_sys_state(path_time_idx, upper, arc_condn)
+                if c_upper[arc] > c_lower[arc]:
+                    
+                    # set upper_n = 0
+                    #upper = {k: 0 if k in arc else v for k, v in upper.items()}
+                    upper = copy.deepcopy(upper)
+                    upper[arc] = 0
+                    fu = eval_sys_state(path_time_idx, upper, arc_condn)
+                    fl = eval_sys_state(path_time_idx, lower, arc_condn)
 
-                sb.append((lower, upper, fl, fu))
-
-                # set upper_n=1, lower_n = 1 
-                upper = c_upper
-                lower = {k: 1 if k in arc else v for k, v in lower.items()}
-
-                fu = c_fu
-                fl = eval_sys_state(path_time_idx, lower, arc_condn)
-
-                # FIXME!!  (different from the logic)
-                if fl==fu:
                     sb.append((lower, upper, fl, fu))
+
+                    # set upper_n=1, lower_n = 1 
+                    #upper = c_upper
+                    #lower = {k: 1 if k in arc else v for k, v in lower.items()}
+                    upper = copy.deepcopy(upper)
+                    upper[arc] = 1
+                    lower = copy.deepcopy(lower)
+                    lower[arc] = 1
+
+            fu = c_fu
+            #fl = eval_sys_state(path_time_idx, lower, arc_condn)
+
+            #if fl==fu:
+                #sb.append((lower, upper, fl, fu))
+            sb.append((lower, upper, fu, fu))
+
 
         b_star = [x for x in sb if x[2] != x[3]]
 
