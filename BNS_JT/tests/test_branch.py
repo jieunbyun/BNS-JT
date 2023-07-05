@@ -7,7 +7,7 @@ import pytest
 #from BNS_JT.variable import Variable
 from Trans.trans import get_arcs_length, do_branch, get_all_paths_and_times
 from Trans.bnb_fns import bnb_sys, bnb_next_comp, bnb_next_state
-from BNS_JT.branch import get_cmat, run_bnb, Branch, branch_and_bound, get_cmat_from_branches, branch_and_bound_new
+from BNS_JT.branch import get_cmat, run_bnb, Branch, branch_and_bound, get_cmat_from_branches, branch_and_bound_old
 from BNS_JT import variable
 
 np.set_printoptions(precision=3)
@@ -303,7 +303,7 @@ def test_get_cmat1s(setup_branch):
     np.testing.assert_array_equal(C, expected)
 
 
-def test_branch_and_bound():
+def test_branch_and_bound_old():
 
     path_time_idx =[([], np.inf, 0), (['e2'], 0.0901, 2), (['e1', 'e3'], 0.2401, 1)]
 
@@ -333,7 +333,7 @@ def test_branch_and_bound():
     upper = {x: 1 for x in arcs}
     arc_condn = 1
 
-    sb = branch_and_bound(path_time_idx, lower, upper, arc_condn)
+    sb = branch_and_bound_old(path_time_idx, lower, upper, arc_condn)
 
     expected =[({'e1': 0, 'e2': 1, 'e3': 0, 'e4': 0, 'e5': 0, 'e6': 0}, {'e1': 1, 'e2': 1, 'e3': 1, 'e4': 1, 'e5': 1, 'e6': 1}, 2, 2),
                ({'e1': 0, 'e2': 0, 'e3': 0, 'e4': 0, 'e5': 0, 'e6': 0}, {'e1': 1, 'e2': 0, 'e3': 0, 'e4': 1, 'e5': 1, 'e6': 1}, 0, 0),
@@ -343,13 +343,14 @@ def test_branch_and_bound():
     assert len(sb) == 4
     assert all([x in sb for x in expected])
 
+
 def test_get_cmat_from_branches():
 
     # variables
     variables = {}
     B = np.array([[1, 0], [0, 1], [1, 1]])
     for i in range(1, 7):
-        variables[f'e{i}'] = variable.Variable(name=f'e{i}', B=B, values=['Surv', 'Fail'])
+        variables[f'e{i}'] = variable.Variable(name=f'e{i}', B=B, values=['Fail', 'Surv'])
 
     branches =[({'e1': 0, 'e2': 1, 'e3': 0, 'e4': 0, 'e5': 0, 'e6': 0},
                 {'e1': 1, 'e2': 1, 'e3': 1, 'e4': 1, 'e5': 1, 'e6': 1}, 2, 2),
@@ -369,6 +370,7 @@ def test_get_cmat_from_branches():
 
     np.testing.assert_array_equal(result, expected)
 
+    # ('e3', 'e1') instead of ('e1', 'e3')
     branches =[({'e1': 0, 'e2': 1, 'e3': 0, 'e4': 0, 'e5': 0, 'e6': 0},
                 {'e1': 1, 'e2': 1, 'e3': 1, 'e4': 1, 'e5': 1, 'e6': 1}, 2, 2),
                ({'e1': 0, 'e2': 0, 'e3': 0, 'e4': 0, 'e5': 0, 'e6': 0},
@@ -388,18 +390,21 @@ def test_get_cmat_from_branches():
     np.testing.assert_array_equal(result, expected)
 
 
-def test_branch_and_bound_new():
+def test_branch_and_bound():
 
+    # 0, 1, 2 corresponds to index of Variable.values
     path_time_idx =[([], np.inf, 0), (['e2'], 0.0901, 2), (['e1', 'e3'], 0.2401, 1)]
+    # FIXME
+    #path_time_idx =[(['e1', 'e3'], 0.2401, 1), ([], np.inf, 0), (['e2'], 0.0901, 2)] # not working 
 
     # init
     arcs = [f'e{i}' for i in range(1, 7)]
 
-    lower = {x: 0 for x in arcs}
-    upper = {x: 1 for x in arcs}
+    lower = {x: 0 for x in arcs}  # Fail
+    upper = {x: 1 for x in arcs}  # surv
     arc_condn = 1
 
-    sb = branch_and_bound_new(path_time_idx, lower, upper, arc_condn)
+    sb = branch_and_bound(path_time_idx, lower, upper, arc_condn)
 
     expected =[({'e1': 0, 'e2': 1, 'e3': 0, 'e4': 0, 'e5': 0, 'e6': 0}, {'e1': 1, 'e2': 1, 'e3': 1, 'e4': 1, 'e5': 1, 'e6': 1}, 2, 2),
                ({'e1': 0, 'e2': 0, 'e3': 0, 'e4': 0, 'e5': 0, 'e6': 0}, {'e1': 0, 'e2': 0, 'e3': 1, 'e4': 1, 'e5': 1, 'e6': 1}, 0, 0),
@@ -409,16 +414,10 @@ def test_branch_and_bound_new():
     assert len(sb) == 4
     assert all([x in sb for x in expected])
 
+    # ('e3', 'e1') instead of ('e1', 'e3')
     path_time_idx =[([], np.inf, 0), (['e2'], 0.0901, 2), (['e3', 'e1'], 0.2401, 1)]
 
-    # init
-    arcs = [f'e{i}' for i in range(1, 7)]
-
-    lower = {x: 0 for x in arcs}
-    upper = {x: 1 for x in arcs}
-    arc_condn = 1
-
-    sb = branch_and_bound_new(path_time_idx, lower, upper, arc_condn)
+    sb = branch_and_bound(path_time_idx, lower, upper, arc_condn)
 
     expected =[({'e1': 0, 'e2': 1, 'e3': 0, 'e4': 0, 'e5': 0, 'e6': 0}, {'e1': 1, 'e2': 1, 'e3': 1, 'e4': 1, 'e5': 1, 'e6': 1}, 2, 2),
                ({'e1': 0, 'e2': 0, 'e3': 0, 'e4': 0, 'e5': 0, 'e6': 0}, {'e1': 1, 'e2': 0, 'e3': 0, 'e4': 1, 'e5': 1, 'e6': 1}, 0, 0),

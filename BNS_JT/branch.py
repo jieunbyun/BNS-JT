@@ -224,7 +224,7 @@ def get_branch_given_paths(path, lower, upper, path_time_idx, arc_condn):
 
 
 
-def branch_and_bound(path_time_idx, lower, upper, arc_condn):
+def branch_and_bound_old(path_time_idx, lower, upper, arc_condn):
     """
     path_time_idx: a list of tuples consisting of path, time, and index (corresponding to row of B matrix)
     lower:
@@ -280,7 +280,7 @@ def branch_and_bound(path_time_idx, lower, upper, arc_condn):
 
 
 
-def branch_and_bound_new(path_time_idx, lower, upper, arc_condn):
+def branch_and_bound(path_time_idx, lower, upper, arc_condn):
     """
     path_time_idx: a list of tuples consisting of path, time, and index (corresponding to row of B matrix)
     lower:
@@ -303,7 +303,7 @@ def branch_and_bound_new(path_time_idx, lower, upper, arc_condn):
 
         # select path using upper branch of b_star
         for c_lower, c_upper, c_fl, c_fu in b_star:
-            
+
             upper_matched = [k for k, v in c_upper.items() if v == arc_condn]
 
             for _path in paths_avail:
@@ -322,7 +322,7 @@ def branch_and_bound_new(path_time_idx, lower, upper, arc_condn):
             for arc in _path:
 
                 if c_upper[arc] > c_lower[arc]:
-                    
+
                     # set upper_n = 0
                     #upper = {k: 0 if k in arc else v for k, v in upper.items()}
                     upper = copy.deepcopy(upper)
@@ -377,4 +377,4 @@ def get_cmat_from_branches(branches, variables):
 
             C[i, j] = irow
 
-    return C
+    return C.astype(int)

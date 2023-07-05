@@ -30,6 +30,9 @@ class Variable(BaseVariable):
         if isinstance(B, list):
             B = np.array(B, dtype=int)
 
+        if B.dtype == np.dtype(np.float64):
+            B = B.astype(int)
+
         assert isinstance(values, list), 'values must be a list'
 
         numBasicState = B.shape[1]

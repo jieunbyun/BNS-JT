@@ -21,8 +21,8 @@ np.set_printoptions(precision=3)
 matplotlib.use("TKAgg")
 import matplotlib.pyplot as plt
 
-from BNS_JT import cpm, variable
-from Trans.trans import get_arcs_length, do_branch, get_all_paths_and_times, eval_sys_state
+from BNS_JT import cpm, variable, config, branch, model
+from Trans.trans import get_arcs_length, do_branch, get_all_paths_and_times, eval_sys_state, get_path_time_idx
 
 HOME = Path(__file__).absolute().parent
 
@@ -705,6 +705,38 @@ def test_do_branch2():
     result = do_branch(group, complete, id_any=3)
     expected = set(map(tuple,[[2, 1, 1, 3], [1, 1, 1, 2]]))
     assert expected==set(map(tuple, result))
+
+
+def test_get_path_time_idx1():
+
+    path_time =[(['e2'], 0.0901), (['e3', 'e1'], 0.24009999999999998)]
+
+    vari = variable.Variable(name='od1', B=np.eye(3), values=[np.inf, 0.2401, 0.0901])
+
+    result = get_path_time_idx(path_time, vari)
+
+    expected = [([], np.inf, 0), (['e2'], 0.0901, 2), (['e3', 'e1'], 0.24009999999999998, 1)]
+
+    assert result==expected
+
+    path_time =[(['e3', 'e1'], 0.24009999999999998), (['e2'], 0.0901)]
+
+    result = get_path_time_idx(path_time, vari)
+
+    assert result==expected
+
+
+def test_get_path_time_idx2():
+
+    path_time =[(['e2'], 0.0901), (['e3', 'e1'], 0.24009999999999998), ([], np.inf)]
+
+    vari = variable.Variable(name='od1', B=np.eye(3), values=[np.inf, 0.2401, 0.0901])
+
+    result = get_path_time_idx(path_time, vari)
+
+    expected = [([], np.inf, 0), (['e2'], 0.0901, 2), (['e3', 'e1'], 0.24009999999999998, 1)]
+
+    assert result==expected
 
 
 def test_eval_sys_state():
