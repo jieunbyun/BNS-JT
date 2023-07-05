@@ -1,6 +1,6 @@
 import numpy as np
 import networkx as nx
-
+from BNS_JT.variable import Variable
 
 def get_all_paths_and_times(ODs, G, key='time'):
     """
@@ -21,6 +21,36 @@ def get_all_paths_and_times(ODs, G, key='time'):
             path_time.setdefault((org, dest), []).append((edges_path, val))
 
     return path_time
+
+
+def get_path_time_idx(path_time, vari):
+    """
+    path_time: a list of tuple
+    vari: instance of Variable
+
+    """
+    assert isinstance(path_time, list)
+    assert all([isinstance(x, tuple) for x in path_time])
+    assert all([len(x)==2 for x in path_time])
+    assert isinstance(vari, Variable)
+
+    path_timex = path_time[:]
+    if not any([np.inf in x for x in path_timex]):
+        path_timex.append(([], np.inf))
+
+    # refering variable
+    path_time_idx = []
+    for x in path_timex:
+        idx = [i for i, y in enumerate(vari.values) if np.isclose(x[1], y)]
+        try:
+            path_time_idx.append((*x, idx[0]))
+        except IndexError:
+            print('path_time incompatible with variable')
+
+    # sort by increasing number of edges
+    path_time_idx = sorted(path_time_idx, key=lambda x: len(x[0]))
+
+    return path_time_idx
 
 
 def get_arcs_length(arcs, node_coords):
