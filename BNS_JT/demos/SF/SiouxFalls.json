@@ -1,0 +1,549 @@
+{
+    "system_meta": {
+        "MODEL_NAME": {
+            "value": "Basic Linear Network",
+            "notes": null
+        },
+        "INFRASTRUCTURE_LEVEL": {
+            "value": "network",
+            "notes": null
+        },
+        "SYSTEM_CLASS": {
+            "value": "RailNetwork",
+            "notes": null
+        },
+        "SYSTEM_SUBCLASS": {
+            "value": "Regional Rail Network",
+            "notes": null
+        },
+        "SYSTEM_COMPONENT_LOCATION_CONF": {
+            "value": "defined",
+            "notes": null
+        },
+        "RESTORATION_TIME_UNIT": {
+            "value": "days",
+            "notes": null
+        },
+        "HAZARD_INTENSITY_MEASURE_PARAM": {
+            "value": "PGA",
+            "notes": null
+        },
+        "HAZARD_INTENSITY_MEASURE_UNIT": {
+            "value": "g",
+            "notes": null
+        }
+    },
+    "sysout_setup": {
+        "od1": {
+            "origin": "1",
+            "destination": "11",
+            "production_node": null,
+            "output_node_capacity": null,
+            "capacity_fraction": null,
+            "priority": null
+        }
+    },
+    "sysinp_setup": {
+        "passengers_in_CBR": {
+            "input_capacity": 1000,
+            "capacity_fraction": 1,
+            "commodity_type": "People"
+        }
+    },
+    "node_conn_df": {
+         "e1_2": {
+          "origin": "1",
+          "destination": "2",
+          "link_capacity": null,
+          "weight": 0.15
+         },
+         "e1_3": {
+          "origin": "1",
+          "destination": "3",
+          "link_capacity": null,
+          "weight": 0.08
+         },
+         "e2_6": {
+          "origin": "2",
+          "destination": "6",
+          "link_capacity": null,
+          "weight": 0.09
+         },
+         "e3_4": {
+          "origin": "3",
+          "destination": "4",
+          "link_capacity": null,
+          "weight": 0.01
+         },
+         "e3_12": {
+          "origin": "3",
+          "destination": "12",
+          "link_capacity": null,
+          "weight": 0.1
+         },
+         "e4_5": {
+          "origin": "4",
+          "destination": "5",
+          "link_capacity": null,
+          "weight": 0.04
+         },
+         "e4_11": {
+          "origin": "4",
+          "destination": "11",
+          "link_capacity": null,
+          "weight": 0.41
+         },
+         "e5_6": {
+          "origin": "5",
+          "destination": "6",
+          "link_capacity": null,
+          "weight": 0.05
+         },
+         "e5_9": {
+          "origin": "5",
+          "destination": "9",
+          "link_capacity": null,
+          "weight": 0.08
+         },
+         "e6_8": {
+          "origin": "6",
+          "destination": "8",
+          "link_capacity": null,
+          "weight": 0.226
+         },
+         "e7_8": {
+          "origin": "7",
+          "destination": "8",
+          "link_capacity": null,
+          "weight": 0.018
+         },
+         "e7_18": {
+          "origin": "7",
+          "destination": "18",
+          "link_capacity": null,
+          "weight": 0.37
+         },
+         "e8_9": {
+          "origin": "8",
+          "destination": "9",
+          "link_capacity": null,
+          "weight": 0.08
+         },
+         "e8_16": {
+          "origin": "8",
+          "destination": "16",
+          "link_capacity": null,
+          "weight": 0.1
+         },
+         "e9_10": {
+          "origin": "9",
+          "destination": "10",
+          "link_capacity": null,
+          "weight": 0.2
+         },
+         "e10_11": {
+          "origin": "10",
+          "destination": "11",
+          "link_capacity": null,
+          "weight": 0.3
+         },
+         "e10_15": {
+          "origin": "10",
+          "destination": "15",
+          "link_capacity": null,
+          "weight": 0.01
+         },
+         "e10_16": {
+          "origin": "10",
+          "destination": "16",
+          "link_capacity": null,
+          "weight": 0.2
+         },
+         "e10_17": {
+          "origin": "10",
+          "destination": "17",
+          "link_capacity": null,
+          "weight": 0.6
+         },
+         "e11_12": {
+          "origin": "11",
+          "destination": "12",
+          "link_capacity": null,
+          "weight": 0.1
+         },
+         "e11_14": {
+          "origin": "11",
+          "destination": "14",
+          "link_capacity": null,
+          "weight": 0.2
+         },
+         "e12_13": {
+          "origin": "12",
+          "destination": "13",
+          "link_capacity": null,
+          "weight": 0.3
+         },
+         "e13_24": {
+          "origin": "13",
+          "destination": "24",
+          "link_capacity": null,
+          "weight": 0.05
+         },
+         "e14_15": {
+          "origin": "14",
+          "destination": "15",
+          "link_capacity": null,
+          "weight": 0.06
+         },
+         "e14_23": {
+          "origin": "14",
+          "destination": "23",
+          "link_capacity": null,
+          "weight": 0.15
+         },
+         "e15_19": {
+          "origin": "15",
+          "destination": "19",
+          "link_capacity": null,
+          "weight": 0.24
+         },
+         "e15_22": {
+          "origin": "15",
+          "destination": "22",
+          "link_capacity": null,
+          "weight": 0.45
+         },
+         "e16_17": {
+          "origin": "16",
+          "destination": "17",
+          "link_capacity": null,
+          "weight": 0.16
+         },
+         "e16_18": {
+          "origin": "16",
+          "destination": "18",
+          "link_capacity": null,
+          "weight": 0.05
+         },
+         "e17_19": {
+          "origin": "17",
+          "destination": "19",
+          "link_capacity": null,
+          "weight": 0.05
+         },
+         "e18_20": {
+          "origin": "18",
+          "destination": "20",
+          "link_capacity": null,
+          "weight": 0.06
+         },
+         "e19_20": {
+          "origin": "19",
+          "destination": "20",
+          "link_capacity": null,
+          "weight": 0.1
+         },
+         "e20_21": {
+          "origin": "20",
+          "destination": "21",
+          "link_capacity": null,
+          "weight": 0.08
+         },
+         "e20_22": {
+          "origin": "20",
+          "destination": "22",
+          "link_capacity": null,
+          "weight": 0.067
+         },
+         "e21_22": {
+          "origin": "21",
+          "destination": "22",
+          "link_capacity": null,
+          "weight": 0.2
+         },
+         "e21_24": {
+          "origin": "21",
+          "destination": "24",
+          "link_capacity": null,
+          "weight": 0.25
+         },
+         "e22_23": {
+          "origin": "22",
+          "destination": "23",
+          "link_capacity": null,
+          "weight": 0.06
+         },
+         "e23_24": {
+          "origin": "23",
+          "destination": "24",
+          "link_capacity": null,
+          "weight": 0.45
+         }
+    },
+    "component_list": {
+     "1": {
+      "component_type": null,
+      "component_class": null,
+      "cost_fraction": null,
+      "node_type": null,
+      "node_cluster": null,
+      "operating_capacity": null,
+      "pos_x": 50000.0,
+      "pos_y": 510000.0,
+      "damages_states_constructor": null
+     },
+     "2": {
+      "component_type": null,
+      "component_class": null,
+      "cost_fraction": null,
+      "node_type": null,
+      "node_cluster": null,
+      "operating_capacity": null,
+      "pos_x": 320000.0,
+      "pos_y": 510000.0,
+      "damages_states_constructor": null
+     },
+     "3": {
+      "component_type": null,
+      "component_class": null,
+      "cost_fraction": null,
+      "node_type": null,
+      "node_cluster": null,
+      "operating_capacity": null,
+      "pos_x": 50000.0,
+      "pos_y": 440000.0,
+      "damages_states_constructor": null
+     },
+     "4": {
+      "component_type": null,
+      "component_class": null,
+      "cost_fraction": null,
+      "node_type": null,
+      "node_cluster": null,
+      "operating_capacity": null,
+      "pos_x": 130000.0,
+      "pos_y": 440000.0,
+      "damages_states_constructor": null
+     },
+     "5": {
+      "component_type": null,
+      "component_class": null,
+      "cost_fraction": null,
+      "node_type": null,
+      "node_cluster": null,
+      "operating_capacity": null,
+      "pos_x": 220000.0,
+      "pos_y": 440000.0,
+      "damages_states_constructor": null
+     },
+     "6": {
+      "component_type": null,
+      "component_class": null,
+      "cost_fraction": null,
+      "node_type": null,
+      "node_cluster": null,
+      "operating_capacity": null,
+      "pos_x": 320000.0,
+      "pos_y": 440000.0,
+      "damages_states_constructor": null
+     },
+     "7": {
+      "component_type": null,
+      "component_class": null,
+      "cost_fraction": null,
+      "node_type": null,
+      "node_cluster": null,
+      "operating_capacity": null,
+      "pos_x": 420000.0,
+      "pos_y": 380000.0,
+      "damages_states_constructor": null
+     },
+     "8": {
+      "component_type": null,
+      "component_class": null,
+      "cost_fraction": null,
+      "node_type": null,
+      "node_cluster": null,
+      "operating_capacity": null,
+      "pos_x": 320000.0,
+      "pos_y": 380000.0,
+      "damages_states_constructor": null
+     },
+     "9": {
+      "component_type": null,
+      "component_class": null,
+      "cost_fraction": null,
+      "node_type": null,
+      "node_cluster": null,
+      "operating_capacity": null,
+      "pos_x": 220000.0,
+      "pos_y": 380000.0,
+      "damages_states_constructor": null
+     },
+     "10": {
+      "component_type": null,
+      "component_class": null,
+      "cost_fraction": null,
+      "node_type": null,
+      "node_cluster": null,
+      "operating_capacity": null,
+      "pos_x": 220000.0,
+      "pos_y": 320000.0,
+      "damages_states_constructor": null
+     },
+     "11": {
+      "component_type": null,
+      "component_class": null,
+      "cost_fraction": null,
+      "node_type": null,
+      "node_cluster": null,
+      "operating_capacity": null,
+      "pos_x": 130000.0,
+      "pos_y": 320000.0,
+      "damages_states_constructor": null
+     },
+     "12": {
+      "component_type": null,
+      "component_class": null,
+      "cost_fraction": null,
+      "node_type": null,
+      "node_cluster": null,
+      "operating_capacity": null,
+      "pos_x": 50000.0,
+      "pos_y": 320000.0,
+      "damages_states_constructor": null
+     },
+     "13": {
+      "component_type": null,
+      "component_class": null,
+      "cost_fraction": null,
+      "node_type": null,
+      "node_cluster": null,
+      "operating_capacity": null,
+      "pos_x": 50000.0,
+      "pos_y": 50000.0,
+      "damages_states_constructor": null
+     },
+     "14": {
+      "component_type": null,
+      "component_class": null,
+      "cost_fraction": null,
+      "node_type": null,
+      "node_cluster": null,
+      "operating_capacity": null,
+      "pos_x": 130000.0,
+      "pos_y": 190000.0,
+      "damages_states_constructor": null
+     },
+     "15": {
+      "component_type": null,
+      "component_class": null,
+      "cost_fraction": null,
+      "node_type": null,
+      "node_cluster": null,
+      "operating_capacity": null,
+      "pos_x": 220000.0,
+      "pos_y": 190000.0,
+      "damages_states_constructor": null
+     },
+     "16": {
+      "component_type": null,
+      "component_class": null,
+      "cost_fraction": null,
+      "node_type": null,
+      "node_cluster": null,
+      "operating_capacity": null,
+      "pos_x": 320000.0,
+      "pos_y": 320000.0,
+      "damages_states_constructor": null
+     },
+     "17": {
+      "component_type": null,
+      "component_class": null,
+      "cost_fraction": null,
+      "node_type": null,
+      "node_cluster": null,
+      "operating_capacity": null,
+      "pos_x": 320000.0,
+      "pos_y": 260000.0,
+      "damages_states_constructor": null
+     },
+     "18": {
+      "component_type": null,
+      "component_class": null,
+      "cost_fraction": null,
+      "node_type": null,
+      "node_cluster": null,
+      "operating_capacity": null,
+      "pos_x": 420000.0,
+      "pos_y": 320000.0,
+      "damages_states_constructor": null
+     },
+     "19": {
+      "component_type": null,
+      "component_class": null,
+      "cost_fraction": null,
+      "node_type": null,
+      "node_cluster": null,
+      "operating_capacity": null,
+      "pos_x": 320000.0,
+      "pos_y": 190000.0,
+      "damages_states_constructor": null
+     },
+     "20": {
+      "component_type": null,
+      "component_class": null,
+      "cost_fraction": null,
+      "node_type": null,
+      "node_cluster": null,
+      "operating_capacity": null,
+      "pos_x": 320000.0,
+      "pos_y": 50000.0,
+      "damages_states_constructor": null
+     },
+     "21": {
+      "component_type": null,
+      "component_class": null,
+      "cost_fraction": null,
+      "node_type": null,
+      "node_cluster": null,
+      "operating_capacity": null,
+      "pos_x": 220000.0,
+      "pos_y": 50000.0,
+      "damages_states_constructor": null
+     },
+     "22": {
+      "component_type": null,
+      "component_class": null,
+      "cost_fraction": null,
+      "node_type": null,
+      "node_cluster": null,
+      "operating_capacity": null,
+      "pos_x": 220000.0,
+      "pos_y": 130000.0,
+      "damages_states_constructor": null
+     },
+     "23": {
+      "component_type": null,
+      "component_class": null,
+      "cost_fraction": null,
+      "node_type": null,
+      "node_cluster": null,
+      "operating_capacity": null,
+      "pos_x": 130000.0,
+      "pos_y": 130000.0,
+      "damages_states_constructor": null
+     },
+     "24": {
+      "component_type": null,
+      "component_class": null,
+      "cost_fraction": null,
+      "node_type": null,
+      "node_cluster": null,
+      "operating_capacity": null,
+      "pos_x": 130000.0,
+      "pos_y": 50000.0,
+      "damages_states_constructor": null
+     }
+    }
+}
