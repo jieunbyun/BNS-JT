@@ -728,7 +728,7 @@ def test_get_path_time_idx1():
 
 def test_get_path_time_idx2():
 
-    path_time =[(['e2'], 0.0901), (['e3', 'e1'], 0.24009999999999998), ([], np.inf)]
+    path_time =[(['e2'], 0.0901), (['e3', 'e1'], 0.24009999999999998)]
 
     vari = variable.Variable(name='od1', B=np.eye(3), values=[np.inf, 0.2401, 0.0901])
 

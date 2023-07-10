@@ -1,5 +1,6 @@
 import time
 import numpy as np
+import pdb
 
 from BNS_JT import config, variable, model, cpm, branch
 from Trans import trans
@@ -18,9 +19,9 @@ s1 = list(cfg.scenarios['scenarios'].keys())[0]
 for k, values in cfg.scenarios['scenarios'][s1].items():
     varis[k] = variable.Variable(name=k, B=B, values=cfg.scenarios['damage_states'])
     cpms[k] = cpm.Cpm(variables = [varis[k]],
-		      no_child = 1,
-		      C = np.arange(len(values))[:, np.newaxis],
-		      p = values)
+            no_child = 1,
+            C = np.arange(len(values))[:, np.newaxis],
+            p = values)
 
 
 path_times = trans.get_all_paths_and_times(cfg.infra['ODs'].values(), cfg.infra['G'], key='time')
@@ -43,7 +44,8 @@ for k, v in cfg.infra['ODs'].items():
 
     # FIXME
     tic = time.time()
-    sb = branch.branch_and_bound(path_time_idx, lower, upper, arc_condn=1)
+    #pdb.set_trace()
+    sb = branch.branch_and_bound_dask(path_time_idx, lower, upper, arc_cond=1)
     print(time.time() - tic)
 
     tic = time.time()
@@ -51,10 +53,10 @@ for k, v in cfg.infra['ODs'].items():
     print(time.time() - tic)
 
     cpms[k] = cpm.Cpm(variables = [varis[k]] + list(variables.values()),
-			  no_child = 1,
-			  C = c,
-			  p = np.ones(c.shape[0]),
-			  )
+           no_child = 1,
+           C = c,
+           p = np.ones(c.shape[0]),
+           )
 
 
 

@@ -35,8 +35,6 @@ def get_path_time_idx(path_time, vari):
     assert isinstance(vari, Variable)
 
     path_timex = path_time[:]
-    if not any([np.inf in x for x in path_timex]):
-        path_timex.append(([], np.inf))
 
     # refering variable
     path_time_idx = []
@@ -48,7 +46,10 @@ def get_path_time_idx(path_time, vari):
             print('path_time incompatible with variable')
 
     # sort by increasing number of edges
-    path_time_idx = sorted(path_time_idx, key=lambda x: len(x[0]))
+    path_time_idx = sorted(path_time_idx, key=lambda x: x[2], reverse=True)
+
+    if not any([np.inf in x for x in path_timex]):
+        path_time_idx.insert(0, ([], np.inf, 0))
 
     return path_time_idx
 
@@ -123,7 +124,7 @@ def do_branch(group, complete, id_any):
     return group
 
 
-def eval_sys_route_old(OD, G, arcs_state, arc_condn, key='time'):
+def eval_sys_route_old(OD, G, arcs_state, arc_cond, key='time'):
 
     path_time = get_all_paths_and_times([OD], G, key)[OD]
     path_time = sorted(path_time, key=lambda x: x[1])
@@ -131,7 +132,7 @@ def eval_sys_route_old(OD, G, arcs_state, arc_condn, key='time'):
     sys_state = 0  # no path available
     for state, (edges, _time) in enumerate(path_time, 1):
 
-        path_is_surv = [arcs_state[i]==arc_condn for i in edges]
+        path_is_surv = [arcs_state[i]==arc_cond for i in edges]
         if all(path_is_surv):
             sys_state = len(path_time) - state + 1
             break
@@ -139,17 +140,17 @@ def eval_sys_route_old(OD, G, arcs_state, arc_condn, key='time'):
     return sys_state
 
 
-def eval_sys_state(path_time_idx, arcs_state, arc_condn):
+def eval_sys_state(path_time_idx, arcs_state, arc_cond):
     """
     path_time_idx: a list of tuple (path, time, idx)
     arcs_state: dict or frozenset
-    arc_condn: value for survival (row index)
+    arc_cond: value for survival (row index)
     """
     sys_state = path_time_idx[0][2]  # no path available
 
     for edges, _, state in path_time_idx:
 
-        path_is_surv = [arcs_state[i]==arc_condn for i in edges]
+        path_is_surv = [arcs_state[i]==arc_cond for i in edges]
         if path_is_surv and all(path_is_surv):
             sys_state = state
             break

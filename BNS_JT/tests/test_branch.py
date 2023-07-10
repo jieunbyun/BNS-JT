@@ -3,11 +3,12 @@ import pandas as pd
 import networkx as nx
 import pdb
 import pytest
+#from daks.distributed import Client
 
 #from BNS_JT.variable import Variable
 from Trans.trans import get_arcs_length, do_branch, get_all_paths_and_times
 from Trans.bnb_fns import bnb_sys, bnb_next_comp, bnb_next_state
-from BNS_JT.branch import get_cmat, run_bnb, Branch, branch_and_bound, get_cmat_from_branches, branch_and_bound_old
+from BNS_JT.branch import get_cmat, run_bnb, Branch, branch_and_bound, get_cmat_from_branches, branch_and_bound_old, branch_and_bound_dask, branch_and_bound_using_fn
 from BNS_JT import variable
 
 np.set_printoptions(precision=3)
@@ -303,7 +304,7 @@ def test_get_cmat1s(setup_branch):
     np.testing.assert_array_equal(C, expected)
 
 
-def test_branch_and_bound_old():
+def test_branch_and_bound():
 
     path_time_idx =[([], np.inf, 0), (['e2'], 0.0901, 2), (['e1', 'e3'], 0.2401, 1)]
 
@@ -333,7 +334,7 @@ def test_branch_and_bound_old():
     upper = {x: 1 for x in arcs}
     arc_condn = 1
 
-    sb = branch_and_bound_old(path_time_idx, lower, upper, arc_condn)
+    sb = branch_and_bound(path_time_idx, lower, upper, arc_condn)
 
     expected =[({'e1': 0, 'e2': 1, 'e3': 0, 'e4': 0, 'e5': 0, 'e6': 0}, {'e1': 1, 'e2': 1, 'e3': 1, 'e4': 1, 'e5': 1, 'e6': 1}, 2, 2),
                ({'e1': 0, 'e2': 0, 'e3': 0, 'e4': 0, 'e5': 0, 'e6': 0}, {'e1': 1, 'e2': 0, 'e3': 0, 'e4': 1, 'e5': 1, 'e6': 1}, 0, 0),
@@ -389,8 +390,7 @@ def test_get_cmat_from_branches():
 
     np.testing.assert_array_equal(result, expected)
 
-
-def test_branch_and_bound():
+def test_branch_and_bound_dask():
 
     # 0, 1, 2 corresponds to index of Variable.values
     path_time_idx =[([], np.inf, 0), (['e2'], 0.0901, 2), (['e1', 'e3'], 0.2401, 1)]
@@ -404,7 +404,8 @@ def test_branch_and_bound():
     upper = {x: 1 for x in arcs}  # surv
     arc_condn = 1
 
-    sb = branch_and_bound(path_time_idx, lower, upper, arc_condn)
+    #pdb.set_trace()
+    sb = branch_and_bound_dask(path_time_idx, lower, upper, arc_condn)
 
     expected =[({'e1': 0, 'e2': 1, 'e3': 0, 'e4': 0, 'e5': 0, 'e6': 0}, {'e1': 1, 'e2': 1, 'e3': 1, 'e4': 1, 'e5': 1, 'e6': 1}, 2, 2),
                ({'e1': 0, 'e2': 0, 'e3': 0, 'e4': 0, 'e5': 0, 'e6': 0}, {'e1': 0, 'e2': 0, 'e3': 1, 'e4': 1, 'e5': 1, 'e6': 1}, 0, 0),
@@ -417,7 +418,38 @@ def test_branch_and_bound():
     # ('e3', 'e1') instead of ('e1', 'e3')
     path_time_idx =[([], np.inf, 0), (['e2'], 0.0901, 2), (['e3', 'e1'], 0.2401, 1)]
 
-    sb = branch_and_bound(path_time_idx, lower, upper, arc_condn)
+    sb = branch_and_bound_dask(path_time_idx, lower, upper, arc_condn)
+
+
+def test_branch_and_bound_using_fn():
+
+    # 0, 1, 2 corresponds to index of Variable.values
+    path_time_idx =[([], np.inf, 0), (['e2'], 0.0901, 2), (['e1', 'e3'], 0.2401, 1)]
+    # FIXME
+    #path_time_idx =[(['e1', 'e3'], 0.2401, 1), ([], np.inf, 0), (['e2'], 0.0901, 2)] # not working 
+
+    # init
+    arcs = [f'e{i}' for i in range(1, 7)]
+
+    lower = {x: 0 for x in arcs}  # Fail
+    upper = {x: 1 for x in arcs}  # surv
+    arc_condn = 1
+
+    #pdb.set_trace()
+    sb = branch_and_bound_using_fn(path_time_idx, lower, upper, arc_condn)
+
+    expected =[({'e1': 0, 'e2': 1, 'e3': 0, 'e4': 0, 'e5': 0, 'e6': 0}, {'e1': 1, 'e2': 1, 'e3': 1, 'e4': 1, 'e5': 1, 'e6': 1}, 2, 2),
+               ({'e1': 0, 'e2': 0, 'e3': 0, 'e4': 0, 'e5': 0, 'e6': 0}, {'e1': 0, 'e2': 0, 'e3': 1, 'e4': 1, 'e5': 1, 'e6': 1}, 0, 0),
+               ({'e1': 1, 'e2': 0, 'e3': 0, 'e4': 0, 'e5': 0, 'e6': 0}, {'e1': 1, 'e2': 0, 'e3': 0, 'e4': 1, 'e5': 1, 'e6': 1}, 0, 0),
+               ({'e1': 1, 'e2': 0, 'e3': 1, 'e4': 0, 'e5': 0, 'e6': 0}, {'e1': 1, 'e2': 0, 'e3': 1, 'e4': 1, 'e5': 1, 'e6': 1}, 1, 1)]
+
+    assert len(sb) == 4
+    assert all([x in sb for x in expected])
+
+    # ('e3', 'e1') instead of ('e1', 'e3')
+    path_time_idx =[([], np.inf, 0), (['e2'], 0.0901, 2), (['e3', 'e1'], 0.2401, 1)]
+
+    sb = branch_and_bound_using_fn(path_time_idx, lower, upper, arc_condn)
 
     expected =[({'e1': 0, 'e2': 1, 'e3': 0, 'e4': 0, 'e5': 0, 'e6': 0}, {'e1': 1, 'e2': 1, 'e3': 1, 'e4': 1, 'e5': 1, 'e6': 1}, 2, 2),
                ({'e1': 0, 'e2': 0, 'e3': 0, 'e4': 0, 'e5': 0, 'e6': 0}, {'e1': 1, 'e2': 0, 'e3': 0, 'e4': 1, 'e5': 1, 'e6': 1}, 0, 0),
@@ -427,4 +459,30 @@ def test_branch_and_bound():
     assert len(sb) == 4
     assert all([x in sb for x in expected])
 
+def test_branch_and_bound_using_rds():
 
+    # 0, 1, 2 corresponds to index of Variable.values
+    path_time_idx = [([], np.inf, 0),
+           (['e3', 'e12', 'e8', 'e9'], 0.30219999999999997, 4),
+           (['e1', 'e10', 'e8', 'e9'], 0.3621, 3),
+           (['e2', 'e11', 'e8', 'e9'], 0.40219999999999995, 2),
+           (['e4', 'e5', 'e6', 'e7', 'e8', 'e9'], 0.48249999999999993, 1)  ]
+
+    # init
+    arcs = [f'e{i}' for i in range(1, 13)]
+
+    lower = {x: 0 for x in arcs}  # Fail
+    upper = {x: 1 for x in arcs}  # surv
+    arc_condn = 1
+
+    #pdb.set_trace()
+    sb = branch_and_bound_dask(path_time_idx, lower, upper, arc_condn)
+
+    varis = {}
+    B = np.array([[1, 0], [0, 1], [1, 1]])
+    for k in range(1, 13):
+        varis[f'e{k}'] = variable.Variable(name=f'e{k}', B=B, values=['Surv', 'Fail'])
+
+    C = get_cmat_from_branches(sb, varis)
+    C = C.astype(int)
+    np.savetxt('./C_dask.txt', C, fmt='%d')

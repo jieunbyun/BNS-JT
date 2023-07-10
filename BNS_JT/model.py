@@ -43,7 +43,7 @@ def setup_model(cfg):
         path_time_idx = trans.get_path_time_idx(path_times[v], varis[k])
 
         # FIXME
-        sb = branch.branch_and_bound(path_time_idx, lower, upper, arc_condn=1)
+        sb = branch.branch_and_bound(path_time_idx, lower, upper, arc_cond=1)
 
         c = branch.get_cmat_from_branches(sb, variables)
 
