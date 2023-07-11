@@ -318,7 +318,7 @@ def fn_dummy(b_star, sb, arc_cond, paths_avail, path_time_idx):
 
 
 
-def branch_and_bound_dask(path_time_idx, lower, upper, arc_cond):
+def branch_and_bound_dask(path_time_idx, lower, upper, arc_cond, client_ip=None):
     """
     path_time_idx: a list of tuples consisting of path, time, and index (corresponding to row of B matrix)
     lower:
@@ -326,8 +326,9 @@ def branch_and_bound_dask(path_time_idx, lower, upper, arc_cond):
     arc_cond:
     """
 
-    client = Client(n_workers=4, threads_per_worker=1)
-
+    client = Client(client_ip)
+    print(client.dashboard_link)
+    #n_workers=4, threads_per_worker=1, processes=False)
     fl = eval_sys_state(path_time_idx, arcs_state=lower, arc_cond=1)
     fu = eval_sys_state(path_time_idx, arcs_state=upper, arc_cond=1)
 
@@ -357,6 +358,8 @@ def branch_and_bound_dask(path_time_idx, lower, upper, arc_cond):
 
         sb = [x for x in sb if not x in chosen]
         b_star = [x for x in sb if x[2] != x[3]]
+
+    client.close()
 
     return sb
 

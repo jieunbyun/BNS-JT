@@ -8,6 +8,7 @@ import pytest
 import numpy as np
 import pandas as pd
 import networkx as nx
+import socket
 from scipy.stats import lognorm
 from pathlib import Path
 import matplotlib
@@ -17,8 +18,10 @@ from math import isclose
 np.set_printoptions(precision=3)
 #pd.set_option.display_precision = 3
 
-
-matplotlib.use("TKAgg")
+if 'gadi' in socket.gethostname():
+    matplotlib.use('Agg')
+else:
+    matplotlib.use("TKAgg")
 import matplotlib.pyplot as plt
 
 from BNS_JT import cpm, variable, config, branch, model
