@@ -1,12 +1,13 @@
 #PBS -m e
-#PBS -P y57
+#PBS -P n74
 #PBS -q normal 
-#PBS -l walltime=01:00:00
+#PBS -l walltime=12:00:00
 #PBS -l ncpus=96
 #PBS -l mem=32GB
 #PBS -l wd
 #PBS -N job
 #PBS -l jobfs=1GB
+#PBS -l storage=scratch/y57+scratch/n74
 
 #module use /g/data3/hh5/public/modules
 #module load conda/analysis3
