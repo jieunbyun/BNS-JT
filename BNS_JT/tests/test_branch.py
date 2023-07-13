@@ -3,7 +3,7 @@ import pandas as pd
 import networkx as nx
 import pdb
 import pytest
-#from daks.distributed import Client
+from dask.distributed import Client, LocalCluster
 
 #from BNS_JT.variable import Variable
 from Trans.trans import get_arcs_length, do_branch, get_all_paths_and_times
@@ -390,7 +390,18 @@ def test_get_cmat_from_branches():
 
     np.testing.assert_array_equal(result, expected)
 
-def test_branch_and_bound_dask():
+
+@pytest.fixture()
+def setup_client():
+
+    cluster = LocalCluster()
+    #client = Client(cluster)
+
+    return cluster
+
+def test_branch_and_bound_dask(setup_client):
+
+    cluster = setup_client
 
     # 0, 1, 2 corresponds to index of Variable.values
     path_time_idx =[([], np.inf, 0), (['e2'], 0.0901, 2), (['e1', 'e3'], 0.2401, 1)]
@@ -404,8 +415,8 @@ def test_branch_and_bound_dask():
     upper = {x: 1 for x in arcs}  # surv
     arc_condn = 1
 
-    #pdb.set_trace()
-    sb = branch_and_bound_dask(path_time_idx, lower, upper, arc_condn)
+    with Client(cluster) as client:
+        sb = branch_and_bound_dask(path_time_idx, lower, upper, arc_condn, client)
 
     expected =[({'e1': 0, 'e2': 1, 'e3': 0, 'e4': 0, 'e5': 0, 'e6': 0}, {'e1': 1, 'e2': 1, 'e3': 1, 'e4': 1, 'e5': 1, 'e6': 1}, 2, 2),
                ({'e1': 0, 'e2': 0, 'e3': 0, 'e4': 0, 'e5': 0, 'e6': 0}, {'e1': 0, 'e2': 0, 'e3': 1, 'e4': 1, 'e5': 1, 'e6': 1}, 0, 0),
@@ -418,7 +429,8 @@ def test_branch_and_bound_dask():
     # ('e3', 'e1') instead of ('e1', 'e3')
     path_time_idx =[([], np.inf, 0), (['e2'], 0.0901, 2), (['e3', 'e1'], 0.2401, 1)]
 
-    sb = branch_and_bound_dask(path_time_idx, lower, upper, arc_condn)
+    with Client(cluster) as client:
+        sb = branch_and_bound_dask(path_time_idx, lower, upper, arc_condn, client)
 
 
 def test_branch_and_bound_using_fn():
@@ -459,7 +471,9 @@ def test_branch_and_bound_using_fn():
     assert len(sb) == 4
     assert all([x in sb for x in expected])
 
-def test_branch_and_bound_using_rds():
+def test_branch_and_bound_using_rds(setup_client):
+
+    cluster = setup_client
 
     # 0, 1, 2 corresponds to index of Variable.values
     path_time_idx = [([], np.inf, 0),
@@ -476,7 +490,8 @@ def test_branch_and_bound_using_rds():
     arc_condn = 1
 
     #pdb.set_trace()
-    sb = branch_and_bound_dask(path_time_idx, lower, upper, arc_condn)
+    with Client(cluster) as client:
+        sb = branch_and_bound_dask(path_time_idx, lower, upper, arc_condn, client)
 
     varis = {}
     B = np.array([[1, 0], [0, 1], [1, 1]])
