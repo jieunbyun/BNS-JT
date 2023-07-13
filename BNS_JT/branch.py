@@ -346,7 +346,7 @@ def branch_and_bound_dask(path_time_idx, lower, upper, arc_cond, client):
         results = []
         for _b_star in b_star:
             scattered_b_star = client.scatter(b_star)
-            result = client.submit(fn_dummy, _b_star, b_star, arc_cond, paths_avail, path_time_idx)
+            result = client.submit(fn_dummy, _b_star, scattered_b_star, arc_cond, paths_avail, path_time_idx)
             results.append(result)
 
         results = client.gather(results)

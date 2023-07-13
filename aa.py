@@ -1,16 +1,19 @@
 import time
 import numpy as np
 import pdb
+from dask.distributed import Client, LocalCluster
 
 from argparse import ArgumentParser
 from BNS_JT import config, variable, model, cpm, branch
 from Trans import trans
 
 
-def main(client_ip=None):
+#def main(client_ip=None):
+def main():
 
-    #cfg = config.Config('./BNS_JT/demos/SF/config_SF.json')
-    cfg = config.Config('./Trans/tests/config_rbd.json')
+    cluster = LocalCluster()
+    cfg = config.Config('./BNS_JT/demos/SF/config_SF.json')
+    #cfg = config.Config('./Trans/tests/config_rbd.json')
 
     # Arcs (components): P(X_i | GM = GM_ob ), i = 1 .. N (= nArc)
     cpms = {}
@@ -50,7 +53,8 @@ def main(client_ip=None):
         # FIXME
         tic = time.time()
         #pdb.set_trace()
-        sb = branch.branch_and_bound_dask(path_time_idx, lower, upper, arc_cond=1, client_ip=client_ip)
+        with Client(cluster) as client:
+            sb = branch.branch_and_bound_dask(path_time_idx, lower, upper, 1, client)
         print(time.time() - tic)
 
         tic = time.time()
@@ -81,4 +85,5 @@ def process_commandline():
 if __name__=='__main__':
     parser = process_commandline()
     args = parser.parse_args()
-    main(client_ip=args.client_ip)
+    #main(client_ip=args.client_ip)
+    main()
