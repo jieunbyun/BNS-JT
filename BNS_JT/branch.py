@@ -278,9 +278,9 @@ def branch_and_bound_old(path_time_idx, lower, upper, arc_cond):
     return sb
 
 
-def fn_dummy(b_star, sb, arc_cond, paths_avail, path_time_idx):
+def fn_dummy(_b_star, b_star, arc_cond, paths_avail, path_time_idx):
 
-    c_lower, c_upper, c_fl, c_fu = b_star
+    c_lower, c_upper, c_fl, c_fu = _b_star
 
     upper_matched = [k for k, v in c_upper.items() if v == arc_cond]
 
@@ -292,7 +292,7 @@ def fn_dummy(b_star, sb, arc_cond, paths_avail, path_time_idx):
             lower = c_lower
             fl = c_fl
             chosen = (c_lower, c_upper, c_fl, c_fu)
-            sb = [x for x in sb if not x == chosen]
+            sb = [x for x in b_star if not x == chosen]
 
             #paths_avail.remove(_path)
             break
@@ -339,14 +339,14 @@ def branch_and_bound_dask(path_time_idx, lower, upper, arc_cond, client):
 
     # make sure the paths are sorted by shortest
     paths_avail = [x[0] for x in path_time_idx if x[0]]
-
+    sb_saved = []
     while b_star:
         print(f'b*: {len(b_star)}, sb: {len(sb)}')
         # select path using upper branch of b_star
         results = []
         for _b_star in b_star:
-            #scattered_sb = client.scatter(sb)
-            result = client.submit(fn_dummy, _b_star, sb, arc_cond, paths_avail, path_time_idx)
+            scattered_b_star = client.scatter(b_star)
+            result = client.submit(fn_dummy, _b_star, b_star, arc_cond, paths_avail, path_time_idx)
             results.append(result)
 
         results = client.gather(results)
@@ -358,9 +358,7 @@ def branch_and_bound_dask(path_time_idx, lower, upper, arc_cond, client):
 
         sb = [x for x in sb if not x in chosen]
         b_star = [x for x in sb if x[2] != x[3]]
-
-    client.close()
-
+        [sb_saved.append(x) for x in sb if x[2] == x[3]]
     return sb
 
 
@@ -382,13 +380,13 @@ def branch_and_bound_using_fn(path_time_idx, lower, upper, arc_cond):
 
     # make sure the paths are sorted by shortest
     paths_avail = [x[0] for x in path_time_idx if x[0]]
-
+    sb_saved = []
     while b_star:
-        print(f'b*: {len(b_star)}, sb: {len(sb)}')
+        print(f'b*: {len(b_star)}, sb: {len(sb_saved)}')
         # select path using upper branch of b_star
         chosen = []
         for _b_star in b_star:
-            _sb, _chosen = fn_dummy(_b_star, sb, arc_cond, paths_avail, path_time_idx)
+            _sb, _chosen = fn_dummy(_b_star, b_star, arc_cond, paths_avail, path_time_idx)
             #if fl==fu:
                 #sb.append((lower, upper, fl, fu))
             #sb.append((lower, upper, c_fu, c_fu))
@@ -397,6 +395,7 @@ def branch_and_bound_using_fn(path_time_idx, lower, upper, arc_cond):
 
         sb = [x for x in sb if not x in chosen]
         b_star = [x for x in sb if x[2] != x[3]]
+        [sb_saved.append(x) for x in sb if x[2] == x[3]]
 
     return sb
 
@@ -419,7 +418,7 @@ def branch_and_bound(path_time_idx, lower, upper, arc_cond):
 
     # make sure the paths are sorted by shortest
     paths_avail = [x[0] for x in path_time_idx if x[0]]
-
+    sb_saved = []
     while b_star:
 
         print(f'b*: {len(b_star)}, sb: {len(sb)}')
@@ -437,7 +436,7 @@ def branch_and_bound(path_time_idx, lower, upper, arc_cond):
                     lower = c_lower
                     fl = c_fl
                     chosen = (c_lower, c_upper, c_fl, c_fu)
-                    sb = [x for x in sb if not x == chosen]
+                    sb = [x for x in b_star if not x == chosen]
 
                     #paths_avail.remove(_path)
                     break
@@ -472,8 +471,9 @@ def branch_and_bound(path_time_idx, lower, upper, arc_cond):
             sb.append((lower, upper, c_fu, c_fu))
 
         b_star = [x for x in sb if x[2] != x[3]]
+        [sb_saved.append(x) for x in sb if x[2] == x[3]]
 
-    return sb
+    return sb_saved
 
 
 def get_cmat_from_branches(branches, variables):

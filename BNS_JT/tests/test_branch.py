@@ -490,8 +490,7 @@ def test_branch_and_bound_using_rds(setup_client):
     arc_condn = 1
 
     #pdb.set_trace()
-    with Client(cluster) as client:
-        sb = branch_and_bound_dask(path_time_idx, lower, upper, arc_condn, client)
+    sb = branch_and_bound(path_time_idx, lower, upper, arc_condn)
 
     varis = {}
     B = np.array([[1, 0], [0, 1], [1, 1]])
@@ -500,4 +499,15 @@ def test_branch_and_bound_using_rds(setup_client):
 
     C = get_cmat_from_branches(sb, varis)
     C = C.astype(int)
-    np.savetxt('./C_dask.txt', C, fmt='%d')
+    C = C[C[:, 0].argsort()]
+    np.savetxt('./C_rds.txt', C, fmt='%d')
+
+    with Client(cluster) as client:
+        sb_dask = branch_and_bound_dask(path_time_idx, lower, upper, arc_condn, client)
+
+    C = get_cmat_from_branches(sb_dask, varis)
+    C = C.astype(int)
+    C = C[C[:, 0].argsort()]
+    np.savetxt('./C_rds_dask.txt', C, fmt='%d')
+
+
