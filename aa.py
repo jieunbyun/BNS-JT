@@ -9,8 +9,8 @@ from Trans import trans
 
 def main(client_ip=None):
 
-    cfg = config.Config('./BNS_JT/demos/SF/config_SF.json')
-    #cfg = config.Config('./Trans/tests/config_rbd.json')
+    #cfg = config.Config('./BNS_JT/demos/SF/config_SF.json')
+    cfg = config.Config('./Trans/tests/config_rbd.json')
 
     # Arcs (components): P(X_i | GM = GM_ob ), i = 1 .. N (= nArc)
     cpms = {}
@@ -50,7 +50,7 @@ def main(client_ip=None):
         # FIXME
         tic = time.time()
         #pdb.set_trace()
-        sb = branch.branch_and_bound_dask(path_time_idx, lower, upper, arc_cond=1, client_ip=None)
+        sb = branch.branch_and_bound_dask(path_time_idx, lower, upper, arc_cond=1, client_ip=client_ip)
         print(time.time() - tic)
 
         tic = time.time()
