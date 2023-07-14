@@ -146,6 +146,7 @@ def eval_sys_state(path_time_idx, arcs_state, arc_cond):
     arcs_state: dict or frozenset
     arc_cond: value for survival (row index)
     """
+
     sys_state = path_time_idx[0][2]  # no path available
 
     for edges, _, state in path_time_idx:
