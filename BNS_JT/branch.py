@@ -5,7 +5,7 @@ from dask.distributed import Client
 
 from BNS_JT.cpm import ismember
 from BNS_JT.variable import Variable
-from Trans import trans
+from BNS_JT.trans import eval_sys_state
 
 class Branch(object):
     """
@@ -206,8 +206,8 @@ def get_branch_given_paths(path, lower, upper, path_time_idx, arc_cond):
 
         # set un = 0
         upper = {k: 0 if k == arc else v for k, v in upper.items()}
-        fu = trans.eval_sys_state(path_time_idx, upper, arc_cond)
-        fl = trans.eval_sys_state(path_time_idx, lower, arc_cond)
+        fu = eval_sys_state(path_time_idx, upper, arc_cond)
+        fl = eval_sys_state(path_time_idx, lower, arc_cond)
 
         sb.append((lower, upper, fl, fu))
 
@@ -215,8 +215,8 @@ def get_branch_given_paths(path, lower, upper, path_time_idx, arc_cond):
         upper = {k: 1 if k == arc else v for k, v in upper.items()}
         lower = {k: 1 if k == arc else v for k, v in lower.items()}
 
-        fu = trans.eval_sys_state(path_time_idx, upper, arc_cond)
-        fl = trans.eval_sys_state(path_time_idx, lower, arc_cond)
+        fu = eval_sys_state(path_time_idx, upper, arc_cond)
+        fl = eval_sys_state(path_time_idx, lower, arc_cond)
 
         sb.append((lower, upper, fl, fu))
 
@@ -232,8 +232,8 @@ def branch_and_bound_old(path_time_idx, lower, upper, arc_cond):
     arc_cond:
     """
 
-    fl = trans.eval_sys_state(path_time_idx, arcs_state=lower, arc_cond=1)
-    fu = trans.eval_sys_state(path_time_idx, arcs_state=upper, arc_cond=1)
+    fl = eval_sys_state(path_time_idx, arcs_state=lower, arc_cond=1)
+    fu = eval_sys_state(path_time_idx, arcs_state=upper, arc_cond=1)
 
     sb = [(lower, upper, fl, fu)]
 
@@ -260,7 +260,7 @@ def branch_and_bound_old(path_time_idx, lower, upper, arc_cond):
 
                 # set upper_n = 0
                 upper = {k: 0 if k == arc else v for k, v in upper.items()}
-                fu = trans.eval_sys_state(path_time_idx, upper, arc_cond)
+                fu = eval_sys_state(path_time_idx, upper, arc_cond)
 
                 sb.append((lower, upper, fl, fu))
 
@@ -268,8 +268,8 @@ def branch_and_bound_old(path_time_idx, lower, upper, arc_cond):
                 upper = {k: 1 if k == arc else v for k, v in upper.items()}
                 lower = {k: 1 if k == arc else v for k, v in lower.items()}
 
-                fu = trans.eval_sys_state(path_time_idx, upper, arc_cond)
-                fl = trans.eval_sys_state(path_time_idx, lower, arc_cond)
+                fu = eval_sys_state(path_time_idx, upper, arc_cond)
+                fl = eval_sys_state(path_time_idx, lower, arc_cond)
 
                 # FIXME!!  (different from the logic)
                 if fu==fl:
@@ -305,7 +305,7 @@ def fn_dummy(_b_star, arc_cond, path_time_idx):
 
             # set upper_n = 0
             upper = {k: 0 if k == arc else v for k, v in upper.items()}
-            fu = trans.eval_sys_state(path_time_idx, upper, arc_cond)
+            fu = eval_sys_state(path_time_idx, upper, arc_cond)
             fl = c_fl
 
             sb.append((lower, upper, fl, fu))
@@ -331,8 +331,8 @@ def branch_and_bound_dask(path_time_idx, lower, upper, arc_cond, client):
     #client = Client(client_ip)
     print(client.dashboard_link)
     #n_workers=4, threads_per_worker=1, processes=False)
-    fl = trans.eval_sys_state(path_time_idx, arcs_state=lower, arc_cond=1)
-    fu = trans.eval_sys_state(path_time_idx, arcs_state=upper, arc_cond=1)
+    fl = eval_sys_state(path_time_idx, arcs_state=lower, arc_cond=1)
+    fu = eval_sys_state(path_time_idx, arcs_state=upper, arc_cond=1)
 
     sb = [(lower, upper, fl, fu)]
 
@@ -372,8 +372,8 @@ def branch_and_bound_using_fn(path_time_idx, lower, upper, arc_cond):
     arc_cond:
     """
 
-    fl = trans.eval_sys_state(path_time_idx, arcs_state=lower, arc_cond=1)
-    fu = trans.eval_sys_state(path_time_idx, arcs_state=upper, arc_cond=1)
+    fl = eval_sys_state(path_time_idx, arcs_state=lower, arc_cond=1)
+    fu = eval_sys_state(path_time_idx, arcs_state=upper, arc_cond=1)
 
     sb = [(lower, upper, fl, fu)]
 
@@ -410,8 +410,8 @@ def branch_and_bound(path_time_idx, lower, upper, arc_cond):
     arc_cond:
     """
 
-    fl = trans.eval_sys_state(path_time_idx, arcs_state=lower, arc_cond=1)
-    fu = trans.eval_sys_state(path_time_idx, arcs_state=upper, arc_cond=1)
+    fl = eval_sys_state(path_time_idx, arcs_state=lower, arc_cond=1)
+    fu = eval_sys_state(path_time_idx, arcs_state=upper, arc_cond=1)
 
     sb = [(lower, upper, fl, fu)]
 
@@ -451,7 +451,7 @@ def branch_and_bound(path_time_idx, lower, upper, arc_cond):
                     upper = {k: 0 if k == arc else v for k, v in upper.items()}
                     #upper = copy.deepcopy(upper)
                     #upper[arc] = 0
-                    fu = trans.eval_sys_state(path_time_idx, upper, arc_cond)
+                    fu = eval_sys_state(path_time_idx, upper, arc_cond)
                     fl = c_fl
 
                     sb.append((lower, upper, fl, fu))

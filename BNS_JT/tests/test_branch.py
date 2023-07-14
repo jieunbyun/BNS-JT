@@ -6,8 +6,8 @@ import pytest
 from dask.distributed import Client, LocalCluster
 
 #from BNS_JT.variable import Variable
-from Trans.trans import get_arcs_length, do_branch, get_all_paths_and_times
-from Trans.bnb_fns import bnb_sys, bnb_next_comp, bnb_next_state
+from BNS_JT.trans import get_arcs_length, do_branch, get_all_paths_and_times
+from BNS_JT.bnb_fns import bnb_sys, bnb_next_comp, bnb_next_state
 from BNS_JT.branch import get_cmat, run_bnb, Branch, branch_and_bound, get_cmat_from_branches, branch_and_bound_old, branch_and_bound_dask, branch_and_bound_using_fn
 from BNS_JT import variable
 

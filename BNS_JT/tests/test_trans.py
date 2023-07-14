@@ -25,7 +25,7 @@ else:
 import matplotlib.pyplot as plt
 
 from BNS_JT import cpm, variable, config, branch, model
-from Trans.trans import get_arcs_length, do_branch, get_all_paths_and_times, eval_sys_state, get_path_time_idx
+from BNS_JT.trans import get_arcs_length, do_branch, get_all_paths_and_times, eval_sys_state, get_path_time_idx
 
 HOME = Path(__file__).absolute().parent
 

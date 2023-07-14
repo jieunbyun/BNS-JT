@@ -1,6 +1,5 @@
 import numpy as np
-from BNS_JT import variable, cpm, branch
-from Trans import trans
+from BNS_JT import variable, cpm, branch, trans
 
 
 

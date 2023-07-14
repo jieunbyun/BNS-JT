@@ -9,7 +9,7 @@ import pdb
 import warnings
 import pytest
 
-from Trans import bnb_fns
+from BNS_JT.bnb_fns import bnb_sys, bnb_next_comp, bnb_next_state
 from BNS_JT.branch import get_cmat, run_bnb
 from BNS_JT.cpm import variable_elim, Cpm, get_prob
 
@@ -50,9 +50,9 @@ def test_bnb(setup_bridge):
     max_state = 2
     comp_max_states = (max_state*np.ones(len(arcs))).tolist()
 
-    branches = run_bnb(sys_fn=bnb_fns.bnb_sys,
-                       next_comp_fn=bnb_fns.bnb_next_comp,
-                       next_state_fn=bnb_fns.bnb_next_state,
+    branches = run_bnb(sys_fn=bnb_sys,
+                       next_comp_fn=bnb_next_comp,
+                       next_state_fn=bnb_next_state,
                        info=info,
                        comp_max_states=comp_max_states)
 

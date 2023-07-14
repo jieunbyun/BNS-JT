@@ -16,7 +16,7 @@ expected_damage = np.array([0.1610,  1,  1,  0.0002,   0,  0.4382])
 @pytest.fixture()
 def setup_road():
 
-    cfg = config.Config(HOME.joinpath('../../Trans/tests/config_roads.json'))
+    cfg = config.Config(HOME.joinpath('./config_roads.json'))
 
     cpms, varis = model.setup_model(cfg)
 
