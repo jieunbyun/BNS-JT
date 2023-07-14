@@ -1,5 +1,6 @@
 import numpy as np
 import textwrap
+import time
 import copy
 from dask.distributed import Client
 
@@ -284,8 +285,6 @@ def fn_dummy(_b_star, arc_cond, path_time_idx):
 
     upper_matched = [k for k, v in c_upper.items() if v == arc_cond]
 
-    sb = []
-
     for _path, _, _ in path_time_idx[1:]:
 
         if set(_path).issubset(upper_matched):
@@ -299,6 +298,7 @@ def fn_dummy(_b_star, arc_cond, path_time_idx):
             #paths_avail.remove(_path)
             break
 
+    sb = []
     for arc in _path:
 
         if c_upper[arc] > c_lower[arc]:
@@ -344,10 +344,12 @@ def branch_and_bound_dask(path_time_idx, lower, upper, arc_cond, client):
     sb_saved = []
     while b_star:
         print(f'b*: {len(b_star)}, sb: {len(sb)}')
+        tic = time.time()
+
         # select path using upper branch of b_star
         results = []
         for _b_star in b_star:
-            #scattered_b_star = client.scatter(b_star)
+            #scattered_path = client.scatter(path_time_idx)
             result = client.submit(fn_dummy, _b_star, arc_cond, path_time_idx)
             results.append(result)
 
@@ -361,6 +363,8 @@ def branch_and_bound_dask(path_time_idx, lower, upper, arc_cond, client):
         sb = [x for x in sb if not x in chosen]
         b_star = [x for x in sb if x[2] != x[3]]
         [sb_saved.append(x) for x in sb if x[2] == x[3]]
+
+        toc = print(f'elapsed: {time.time()-tic}')
     return sb
 
 
