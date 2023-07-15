@@ -3,6 +3,7 @@ import textwrap
 import json
 import time
 import copy
+import gc
 from dask.distributed import Client
 
 from BNS_JT.cpm import ismember
@@ -344,14 +345,16 @@ def branch_and_bound_dask(path_time_idx, lower, upper, arc_cond, client):
     #paths_avail = [x[0] for x in path_time_idx if x[0]]
     i = 0
     while b_star:
-        print(f'b*: {len(b_star)}, sb: {len(sb)}')
+        print(f'b*: {len(b_star)}')
         tic = time.time()
 
         # select path using upper branch of b_star
         results = []
         for _b_star in b_star:
             #scattered_path = client.scatter(path_time_idx)
+
             result = client.submit(fn_dummy, _b_star, arc_cond, path_time_idx)
+            client.run(gc.collect)
             results.append(result)
 
         results = client.gather(results)
@@ -366,12 +369,12 @@ def branch_and_bound_dask(path_time_idx, lower, upper, arc_cond, client):
         b_star = [x for x in sb if x[2] != x[3]]
         sb_saved = [x for x in sb if x[2] == x[3]]
 
-        with open('sb_saved_{i}.json', 'w') as w:
+        with open(f'sb_saved_{i}.json', 'w') as w:
             json.dump(sb_saved, w, indent=4)
             i += 1
-
+            sb = []
         toc = print(f'elapsed: {time.time()-tic}')
-    return sb
+    #return sb_saved
 
 
 def branch_and_bound_using_fn(path_time_idx, lower, upper, arc_cond):
