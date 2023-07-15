@@ -1,5 +1,6 @@
 import numpy as np
 import textwrap
+import json
 import time
 import copy
 from dask.distributed import Client
@@ -341,7 +342,7 @@ def branch_and_bound_dask(path_time_idx, lower, upper, arc_cond, client):
 
     # make sure the paths are sorted by shortest
     #paths_avail = [x[0] for x in path_time_idx if x[0]]
-    sb_saved = []
+    i = 0
     while b_star:
         print(f'b*: {len(b_star)}, sb: {len(sb)}')
         tic = time.time()
@@ -354,15 +355,20 @@ def branch_and_bound_dask(path_time_idx, lower, upper, arc_cond, client):
             results.append(result)
 
         results = client.gather(results)
-
         chosen = []
         for result in results:
             chosen.append(result[1])
             [sb.append(x) for x in result[0] if not x in sb]
 
+        #sb, chosen = zip(*results)
+        #print(len(sb), len(chosen))
         sb = [x for x in sb if not x in chosen]
         b_star = [x for x in sb if x[2] != x[3]]
-        [sb_saved.append(x) for x in sb if x[2] == x[3]]
+        sb_saved = [x for x in sb if x[2] == x[3]]
+
+        with open('sb_saved_{i}.json', 'w') as w:
+            json.dump(sb_saved, w, indent=4)
+            i += 1
 
         toc = print(f'elapsed: {time.time()-tic}')
     return sb
