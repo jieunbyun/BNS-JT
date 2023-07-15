@@ -1,21 +1,21 @@
 import time
+import logging
 import numpy as np
 import pdb
 import json
 from dask.distributed import Client, LocalCluster
 
-import dask.config
+import dask
 from dask.distributed import Client,LocalCluster
-from dask_jobqueue import PBSCluster
+#from dask_jobqueue import PBSCluster
 
 from argparse import ArgumentParser
-from BNS_JT import config, variable, model, cpm, branch
-from Trans import trans
+from BNS_JT import config, variable, model, cpm, branch, trans
 
 
 #def main(client_ip=None):
 def main():
-
+    """
     walltime = '01:00:00'
     cores = 112
     memory = '192GB'
@@ -33,11 +33,8 @@ def main():
     # normalbw: 56, 192GB => workers:8, threads: 7, mem:96GB
     #cluster = LocalCluster()
     #cluster = LocalCluster(n_workers=112, threads_per_worker=1, memory_limit='32GB')
-    cluster = LocalCluster(n_workers=8, threads_per_worker=14, memory_limit='32GB')
-    """
-    print(cluster)
     cfg = config.Config('./BNS_JT/demos/SF/config_SF.json')
-    #cfg = config.Config('./Trans/tests/config_rbd.json')
+    #cfg = config.Config('./BNS_JT/tests/config_rbd.json')
 
     # Arcs (components): P(X_i | GM = GM_ob ), i = 1 .. N (= nArc)
     cpms = {}
@@ -77,27 +74,35 @@ def main():
 
     path_time_idx = path_time_idx_dic['od1']
 
-    #    path_time_idx = trans.get_path_time_idx(path_times[v], varis[k])
-    #    print(time.time() - tic)
-
+    #path_time_idx = trans.get_path_time_idx(path_times[v], varis[k])
+    #print(time.time() - tic)
+    """
+    dask.config.set({'logging.distributed.client': 'error',
+                     'logging.distributed.scheduler': 'error',
+                     'logging.distributed.nanny': 'error',
+                     'logging.distributed.worker': 'error',
+                     'logging.distributed.utils_perf': 'error'})
+    """
     # FIXME
     tic = time.time()
     #pdb.set_trace()
+    cluster = LocalCluster(n_workers=10, threads_per_worker=2, memory_limit='64GB')
+    print(cluster)
     with Client(cluster) as client:
         sb = branch.branch_and_bound_dask(path_time_idx, lower, upper, 1, client)
     print(time.time() - tic)
 
+    """
     tic = time.time()
     c = branch.get_cmat_from_branches(sb, variables)
     print(time.time() - tic)
     np.savetxt('./c.txt', c, fmt='%d')
-    """
         cpms[k] = cpm.Cpm(variables = [varis[k]] + list(variables.values()),
                no_child = 1,
                C = c,
                p = np.ones(c.shape[0]),
                )
-        """
+    """
 def process_commandline():
     parser = ArgumentParser()
     #
