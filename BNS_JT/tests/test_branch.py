@@ -416,7 +416,7 @@ def test_branch_and_bound_dask(setup_client):
     arc_condn = 1
 
     with Client(cluster) as client:
-        sb = branch_and_bound_dask(path_time_idx, lower, upper, arc_condn, client)
+        sb = branch_and_bound_dask(path_time_idx, lower, upper, arc_condn, client, 's1')
 
     expected =[({'e1': 0, 'e2': 1, 'e3': 0, 'e4': 0, 'e5': 0, 'e6': 0}, {'e1': 1, 'e2': 1, 'e3': 1, 'e4': 1, 'e5': 1, 'e6': 1}, 2, 2),
                ({'e1': 0, 'e2': 0, 'e3': 0, 'e4': 0, 'e5': 0, 'e6': 0}, {'e1': 0, 'e2': 0, 'e3': 1, 'e4': 1, 'e5': 1, 'e6': 1}, 0, 0),
@@ -430,7 +430,7 @@ def test_branch_and_bound_dask(setup_client):
     path_time_idx =[([], np.inf, 0), (['e2'], 0.0901, 2), (['e3', 'e1'], 0.2401, 1)]
 
     with Client(cluster) as client:
-        sb = branch_and_bound_dask(path_time_idx, lower, upper, arc_condn, client)
+        sb = branch_and_bound_dask(path_time_idx, lower, upper, arc_condn, client, 's2')
 
 
 def test_branch_and_bound_using_fn():
@@ -503,7 +503,7 @@ def test_branch_and_bound_using_rds(setup_client):
     np.savetxt('./C_rds.txt', C, fmt='%d')
 
     with Client(cluster) as client:
-        sb_dask = branch_and_bound_dask(path_time_idx, lower, upper, arc_condn, client)
+        sb_dask = branch_and_bound_dask(path_time_idx, lower, upper, arc_condn, client, key='rds')
 
     C = get_cmat_from_branches(sb_dask, varis)
     C = C.astype(int)

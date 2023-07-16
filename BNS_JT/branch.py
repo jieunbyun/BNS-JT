@@ -4,6 +4,8 @@ import json
 import time
 import copy
 import gc
+import pdb
+from pathlib import Path
 from dask.distributed import Client
 
 from BNS_JT.cpm import ismember
@@ -281,24 +283,34 @@ def branch_and_bound_old(path_time_idx, lower, upper, arc_cond):
     return sb
 
 
-def fn_dummy(_b_star, arc_cond, path_time_idx):
+def get_path_given_b_star(_b_star, arc_cond, path_time_idx):
 
-    c_lower, c_upper, c_fl, c_fu = _b_star
+    #_, c_upper, _, _ = _b_star
 
-    upper_matched = [k for k, v in c_upper.items() if v == arc_cond]
+    upper_matched = [k for k, v in _b_star[1].items() if v == arc_cond]
 
     for _path, _, _ in path_time_idx[1:]:
 
         if set(_path).issubset(upper_matched):
 
-            upper = c_upper
-            lower = c_lower
-            fl = c_fl
-            chosen = (c_lower, c_upper, c_fl, c_fu)
+            #upper = c_upper
+            #lower = c_lower
+            #fl = c_fl
+            #chosen = (c_lower, c_upper, c_fl, c_fu)
             #sb = [x for x in b_star if not x == chosen]
 
             #paths_avail.remove(_path)
             break
+
+    return _path
+
+
+
+def fn_dummy(_b_star, _path, arc_cond, path_time_idx):
+
+    c_lower, c_upper, c_fl, c_fu = _b_star
+    upper = c_upper
+    lower = c_lower
 
     sb = []
     for arc in _path:
@@ -308,8 +320,8 @@ def fn_dummy(_b_star, arc_cond, path_time_idx):
             # set upper_n = 0
             upper = {k: 0 if k == arc else v for k, v in upper.items()}
             fu = eval_sys_state(path_time_idx, upper, arc_cond)
-            fl = c_fl
-
+            fl = eval_sys_state(path_time_idx, lower, arc_cond)
+            assert fl == c_fl, f'fl is not equal to c_fl: {fl} vs {c_fl}'
             sb.append((lower, upper, fl, fu))
 
             # set upper_n=1, lower_n = 1 
@@ -318,11 +330,11 @@ def fn_dummy(_b_star, arc_cond, path_time_idx):
 
     sb.append((lower, upper, c_fu, c_fu))
 
-    return sb, chosen
+    return sb
 
 
 
-def branch_and_bound_dask(path_time_idx, lower, upper, arc_cond, client):
+def branch_and_bound_dask(path_time_idx, lower, upper, arc_cond, client, key=None):
     """
     path_time_idx: a list of tuples consisting of path, time, and index (corresponding to row of B matrix)
     lower:
@@ -350,31 +362,37 @@ def branch_and_bound_dask(path_time_idx, lower, upper, arc_cond, client):
 
         # select path using upper branch of b_star
         results = []
-        for _b_star in b_star:
-            #scattered_path = client.scatter(path_time_idx)
 
-            result = client.submit(fn_dummy, _b_star, arc_cond, path_time_idx)
+        for _b_star in b_star:
+            scattered_path = client.scatter(path_time_idx)
+            _path = client.submit(get_path_given_b_star, _b_star, arc_cond, scattered_path)
+            result = client.submit(fn_dummy, _b_star, _path, arc_cond, scattered_path)
             client.run(gc.collect)
             results.append(result)
 
         results = client.gather(results)
-        chosen = []
-        for result in results:
-            chosen.append(result[1])
-            [sb.append(x) for x in result[0] if not x in sb]
+        [sb.append(x) for result in results for x in result if not x in sb]
 
         #sb, chosen = zip(*results)
         #print(len(sb), len(chosen))
-        sb = [x for x in sb if not x in chosen]
+        sb = [x for x in sb if not x in b_star]
         b_star = [x for x in sb if x[2] != x[3]]
         sb_saved = [x for x in sb if x[2] == x[3]]
 
-        with open(f'sb_saved_{i}.json', 'w') as w:
+        with open(f'sb_saved_{key}{i}.json', 'w') as w:
             json.dump(sb_saved, w, indent=4)
             i += 1
             sb = []
         toc = print(f'elapsed: {time.time()-tic}')
-    #return sb_saved
+
+    # read sb_saved json
+    sb_saved = []
+    for x in Path().glob(f'sb_saved_{key}*.json'):
+        with open(x, 'r') as fid:
+            tmp = json.load(fid)
+            [sb_saved.append(tuple(x)) for x in tmp]
+
+    return sb_saved
 
 
 def branch_and_bound_using_fn(path_time_idx, lower, upper, arc_cond):
@@ -399,16 +417,17 @@ def branch_and_bound_using_fn(path_time_idx, lower, upper, arc_cond):
 
         print(f'b*: {len(b_star)}, sb: {len(sb_saved)}')
         # select path using upper branch of b_star
-        chosen = []
+        #chosen = []
         for _b_star in b_star:
-            _sb, _chosen = fn_dummy(_b_star, arc_cond, path_time_idx)
+            _path = get_path_given_b_star(_b_star, arc_cond, path_time_idx)
+            _sb = fn_dummy(_b_star, _path, arc_cond, path_time_idx)
             #if fl==fu:
                 #sb.append((lower, upper, fl, fu))
             #sb.append((lower, upper, c_fu, c_fu))
             [sb.append(x) for x in _sb if not x in sb]
-            chosen.append(_chosen)
+            #chosen.append(_chosen)
 
-        sb = [x for x in sb if not x in chosen]
+        sb = [x for x in sb if not x in b_star]
         b_star = [x for x in sb if x[2] != x[3]]
         [sb_saved.append(x) for x in sb if x[2] == x[3]]
 
@@ -465,7 +484,8 @@ def branch_and_bound(path_time_idx, lower, upper, arc_cond):
                     #upper = copy.deepcopy(upper)
                     #upper[arc] = 0
                     fu = eval_sys_state(path_time_idx, upper, arc_cond)
-                    fl = c_fl
+                    fl = eval_sys_state(path_time_idx, lower, arc_cond)
+                    print(f'{fl} vs {c_fl}')
 
                     sb.append((lower, upper, fl, fu))
 
