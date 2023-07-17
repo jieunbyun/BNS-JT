@@ -86,7 +86,7 @@ def main():
     # FIXME
     tic = time.time()
     #pdb.set_trace()
-    cluster = LocalCluster(n_workers=10, threads_per_worker=2, memory_limit='64GB')
+    cluster = LocalCluster(n_workers=56, threads_per_worker=2, memory_limit='64GB')
     print(cluster)
     with Client(cluster) as client:
         sb = branch.branch_and_bound_dask(path_time_idx, lower, upper, 1, client)
