@@ -6,7 +6,8 @@ import copy
 import gc
 import pdb
 from pathlib import Path
-from dask.distributed import Client
+import dask
+from dask.distributed import Client, worker_client
 
 from BNS_JT.cpm import ismember
 from BNS_JT.variable import Variable
@@ -282,7 +283,6 @@ def branch_and_bound_old(path_time_idx, lower, upper, arc_cond):
 
     return sb
 
-
 def get_path_given_b_star(_b_star, arc_cond, path_time_idx):
 
     #_, c_upper, _, _ = _b_star
@@ -305,7 +305,6 @@ def get_path_given_b_star(_b_star, arc_cond, path_time_idx):
     return _path
 
 
-
 def fn_dummy(_b_star, _path, arc_cond, path_time_idx):
 
     c_lower, c_upper, c_fl, c_fu = _b_star
@@ -320,9 +319,9 @@ def fn_dummy(_b_star, _path, arc_cond, path_time_idx):
             # set upper_n = 0
             upper = {k: 0 if k == arc else v for k, v in upper.items()}
             fu = eval_sys_state(path_time_idx, upper, arc_cond)
-            fl = eval_sys_state(path_time_idx, lower, arc_cond)
-            assert fl == c_fl, f'fl is not equal to c_fl: {fl} vs {c_fl}'
-            sb.append((lower, upper, fl, fu))
+            #fl = eval_sys_state(path_time_idx, lower, arc_cond)
+            #assert fl == c_fl, f'fl is not equal to c_fl: {fl} vs {c_fl}'
+            sb.append((lower, upper, c_fl, fu))
 
             # set upper_n=1, lower_n = 1 
             upper = {k: 1 if k == arc else v for k, v in upper.items()}
@@ -334,7 +333,7 @@ def fn_dummy(_b_star, _path, arc_cond, path_time_idx):
 
 
 
-def branch_and_bound_dask(path_time_idx, lower, upper, arc_cond, client, key=None):
+def branch_and_bound_dask(path_time_idx, lower, upper, arc_cond, client, key=''):
     """
     path_time_idx: a list of tuples consisting of path, time, and index (corresponding to row of B matrix)
     lower:
@@ -363,6 +362,7 @@ def branch_and_bound_dask(path_time_idx, lower, upper, arc_cond, client, key=Non
         # select path using upper branch of b_star
         results = []
 
+        #with worker_client() as client:
         for _b_star in b_star:
             scattered_path = client.scatter(path_time_idx)
             _path = client.submit(get_path_given_b_star, _b_star, arc_cond, scattered_path)
@@ -430,8 +430,9 @@ def branch_and_bound_using_fn(path_time_idx, lower, upper, arc_cond):
         sb = [x for x in sb if not x in b_star]
         b_star = [x for x in sb if x[2] != x[3]]
         [sb_saved.append(x) for x in sb if x[2] == x[3]]
+        sb = []
 
-    return sb
+    return sb_saved
 
 
 def branch_and_bound(path_time_idx, lower, upper, arc_cond):
@@ -484,8 +485,8 @@ def branch_and_bound(path_time_idx, lower, upper, arc_cond):
                     #upper = copy.deepcopy(upper)
                     #upper[arc] = 0
                     fu = eval_sys_state(path_time_idx, upper, arc_cond)
-                    fl = eval_sys_state(path_time_idx, lower, arc_cond)
-                    print(f'{fl} vs {c_fl}')
+                    #fl = eval_sys_state(path_time_idx, lower, arc_cond)
+                    # print(f'{fl} vs {c_fl}')
 
                     sb.append((lower, upper, fl, fu))
 
