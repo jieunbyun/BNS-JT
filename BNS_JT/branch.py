@@ -368,12 +368,13 @@ def branch_and_bound_dask(path_time_idx, lower, upper, arc_cond, client, key='')
         #with worker_client() as client:
         for _b_star in b_star:
             #scattered_path = client.scatter(path_time_idx)
-            _path = get_path_given_b_star(_b_star, arc_cond, path_time_idx)
-            result = fn_dummy(_b_star, _path, arc_cond, path_time_idx)
-            client.run(gc.collect)
+            _path = client.submit(get_path_given_b_star, _b_star, arc_cond, path_time_idx)
+            result = client.submit(fn_dummy, _b_star, _path, arc_cond, path_time_idx)
             results.append(result)
 
         results = client.gather(results)
+        client.run(gc.collect)
+
         [sb.append(x) for result in results for x in result if not x in sb]
 
         sb = [x for x in sb if not x in b_star]
