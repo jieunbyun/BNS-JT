@@ -283,6 +283,7 @@ def branch_and_bound_old(path_time_idx, lower, upper, arc_cond):
 
     return sb
 
+
 def get_path_given_b_star(_b_star, arc_cond, path_time_idx):
 
     #_, c_upper, _, _ = _b_star
@@ -306,6 +307,8 @@ def get_path_given_b_star(_b_star, arc_cond, path_time_idx):
 
 
 def fn_dummy(_b_star, _path, arc_cond, path_time_idx):
+
+    #_path = get_path_given_b_star(_b_star, arc_cond, path_time_idx)
 
     c_lower, c_upper, c_fl, c_fu = _b_star
     upper = c_upper
@@ -364,17 +367,15 @@ def branch_and_bound_dask(path_time_idx, lower, upper, arc_cond, client, key='')
 
         #with worker_client() as client:
         for _b_star in b_star:
-            scattered_path = client.scatter(path_time_idx)
-            _path = client.submit(get_path_given_b_star, _b_star, arc_cond, scattered_path)
-            result = client.submit(fn_dummy, _b_star, _path, arc_cond, scattered_path)
+            #scattered_path = client.scatter(path_time_idx)
+            _path = get_path_given_b_star(_b_star, arc_cond, path_time_idx)
+            result = fn_dummy(_b_star, _path, arc_cond, path_time_idx)
             client.run(gc.collect)
             results.append(result)
 
         results = client.gather(results)
         [sb.append(x) for result in results for x in result if not x in sb]
 
-        #sb, chosen = zip(*results)
-        #print(len(sb), len(chosen))
         sb = [x for x in sb if not x in b_star]
         b_star = [x for x in sb if x[2] != x[3]]
         sb_saved = [x for x in sb if x[2] == x[3]]
@@ -419,6 +420,7 @@ def branch_and_bound_using_fn(path_time_idx, lower, upper, arc_cond):
         # select path using upper branch of b_star
         #chosen = []
         for _b_star in b_star:
+
             _path = get_path_given_b_star(_b_star, arc_cond, path_time_idx)
             _sb = fn_dummy(_b_star, _path, arc_cond, path_time_idx)
             #if fl==fu:
