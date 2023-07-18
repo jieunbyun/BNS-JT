@@ -284,6 +284,27 @@ def branch_and_bound_old(path_time_idx, lower, upper, arc_cond):
     return sb
 
 
+def get_hstars_from_sb_dump(file_name):
+
+    b_stars = []
+    with open(file_name, 'r') as fid:
+        tmp = json.load(fid)
+        [b_stars.append(tuple(x)) for x in tmp if x[2] != x[3]]
+
+    return b_stars
+
+
+def get_sb_saved_from_sb_dump(file_name):
+
+    sb_saved = []
+    with open(file_name, 'r') as fid:
+        tmp = json.load(fid)
+        [sb_saved.append(tuple(x)) for x in tmp if x[2] == x[3]]
+
+    return sb_saved
+
+
+
 def get_path_given_b_star(_b_star, arc_cond, path_time_idx):
 
     #_, c_upper, _, _ = _b_star
