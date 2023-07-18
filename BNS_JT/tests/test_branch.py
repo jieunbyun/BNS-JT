@@ -490,7 +490,7 @@ def test_branch_and_bound_using_rds(setup_client):
     arc_condn = 1
 
     #pdb.set_trace()
-    sb = branch_and_bound(path_time_idx, lower, upper, arc_condn)
+    sb = branch_and_bound_using_fn(path_time_idx, lower, upper, arc_condn)
 
     varis = {}
     B = np.array([[1, 0], [0, 1], [1, 1]])
@@ -509,5 +509,34 @@ def test_branch_and_bound_using_rds(setup_client):
     C = C.astype(int)
     C = C[C[:, 0].argsort()]
     np.savetxt('./C_rds_dask.txt', C, fmt='%d')
+
+def test_branch_and_bound_using_rds0():
+
+    # 0, 1, 2 corresponds to index of Variable.values
+    path_time_idx = [([], np.inf, 0),
+           (['e3', 'e12', 'e8', 'e9'], 0.30219999999999997, 4),
+           (['e1', 'e10', 'e8', 'e9'], 0.3621, 3),
+           (['e2', 'e11', 'e8', 'e9'], 0.40219999999999995, 2),
+           (['e4', 'e5', 'e6', 'e7', 'e8', 'e9'], 0.48249999999999993, 1)  ]
+
+    # init
+    arcs = [f'e{i}' for i in range(1, 13)]
+
+    lower = {x: 0 for x in arcs}  # Fail
+    upper = {x: 1 for x in arcs}  # surv
+    arc_condn = 1
+
+    #pdb.set_trace()
+    sb = branch_and_bound(path_time_idx, lower, upper, arc_condn)
+
+    varis = {}
+    B = np.array([[1, 0], [0, 1], [1, 1]])
+    for k in range(1, 13):
+        varis[f'e{k}'] = variable.Variable(name=f'e{k}', B=B, values=['Surv', 'Fail'])
+
+    C = get_cmat_from_branches(sb, varis)
+    C = C.astype(int)
+    C = C[C[:, 0].argsort()]
+    np.savetxt('./C_rds_orig.txt', C, fmt='%d')
 
 

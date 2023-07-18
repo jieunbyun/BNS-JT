@@ -335,6 +335,43 @@ def fn_dummy(_b_star, _path, arc_cond, path_time_idx):
     return sb
 
 
+def computing_sb_given_bstars(b_stars, path_time_idx, arc_cond, client, key, sb=[]):
+
+    # make sure the paths are sorted by shortest
+    #paths_avail = [x[0] for x in path_time_idx if x[0]]
+    i = 0
+    while b_stars:
+        print(f'b*: {len(b_stars)}')
+        tic = time.time()
+
+        # select path using upper branch of b_star
+        results = []
+
+        #with worker_client() as client:
+        for b_star in b_stars:
+            #scattered_path = client.scatter(path_time_idx)
+            _path = client.submit(get_path_given_b_star, b_star, arc_cond, path_time_idx)
+            result = client.submit(fn_dummy, b_star, _path, arc_cond, path_time_idx)
+            results.append(result)
+
+        results = client.gather(results)
+        client.run(gc.collect)
+
+        [sb.append(x) for result in results for x in result]
+
+        sb = [x for x in sb if not x in b_stars]
+        b_stars = [x for x in sb if x[2] != x[3]]
+        sb_saved = [x for x in sb if x[2] == x[3]]
+
+        with open(f'sb_saved_{key}{i}.json', 'w') as w:
+            json.dump(sb_saved, w, indent=4)
+            i += 1
+            sb = []
+        toc = print(f'elapsed: {time.time()-tic}')
+
+        with open(f'b_stars{key}{i}.json', 'w') as w:
+            json.dump(b_stars, w, indent=4)
+
 
 def branch_and_bound_dask(path_time_idx, lower, upper, arc_cond, client, key=''):
     """
@@ -353,39 +390,9 @@ def branch_and_bound_dask(path_time_idx, lower, upper, arc_cond, client, key='')
     sb = [(lower, upper, fl, fu)]
 
     # selecting a branch from sb such that fl /= fu
-    b_star = [x for x in sb if x[2] != x[3]]
+    b_stars = [x for x in sb if x[2] != x[3]]
 
-    # make sure the paths are sorted by shortest
-    #paths_avail = [x[0] for x in path_time_idx if x[0]]
-    i = 0
-    while b_star:
-        print(f'b*: {len(b_star)}')
-        tic = time.time()
-
-        # select path using upper branch of b_star
-        results = []
-
-        #with worker_client() as client:
-        for _b_star in b_star:
-            #scattered_path = client.scatter(path_time_idx)
-            _path = client.submit(get_path_given_b_star, _b_star, arc_cond, path_time_idx)
-            result = client.submit(fn_dummy, _b_star, _path, arc_cond, path_time_idx)
-            results.append(result)
-
-        results = client.gather(results)
-        client.run(gc.collect)
-
-        [sb.append(x) for result in results for x in result if not x in sb]
-
-        sb = [x for x in sb if not x in b_star]
-        b_star = [x for x in sb if x[2] != x[3]]
-        sb_saved = [x for x in sb if x[2] == x[3]]
-
-        with open(f'sb_saved_{key}{i}.json', 'w') as w:
-            json.dump(sb_saved, w, indent=4)
-            i += 1
-            sb = []
-        toc = print(f'elapsed: {time.time()-tic}')
+    computing_sb_given_bstars(b_stars, path_time_idx, arc_cond, client, key, sb=sb)
 
     # read sb_saved json
     sb_saved = []
@@ -427,12 +434,14 @@ def branch_and_bound_using_fn(path_time_idx, lower, upper, arc_cond):
             #if fl==fu:
                 #sb.append((lower, upper, fl, fu))
             #sb.append((lower, upper, c_fu, c_fu))
-            [sb.append(x) for x in _sb if not x in sb]
+            #[sb.append(x) for x in _sb if not x in sb]
+            [sb.append(x) for x in _sb]
             #chosen.append(_chosen)
 
         sb = [x for x in sb if not x in b_star]
-        b_star = [x for x in sb if x[2] != x[3]]
         [sb_saved.append(x) for x in sb if x[2] == x[3]]
+        # for the next step
+        b_star = [x for x in sb if x[2] != x[3]]
         sb = []
 
     return sb_saved
