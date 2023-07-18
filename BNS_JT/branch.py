@@ -341,7 +341,9 @@ def computing_sb_given_bstars(b_stars, path_time_idx, arc_cond, client, key, sb=
     #paths_avail = [x[0] for x in path_time_idx if x[0]]
     i = 0
     while b_stars:
+
         print(f'b*: {len(b_stars)}')
+
         tic = time.time()
 
         # select path using upper branch of b_star
@@ -360,17 +362,18 @@ def computing_sb_given_bstars(b_stars, path_time_idx, arc_cond, client, key, sb=
         [sb.append(x) for result in results for x in result]
 
         sb = [x for x in sb if not x in b_stars]
+
+        with open(f'sb_dump_{key}{i}.json', 'w') as w:
+            json.dump(sb, w, indent=4)
+
         b_stars = [x for x in sb if x[2] != x[3]]
         sb_saved = [x for x in sb if x[2] == x[3]]
 
-        with open(f'sb_saved_{key}{i}.json', 'w') as w:
-            json.dump(sb_saved, w, indent=4)
-            i += 1
-            sb = []
-        toc = print(f'elapsed: {time.time()-tic}')
+        # for the next iteration
+        i = i + 1
+        sb = []
 
-        with open(f'b_stars{key}{i}.json', 'w') as w:
-            json.dump(b_stars, w, indent=4)
+        toc = print(f'elapsed: {time.time()-tic}')
 
 
 def branch_and_bound_dask(path_time_idx, lower, upper, arc_cond, client, key=''):
@@ -396,10 +399,10 @@ def branch_and_bound_dask(path_time_idx, lower, upper, arc_cond, client, key='')
 
     # read sb_saved json
     sb_saved = []
-    for x in Path().glob(f'sb_saved_{key}*.json'):
+    for x in Path().glob(f'sb_dump_{key}*.json'):
         with open(x, 'r') as fid:
             tmp = json.load(fid)
-            [sb_saved.append(tuple(x)) for x in tmp]
+            [sb_saved.append(tuple(x)) for x in tmp if x[2] == x[3]]
 
     return sb_saved
 
