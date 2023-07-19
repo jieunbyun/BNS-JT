@@ -388,7 +388,7 @@ def computing_sb_given_bstars(b_stars, path_time_idx, arc_cond, client, key, sb=
             json.dump(sb, w, indent=4)
 
         b_stars = [x for x in sb if x[2] != x[3]]
-        sb_saved = [x for x in sb if x[2] == x[3]]
+        #sb_saved = [x for x in sb if x[2] == x[3]]
 
         # for the next iteration
         i = i + 1
@@ -416,7 +416,8 @@ def branch_and_bound_dask(path_time_idx, lower, upper, arc_cond, client, key='')
     # selecting a branch from sb such that fl /= fu
     b_stars = [x for x in sb if x[2] != x[3]]
 
-    computing_sb_given_bstars(b_stars, path_time_idx, arc_cond, client, key, sb=sb)
+    s_path_time_idx = client.scatter(path_time_idx)
+    computing_sb_given_bstars(b_stars, s_path_time_idx, arc_cond, client, key, sb=sb)
 
     # read sb_saved json
     sb_saved = []
