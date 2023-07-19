@@ -1,8 +1,11 @@
+import os
+import socket
 import time
 import logging
 import numpy as np
 import pdb
 import json
+from pathlib import Path
 from dask.distributed import Client, LocalCluster
 
 import dask
@@ -12,9 +15,10 @@ from dask.distributed import Client,LocalCluster
 from argparse import ArgumentParser
 from BNS_JT import config, variable, model, cpm, branch, trans
 
+HOME = Path(__file__).absolute().parent
 
 #def main(client_ip=None):
-def main():
+def main(client):
     """
     walltime = '01:00:00'
     cores = 112
@@ -33,7 +37,8 @@ def main():
     # normalbw: 56, 192GB => workers:8, threads: 7, mem:96GB
     #cluster = LocalCluster()
     #cluster = LocalCluster(n_workers=112, threads_per_worker=1, memory_limit='32GB')
-    cfg = config.Config('./BNS_JT/demos/SF/config_SF.json')
+    cfg_file = HOME.joinpath('BNS_JT/demos/SF/config_SF.json')
+    cfg = config.Config(cfg_file)
     #cfg = config.Config('./BNS_JT/tests/config_rbd.json')
 
     # Arcs (components): P(X_i | GM = GM_ob ), i = 1 .. N (= nArc)
@@ -69,7 +74,8 @@ def main():
     varis[k] = variable.Variable(name=k, B=np.eye(len(values)), values=values)
 
     #tic = time.time()
-    with open('./BNS_JT/demos/SF/path_time_idx.json', 'r') as fid:
+    _file = HOME.joinpath('BNS_JT/demos/SF/path_time_idx.json')
+    with open(_file, 'r') as fid:
         path_time_idx_dic = json.load(fid)
 
     path_time_idx = path_time_idx_dic['od1']
@@ -86,10 +92,8 @@ def main():
     # FIXME
     tic = time.time()
     #pdb.set_trace()
-    cluster = LocalCluster(n_workers=56, threads_per_worker=2, memory_limit='64GB')
-    print(cluster)
-    with Client(cluster) as client:
-        sb = branch.branch_and_bound_dask(path_time_idx, lower, upper, 1, client)
+    print(client)
+    sb = branch.branch_and_bound_dask(path_time_idx, lower, upper, 1, client)
     print(time.time() - tic)
 
     """
@@ -118,7 +122,17 @@ def process_commandline():
 
 
 if __name__=='__main__':
-    parser = process_commandline()
-    args = parser.parse_args()
+    #parser = process_commandline()
+    #args = parser.parse_args()
     #main(client_ip=args.client_ip)
-    main()
+
+    #if 'gadi' in socket.gethostname():
+    #client = Client(scheduler_file=os.environ["DASK_PBS_SCHEDULER"])
+    #else:
+    try:
+        client = Client(scheduler_file=os.environ["DASK_PBS_SCHEDULER"])
+    except KeyError:
+        cluster = LocalCluster(n_workers=28, threads_per_worker=2, memory_limit='64GB')
+        client = Client(cluster)
+
+    main(client)
