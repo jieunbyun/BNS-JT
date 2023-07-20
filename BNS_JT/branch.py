@@ -380,9 +380,9 @@ def computing_sb_given_bstars(b_stars, path_time_idx, arc_cond, client, key, sb=
         results = client.gather(results)
         client.run(gc.collect)
 
-        [sb.append(x) for result in results for x in result]
+        sb = [x for result in results for x in result if not x in b_stars]
 
-        sb = [x for x in sb if not x in b_stars]
+        #sb = [x for x in sb if not x in b_stars]
 
         with open(f'sb_dump_{key}{i}.json', 'w') as w:
             json.dump(sb, w, indent=4)
@@ -392,7 +392,6 @@ def computing_sb_given_bstars(b_stars, path_time_idx, arc_cond, client, key, sb=
 
         # for the next iteration
         i = i + 1
-        sb = []
 
         toc = print(f'elapsed: {time.time()-tic}')
 
@@ -483,13 +482,13 @@ def branch_and_bound_dask(path_time_idx, lower, upper, arc_cond, client, key='')
     fl = eval_sys_state(path_time_idx, arcs_state=lower, arc_cond=1)
     fu = eval_sys_state(path_time_idx, arcs_state=upper, arc_cond=1)
 
-    sb = [(lower, upper, fl, fu)]
+    b_stars = [(lower, upper, fl, fu)]
 
     # selecting a branch from sb such that fl /= fu
-    b_stars = [x for x in sb if x[2] != x[3]]
+    #b_stars = [x for x in sb if x[2] != x[3]]
 
     s_path_time_idx = client.scatter(path_time_idx)
-    computing_sb_given_bstars(b_stars, s_path_time_idx, arc_cond, client, key, sb=sb)
+    computing_sb_given_bstars(b_stars, s_path_time_idx, arc_cond, client, key)
 
     # read sb_saved json
     sb_saved = []
