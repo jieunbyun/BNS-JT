@@ -107,6 +107,21 @@ def main(client):
                p = np.ones(c.shape[0]),
                )
     """
+
+def resume(file_dump, key, client):
+
+    print(client)
+    #tic = time.time()
+    _file = HOME.joinpath('BNS_JT/demos/SF/path_time_idx.json')
+    with open(_file, 'r') as fid:
+        path_time_idx_dic = json.load(fid)
+
+    path_time_idx = path_time_idx_dic['od1']
+
+    b_stars = branch.get_bstars_from_sb_dump(file_dump)
+
+    branch.computing_sb_given_bstars(b_stars, path_time_idx, 1, client, key)
+
 def process_commandline():
     parser = ArgumentParser()
     #

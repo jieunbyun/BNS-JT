@@ -8,7 +8,7 @@ from dask.distributed import Client, LocalCluster
 #from BNS_JT.variable import Variable
 from BNS_JT.trans import get_arcs_length, do_branch, get_all_paths_and_times
 from BNS_JT.bnb_fns import bnb_sys, bnb_next_comp, bnb_next_state
-from BNS_JT.branch import get_cmat, run_bnb, Branch, branch_and_bound, get_cmat_from_branches, branch_and_bound_old, branch_and_bound_dask, branch_and_bound_using_fn
+from BNS_JT.branch import get_cmat, run_bnb, Branch, branch_and_bound, get_cmat_from_branches, branch_and_bound_old, branch_and_bound_dask, branch_and_bound_using_fn, branch_and_bound_dask1
 from BNS_JT import variable
 
 np.set_printoptions(precision=3)
@@ -503,7 +503,7 @@ def test_branch_and_bound_using_rds(setup_client):
     np.savetxt('./C_rds.txt', C, fmt='%d')
 
     with Client(cluster) as client:
-        sb_dask = branch_and_bound_dask(path_time_idx, lower, upper, arc_condn, client, key='rds')
+        sb_dask = branch_and_bound_dask1(path_time_idx, lower, upper, arc_condn, client, key='rds')
 
     C = get_cmat_from_branches(sb_dask, varis)
     C = C.astype(int)

@@ -284,7 +284,7 @@ def branch_and_bound_old(path_time_idx, lower, upper, arc_cond):
     return sb
 
 
-def get_hstars_from_sb_dump(file_name):
+def get_bstars_from_sb_dump(file_name):
 
     b_stars = []
     with open(file_name, 'r') as fid:
@@ -395,6 +395,78 @@ def computing_sb_given_bstars(b_stars, path_time_idx, arc_cond, client, key, sb=
         sb = []
 
         toc = print(f'elapsed: {time.time()-tic}')
+
+
+def branch_and_bound_dask1(path_time_idx, lower, upper, arc_cond, client, key=''):
+    """
+    path_time_idx: a list of tuples consisting of path, time, and index (corresponding to row of B matrix)
+    lower:
+    upper:
+    arc_cond:
+    """
+
+    #client = Client(client_ip)
+    #print(client.dashboard_link)
+    #n_workers=4, threads_per_worker=1, processes=False)
+    fl = eval_sys_state(path_time_idx, arcs_state=lower, arc_cond=1)
+    fu = eval_sys_state(path_time_idx, arcs_state=upper, arc_cond=1)
+
+    # selecting a branch from sb such that fl /= fu
+    b_stars = [(lower, upper, fl, fu)]
+
+    #b_stars = [x for x in sb if x[2] != x[3]]
+
+
+    # make sure the paths are sorted by shortest
+    #paths_avail = [x[0] for x in path_time_idx if x[0]]
+    i = 0
+    while b_stars:
+
+        #client = Client(n_workers=len(b_stars), threads_per_worker=1)
+        print(f'b*: {len(b_stars)}')
+
+        tic = time.time()
+
+        s_path_time_idx = client.scatter(path_time_idx)
+        # select path using upper branch of b_star
+        results = []
+
+        #with worker_client() as client:
+        for b_star in b_stars:
+            #scattered_path = client.scatter(path_time_idx)
+            _path = client.submit(get_path_given_b_star, b_star, arc_cond, s_path_time_idx)
+            result = client.submit(fn_dummy, b_star, _path, arc_cond, s_path_time_idx)
+            results.append(result)
+
+        results = client.gather(results)
+        client.run(gc.collect)
+
+        sb = [x for result in results for x in result if not x in b_stars]
+
+        #sb = [x for x in sb if not x in b_stars]
+
+        with open(f'sb_dump_{key}{i}.json', 'w') as w:
+            json.dump(sb, w, indent=4)
+
+        b_stars = [x for x in sb if x[2] != x[3]]
+        #sb_saved = [x for x in sb if x[2] == x[3]]
+
+        # for the next iteration
+        i = i + 1
+        #sb = []
+        #client.close()
+        toc = print(f'elapsed: {time.time()-tic}')
+
+    # read sb_saved json
+    sb_saved = []
+    for x in Path().glob(f'sb_dump_{key}*.json'):
+        with open(x, 'r') as fid:
+            tmp = json.load(fid)
+            [sb_saved.append(tuple(x)) for x in tmp if x[2] == x[3]]
+
+    return sb_saved
+
+
 
 
 def branch_and_bound_dask(path_time_idx, lower, upper, arc_cond, client, key=''):
