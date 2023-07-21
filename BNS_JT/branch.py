@@ -497,6 +497,48 @@ def branch_and_bound_no_dask2(path_time_idx, b_stars, arc_cond, key=''):
     return sb
 
 
+def branch_and_bound_dask3(b_stars, i):
+    """
+    path_time_idx: a list of tuples consisting of path, time, and index (corresponding to row of B matrix)
+    lower:
+    upper:
+    arc_cond:
+    """
+
+    print(f'b*: {len(b_stars)}')
+
+    #s_path_time_idx = client.scatter(path_time_idx)
+    tic = time.time()
+
+    with worker_client as client:
+
+        path_time_idx = g_path_time_idx.get()
+        arc_cond = g_arc_cond.get()
+        key = g_key.get()
+
+        results = []
+        for b_star in b_stars:
+            arcs = client.submit(get_arcs_given_bstar, b_star, arc_cond, path_time_idx)
+            result = client.submit(fn_dummy1, b_star, arcs, path_time_idx, arc_cond)
+            results.append(result)
+
+        results = client.gather(results)
+        client.run(gc.collect)
+
+    sb = [x for result in results for x in result if not x in b_stars]
+    with open(f'sb_dump_{key}_{i}.json', 'w') as w:
+        json.dump(sb, w, indent=4)
+
+    b_stars = [x for x in sb if x[2] != x[3]]
+    # for the next iteration
+    i = i + 1
+    toc = print(f'elapsed: {time.time()-tic}')
+
+    branch_and_bound_dask3(b_stars, i)
+
+    return b_stars
+
+
 def branch_and_bound_dask2(client, path_time_idx, b_stars, arc_cond, key=''):
     """
     path_time_idx: a list of tuples consisting of path, time, and index (corresponding to row of B matrix)

@@ -6,12 +6,12 @@ import time
 import pytest
 import json
 from pathlib import Path
-from dask.distributed import Client, LocalCluster
+from dask.distributed import Client, LocalCluster, Variable
 
 #from BNS_JT.variable import Variable
 from BNS_JT.trans import get_arcs_length, do_branch, get_all_paths_and_times, eval_sys_state
 from BNS_JT.bnb_fns import bnb_sys, bnb_next_comp, bnb_next_state
-from BNS_JT.branch import get_cmat, run_bnb, Branch, branch_and_bound, get_cmat_from_branches, branch_and_bound_old, branch_and_bound_dask, branch_and_bound_using_fn, branch_and_bound_dask1, get_arcs_given_bstar, get_bstars_from_sb_dump, get_sb_given_arcs, fn_dummy, branch_and_bound_dask2, get_sb_saved_from_job
+from BNS_JT.branch import get_cmat, run_bnb, Branch, branch_and_bound, get_cmat_from_branches, branch_and_bound_old, branch_and_bound_dask, branch_and_bound_using_fn, branch_and_bound_dask1, get_arcs_given_bstar, get_bstars_from_sb_dump, get_sb_given_arcs, fn_dummy, branch_and_bound_dask2, get_sb_saved_from_job, branch_and_bound_dask3
 from BNS_JT import variable
 
 HOME = Path(__file__).absolute().parent
@@ -625,3 +625,48 @@ def test_get_sb_given_arcs():
     expected = fn_dummy(bstars[0], _path, 1, path_time_idx)
     print(f'elapsed: {time.time()-tic}')
     assert result == expected
+
+
+def test_branch_and_bound_dask3(setup_client):
+
+    cluster = setup_client
+
+    # 0, 1, 2 corresponds to index of Variable.values
+    path_time_idx = [([], np.inf, 0),
+           (['e3', 'e12', 'e8', 'e9'], 0.30219999999999997, 4),
+           (['e1', 'e10', 'e8', 'e9'], 0.3621, 3),
+           (['e2', 'e11', 'e8', 'e9'], 0.40219999999999995, 2),
+           (['e4', 'e5', 'e6', 'e7', 'e8', 'e9'], 0.48249999999999993, 1)  ]
+
+    # init
+    arcs = [f'e{i}' for i in range(1, 13)]
+
+    lower = {x: 0 for x in arcs}  # Fail
+    upper = {x: 1 for x in arcs}  # surv
+    arc_condn = 1
+    fl = eval_sys_state(path_time_idx, lower, 1)
+    fu = eval_sys_state(path_time_idx, upper, 1)
+    bstars = [(lower, upper, fl, fu)]
+    #pdb.set_trace()
+
+    varis = {}
+    B = np.array([[1, 0], [0, 1], [1, 1]])
+    for k in range(1, 13):
+        varis[f'e{k}'] = variable.Variable(name=f'e{k}', B=B, values=['Surv', 'Fail'])
+
+    with Client(cluster) as client:
+
+        g_path_time_idx = Variable("path_time_idx")
+        g_path_time_idx.set(path_time_idx)
+
+        g_arc_cond = Variable('arc_cond')
+        g_arc_cond.set(arc_condn)
+
+        g_key = Variable('key')
+        g_key.set('rds3')
+
+        future = client.submit(branch_and_bound_dask3, bstars, 0)
+        result = client.gather(future)
+
+    sb_dask = get_sb_saved_from_job(PROJ, key='rds3')
+
