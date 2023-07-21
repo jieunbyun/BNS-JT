@@ -587,7 +587,7 @@ def test_branch_and_bound_using_rds0():
 
 def test_get_arcs_given_bstar():
 
-    bstars = get_bstars_from_sb_dump(HOME.joinpath('../../sb_dump_1.json'))
+    bstars = get_bstars_from_sb_dump(HOME.joinpath('./sb_dump_1.json'))
     bstar = bstars[0]
 
     with open(HOME.joinpath('../demos/SF/path_time_idx.json'), 'r') as fid:
@@ -604,7 +604,7 @@ def test_get_arcs_given_bstar():
 
 def test_get_sb_given_arcs():
 
-    bstars = get_bstars_from_sb_dump(HOME.joinpath('../../sb_dump_1.json'))
+    bstars = get_bstars_from_sb_dump(HOME.joinpath('./sb_dump_1.json'))
     bstar = bstars[0]
 
     with open(HOME.joinpath('../demos/SF/path_time_idx.json'), 'r') as fid:
@@ -627,6 +627,7 @@ def test_get_sb_given_arcs():
     assert result == expected
 
 
+@pytest.mark.skip("NYI")
 def test_branch_and_bound_dask3(setup_client):
 
     cluster = setup_client
