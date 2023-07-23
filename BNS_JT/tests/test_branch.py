@@ -6,12 +6,12 @@ import time
 import pytest
 import json
 from pathlib import Path
-from dask.distributed import Client, LocalCluster, Variable
+from dask.distributed import Client, LocalCluster, Variable, worker_client
 
 #from BNS_JT.variable import Variable
 from BNS_JT.trans import get_arcs_length, do_branch, get_all_paths_and_times, eval_sys_state
 from BNS_JT.bnb_fns import bnb_sys, bnb_next_comp, bnb_next_state
-from BNS_JT.branch import get_cmat, run_bnb, Branch, branch_and_bound, get_cmat_from_branches, branch_and_bound_old, branch_and_bound_dask, branch_and_bound_using_fn, branch_and_bound_dask1, get_arcs_given_bstar, get_bstars_from_sb_dump, get_sb_given_arcs, fn_dummy, branch_and_bound_dask2, get_sb_saved_from_job, branch_and_bound_dask3
+from BNS_JT.branch import get_cmat, run_bnb, Branch, branch_and_bound, get_cmat_from_branches, branch_and_bound_old, branch_and_bound_dask, branch_and_bound_using_fn, branch_and_bound_dask1, get_arcs_given_bstar, get_bstars_from_sb_dump, get_sb_given_arcs, fn_dummy, branch_and_bound_dask2, get_sb_saved_from_job, branch_and_bound_dask3, outer_bnb_dask3
 from BNS_JT import variable
 
 HOME = Path(__file__).absolute().parent
@@ -477,7 +477,7 @@ def test_branch_and_bound_using_fn():
     assert len(sb) == 4
     assert all([x in sb for x in expected])
 
-def test_branch_and_bound_using_rds(setup_client):
+def test_branch_and_bound_using_rbd(setup_client):
 
     cluster = setup_client
 
@@ -506,7 +506,7 @@ def test_branch_and_bound_using_rds(setup_client):
     C = get_cmat_from_branches(sb, varis)
     C = C.astype(int)
     C = C[C[:, 0].argsort()]
-    np.savetxt('./C_rds.txt', C, fmt='%d')
+    np.savetxt('./C_rbd.txt', C, fmt='%d')
 
     with Client(cluster) as client:
         branch_and_bound_dask1(path_time_idx, lower, upper, arc_condn, client, key='rds')
@@ -514,10 +514,10 @@ def test_branch_and_bound_using_rds(setup_client):
     C = get_cmat_from_branches(sb_dask, varis)
     C = C.astype(int)
     C = C[C[:, 0].argsort()]
-    np.savetxt('./C_rds_dask.txt', C, fmt='%d')
+    np.savetxt('./C_rbd_dask.txt', C, fmt='%d')
 
 
-def test_branch_and_bound_using_rds2(setup_client):
+def test_branch_and_bound_using_rbd2(setup_client):
 
     cluster = setup_client
 
@@ -551,10 +551,10 @@ def test_branch_and_bound_using_rds2(setup_client):
     C = get_cmat_from_branches(sb_dask, varis)
     C = C.astype(int)
     C = C[C[:, 0].argsort()]
-    np.savetxt('./C_rds_dask2.txt', C, fmt='%d')
+    np.savetxt('./C_rbd_dask2.txt', C, fmt='%d')
 
 
-def test_branch_and_bound_using_rds0():
+def test_branch_and_bound_using_rbd0():
 
     # 0, 1, 2 corresponds to index of Variable.values
     path_time_idx = [([], np.inf, 0),
@@ -582,7 +582,7 @@ def test_branch_and_bound_using_rds0():
     C = get_cmat_from_branches(sb, varis)
     C = C.astype(int)
     C = C[C[:, 0].argsort()]
-    np.savetxt('./C_rds_orig.txt', C, fmt='%d')
+    np.savetxt('./C_rbd_orig.txt', C, fmt='%d')
 
 
 def test_get_arcs_given_bstar():
@@ -627,7 +627,7 @@ def test_get_sb_given_arcs():
     assert result == expected
 
 
-@pytest.mark.skip("NYI")
+#@pytest.mark.skip("NYI")
 def test_branch_and_bound_dask3(setup_client):
 
     cluster = setup_client
@@ -657,17 +657,38 @@ def test_branch_and_bound_dask3(setup_client):
 
     with Client(cluster) as client:
 
-        g_path_time_idx = Variable("path_time_idx")
-        g_path_time_idx.set(path_time_idx)
-
         g_arc_cond = Variable('arc_cond')
         g_arc_cond.set(arc_condn)
 
         g_key = Variable('key')
         g_key.set('rds3')
 
-        future = client.submit(branch_and_bound_dask3, bstars, 0)
-        result = client.gather(future)
+        result = outer_bnb_dask3(client, bstars, path_time_idx, g_arc_cond, g_key)
 
     sb_dask = get_sb_saved_from_job(PROJ, key='rds3')
 
+    assert len(sb_dask) == 77
+
+def fib2(n):
+    if n==0:
+        return (0, [0])
+    elif n==1:
+        return (1, [0, 1])
+    else:
+        with worker_client() as client:
+            a_f = client.submit(fib2, n-1)
+            b_f = client.submit(fib2, n-2)
+            a, b = client.gather([a_f, b_f])
+        return (a[0]+b[0], a[1] + [a[0]+b[0]])
+
+
+def test_dask_fib(setup_client):
+
+    cluster = setup_client
+
+    with Client(cluster) as client:
+        future = client.submit(fib2, 10)
+        result = client.gather(future)
+
+    assert result[0] == 55
+    assert result[1] == [0, 1, 1, 2, 3, 5, 8, 13, 21, 34, 55]

@@ -9,6 +9,7 @@ from pathlib import Path
 import dask
 from dask.distributed import Client, worker_client, as_completed
 
+import dask.bag as db
 from BNS_JT import cpm, variable, trans
 
 
@@ -490,14 +491,33 @@ def branch_and_bound_no_dask2(path_time_idx, b_stars, arc_cond, key=''):
         #client.close()
     toc = print(f'elapsed: {time.time()-tic}')
 
-
     #results = client.gather(new)
     #client.run(gc.collect)
 
     return sb
 
 
-def branch_and_bound_dask3(b_stars, i):
+def split(list_a, chunk_size):
+
+  for i in range(0, len(list_a), chunk_size):
+    yield list_a[i:i + chunk_size]
+
+
+def outer_bnb_dask3(client, b_stars, path_time_idx, g_arc_cond, g_key):
+
+    i=0
+    no_procs = sum(client.ncores().values())
+    while b_stars:
+        batches = []
+        for b_stars_batch in split(b_stars, no_procs):
+            future = client.submit(branch_and_bound_dask3, b_stars_batch, path_time_idx, i, g_arc_cond, g_key)
+            i = i + 1
+            batches.append(future)
+
+        b_stars = client.gather(future)
+
+
+def branch_and_bound_dask3(b_stars, path_time_idx, i, g_arc_cond, g_key):
     """
     path_time_idx: a list of tuples consisting of path, time, and index (corresponding to row of B matrix)
     lower:
@@ -510,13 +530,14 @@ def branch_and_bound_dask3(b_stars, i):
     #s_path_time_idx = client.scatter(path_time_idx)
     tic = time.time()
 
-    with worker_client as client:
+    with worker_client() as client:
 
-        path_time_idx = g_path_time_idx.get()
         arc_cond = g_arc_cond.get()
         key = g_key.get()
 
         results = []
+
+
         for b_star in b_stars:
             arcs = client.submit(get_arcs_given_bstar, b_star, arc_cond, path_time_idx)
             result = client.submit(fn_dummy1, b_star, arcs, path_time_idx, arc_cond)
@@ -531,10 +552,10 @@ def branch_and_bound_dask3(b_stars, i):
 
     b_stars = [x for x in sb if x[2] != x[3]]
     # for the next iteration
-    i = i + 1
+    #i = i + 1
     toc = print(f'elapsed: {time.time()-tic}')
 
-    branch_and_bound_dask3(b_stars, i)
+    #branch_and_bound_dask3(b_stars, i)
 
     return b_stars
 
@@ -583,7 +604,7 @@ def get_sb_saved_from_job(output_path, key):
     except AttributeError:
         output_path = Path(output_path)
         assert output_path.exists(), f'output_path does not exist'
-    else:
+    finally:
         # read sb_saved json
         sb_saved = []
         for x in output_path.glob(f'sb_dump_{key}_*.json'):
@@ -591,7 +612,7 @@ def get_sb_saved_from_job(output_path, key):
                 tmp = json.load(fid)
                 [sb_saved.append(tuple(x)) for x in tmp if x[2] == x[3]]
 
-        return sb_saved
+    return sb_saved
 
 
 def branch_and_bound_dask1(path_time_idx, lower, upper, arc_cond, client, key=''):
