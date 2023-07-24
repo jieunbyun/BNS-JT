@@ -398,7 +398,7 @@ def test_get_cmat_from_branches():
 @pytest.fixture()
 def setup_client():
 
-    cluster = LocalCluster()
+    cluster = LocalCluster(n_workers=2, threads_per_worker=2)
     #client = Client(cluster)
 
     return cluster
@@ -656,14 +656,14 @@ def test_branch_and_bound_dask3(setup_client):
         varis[f'e{k}'] = variable.Variable(name=f'e{k}', B=B, values=['Surv', 'Fail'])
 
     with Client(cluster) as client:
-
+        print(client.dashboard_link)
         g_arc_cond = Variable('arc_cond')
         g_arc_cond.set(arc_condn)
 
         g_key = Variable('key')
         g_key.set('rds3')
 
-        result = outer_bnb_dask3(client, bstars, path_time_idx, g_arc_cond, g_key)
+        outer_bnb_dask3(client, bstars, path_time_idx, g_arc_cond, g_key)
 
     sb_dask = get_sb_saved_from_job(PROJ, key='rds3')
 

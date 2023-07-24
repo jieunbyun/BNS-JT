@@ -6,10 +6,9 @@ import numpy as np
 import pdb
 import json
 from pathlib import Path
-from dask.distributed import Client, LocalCluster
+from dask.distributed import Client, LocalCluster, Variable
 
 import dask
-from dask.distributed import Client,LocalCluster
 #from dask_jobqueue import PBSCluster
 
 from argparse import ArgumentParser
@@ -80,6 +79,10 @@ def main(client):
 
     path_time_idx = path_time_idx_dic['od1']
 
+    fl = trans.eval_sys_state(path_time_idx, lower, 1)
+    fu = trans.eval_sys_state(path_time_idx, upper, 1)
+    bstars = [(lower, upper, fl, fu)]
+
     #path_time_idx = trans.get_path_time_idx(path_times[v], varis[k])
     #print(time.time() - tic)
     """
@@ -89,12 +92,21 @@ def main(client):
                      'logging.distributed.worker': 'error',
                      'logging.distributed.utils_perf': 'error'})
     """
+
     # FIXME
     tic = time.time()
     #pdb.set_trace()
-    print(client)
-    sb = branch.branch_and_bound_dask(path_time_idx, lower, upper, 1, client)
-    print(time.time() - tic)
+    print(client.dashboard_link)
+
+    g_arc_cond = Variable('arc_cond')
+    g_arc_cond.set(1)
+
+    g_key = Variable('key')
+    g_key.set('SFX')
+
+    branch.outer_bnb_dask3(client, bstars, path_time_idx, g_arc_cond, g_key)
+
+    print(f'Elapsed: {time.time() - tic}')
 
     """
     tic = time.time()
@@ -149,5 +161,6 @@ if __name__=='__main__':
     except KeyError:
         cluster = LocalCluster(n_workers=28, threads_per_worker=2, memory_limit='64GB')
         client = Client(cluster)
-
-    main(client)
+        print(cluster)
+    finally:
+        main(client)

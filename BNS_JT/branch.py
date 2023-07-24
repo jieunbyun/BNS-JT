@@ -507,14 +507,31 @@ def outer_bnb_dask3(client, b_stars, path_time_idx, g_arc_cond, g_key):
 
     i=0
     no_procs = sum(client.ncores().values())
-    while b_stars:
-        batches = []
-        for b_stars_batch in split(b_stars, no_procs):
-            future = client.submit(branch_and_bound_dask3, b_stars_batch, path_time_idx, i, g_arc_cond, g_key)
-            i = i + 1
-            batches.append(future)
+    path_time_idx = client.scatter(path_time_idx)
 
-        b_stars = client.gather(future)
+    while b_stars:
+
+        if len(b_stars) > no_procs:
+            b_stars_batch = b_stars[: no_procs]
+            b_stars = b_stars[no_procs:]
+        else:
+            b_stars_batch = b_stars
+            b_stars = []
+
+        print(f'before {i}: b*: {len(b_stars_batch)}, left: {len(b_stars)}')
+        tic = time.time()
+
+        future = client.submit(branch_and_bound_dask3, b_stars_batch, path_time_idx, i, g_arc_cond, g_key)
+
+        batches = client.gather(future)
+        client.run(gc.collect)
+
+        [b_stars.append(x) for x in batches]
+
+        print(f'elapsed {i}: {time.time()-tic}')
+
+        i = i + 1
+
 
 
 def branch_and_bound_dask3(b_stars, path_time_idx, i, g_arc_cond, g_key):
@@ -525,10 +542,7 @@ def branch_and_bound_dask3(b_stars, path_time_idx, i, g_arc_cond, g_key):
     arc_cond:
     """
 
-    print(f'b*: {len(b_stars)}')
-
     #s_path_time_idx = client.scatter(path_time_idx)
-    tic = time.time()
 
     with worker_client() as client:
 
@@ -536,7 +550,6 @@ def branch_and_bound_dask3(b_stars, path_time_idx, i, g_arc_cond, g_key):
         key = g_key.get()
 
         results = []
-
 
         for b_star in b_stars:
             arcs = client.submit(get_arcs_given_bstar, b_star, arc_cond, path_time_idx)
@@ -551,11 +564,6 @@ def branch_and_bound_dask3(b_stars, path_time_idx, i, g_arc_cond, g_key):
         json.dump(sb, w, indent=4)
 
     b_stars = [x for x in sb if x[2] != x[3]]
-    # for the next iteration
-    #i = i + 1
-    toc = print(f'elapsed: {time.time()-tic}')
-
-    #branch_and_bound_dask3(b_stars, i)
 
     return b_stars
 
@@ -860,3 +868,4 @@ def get_cmat_from_branches(branches, variables):
             C[i, j] = irow
 
     return C.astype(int)
+
