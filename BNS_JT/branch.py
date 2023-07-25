@@ -503,12 +503,12 @@ def split(list_a, chunk_size):
     yield list_a[i:i + chunk_size]
 
 
-def outer_bnb_dask3(client, b_stars, path_time_idx, g_arc_cond, g_key):
+def outer_bnb_dask3(client, b_stars, path_time_idx, g_arc_cond, key):
 
-    i=0
     no_procs = sum(client.ncores().values())
     path_time_idx = client.scatter(path_time_idx)
 
+    i=0
     while b_stars:
 
         if len(b_stars) > no_procs:
@@ -521,20 +521,24 @@ def outer_bnb_dask3(client, b_stars, path_time_idx, g_arc_cond, g_key):
         print(f'before {i}: b*: {len(b_stars_batch)}, left: {len(b_stars)}')
         tic = time.time()
 
-        future = client.submit(branch_and_bound_dask3, b_stars_batch, path_time_idx, i, g_arc_cond, g_key)
+        future = client.submit(branch_and_bound_dask3, b_stars_batch, path_time_idx, g_arc_cond)
 
         batches = client.gather(future)
         client.run(gc.collect)
 
         [b_stars.append(x) for x in batches]
 
+        with open(f'sb_dump_{key}_{i}.json', 'w') as w:
+            json.dump(b_stars, w, indent=4)
+
         print(f'elapsed {i}: {time.time()-tic}')
 
-        i = i + 1
+        # next iteration
+        b_stars = [x for x in b_stars if x[2] != x[3]]
+        i += 1
 
 
-
-def branch_and_bound_dask3(b_stars, path_time_idx, i, g_arc_cond, g_key):
+def branch_and_bound_dask3(b_stars, path_time_idx, g_arc_cond):
     """
     path_time_idx: a list of tuples consisting of path, time, and index (corresponding to row of B matrix)
     lower:
@@ -547,7 +551,7 @@ def branch_and_bound_dask3(b_stars, path_time_idx, i, g_arc_cond, g_key):
     with worker_client() as client:
 
         arc_cond = g_arc_cond.get()
-        key = g_key.get()
+        #key = g_key.get()
 
         results = []
 
@@ -560,12 +564,12 @@ def branch_and_bound_dask3(b_stars, path_time_idx, i, g_arc_cond, g_key):
         client.run(gc.collect)
 
     sb = [x for result in results for x in result if not x in b_stars]
-    with open(f'sb_dump_{key}_{i}.json', 'w') as w:
-        json.dump(sb, w, indent=4)
+    #with open(f'sb_dump_{key}_{i}.json', 'w') as w:
+    #    json.dump(sb, w, indent=4)
 
-    b_stars = [x for x in sb if x[2] != x[3]]
+    #b_stars = [x for x in sb if x[2] != x[3]]
 
-    return b_stars
+    return sb
 
 
 def branch_and_bound_dask2(client, path_time_idx, b_stars, arc_cond, key=''):

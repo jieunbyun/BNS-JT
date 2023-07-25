@@ -11,7 +11,7 @@ from dask.distributed import Client, LocalCluster, Variable, worker_client
 #from BNS_JT.variable import Variable
 from BNS_JT.trans import get_arcs_length, do_branch, get_all_paths_and_times, eval_sys_state
 from BNS_JT.bnb_fns import bnb_sys, bnb_next_comp, bnb_next_state
-from BNS_JT.branch import get_cmat, run_bnb, Branch, branch_and_bound, get_cmat_from_branches, branch_and_bound_old, branch_and_bound_dask, branch_and_bound_using_fn, branch_and_bound_dask1, get_arcs_given_bstar, get_bstars_from_sb_dump, get_sb_given_arcs, fn_dummy, branch_and_bound_dask2, get_sb_saved_from_job, branch_and_bound_dask3, outer_bnb_dask3
+from BNS_JT.branch import get_cmat, run_bnb, Branch, branch_and_bound, get_cmat_from_branches, branch_and_bound_old, branch_and_bound_dask, branch_and_bound_using_fn, branch_and_bound_dask1, get_arcs_given_bstar, get_bstars_from_sb_dump, get_sb_given_arcs, fn_dummy, branch_and_bound_dask2, get_sb_saved_from_job, branch_and_bound_dask3, outer_bnb_dask3, get_sb_saved_from_sb_dump
 from BNS_JT import variable
 
 HOME = Path(__file__).absolute().parent
@@ -655,19 +655,53 @@ def test_branch_and_bound_dask3(setup_client):
     for k in range(1, 13):
         varis[f'e{k}'] = variable.Variable(name=f'e{k}', B=B, values=['Surv', 'Fail'])
 
+    key = 'rds3'
     with Client(cluster) as client:
         print(client.dashboard_link)
         g_arc_cond = Variable('arc_cond')
         g_arc_cond.set(arc_condn)
 
-        g_key = Variable('key')
-        g_key.set('rds3')
+        #g_key = Variable('key')
+        #g_key.set('rds3')
 
-        outer_bnb_dask3(client, bstars, path_time_idx, g_arc_cond, g_key)
+        outer_bnb_dask3(client, bstars, path_time_idx, g_arc_cond, key)
 
     sb_dask = get_sb_saved_from_job(PROJ, key='rds3')
 
     assert len(sb_dask) == 77
+
+
+#@pytest.mark.skip("NYI")
+def test_branch_and_bound_dask4(setup_client):
+
+    cluster = setup_client
+
+    # 0, 1, 2 corresponds to index of Variable.values
+    path_time_idx = [([], np.inf, 0),
+           (['e3', 'e12', 'e8', 'e9'], 0.30219999999999997, 4),
+           (['e1', 'e10', 'e8', 'e9'], 0.3621, 3),
+           (['e2', 'e11', 'e8', 'e9'], 0.40219999999999995, 2),
+           (['e4', 'e5', 'e6', 'e7', 'e8', 'e9'], 0.48249999999999993, 1)  ]
+
+    # init
+    arcs = [f'e{i}' for i in range(1, 13)]
+    arc_condn = 1
+
+    bstars = get_bstars_from_sb_dump(HOME.joinpath('./sb_dump_rds2_2.json'))
+    #pdb.set_trace()
+
+    key = 'rds4'
+    with Client(cluster) as client:
+        print(client.dashboard_link)
+        g_arc_cond = Variable('arc_cond')
+        g_arc_cond.set(arc_condn)
+
+        outer_bnb_dask3(client, bstars, path_time_idx, g_arc_cond, key)
+
+    sb_dask = get_sb_saved_from_sb_dump(PROJ.joinpath(f'./sb_dump_{key}_1.json'))
+
+    assert len(sb_dask) == 28
+
 
 def fib2(n):
     if n==0:
