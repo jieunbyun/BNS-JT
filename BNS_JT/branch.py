@@ -1,11 +1,17 @@
 import numpy as np
 import textwrap
+import json
+import time
 import copy
+import gc
+import pdb
+from pathlib import Path
+import dask
+from dask.distributed import Client, worker_client, as_completed
 
+import dask.bag as db
+from BNS_JT import cpm, variable, trans
 
-from BNS_JT.cpm import ismember
-from BNS_JT.variable import Variable
-from Trans.trans import eval_sys_state
 
 class Branch(object):
     """
@@ -97,7 +103,7 @@ def get_cmat(branches, comp_var, flag=True):
                 b1 = np.zeros((1, b.shape[1]))
                 b1[int(down_state):int(up_state)] = 1
 
-                _, loc = ismember(b1, b)
+                _, loc = cpm.ismember(b1, b)
 
                 if any(loc):
                     # conversion to python index
@@ -105,7 +111,7 @@ def get_cmat(branches, comp_var, flag=True):
                 else:
                     print(f'B of {comp_var[j].name} is updated')
                     b = np.vstack((b, b1))
-                    comp_var[j] = Variable(name= comp_var[j].name,
+                    comp_var[j] = variable.Variable(name= comp_var[j].name,
                                            B=b,
                                            values=comp_var[j].values)
                     c[j + 1] = b.shape[1]
@@ -197,7 +203,7 @@ def run_bnb(sys_fn, next_comp_fn, next_state_fn, info, comp_max_states):
     return branches
 
 
-def get_branch_given_paths(path, lower, upper, path_time_idx, arc_condn):
+def get_branch_given_paths(path, lower, upper, path_time_idx, arc_cond):
     """
     path: list of edges
     """
@@ -205,18 +211,18 @@ def get_branch_given_paths(path, lower, upper, path_time_idx, arc_condn):
     for arc in path:
 
         # set un = 0
-        upper = {k: 0 if k in arc else v for k, v in upper.items()}
-        fu = eval_sys_state(path_time_idx, upper, arc_condn)
-        fl = eval_sys_state(path_time_idx, lower, arc_condn)
+        upper = {k: 0 if k == arc else v for k, v in upper.items()}
+        fu = trans.eval_sys_state(path_time_idx, upper, arc_cond)
+        fl = trans.eval_sys_state(path_time_idx, lower, arc_cond)
 
         sb.append((lower, upper, fl, fu))
 
         # set un=1, ln = 1 
-        upper = {k: 1 if k in arc else v for k, v in upper.items()}
-        lower = {k: 1 if k in arc else v for k, v in lower.items()}
+        upper = {k: 1 if k == arc else v for k, v in upper.items()}
+        lower = {k: 1 if k == arc else v for k, v in lower.items()}
 
-        fu = eval_sys_state(path_time_idx, upper, arc_condn)
-        fl = eval_sys_state(path_time_idx, lower, arc_condn)
+        fu = trans.eval_sys_state(path_time_idx, upper, arc_cond)
+        fl = trans.eval_sys_state(path_time_idx, lower, arc_cond)
 
         sb.append((lower, upper, fl, fu))
 
@@ -224,16 +230,16 @@ def get_branch_given_paths(path, lower, upper, path_time_idx, arc_condn):
 
 
 
-def branch_and_bound_old(path_time_idx, lower, upper, arc_condn):
+def branch_and_bound_old(path_time_idx, lower, upper, arc_cond):
     """
     path_time_idx: a list of tuples consisting of path, time, and index (corresponding to row of B matrix)
     lower:
     upper:
-    arc_condn:
+    arc_cond:
     """
 
-    fl = eval_sys_state(path_time_idx, arcs_state=lower, arc_condn=1)
-    fu = eval_sys_state(path_time_idx, arcs_state=upper, arc_condn=1)
+    fl = trans.eval_sys_state(path_time_idx, arcs_state=lower, arc_cond=1)
+    fu = trans.eval_sys_state(path_time_idx, arcs_state=upper, arc_cond=1)
 
     sb = [(lower, upper, fl, fu)]
 
@@ -244,7 +250,7 @@ def branch_and_bound_old(path_time_idx, lower, upper, arc_condn):
             # select lower and upper branch from b_star
             for c_lower, c_upper, c_fl, c_fu in sb:
 
-                upper_matched = [k for k, v in c_upper.items() if v == arc_condn]
+                upper_matched = [k for k, v in c_upper.items() if v == arc_cond]
 
                 # selecting a branch from sb such that fl /= fu
                 if (c_fl != c_fu) and set(_path).issubset(upper_matched):
@@ -259,17 +265,17 @@ def branch_and_bound_old(path_time_idx, lower, upper, arc_condn):
             for arc in _path:
 
                 # set upper_n = 0
-                upper = {k: 0 if k in arc else v for k, v in upper.items()}
-                fu = eval_sys_state(path_time_idx, upper, arc_condn)
+                upper = {k: 0 if k == arc else v for k, v in upper.items()}
+                fu = trans.eval_sys_state(path_time_idx, upper, arc_cond)
 
                 sb.append((lower, upper, fl, fu))
 
                 # set upper_n=1, lower_n = 1 
-                upper = {k: 1 if k in arc else v for k, v in upper.items()}
-                lower = {k: 1 if k in arc else v for k, v in lower.items()}
+                upper = {k: 1 if k == arc else v for k, v in upper.items()}
+                lower = {k: 1 if k == arc else v for k, v in lower.items()}
 
-                fu = eval_sys_state(path_time_idx, upper, arc_condn)
-                fl = eval_sys_state(path_time_idx, lower, arc_condn)
+                fu = trans.eval_sys_state(path_time_idx, upper, arc_cond)
+                fl = trans.eval_sys_state(path_time_idx, lower, arc_cond)
 
                 # FIXME!!  (different from the logic)
                 if fu==fl:
@@ -278,18 +284,459 @@ def branch_and_bound_old(path_time_idx, lower, upper, arc_condn):
     return sb
 
 
+def get_bstars_from_sb_dump(file_name):
+
+    b_stars = []
+    with open(file_name, 'r') as fid:
+        tmp = json.load(fid)
+        [b_stars.append(tuple(x)) for x in tmp if x[2] != x[3]]
+
+    return b_stars
 
 
-def branch_and_bound(path_time_idx, lower, upper, arc_condn):
+def get_sb_saved_from_sb_dump(file_name):
+
+    sb_saved = []
+    with open(file_name, 'r') as fid:
+        tmp = json.load(fid)
+        [sb_saved.append(tuple(x)) for x in tmp if x[2] == x[3]]
+
+    return sb_saved
+
+
+
+def get_path_given_b_star(_b_star, arc_cond, path_time_idx):
+
+    #_, c_upper, _, _ = _b_star
+
+    upper_matched = [k for k, v in _b_star[1].items() if v == arc_cond]
+
+    for _path, _, _ in path_time_idx[1:]:
+
+        if set(_path).issubset(upper_matched):
+
+            break
+
+    return _path
+
+
+def get_arcs_given_bstar(b_star, arc_cond, path_time_idx):
+
+    c_lower, c_upper, _, _ = b_star
+
+    upper_matched = [k for k, v in c_upper.items() if v == arc_cond]
+    arcs = []
+    for _path, _, _ in path_time_idx[1:]:
+
+        if set(_path).issubset(upper_matched):
+
+            arcs = [x for x in _path if c_upper[x] > c_lower[x]]
+
+            break
+
+    return arcs
+
+def get_sb_given_arcs(lower, upper, arcs, path_time_idx, c_fl, c_fu, arc_cond, sb):
+
+    if len(arcs) == 0:
+        upper = {k: 1 if k in arcs else v for k, v in upper.items()}
+        lower = {k: 1 if k in arcs else v for k, v in lower.items()}
+        sb.append((lower, upper, c_fu, c_fu))
+    else:
+        arc = arcs.pop(0)
+
+        # set upper_n = 0
+        upper = {k: 0 if k == arc else v for k, v in upper.items()}
+        fu = trans.eval_sys_state(path_time_idx, upper, arc_cond)
+        #fl = trans.eval_sys_state(path_time_idx, lower, arc_cond)
+        #assert fl == c_fl, f'fl is not equal to c_fl: {fl} vs {c_fl}'
+        sb.append((lower, upper, c_fl, fu))
+
+        # set upper_n=1, lower_n = 1 
+        upper = {k: 1 if k == arc else v for k, v in upper.items()}
+        lower = {k: 1 if k == arc else v for k, v in lower.items()}
+
+        get_sb_given_arcs(lower, upper, arcs, path_time_idx, c_fl, c_fu, arc_cond, sb)
+
+    return sb
+
+
+
+
+def fn_dummy1(b_star, arcs, path_time_idx, arc_cond):
+
+    #_path = get_path_given_b_star(_b_star, arc_cond, path_time_idx)
+    lower, upper, c_fl, c_fu = b_star
+    #upper = c_upper
+    #lower = c_lower
+
+    sb = []
+    for arc in arcs:
+
+        # set upper_n = 0
+        upper = {k: 0 if k == arc else v for k, v in upper.items()}
+        fu = trans.eval_sys_state(path_time_idx, upper, arc_cond)
+        #fl = trans.eval_sys_state(path_time_idx, lower, arc_cond)
+        #assert fl == c_fl, f'fl is not equal to c_fl: {fl} vs {c_fl}'
+        sb.append((lower, upper, c_fl, fu))
+
+        # set upper_n=1, lower_n = 1 
+        upper = {k: 1 if k == arc else v for k, v in upper.items()}
+        lower = {k: 1 if k == arc else v for k, v in lower.items()}
+
+    sb.append((lower, upper, c_fu, c_fu))
+
+    return sb
+
+
+
+def fn_dummy(b_star, _path, arc_cond, path_time_idx):
+
+    #_path = get_path_given_b_star(_b_star, arc_cond, path_time_idx)
+
+    c_lower, c_upper, c_fl, c_fu = b_star
+    upper = c_upper
+    lower = c_lower
+
+    sb = []
+    for arc in _path:
+
+        if c_upper[arc] > c_lower[arc]:
+
+            # set upper_n = 0
+            upper = {k: 0 if k == arc else v for k, v in upper.items()}
+            fu = trans.eval_sys_state(path_time_idx, upper, arc_cond)
+            #fl = trans.eval_sys_state(path_time_idx, lower, arc_cond)
+            #assert fl == c_fl, f'fl is not equal to c_fl: {fl} vs {c_fl}'
+            sb.append((lower, upper, c_fl, fu))
+
+            # set upper_n=1, lower_n = 1 
+            upper = {k: 1 if k == arc else v for k, v in upper.items()}
+            lower = {k: 1 if k == arc else v for k, v in lower.items()}
+
+    sb.append((lower, upper, c_fu, c_fu))
+
+    return sb
+
+
+def computing_sb_given_bstars(b_stars, path_time_idx, arc_cond, client, key, sb=[]):
+
+    # make sure the paths are sorted by shortest
+    #paths_avail = [x[0] for x in path_time_idx if x[0]]
+    i = 0
+    while b_stars:
+
+        print(f'b*: {len(b_stars)}')
+
+        tic = time.time()
+
+        # select path using upper branch of b_star
+        results = []
+
+        #with worker_client() as client:
+        for b_star in b_stars:
+            #scattered_path = client.scatter(path_time_idx)
+            _path = client.submit(get_path_given_b_star, b_star, arc_cond, path_time_idx)
+            result = client.submit(fn_dummy, b_star, _path, arc_cond, path_time_idx)
+            results.append(result)
+
+        results = client.gather(results)
+        client.run(gc.collect)
+
+        sb = [x for result in results for x in result if not x in b_stars]
+
+        #sb = [x for x in sb if not x in b_stars]
+
+        with open(f'sb_dump_{key}_{i}.json', 'w') as w:
+            json.dump(sb, w, indent=4)
+
+        b_stars = [x for x in sb if x[2] != x[3]]
+        #sb_saved = [x for x in sb if x[2] == x[3]]
+
+        # for the next iteration
+        i = i + 1
+
+        toc = print(f'elapsed: {time.time()-tic}')
+
+
+def branch_and_bound_no_dask2(path_time_idx, b_stars, arc_cond, key=''):
     """
     path_time_idx: a list of tuples consisting of path, time, and index (corresponding to row of B matrix)
     lower:
     upper:
-    arc_condn:
+    arc_cond:
     """
 
-    fl = eval_sys_state(path_time_idx, arcs_state=lower, arc_condn=1)
-    fu = eval_sys_state(path_time_idx, arcs_state=upper, arc_condn=1)
+    #s_path_time_idx = client.scatter(path_time_idx)
+    tic = time.time()
+
+    results = []
+    for b_star in b_stars:
+        arcs = get_arcs_given_bstar(b_star, arc_cond, path_time_idx)
+        print(b_star[2], b_star[3], arcs)
+        new = fn_dummy1(b_star, arcs, path_time_idx, arc_cond)
+        results.append(new)
+
+    sb = [x for result in results for x in result if not x in b_stars]
+
+    with open(f'sb_dump_{key}.json', 'w') as w:
+        json.dump(sb, w, indent=4)
+
+    #b_stars = [x for x in sb if x[2] != x[3]]
+        #sb_saved = [x for x in sb if x[2] == x[3]]
+
+        # for the next iteration
+    #    i = i + 1
+        #sb = []
+        #client.close()
+    toc = print(f'elapsed: {time.time()-tic}')
+
+    #results = client.gather(new)
+    #client.run(gc.collect)
+
+    return sb
+
+
+def split(list_a, chunk_size):
+
+  for i in range(0, len(list_a), chunk_size):
+    yield list_a[i:i + chunk_size]
+
+
+def outer_bnb_dask3(client, b_stars, path_time_idx, g_arc_cond, key):
+
+    no_procs = sum(client.ncores().values())
+    path_time_idx = client.scatter(path_time_idx)
+
+    i=0
+    while b_stars:
+
+        if len(b_stars) > no_procs:
+            b_stars_batch = b_stars[: no_procs]
+            b_stars = b_stars[no_procs:]
+        else:
+            b_stars_batch = b_stars
+            b_stars = []
+
+        print(f'before {i}: b*: {len(b_stars_batch)}, left: {len(b_stars)}')
+        tic = time.time()
+
+        future = client.submit(branch_and_bound_dask3, b_stars_batch, path_time_idx, g_arc_cond)
+
+        batches = client.gather(future)
+        client.run(gc.collect)
+
+        [b_stars.append(x) for x in batches]
+
+        with open(f'sb_dump_{key}_{i}.json', 'w') as w:
+            json.dump(b_stars, w, indent=4)
+
+        print(f'elapsed {i}: {time.time()-tic}')
+
+        # next iteration
+        b_stars = [x for x in b_stars if x[2] != x[3]]
+        i += 1
+
+
+def branch_and_bound_dask3(b_stars, path_time_idx, g_arc_cond):
+    """
+    path_time_idx: a list of tuples consisting of path, time, and index (corresponding to row of B matrix)
+    lower:
+    upper:
+    arc_cond:
+    """
+
+    #s_path_time_idx = client.scatter(path_time_idx)
+
+    with worker_client() as client:
+
+        arc_cond = g_arc_cond.get()
+        #key = g_key.get()
+
+        results = []
+
+        for b_star in b_stars:
+            arcs = client.submit(get_arcs_given_bstar, b_star, arc_cond, path_time_idx)
+            result = client.submit(fn_dummy1, b_star, arcs, path_time_idx, arc_cond)
+            results.append(result)
+
+        results = client.gather(results)
+        client.run(gc.collect)
+
+    sb = [x for result in results for x in result if not x in b_stars]
+    #with open(f'sb_dump_{key}_{i}.json', 'w') as w:
+    #    json.dump(sb, w, indent=4)
+
+    #b_stars = [x for x in sb if x[2] != x[3]]
+
+    return sb
+
+
+def branch_and_bound_dask2(client, path_time_idx, b_stars, arc_cond, key=''):
+    """
+    path_time_idx: a list of tuples consisting of path, time, and index (corresponding to row of B matrix)
+    lower:
+    upper:
+    arc_cond:
+    """
+
+    i = 0
+    while b_stars:
+
+        print(f'b*: {len(b_stars)}')
+
+        #s_path_time_idx = client.scatter(path_time_idx)
+        tic = time.time()
+
+        results = []
+        for b_star in b_stars:
+            arcs = client.submit(get_arcs_given_bstar, b_star, arc_cond, path_time_idx)
+            result = client.submit(fn_dummy1, b_star, arcs, path_time_idx, arc_cond)
+            results.append(result)
+
+        results = client.gather(results)
+        client.run(gc.collect)
+
+        sb = [x for result in results for x in result if not x in b_stars]
+        with open(f'sb_dump_{key}_{i}.json', 'w') as w:
+            json.dump(sb, w, indent=4)
+
+        b_stars = [x for x in sb if x[2] != x[3]]
+        # for the next iteration
+        i = i + 1
+        toc = print(f'elapsed: {time.time()-tic}')
+
+
+def get_sb_saved_from_job(output_path, key):
+    '''
+    output_path: str or Path
+    '''
+    try:
+        assert output_path.exists(), f'output_path does not exist'
+    except AttributeError:
+        output_path = Path(output_path)
+        assert output_path.exists(), f'output_path does not exist'
+    finally:
+        # read sb_saved json
+        sb_saved = []
+        for x in output_path.glob(f'sb_dump_{key}_*.json'):
+            with open(x, 'r') as fid:
+                tmp = json.load(fid)
+                [sb_saved.append(tuple(x)) for x in tmp if x[2] == x[3]]
+
+    return sb_saved
+
+
+def branch_and_bound_dask1(path_time_idx, lower, upper, arc_cond, client, key=''):
+    """
+    path_time_idx: a list of tuples consisting of path, time, and index (corresponding to row of B matrix)
+    lower:
+    upper:
+    arc_cond:
+    """
+
+    s_path_time_idx = client.scatter(path_time_idx)
+
+    #client = Client(client_ip)
+    #print(client.dashboard_link)
+    #n_workers=4, threads_per_worker=1, processes=False)
+    fl = client.submit(trans.eval_sys_state, s_path_time_idx, arcs_state=lower, arc_cond=1)
+    fu = client.submit(trans.eval_sys_state, s_path_time_idx, arcs_state=upper, arc_cond=1)
+
+    # selecting a branch from sb such that fl /= fu
+    b_stars = [(lower, upper, fl, fu)]
+
+    #b_stars = [x for x in sb if x[2] != x[3]]
+
+    paths = []
+    for b_star in b_stars:
+            #scattered_path = client.scatter(path_time_idx)
+        _path = client.submit(get_path_given_b_star, b_star, arc_cond, s_path_time_idx)
+        paths.append(_path)
+
+    seq = as_completed(paths)
+    while seq.count() > 1:
+        b_path = next(seq)
+        new = client.submit(fn_dummy, b_star, b_path, arc_cond, s_path_time_idx, priority=1)
+        seq.add(new)
+
+
+    while seq.count() > 1:
+
+        _path = next(seq)
+    # make sure the paths are sorted by shortest
+    #paths_avail = [x[0] for x in path_time_idx if x[0]]
+    i = 0
+    while b_stars:
+
+        #client = Client(n_workers=len(b_stars), threads_per_worker=1)
+        print(f'b*: {len(b_stars)}')
+
+        tic = time.time()
+
+        # select path using upper branch of b_star
+        results = []
+
+        #with worker_client() as client:
+        for b_star in b_stars:
+            #scattered_path = client.scatter(path_time_idx)
+            _path = client.submit(get_path_given_b_star, b_star, arc_cond, s_path_time_idx)
+            result = client.submit(fn_dummy, b_star, _path, arc_cond, s_path_time_idx)
+            results.append(result)
+
+        results = client.gather(results)
+        client.run(gc.collect)
+
+        sb = [x for result in results for x in result if not x in b_stars]
+
+        #sb = [x for x in sb if not x in b_stars]
+
+        with open(f'sb_dump_{key}_{i}.json', 'w') as w:
+            json.dump(sb, w, indent=4)
+
+        b_stars = [x for x in sb if x[2] != x[3]]
+        #sb_saved = [x for x in sb if x[2] == x[3]]
+
+        # for the next iteration
+        i = i + 1
+        #sb = []
+        #client.close()
+        toc = print(f'elapsed: {time.time()-tic}')
+
+
+def branch_and_bound_dask(path_time_idx, lower, upper, arc_cond, client, key=''):
+    """
+    path_time_idx: a list of tuples consisting of path, time, and index (corresponding to row of B matrix)
+    lower:
+    upper:
+    arc_cond:
+    """
+
+    #client = Client(client_ip)
+    print(client.dashboard_link)
+    #n_workers=4, threads_per_worker=1, processes=False)
+    fl = trans.eval_sys_state(path_time_idx, arcs_state=lower, arc_cond=1)
+    fu = trans.eval_sys_state(path_time_idx, arcs_state=upper, arc_cond=1)
+
+    b_stars = [(lower, upper, fl, fu)]
+
+    # selecting a branch from sb such that fl /= fu
+    #b_stars = [x for x in sb if x[2] != x[3]]
+
+    s_path_time_idx = client.scatter(path_time_idx)
+    computing_sb_given_bstars(b_stars, s_path_time_idx, arc_cond, client, key)
+
+
+def branch_and_bound_using_fn(path_time_idx, lower, upper, arc_cond):
+    """
+    path_time_idx: a list of tuples consisting of path, time, and index (corresponding to row of B matrix)
+    lower:
+    upper:
+    arc_cond:
+    """
+
+    fl = trans.eval_sys_state(path_time_idx, arcs_state=lower, arc_cond=1)
+    fu = trans.eval_sys_state(path_time_idx, arcs_state=upper, arc_cond=1)
 
     sb = [(lower, upper, fl, fu)]
 
@@ -297,16 +744,61 @@ def branch_and_bound(path_time_idx, lower, upper, arc_condn):
     b_star = [x for x in sb if x[2] != x[3]]
 
     # make sure the paths are sorted by shortest
-    paths_avail = [x[0] for x in path_time_idx if x[0]]
-
+    sb_saved = []
     while b_star:
 
+        print(f'b*: {len(b_star)}, sb: {len(sb_saved)}')
         # select path using upper branch of b_star
-        for c_lower, c_upper, c_fl, c_fu in b_star:
+        #chosen = []
+        for _b_star in b_star:
 
-            upper_matched = [k for k, v in c_upper.items() if v == arc_condn]
+            _path = get_path_given_b_star(_b_star, arc_cond, path_time_idx)
+            _sb = fn_dummy(_b_star, _path, arc_cond, path_time_idx)
+            #if fl==fu:
+                #sb.append((lower, upper, fl, fu))
+            #sb.append((lower, upper, c_fu, c_fu))
+            #[sb.append(x) for x in _sb if not x in sb]
+            [sb.append(x) for x in _sb]
+            #chosen.append(_chosen)
 
-            for _path in paths_avail:
+        sb = [x for x in sb if not x in b_star]
+        [sb_saved.append(x) for x in sb if x[2] == x[3]]
+        # for the next step
+        b_star = [x for x in sb if x[2] != x[3]]
+        sb = []
+
+    return sb_saved
+
+
+def branch_and_bound(path_time_idx, lower, upper, arc_cond):
+    """
+    path_time_idx: a list of tuples consisting of path, time, and index (corresponding to row of B matrix)
+    lower:
+    upper:
+    arc_cond:
+    """
+
+    fl = trans.eval_sys_state(path_time_idx, arcs_state=lower, arc_cond=1)
+    fu = trans.eval_sys_state(path_time_idx, arcs_state=upper, arc_cond=1)
+
+    sb = [(lower, upper, fl, fu)]
+
+    # selecting a branch from sb such that fl /= fu
+    b_star = [x for x in sb if x[2] != x[3]]
+
+    # make sure the paths are sorted by shortest
+    #paths_avail = [x[0] for x in path_time_idx if x[0]]
+    sb_saved = []
+    while b_star:
+
+        print(f'b*: {len(b_star)}, sb: {len(sb)}')
+        # select path using upper branch of b_star
+        for _b_star in b_star:
+
+            c_lower, c_upper, c_fl, c_fu = _b_star
+            upper_matched = [k for k, v in c_upper.items() if v == arc_cond]
+
+            for _path, _, _ in path_time_idx[1:]:
 
                 if set(_path).issubset(upper_matched):
 
@@ -314,9 +806,9 @@ def branch_and_bound(path_time_idx, lower, upper, arc_condn):
                     lower = c_lower
                     fl = c_fl
                     chosen = (c_lower, c_upper, c_fl, c_fu)
-                    sb = [x for x in sb if not x == chosen]
+                    sb = [x for x in b_star if not x == chosen]
 
-                    paths_avail.remove(_path)
+                    #paths_avail.remove(_path)
                     break
 
             for arc in _path:
@@ -324,33 +816,35 @@ def branch_and_bound(path_time_idx, lower, upper, arc_condn):
                 if c_upper[arc] > c_lower[arc]:
 
                     # set upper_n = 0
-                    #upper = {k: 0 if k in arc else v for k, v in upper.items()}
-                    upper = copy.deepcopy(upper)
-                    upper[arc] = 0
-                    fu = eval_sys_state(path_time_idx, upper, arc_condn)
-                    fl = eval_sys_state(path_time_idx, lower, arc_condn)
+                    upper = {k: 0 if k == arc else v for k, v in upper.items()}
+                    #upper = copy.deepcopy(upper)
+                    #upper[arc] = 0
+                    fu = trans.eval_sys_state(path_time_idx, upper, arc_cond)
+                    #fl = trans.eval_sys_state(path_time_idx, lower, arc_cond)
+                    # print(f'{fl} vs {c_fl}')
 
                     sb.append((lower, upper, fl, fu))
 
                     # set upper_n=1, lower_n = 1 
                     #upper = c_upper
-                    #lower = {k: 1 if k in arc else v for k, v in lower.items()}
-                    upper = copy.deepcopy(upper)
-                    upper[arc] = 1
-                    lower = copy.deepcopy(lower)
-                    lower[arc] = 1
+                    upper = {k: 1 if k == arc else v for k, v in upper.items()}
+                    lower = {k: 1 if k == arc else v for k, v in lower.items()}
+                    #upper = copy.deepcopy(upper)
+                    #upper[arc] = 1
+                    #lower = copy.deepcopy(lower)
+                    #lower[arc] = 1
 
-            fu = c_fu
-            #fl = eval_sys_state(path_time_idx, lower, arc_condn)
+            #fu = c_fu
+            #fl = trans.eval_sys_state(path_time_idx, lower, arc_cond)
 
             #if fl==fu:
                 #sb.append((lower, upper, fl, fu))
-            sb.append((lower, upper, fu, fu))
-
+            sb.append((lower, upper, c_fu, c_fu))
 
         b_star = [x for x in sb if x[2] != x[3]]
+        [sb_saved.append(x) for x in sb if x[2] == x[3]]
 
-    return sb
+    return sb_saved
 
 
 def get_cmat_from_branches(branches, variables):
@@ -378,3 +872,4 @@ def get_cmat_from_branches(branches, variables):
             C[i, j] = irow
 
     return C.astype(int)
+

@@ -1,0 +1,6 @@
+distributed:
+  version: 2
+  logging:
+    distributed: error
+    distributed.client: error
+    distributed.scheduler: error

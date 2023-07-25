@@ -1,6 +1,5 @@
 import numpy as np
-from BNS_JT import variable, cpm, branch
-from Trans.trans import get_all_paths_and_times, get_path_time_idx
+from BNS_JT import variable, cpm, branch, trans
 
 
 
@@ -26,7 +25,7 @@ def setup_model(cfg):
                           C = np.arange(len(values))[:, np.newaxis],
                           p = values)
 
-    path_times = get_all_paths_and_times(cfg.infra['ODs'].values(), cfg.infra['G'], key='time')
+    path_times = trans.get_all_paths_and_times(cfg.infra['ODs'].values(), cfg.infra['G'], key='time')
 
     # FIXME: only works for binary ATM
     lower = {k: 0 for k, _ in cfg.infra['edges'].items()}
@@ -40,10 +39,10 @@ def setup_model(cfg):
 
         varis[k] = variable.Variable(name=k, B=np.eye(len(values)), values=values)
 
-        path_time_idx = get_path_time_idx(path_times[v], varis[k])
+        path_time_idx = trans.get_path_time_idx(path_times[v], varis[k])
 
         # FIXME
-        sb = branch.branch_and_bound(path_time_idx, lower, upper, arc_condn=1)
+        sb = branch.branch_and_bound(path_time_idx, lower, upper, arc_cond=1)
 
         c = branch.get_cmat_from_branches(sb, variables)
 
@@ -59,7 +58,7 @@ def setup_model(cfg):
 def compute_prob(cfg, cpms, varis, var_elim, key, idx_state, flag):
     """
 
-    var_elim: list of variable to be eliminated 
+    var_elim: list of variable to be eliminated
     """
 
     assert isinstance(var_elim, list), 'var_elim should be a list'

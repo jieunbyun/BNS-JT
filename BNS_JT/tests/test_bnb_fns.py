@@ -1,6 +1,6 @@
 import numpy as np
 
-from Trans.bnb_fns import bnb_sys, bnb_next_comp, bnb_next_state
+from BNS_JT.bnb_fns import bnb_sys, bnb_next_comp, bnb_next_state
 
 
 def test_bnb_sys1():

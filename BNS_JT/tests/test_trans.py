@@ -8,6 +8,7 @@ import pytest
 import numpy as np
 import pandas as pd
 import networkx as nx
+import socket
 from scipy.stats import lognorm
 from pathlib import Path
 import matplotlib
@@ -17,12 +18,14 @@ from math import isclose
 np.set_printoptions(precision=3)
 #pd.set_option.display_precision = 3
 
-
-matplotlib.use("TKAgg")
+if 'gadi' in socket.gethostname():
+    matplotlib.use('Agg')
+else:
+    matplotlib.use("TKAgg")
 import matplotlib.pyplot as plt
 
 from BNS_JT import cpm, variable, config, branch, model
-from Trans.trans import get_arcs_length, do_branch, get_all_paths_and_times, eval_sys_state, get_path_time_idx
+from BNS_JT.trans import get_arcs_length, do_branch, get_all_paths_and_times, eval_sys_state, get_path_time_idx
 
 HOME = Path(__file__).absolute().parent
 
@@ -728,7 +731,7 @@ def test_get_path_time_idx1():
 
 def test_get_path_time_idx2():
 
-    path_time =[(['e2'], 0.0901), (['e3', 'e1'], 0.24009999999999998), ([], np.inf)]
+    path_time =[(['e2'], 0.0901), (['e3', 'e1'], 0.24009999999999998)]
 
     vari = variable.Variable(name='od1', B=np.eye(3), values=[np.inf, 0.2401, 0.0901])
 
