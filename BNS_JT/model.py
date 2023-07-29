@@ -40,9 +40,13 @@ def setup_model(cfg):
         varis[k] = variable.Variable(name=k, B=np.eye(len(values)), values=values)
 
         path_time_idx = trans.get_path_time_idx(path_times[v], varis[k])
+        fl = trans.eval_sys_state(path_time_idx, lower, 1)
+        fu = trans.eval_sys_state(path_time_idx, upper, 1)
 
         # FIXME
-        sb = branch.branch_and_bound(path_time_idx, lower, upper, arc_cond=1)
+        bstars = [(lower, upper, fl, fu)]
+
+        sb = branch.branch_and_bound(bstars, path_time_idx, arc_cond=1)
 
         c = branch.get_cmat_from_branches(sb, variables)
 

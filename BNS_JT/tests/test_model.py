@@ -27,10 +27,10 @@ def test_setup_model(setup_road):
 
     cpms, varis, _ = setup_road
 
-    expected = np.array([[2,2,1,2,2,2,2],
-                         [0,2,0,0,2,2,2],
+    expected = np.array([[0,2,0,0,2,2,2],
                          [0,0,0,1,2,2,2],
-                         [1,1,0,1,2,2,2]])
+                         [1,1,0,1,2,2,2],
+                         [2,2,1,2,2,2,2]])
 
     np.testing.assert_array_equal(cpms['od1'].C, expected)
 
