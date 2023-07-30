@@ -32,7 +32,7 @@ def test_setup_model(setup_road):
                          [1,1,0,1,2,2,2],
                          [2,2,1,2,2,2,2]])
 
-    np.testing.assert_array_equal(cpms['od1'].C, expected)
+    np.testing.assert_array_equal(cpms[('od1', 's1')]['od1'].C, expected)
 
 
 def test_compute_prob1(setup_road):
@@ -42,7 +42,7 @@ def test_compute_prob1(setup_road):
     var_elim = list(cfg.infra['edges'].keys())
 
     for i, k in enumerate(['od1', 'od2', 'od3', 'od4']):
-        prob, _ = model.compute_prob(cfg, cpms, varis, var_elim, k, 0, flag=True)
+        prob, _ = model.compute_prob(cfg, cpms[(k, 's1')], varis[(k, 's1')], var_elim, k, 0, flag=True)
 
         assert expected_disconn[i] == pytest.approx(prob, abs=0.0001)
 
@@ -54,7 +54,7 @@ def test_compute_prob2(setup_road):
     var_elim = list(cfg.infra['edges'].keys())
 
     for i, k in enumerate(['od1', 'od2', 'od3', 'od4']):
-        prob, _ = model.compute_prob(cfg, cpms, varis, var_elim, k, 2, flag=False)
+        prob, _ = model.compute_prob(cfg, cpms[(k, 's1')], varis[(k, 's1')], var_elim, k, 2, flag=False)
 
         assert expected_delay[i] == pytest.approx(prob, abs=0.0001)
 
