@@ -4,15 +4,37 @@ import itertools
 from BNS_JT import variable, cpm, branch, trans
 
 
+def setup_model(cfg):
+    """
+    cfg: instance of config class
 
-def get_set_branches(cfg, path_times):
+    """
+    # path_times by od 
+    path_times = trans.get_all_paths_and_times(cfg.infra['ODs'].values(), cfg.infra['G'], key='time')
+
+    branches = get_branches(cfg, path_times)
+
+    # combination of multiple ODs and scenarios
+    od_scen_pairs = itertools.product(cfg.infra['ODs'].keys(), cfg.scenarios['scenarios'].keys())
+
+    cpms_by_od_scen = {}
+    varis_by_od_scen = {}
+
+    for od, scen in od_scen_pairs:
+
+        cpms_by_od_scen[(od, scen)], varis_by_od_scen[(od, scen)] = model_given_od_scen(cfg, path_times, od, scen, branches[od])
+
+    return cpms_by_od_scen, varis_by_od_scen
+
+
+def get_branches(cfg, path_times):
 
     # FIXME: only works for binary ATM
     lower = {k: 0 for k, _ in cfg.infra['edges'].items()}
     upper = {k: 1 for k, _ in cfg.infra['edges'].items()}
 
     # set of branches by od pair
-    set_branches = {}
+    branches = {}
     for k, v in cfg.infra['ODs'].items():
 
         values = [np.inf] + sorted([y for _, y in path_times[v]], reverse=True)
@@ -25,35 +47,12 @@ def get_set_branches(cfg, path_times):
 
         bstars = [(lower, upper, fl, fu)]
 
-        set_branches[k] = branch.branch_and_bound(bstars, path_time_idx, arc_cond=1)
+        branches[k] = branch.branch_and_bound(bstars, path_time_idx, arc_cond=1)
 
-    return set_branches
-
-
-def setup_model(cfg):
-    """
-    cfg: instance of config class
-
-    """
-    # path_times by od 
-    path_times = trans.get_all_paths_and_times(cfg.infra['ODs'].values(), cfg.infra['G'], key='time')
-
-    set_branches = get_set_branches(cfg, path_times)
-
-    # combination of multiple ODs and scenarios
-    od_scen_pairs = itertools.product(cfg.infra['ODs'].keys(), cfg.scenarios['scenarios'].keys())
-
-    cpms_by_od_scen = {}
-    varis_by_od_scen = {}
-
-    for od, scen in od_scen_pairs:
-
-        cpms_by_od_scen[(od, scen)], varis_by_od_scen[(od, scen)] = model_given_od_scen(cfg, path_times, od, scen, set_branches[od])
-
-    return cpms_by_od_scen, varis_by_od_scen
+    return branches
 
 
-def model_given_od_scen(cfg, path_times, od, scen, sb):
+def model_given_od_scen(cfg, path_times, od, scen, branches):
 
     # Arcs (components): P(X_i | GM = GM_ob ), i = 1 .. N (= nArc)
     cpms = {}
@@ -62,6 +61,7 @@ def model_given_od_scen(cfg, path_times, od, scen, sb):
     # FIXME: only works for binary ATM
     B = np.vstack([np.eye(cfg.no_ds), np.ones(cfg.no_ds)])
 
+    # scenario dependent
     for k, values in cfg.scenarios['scenarios'][scen].items():
 
         varis[k] = variable.Variable(name=k, B=B, values=cfg.scenarios['damage_states'])
@@ -71,26 +71,23 @@ def model_given_od_scen(cfg, path_times, od, scen, sb):
                   p = values)
 
     # Travel times (systems): P(OD_j | X1, ... Xn) j = 1 ... nOD
-    variables = {k: varis[k] for k in cfg.infra['edges'].keys()}
-
-    #for k, v in cfg.infra['ODs'].items():
     values = [np.inf] + sorted([y for _, y in path_times[cfg.infra['ODs'][od]]], reverse=True)
     varis[od] = variable.Variable(name=od, B=np.eye(len(values)), values=values)
 
-    c = branch.get_cmat_from_branches(sb, variables)
+    variables = {k: varis[k] for k in cfg.infra['edges'].keys()}
+    c = branch.get_cmat_from_branches(branches, variables)
 
     cpms[od] = cpm.Cpm(variables = [varis[od]] + list(variables.values()),
-                          no_child = 1,
-                          C = c,
-                          p = np.ones(c.shape[0]),
-                          )
+                       no_child = 1,
+                       C = c,
+                       p = np.ones(c.shape[0]),
+                       )
 
     return cpms, varis
 
 
 def compute_prob(cfg, cpms, varis, var_elim, key, idx_state, flag):
     """
-
     var_elim: list of variable to be eliminated
     """
 
