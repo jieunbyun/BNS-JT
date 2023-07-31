@@ -9,9 +9,8 @@ import pdb
 import warnings
 import pytest
 
-from BNS_JT.bnb_fns import bnb_sys, bnb_next_comp, bnb_next_state
-from BNS_JT.branch import get_cmat, run_bnb
-from BNS_JT.cpm import variable_elim, Cpm, get_prob
+from BNS_JT import bnb_fns, branch, cpm
+
 
 expected_disconn = np.array([0.0096, 0.0011, 0.2102, 0.2102])
 expected_delay = np.array([0.0583, 0.0052, 0.4795, 0.4382])
@@ -50,13 +49,13 @@ def test_bnb(setup_bridge):
     max_state = 2
     comp_max_states = (max_state*np.ones(len(arcs))).tolist()
 
-    branches = run_bnb(sys_fn=bnb_sys,
-                       next_comp_fn=bnb_next_comp,
-                       next_state_fn=bnb_next_state,
+    branches = branch.run_bnb(sys_fn=bnb_fns.bnb_sys,
+                       next_comp_fn=bnb_fns.bnb_next_comp,
+                       next_state_fn=bnb_fns.bnb_next_state,
                        info=info,
                        comp_max_states=comp_max_states)
 
-    C_od= get_cmat(branches, [vars_arc[i] for i in arcs.keys()], False)
+    C_od= branch.get_cmat(branches, [vars_arc[i] for i in arcs.keys()], False)
 
     # Check if the results are correct
     # FIXME: index issue
@@ -69,12 +68,12 @@ def test_bnb(setup_bridge):
     #M_bnb = [cpms_arc[i] for i in list(arcs.keys()) + ['od1']]
     M_bnb[od_var_id].C = C_od
     M_bnb[od_var_id].p = np.ones(shape=(C_od.shape[0], 1))
-    M_bnb_VE= variable_elim(M_bnb, var_elim_order)
+    M_bnb_VE= cpm.variable_elim(M_bnb, var_elim_order)
 
     # FIXME: index issue
     disconn_state = 3-1 # max basic state
-    disconn_prob = get_prob(M_bnb_VE, [vars_arc['od1']], np.array([disconn_state]))
-    delay_prob = get_prob(M_bnb_VE, [vars_arc['od1']], np.array([1-1]), 0)
+    disconn_prob = cpm.get_prob(M_bnb_VE, [vars_arc['od1']], np.array([disconn_state]))
+    delay_prob = cpm.get_prob(M_bnb_VE, [vars_arc['od1']], np.array([1-1]), 0)
 
     # Check if the results are the same
     # FIXME: index issue
@@ -83,8 +82,8 @@ def test_bnb(setup_bridge):
 
     # using variable name instead
     disconn_state = 3-1 # max basic state
-    disconn_prob = get_prob(M_bnb_VE, ['od1'], np.array([disconn_state]))
-    delay_prob = get_prob(M_bnb_VE, ['od1'], np.array([1-1]), 0)
+    disconn_prob = cpm.get_prob(M_bnb_VE, ['od1'], np.array([disconn_state]))
+    delay_prob = cpm.get_prob(M_bnb_VE, ['od1'], np.array([1-1]), 0)
 
     np.testing.assert_array_almost_equal(expected_disconn[0], disconn_prob, decimal=4)
     np.testing.assert_array_almost_equal(expected_delay[0], delay_prob, decimal=4)

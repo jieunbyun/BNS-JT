@@ -9,10 +9,11 @@ import numpy as np
 import pandas as pd
 import networkx as nx
 import socket
-from scipy.stats import lognorm
-from pathlib import Path
 import matplotlib
 import pdb
+
+from scipy.stats import lognorm
+from pathlib import Path
 from math import isclose
 
 np.set_printoptions(precision=3)
@@ -24,8 +25,8 @@ else:
     matplotlib.use("TKAgg")
 import matplotlib.pyplot as plt
 
-from BNS_JT import cpm, variable, config, branch, model
-from BNS_JT.trans import get_arcs_length, do_branch, get_all_paths_and_times, eval_sys_state, get_path_time_idx
+from BNS_JT import cpm, variable, config, branch, model, trans
+
 
 HOME = Path(__file__).absolute().parent
 
@@ -89,11 +90,11 @@ GM_obs = {'e1': 30.0,
 def setup_bridge():
 
     # Arcs' states index compatible with variable B index, and C
-    arc_surv = 1 - 1
-    arc_fail = 2 - 1
-    arc_either = 3 - 1
+    arc_surv = 0
+    arc_fail = 1
+    arc_either = 2
 
-    arc_lens_km = get_arcs_length(arcs, node_coords)
+    arc_lens_km = trans.get_arcs_length(arcs, node_coords)
 
     #arcTimes_h = arcLens_km ./ arcs_Vavg_kmh
     arc_times_h = {k: v/arcs_avg_kmh[k] for k, v in arc_lens_km.items()}
@@ -106,7 +107,7 @@ def setup_bridge():
     for k, v in node_coords.items():
         G.add_node(k, pos=v)
 
-    path_time = get_all_paths_and_times(var_ODs.values(), G, key='time')
+    path_time = trans.get_all_paths_and_times(var_ODs.values(), G, key='time')
 
     # plot graph
     pos = nx.get_node_attributes(G, 'pos')
@@ -209,7 +210,7 @@ def setup_bridge_alt():
     arc_surv = 1
     arc_either = 2
 
-    arc_lens_km = get_arcs_length(arcs, node_coords)
+    arc_lens_km = trans.get_arcs_length(arcs, node_coords)
 
     #arcTimes_h = arcLens_km ./ arcs_Vavg_kmh
     arc_times_h = {k: v/arcs_avg_kmh[k] for k, v in arc_lens_km.items()}
@@ -222,7 +223,7 @@ def setup_bridge_alt():
     for k, v in node_coords.items():
         G.add_node(k, pos=v)
 
-    path_time = get_all_paths_and_times(var_ODs.values(), G, key='time')
+    path_time = trans.get_all_paths_and_times(var_ODs.values(), G, key='time')
 
     # plot graph
     pos = nx.get_node_attributes(G, 'pos')
@@ -603,7 +604,7 @@ def test_get_arcs_length():
             5: [3,5],
             6: [4,5]}
 
-    result = get_arcs_length(arcs, node_coords)
+    result = trans.get_arcs_length(arcs, node_coords)
 
     expected = {1: 6.0,
                 2: 3.6056,
@@ -633,7 +634,7 @@ def test_get_all_paths_and_times():
 
     ODs = [(5, 1), (5, 2), (5, 3), (5, 4)]
 
-    path_time = get_all_paths_and_times(ODs, G)
+    path_time = trans.get_all_paths_and_times(ODs, G)
 
     expected = {(5, 1): [([2], 0.0901),
                          ([3, 1], 0.2401)],
@@ -665,7 +666,7 @@ def test_do_branch1():
 
     complete = {x: (1, 2) for x in range(4)}
 
-    result = do_branch(group, complete, id_any=3)
+    result = trans.do_branch(group, complete, id_any=3)
 
     assert result==[[1, 3, 3, 1]]
 
@@ -674,7 +675,7 @@ def test_do_branch1():
              [1, 2, 2, 1],
              [1, 1, 2, 1]]
 
-    result = do_branch(group, complete, id_any=3)
+    result = trans.do_branch(group, complete, id_any=3)
 
     assert result == [[1, 3, 3, 1]]
 
@@ -696,7 +697,7 @@ def test_do_branch2():
 
     complete = {x: (1, 2) for x in range(4)}
 
-    result = do_branch(group, complete, id_any=3)
+    result = trans.do_branch(group, complete, id_any=3)
     expected = set(map(tuple,[[3, 1, 1, 2], [2, 1, 1, 1]]))
     assert expected == set(map(tuple, result))
 
@@ -705,7 +706,7 @@ def test_do_branch2():
              [2, 1, 1, 2],
              [1, 1, 1, 2]]
 
-    result = do_branch(group, complete, id_any=3)
+    result = trans.do_branch(group, complete, id_any=3)
     expected = set(map(tuple,[[2, 1, 1, 3], [1, 1, 1, 2]]))
     assert expected==set(map(tuple, result))
 
@@ -716,7 +717,7 @@ def test_get_path_time_idx1():
 
     vari = variable.Variable(name='od1', B=np.eye(3), values=[np.inf, 0.2401, 0.0901])
 
-    result = get_path_time_idx(path_time, vari)
+    result = trans.get_path_time_idx(path_time, vari)
 
     expected = [([], np.inf, 0), (['e2'], 0.0901, 2), (['e3', 'e1'], 0.24009999999999998, 1)]
 
@@ -724,7 +725,7 @@ def test_get_path_time_idx1():
 
     path_time =[(['e3', 'e1'], 0.24009999999999998), (['e2'], 0.0901)]
 
-    result = get_path_time_idx(path_time, vari)
+    result = trans.get_path_time_idx(path_time, vari)
 
     assert result==expected
 
@@ -735,7 +736,7 @@ def test_get_path_time_idx2():
 
     vari = variable.Variable(name='od1', B=np.eye(3), values=[np.inf, 0.2401, 0.0901])
 
-    result = get_path_time_idx(path_time, vari)
+    result = trans.get_path_time_idx(path_time, vari)
 
     expected = [([], np.inf, 0), (['e2'], 0.0901, 2), (['e3', 'e1'], 0.24009999999999998, 1)]
 
@@ -774,7 +775,7 @@ def test_eval_sys_state():
     vars_od1 = variable.Variable(name='od1', B=B_,
             values=[np.inf, 0.2401, 0.0901])
 
-    path_time = get_all_paths_and_times([ODs[0]], G, 'time')[ODs[0]]
+    path_time = trans.get_all_paths_and_times([ODs[0]], G, 'time')[ODs[0]]
     path_time.append(([], np.inf))
 
     # refering variable
@@ -790,7 +791,7 @@ def test_eval_sys_state():
     path_time_idx = sorted(path_time_idx, key=lambda x: len(x[0]))
 
     # The shortest route (2) available
-    sys_state = eval_sys_state(path_time_idx, arcs_state, arc_surv)
+    sys_state = trans.eval_sys_state(path_time_idx, arcs_state, arc_surv)
     assert sys_state == 2
 
     arcs_state = {'e1': arc_surv,
@@ -801,7 +802,7 @@ def test_eval_sys_state():
                   'e6': arc_surv}
 
     # The second shortest route (1,3) available
-    sys_state = eval_sys_state(path_time_idx, arcs_state, arc_surv)
+    sys_state = trans.eval_sys_state(path_time_idx, arcs_state, arc_surv)
     assert sys_state == 1
 
     arcs_state = {'e1': arc_surv,
@@ -812,6 +813,6 @@ def test_eval_sys_state():
                   'e6': arc_surv}
 
     # No path available
-    sys_state = eval_sys_state(path_time_idx, arcs_state, arc_surv)
+    sys_state = trans.eval_sys_state(path_time_idx, arcs_state, arc_surv)
     assert sys_state == 0
 

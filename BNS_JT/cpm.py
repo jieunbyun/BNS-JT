@@ -53,7 +53,10 @@ class Cpm(object):
             C.shape = (len(C), 1)
         else:
             assert C.shape[1] == len(self.variables), 'C must have the same number of columns with that of variables'
-        assert all(np.max(C, initial=0) <= [x.B.shape[1] for x in self.variables]), 'check C matrix'
+
+        max_C = np.max(C, axis=0, initial=0)
+        max_var = [x.B.shape[1] for x in self.variables]
+        assert all(max_C <= max_var), f'check C matrix: {max_C} vs {max_var}'
 
         self.C = C
 
