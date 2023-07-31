@@ -67,10 +67,14 @@ def test_compute_prob1(setup_road):
 
     var_elim = list(cfg.infra['edges'].keys())
 
-    for i, k in enumerate(['od1', 'od2', 'od3', 'od4']):
-        prob, _ = model.compute_prob(cfg, cpms[(k, 's1')], varis[(k, 's1')], var_elim, k, 0, flag=True)
+    od_scen_pairs = itertools.product(cfg.infra['ODs'].keys(), cfg.scenarios['scenarios'].keys())
 
-        assert expected_disconn[i] == pytest.approx(prob, abs=0.0001)
+    map_dic = {f'od{i+1}': i for i in range(4)}
+    for od, scen in od_scen_pairs:
+
+        prob, _ = model.compute_prob(cfg, cpms[(od, scen)], varis[(od, scen)], var_elim, od, 0, flag=True)
+
+        assert expected_disconn[map_dic[od]] == pytest.approx(prob, abs=0.0001)
 
 
 def test_compute_prob2(setup_road):
@@ -79,10 +83,14 @@ def test_compute_prob2(setup_road):
 
     var_elim = list(cfg.infra['edges'].keys())
 
-    for i, k in enumerate(['od1', 'od2', 'od3', 'od4']):
-        prob, _ = model.compute_prob(cfg, cpms[(k, 's1')], varis[(k, 's1')], var_elim, k, 2, flag=False)
+    od_scen_pairs = itertools.product(cfg.infra['ODs'].keys(), cfg.scenarios['scenarios'].keys())
 
-        assert expected_delay[i] == pytest.approx(prob, abs=0.0001)
+    map_dic = {f'od{i+1}': i for i in range(4)}
+    for od, scen in od_scen_pairs:
+
+        prob, _ = model.compute_prob(cfg, cpms[(od, scen)], varis[(od, scen)], var_elim, od, 2, flag=False)
+
+        assert expected_delay[map_dic[od]] == pytest.approx(prob, abs=0.0001)
 
 
 def test_get_branches(cmatrix_road):
