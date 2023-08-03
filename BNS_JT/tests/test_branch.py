@@ -8,7 +8,7 @@ import json
 from pathlib import Path
 from dask.distributed import Client, LocalCluster, Variable, worker_client
 
-from BNS_JT import variable, trans, bnb_fns, branch
+from BNS_JT import variable, trans, bnb_fns, branch, config
 
 HOME = Path(__file__).absolute().parent
 PROJ = HOME.joinpath('../../')
@@ -606,7 +606,7 @@ def test_get_arcs_given_bstar():
 
     path_time_idx = _dic['od1']
 
-    result = branch.get_arcs_given_bstar(bstar, 1, path_time_idx)
+    result = branch.get_arcs_given_bstar(bstar, path_time_idx, 1)
 
     expected = ['e6_8', 'e8_9', 'e5_9', 'e4_5', 'e3_4', 'e3_12', 'e11_12']
 
@@ -651,9 +651,9 @@ def test_branch_and_bound_dask_split(setup_client, setup_rbd):
         g_arc_cond = Variable('arc_cond')
         g_arc_cond.set(arc_cond)
 
-        branch.branch_and_bound_dask_split(client, bstars, path_time_idx, g_arc_cond, key)
+        branch.branch_and_bound_dask_split(client, bstars, path_time_idx, g_arc_cond, key, output_path=HOME)
 
-    sb_dask = branch.get_sb_saved_from_job(PROJ, key='rds3')
+    sb_dask = branch.get_sb_saved_from_job(HOME, key='rds3')
 
     assert len(sb_dask) == 77
 
@@ -673,9 +673,9 @@ def test_branch_and_bound_dask4(setup_client, setup_rbd):
         g_arc_cond = Variable('arc_cond')
         g_arc_cond.set(arc_cond)
 
-        branch.branch_and_bound_dask_split(client, bstars, path_time_idx, g_arc_cond, key)
+        branch.branch_and_bound_dask_split(client, bstars, path_time_idx, g_arc_cond, key, output_path=HOME)
 
-    sb_dask = branch.get_sb_saved_from_sb_dump(PROJ.joinpath(f'./sb_dump_{key}_1.json'))
+    sb_dask = branch.get_sb_saved_from_sb_dump(HOME.joinpath(f'./sb_dump_{key}_1.json'))
 
     assert len(sb_dask) == 28
 
@@ -719,4 +719,42 @@ def test_dask_fib(setup_client):
     assert result[0] == 55
     assert result[1] == [0, 1, 1, 2, 3, 5, 8, 13, 21, 34, 55]
 
+
+def test_get_set_branches_no_iteration(setup_client):
+
+    cluster = setup_client
+
+    # using road
+    cfg = config.Config(HOME.joinpath('./config_roads.json'))
+
+    path_times = trans.get_all_paths_and_times(cfg.infra['ODs'].values(), cfg.infra['G'], key='time')
+
+    expected =[({'e1': 0, 'e2': 0, 'e3': 0, 'e4': 0, 'e5': 0, 'e6': 0}, {'e1': 1, 'e2': 0, 'e3': 1, 'e4': 1, 'e5': 1, 'e6': 1}, 0, 1),
+               ({'e1': 0, 'e2': 1, 'e3': 0, 'e4': 0, 'e5': 0, 'e6': 0}, {'e1': 1, 'e2': 1, 'e3': 1, 'e4': 1, 'e5': 1, 'e6': 1}, 2, 2)]
+
+    k, v = 'od1', ('n5', 'n1')
+    arc_cond = 1
+    values = [np.inf] + sorted([y for _, y in path_times[v]], reverse=True)
+    varis = variable.Variable(name=k, B=np.eye(len(values)), values=values)
+    path_time_idx = trans.get_path_time_idx(path_times[v], varis)
+
+    lower = {k: 0 for k, _ in cfg.infra['edges'].items()}
+    upper = {k: 1 for k, _ in cfg.infra['edges'].items()}
+
+    fl = trans.eval_sys_state(path_time_idx, lower, arc_cond)
+    fu = trans.eval_sys_state(path_time_idx, upper, arc_cond)
+
+    bstar = (lower, upper, fl, fu)
+
+    arcs = branch.get_arcs_given_bstar(bstar, path_time_idx, arc_cond)
+
+    with Client(cluster) as client:
+        sb = branch.get_set_branches_no_iteration(bstar, arcs, path_time_idx, arc_cond)
+        sb = client.gather(sb)
+    assert len(sb) == 2
+
+    assert sb == expected
+
+    sb1 = branch.get_set_of_branches(bstar, arcs, path_time_idx, arc_cond)
+    assert sb == sb1
 

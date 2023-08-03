@@ -188,6 +188,29 @@ def eval_sys_route_old(OD, G, arcs_state, arc_cond, key='time'):
 
     return sys_state
 
+def eval_sys_state_given_arc(arcs_state, **kwargs):
+    """
+    arcs_state: dict or frozenset
+    path_time_idx: a list of tuple (path, time, idx)
+    arc_cond: value for survival (row index)
+    """
+
+    path_time_idx = kwargs['path_time_idx']
+    arc_cond = kwargs['arc_cond']
+
+    sys_state = path_time_idx[0][2]  # no path available
+
+    for edges, _, state in path_time_idx:
+
+        path_is_surv = [arcs_state[i]==arc_cond for i in edges]
+        if path_is_surv and all(path_is_surv):
+            sys_state = state
+            break
+
+    return sys_state
+
+
+
 
 def eval_sys_state(path_time_idx, arcs_state, arc_cond):
     """

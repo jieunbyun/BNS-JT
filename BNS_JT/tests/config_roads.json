@@ -1,7 +1,8 @@
 {
-	"CONFIGURATION_ID": null,
+	"CONFIGURATION_ID": "roads",
     "MODEL_NAME": "model_roads.json",
     "SCENARIO_NAME": "scenarios_roads.json",
+    "OUTPUT_PATH": "./roads",
 
     "HAZARD_INPUT_METHOD": null,
     "HAZARD_TYPE": null,

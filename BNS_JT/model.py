@@ -1,5 +1,6 @@
 import numpy as np
 import itertools
+from dask.distributed import Variable
 
 from BNS_JT import variable, cpm, branch, trans
 
@@ -48,6 +49,36 @@ def get_branches(cfg, path_times):
         bstars = [(lower, upper, fl, fu)]
 
         branches[k] = branch.branch_and_bound(bstars, path_time_idx, arc_cond=1)
+
+    return branches
+
+
+def get_branches_dask(cfg, path_times, client):
+
+    g_arc_cond = Variable('arc_cond')
+    g_arc_cond.set(1)
+
+    # FIXME: only works for binary ATM
+    lower = {k: 0 for k, _ in cfg.infra['edges'].items()}
+    upper = {k: 1 for k, _ in cfg.infra['edges'].items()}
+
+    # set of branches by od pair
+    branches = {}
+    for k, v in cfg.infra['ODs'].items():
+
+        values = [np.inf] + sorted([y for _, y in path_times[v]], reverse=True)
+        varis = variable.Variable(name=k, B=np.eye(len(values)), values=values)
+
+        path_time_idx = trans.get_path_time_idx(path_times[v], varis)
+
+        fl = trans.eval_sys_state(path_time_idx, lower, 1)
+        fu = trans.eval_sys_state(path_time_idx, upper, 1)
+
+        bstars = [(lower, upper, fl, fu)]
+
+        branch.branch_and_bound_dask_split(client, bstars, path_time_idx, g_arc_cond, key=cfg.key, output_path =cfg.output_path)
+
+        branches[k] = branch.get_sb_saved_from_job('.', key='xx')
 
     return branches
 

@@ -1,7 +1,8 @@
 {
-	"CONFIGURATION_ID": null,
+	"CONFIGURATION_ID": "rbd",
     "MODEL_NAME": "model_rbd.json",
     "SCENARIO_NAME": "scenarios_rbd.json",
+    "OUTPUT_PATH": "./rbd",
 
     "HAZARD_INPUT_METHOD": null,
     "HAZARD_TYPE": null,

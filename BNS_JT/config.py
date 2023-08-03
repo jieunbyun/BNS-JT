@@ -33,6 +33,8 @@ template_edges = {
     }
 
 
+
+
 class Config(object):
     """
     """
@@ -55,6 +57,13 @@ class Config(object):
         self.scenarios = read_scenarios_from_json(file_scenarios)
 
         self.no_ds = len(self.scenarios['damage_states'])
+
+        self.key = cfg['CONFIGURATION_ID']
+
+        self.output_path = HOME.joinpath(cfg['OUTPUT_PATH'])
+        if not self.output_path.exists():
+            self.output_path.mkdir(parents=True, exist_ok=True)
+            print(f'{self.output_path} created')
 
 
 def read_model_from_json(file_input):
@@ -109,10 +118,5 @@ def convert_csv_to_json(df, template):
         data[str(k)] = copy.deepcopy(template)
 
     return data
-
-
-
-
-
 
 
