@@ -1,7 +1,8 @@
 {
-	"CONFIGURATION_ID": null,
+	"CONFIGURATION_ID": "SF",
     "MODEL_NAME": "SiouxFalls.json",
     "SCENARIO_NAME": "scenarios.json",
+    "OUTPUT_PATH": "./",
 
     "HAZARD_INPUT_METHOD": null,
     "HAZARD_TYPE": null,
