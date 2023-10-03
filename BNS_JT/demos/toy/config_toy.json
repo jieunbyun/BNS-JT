@@ -1,6 +1,6 @@
 {
-	"CONFIGURATION_ID": "SF",
-    "MODEL_NAME": "SiouxFalls.json",
+	"CONFIGURATION_ID": "toy",
+    "MODEL_NAME": "toy.json",
     "SCENARIO_NAME": "scenarios.json",
     "OUTPUT_PATH": "./",
 

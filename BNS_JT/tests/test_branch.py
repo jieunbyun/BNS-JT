@@ -1,5 +1,5 @@
-import numpy as np
 import pandas as pd
+import numpy as np
 import networkx as nx
 import pdb
 import time
@@ -8,7 +8,7 @@ import json
 from pathlib import Path
 from dask.distributed import Client, LocalCluster, Variable, worker_client
 
-from BNS_JT import variable, trans, bnb_fns, branch
+from BNS_JT import variable, trans, bnb_fns, branch, config
 
 HOME = Path(__file__).absolute().parent
 PROJ = HOME.joinpath('../../')
@@ -306,11 +306,11 @@ def test_get_cmat1s(setup_branch):
     np.testing.assert_array_equal(C, expected)
 
 
-def test_branch_and_bound():
+def test_branch_and_bound_org():
 
     path_time_idx = [([], np.inf, 0), (['e2'], 0.0901, 2), (['e1', 'e3'], 0.2401, 1)]
 
-    arc_condn = 1
+    arc_cond = 1
 
     # init
     arcs = [f'e{i}' for i in range(1, 7)]
@@ -324,7 +324,7 @@ def test_branch_and_bound():
     # selecting a branch from sb such that fl /= fu
     bstars = [(lower, upper, fl, fu)]
 
-    sb = branch.branch_and_bound(bstars, path_time_idx, arc_condn)
+    sb = branch.branch_and_bound_org(bstars, path_time_idx, arc_cond)
 
     expected =[({'e1': 0, 'e2': 1, 'e3': 0, 'e4': 0, 'e5': 0, 'e6': 0}, {'e1': 1, 'e2': 1, 'e3': 1, 'e4': 1, 'e5': 1, 'e6': 1}, 2, 2),
                ({'e1': 0, 'e2': 0, 'e3': 0, 'e4': 0, 'e5': 0, 'e6': 0}, {'e1': 0, 'e2': 0, 'e3': 1, 'e4': 1, 'e5': 1, 'e6': 1}, 0, 0),
@@ -341,7 +341,7 @@ def test_branch_and_bound():
 
     lower = {x: 0 for x in arcs}
     upper = {x: 1 for x in arcs}
-    arc_condn = 1
+    arc_cond = 1
 
     fl = trans.eval_sys_state(path_time_idx, arcs_state=lower, arc_cond=1)
     fu = trans.eval_sys_state(path_time_idx, arcs_state=upper, arc_cond=1)
@@ -349,7 +349,7 @@ def test_branch_and_bound():
     # selecting a branch from sb such that fl /= fu
     bstars = [(lower, upper, fl, fu)]
 
-    sb = branch.branch_and_bound(bstars, path_time_idx, arc_condn)
+    sb = branch.branch_and_bound_org(bstars, path_time_idx, arc_cond)
 
     expected =[({'e1': 0, 'e2': 1, 'e3': 0, 'e4': 0, 'e5': 0, 'e6': 0}, {'e1': 1, 'e2': 1, 'e3': 1, 'e4': 1, 'e5': 1, 'e6': 1}, 2, 2),
                ({'e1': 0, 'e2': 0, 'e3': 0, 'e4': 0, 'e5': 0, 'e6': 0}, {'e1': 1, 'e2': 0, 'e3': 0, 'e4': 1, 'e5': 1, 'e6': 1}, 0, 0),
@@ -411,7 +411,6 @@ def setup_client():
 
     cluster = LocalCluster(n_workers=2, threads_per_worker=2)
     #client = Client(cluster)
-
     return cluster
 
 @pytest.mark.skip('removed')
@@ -429,10 +428,10 @@ def test_branch_and_bound_dask(setup_client):
 
     lower = {x: 0 for x in arcs}  # Fail
     upper = {x: 1 for x in arcs}  # surv
-    arc_condn = 1
+    arc_cond = 1
 
     with Client(cluster) as client:
-        branch.branch_and_bound_dask(path_time_idx, lower, upper, arc_condn, client, 's1')
+        branch.branch_and_bound_dask(path_time_idx, lower, upper, arc_cond, client, 's1')
 
     sb = branch.get_sb_saved_from_job(PROJ, 's1')
 
@@ -448,11 +447,10 @@ def test_branch_and_bound_dask(setup_client):
     path_time_idx =[([], np.inf, 0), (['e2'], 0.0901, 2), (['e3', 'e1'], 0.2401, 1)]
 
     with Client(cluster) as client:
-        branch.branch_and_bound_dask(path_time_idx, lower, upper, arc_condn, client, 's2')
+        branch.branch_and_bound_dask(path_time_idx, lower, upper, arc_cond, client, 's2')
 
 
-@pytest.mark.skip('removed')
-def test_branch_and_bound_using_fn():
+def test_branch_and_bound():
 
     # 0, 1, 2 corresponds to index of Variable.values
     path_time_idx =[([], np.inf, 0), (['e2'], 0.0901, 2), (['e1', 'e3'], 0.2401, 1)]
@@ -464,10 +462,13 @@ def test_branch_and_bound_using_fn():
 
     lower = {x: 0 for x in arcs}  # Fail
     upper = {x: 1 for x in arcs}  # surv
-    arc_condn = 1
+    arc_cond = 1
 
-    #pdb.set_trace()
-    sb = branch.branch_and_bound_using_fn(path_time_idx, lower, upper, arc_condn)
+    bstars = [(lower, upper, 0, 2)]
+
+    branch.branch_and_bound(bstars, path_time_idx, arc_cond, output_path=HOME, key='test')
+
+    sb = branch.get_sb_saved_from_job(HOME, 'test')
 
     expected =[({'e1': 0, 'e2': 1, 'e3': 0, 'e4': 0, 'e5': 0, 'e6': 0}, {'e1': 1, 'e2': 1, 'e3': 1, 'e4': 1, 'e5': 1, 'e6': 1}, 2, 2),
                ({'e1': 0, 'e2': 0, 'e3': 0, 'e4': 0, 'e5': 0, 'e6': 0}, {'e1': 0, 'e2': 0, 'e3': 1, 'e4': 1, 'e5': 1, 'e6': 1}, 0, 0),
@@ -479,8 +480,11 @@ def test_branch_and_bound_using_fn():
 
     # ('e3', 'e1') instead of ('e1', 'e3')
     path_time_idx =[([], np.inf, 0), (['e2'], 0.0901, 2), (['e3', 'e1'], 0.2401, 1)]
+    bstars = [(lower, upper, 0, 2)]
 
-    sb = branch.branch_and_bound_using_fn(path_time_idx, lower, upper, arc_condn)
+    branch.branch_and_bound(bstars, path_time_idx, arc_cond, output_path=HOME, key='test')
+
+    sb = branch.get_sb_saved_from_job(HOME, 'test')
 
     expected =[({'e1': 0, 'e2': 1, 'e3': 0, 'e4': 0, 'e5': 0, 'e6': 0}, {'e1': 1, 'e2': 1, 'e3': 1, 'e4': 1, 'e5': 1, 'e6': 1}, 2, 2),
                ({'e1': 0, 'e2': 0, 'e3': 0, 'e4': 0, 'e5': 0, 'e6': 0}, {'e1': 1, 'e2': 0, 'e3': 0, 'e4': 1, 'e5': 1, 'e6': 1}, 0, 0),
@@ -512,88 +516,40 @@ def setup_rbd():
     fu = trans.eval_sys_state(path_time_idx, upper, 1)
     bstars = [(lower, upper, fl, fu)]
 
-    return path_time_idx, bstars, arc_cond
+    output_path = HOME
+
+    key = 'rbd'
+
+    return path_time_idx, bstars, arc_cond, output_path, key
 
 
-@pytest.mark.skip('dask1 removed')
 def test_branch_and_bound_using_rbd(setup_client, setup_rbd):
 
-    cluster = setup_client
-
     # 0, 1, 2 corresponds to index of Variable.values
-    path_time_idx, bstars, arc_condn = setup_rbd
-
-    # init
-    lower, upper, _, _ = bstars[0]
-
-    #pdb.set_trace()
-    sb = branch.branch_and_bound_using_fn(path_time_idx, lower, upper, arc_condn)
+    path_time_idx, bstars, arc_cond, output_path, key = setup_rbd
 
     varis = {}
     B = np.array([[1, 0], [0, 1], [1, 1]])
     for k in range(1, 13):
         varis[f'e{k}'] = variable.Variable(name=f'e{k}', B=B, values=['Surv', 'Fail'])
+
+    sb_org = branch.branch_and_bound_org(bstars, path_time_idx, arc_cond)
+    C1 = branch.get_cmat_from_branches(sb_org, varis)
+    C1 = C1.astype(int)
+    C1 = C1[C1[:, 0].argsort()]
+    np.savetxt(HOME.joinpath('./C_rbd_org.txt'), C1, fmt='%d')
+    assert C1.shape[0] == 77
+
+    branch.branch_and_bound(bstars, path_time_idx, arc_cond, output_path, key)
+
+    sb = branch.get_sb_saved_from_job(output_path, key)
 
     C = branch.get_cmat_from_branches(sb, varis)
     C = C.astype(int)
     C = C[C[:, 0].argsort()]
-    np.savetxt('./C_rbd.txt', C, fmt='%d')
-
-    with Client(cluster) as client:
-        branch.branch_and_bound_dask1(path_time_idx, lower, upper, arc_condn, client, key='rds')
-    sb_dask = get_sb_saved_from_job(PROJ, key='rds')
-    C = branch.get_cmat_from_branches(sb_dask, varis)
-    C = C.astype(int)
-    C = C[C[:, 0].argsort()]
-    np.savetxt('./C_rbd_dask.txt', C, fmt='%d')
-
-
-def test_branch_and_bound_using_rbd2(setup_client, setup_rbd):
-
-    cluster = setup_client
-
-    # 0, 1, 2 corresponds to index of Variable.values
-    path_time_idx, bstars, arc_condn = setup_rbd
-
-    # init
-    #lower, upper, _, _ = bstars[0]
-
-    #bstars = [(lower, upper, fl, fu)]
-    #pdb.set_trace()
-
-    with Client(cluster) as client:
-        branch.branch_and_bound_dask(client, bstars, path_time_idx, arc_condn, key='rds2')
-
-    sb_dask = branch.get_sb_saved_from_job(PROJ, key='rds2')
-
-    varis = {}
-    B = np.array([[1, 0], [0, 1], [1, 1]])
-    for k in range(1, 13):
-        varis[f'e{k}'] = variable.Variable(name=f'e{k}', B=B, values=['Surv', 'Fail'])
-
-    C = branch.get_cmat_from_branches(sb_dask, varis)
-    #C = C[C[:, 0].argsort()]
-    np.savetxt('./C_rbd_dask2.txt', C, fmt='%d')
-
-
-def test_branch_and_bound_using_rbd0(setup_rbd):
-
-    path_time_idx, bstars, arc_condn = setup_rbd
-
-    #lower, upper, _, _ = bstars[0]
-
-    #pdb.set_trace()
-    sb = branch.branch_and_bound(bstars, path_time_idx, arc_condn)
-
-    varis = {}
-    B = np.array([[1, 0], [0, 1], [1, 1]])
-    for k in range(1, 13):
-        varis[f'e{k}'] = variable.Variable(name=f'e{k}', B=B, values=['Surv', 'Fail'])
-
-    C = branch.get_cmat_from_branches(sb, varis)
-    C = C.astype(int)
-    C = C[C[:, 0].argsort()]
-    np.savetxt('./C_rbd_orig.txt', C, fmt='%d')
+    np.savetxt(HOME.joinpath('./C_rbd.txt'), C, fmt='%d')
+    #assert C.shape[0] == 77
+    assert all((C[:, None] == C1).all(-1).any(-1))
 
 
 def test_get_arcs_given_bstar():
@@ -605,94 +561,12 @@ def test_get_arcs_given_bstar():
         _dic = json.load(fid)
 
     path_time_idx = _dic['od1']
-
-    result = branch.get_arcs_given_bstar(bstar, 1, path_time_idx)
-
+    result = branch.get_arcs_given_bstar(bstar, path_time_idx, 1)
     expected = ['e6_8', 'e8_9', 'e5_9', 'e4_5', 'e3_4', 'e3_12', 'e11_12']
-
     assert result == expected
 
-
-def test_get_sb_given_arcs():
-
-    bstars = branch.get_bstars_from_sb_dump(HOME.joinpath('./sb_dump_1.json'))
-    bstar = bstars[0]
-
-    with open(HOME.joinpath('../demos/SF/path_time_idx.json'), 'r') as fid:
-        _dic = json.load(fid)
-
-    path_time_idx = _dic['od1']
-
-    arcs = ['e6_8', 'e8_9', 'e5_9', 'e4_5', 'e3_4', 'e3_12', 'e11_12']
-    _path = ['e1_2', 'e2_6', 'e6_8', 'e8_9', 'e5_9', 'e4_5', 'e3_4', 'e3_12', 'e11_12']
-
-    lower, upper, c_fl, c_fu = bstar
-    sb = []
-    tic = time.time()
-    result = branch.get_sb_given_arcs(lower, upper, arcs, path_time_idx, c_fl, c_fu, 1, sb)
-    print(f'elapsed: {time.time()-tic}')
-
-    tic = time.time()
-    expected = branch.fn_dummy(bstars[0], _path, 1, path_time_idx)
-    print(f'elapsed: {time.time()-tic}')
+    result = branch.get_arcs_given_bstar_nobreak(bstar, path_time_idx, 1)
     assert result == expected
-
-
-#@pytest.mark.skip("NYI")
-def test_branch_and_bound_dask_split(setup_client, setup_rbd):
-
-    cluster = setup_client
-
-    path_time_idx, bstars, arc_cond = setup_rbd
-
-    key = 'rds3'
-    with Client(cluster) as client:
-        print(client.dashboard_link)
-        g_arc_cond = Variable('arc_cond')
-        g_arc_cond.set(arc_cond)
-
-        branch.branch_and_bound_dask_split(client, bstars, path_time_idx, g_arc_cond, key)
-
-    sb_dask = branch.get_sb_saved_from_job(PROJ, key='rds3')
-
-    assert len(sb_dask) == 77
-
-
-#@pytest.mark.skip("NYI")
-def test_branch_and_bound_dask4(setup_client, setup_rbd):
-
-    cluster = setup_client
-
-    path_time_idx, _, arc_cond = setup_rbd
-
-    bstars = branch.get_bstars_from_sb_dump(HOME.joinpath('./sb_dump_rds2_2.json'))
-
-    key = 'rds4'
-    with Client(cluster) as client:
-        print(client.dashboard_link)
-        g_arc_cond = Variable('arc_cond')
-        g_arc_cond.set(arc_cond)
-
-        branch.branch_and_bound_dask_split(client, bstars, path_time_idx, g_arc_cond, key)
-
-    sb_dask = branch.get_sb_saved_from_sb_dump(PROJ.joinpath(f'./sb_dump_{key}_1.json'))
-
-    assert len(sb_dask) == 28
-
-
-#@pytest.mark.skip('FIXME')
-def test_branch_and_bound_new3(setup_rbd):
-
-    path_time_idx, bstars, arc_cond = setup_rbd
-
-    #pdb.set_trace()
-    key = 'new3'
-
-    branch.branch_and_bound_new3(bstars, path_time_idx, arc_cond, key)
-
-    sb_dask = branch.get_sb_saved_from_job(PROJ, key='new3')
-
-    assert len(sb_dask) == 77
 
 
 def fib2(n):
@@ -719,4 +593,76 @@ def test_dask_fib(setup_client):
     assert result[0] == 55
     assert result[1] == [0, 1, 1, 2, 3, 5, 8, 13, 21, 34, 55]
 
+
+def test_create_arc_state_given_cond():
+
+    arc = 'e3'
+    arc_state = {'e1': 0, 'e2': 0, 'e3': 0, 'e4': 0, 'e5': 0, 'e6': 0}
+    expected = {'e1': 0, 'e2': 0, 'e3': 1, 'e4': 0, 'e5': 0, 'e6': 0}
+
+    result = branch.create_arc_state_given_cond(arc, value=1, arc_state=arc_state)
+    assert result==expected
+
+    arc = 'e5'
+    arc_state = {'e1': 1, 'e2': 1, 'e3': 1, 'e4': 1, 'e5': 1, 'e6': 1}
+    expected = {'e1': 1, 'e2': 1, 'e3': 1, 'e4': 1, 'e5': 0, 'e6': 1}
+
+    result = branch.create_arc_state_given_cond(arc, value=0, arc_state=arc_state)
+
+    assert result==expected
+
+
+def test_get_set_branches_no_iteration():
+
+    #cluster = setup_client
+
+    # using road
+    cfg = config.Config(HOME.joinpath('./config_roads.json'))
+
+    path_times = trans.get_all_paths_and_times(cfg.infra['ODs'].values(), cfg.infra['G'], key='time')
+
+    expected =[({'e1': 0, 'e2': 0, 'e3': 0, 'e4': 0, 'e5': 0, 'e6': 0}, {'e1': 1, 'e2': 0, 'e3': 1, 'e4': 1, 'e5': 1, 'e6': 1}, 0, 1),
+               ({'e1': 0, 'e2': 1, 'e3': 0, 'e4': 0, 'e5': 0, 'e6': 0}, {'e1': 1, 'e2': 1, 'e3': 1, 'e4': 1, 'e5': 1, 'e6': 1}, 2, 2)]
+
+    k, v = 'od1', ('n5', 'n1')
+    arc_cond = 1
+    values = [np.inf] + sorted([y for _, y in path_times[v]], reverse=True)
+    varis = variable.Variable(name=k, B=np.eye(len(values)), values=values)
+    path_time_idx = trans.get_path_time_idx(path_times[v], varis)
+
+    lower = {k: 0 for k, _ in cfg.infra['edges'].items()}
+    upper = {k: 1 for k, _ in cfg.infra['edges'].items()}
+
+    fl = trans.eval_sys_state(path_time_idx, lower, arc_cond)
+    fu = trans.eval_sys_state(path_time_idx, upper, arc_cond)
+
+    bstar = (lower, upper, fl, fu)
+
+    arcs = branch.get_arcs_given_bstar(bstar, path_time_idx, arc_cond)
+
+    sb = branch.get_set_of_branches(bstar, arcs, path_time_idx, arc_cond)
+
+    assert len(sb) == 2
+    assert sb == expected
+
+
+def test_get_set_branches_no_iteration_sf():
+
+    cfg = config.Config(HOME.joinpath('../demos/SF/config_SF.json'))
+
+    with open(HOME.joinpath('../demos/SF/path_time_idx.json'), 'r') as fid:
+        _dic = json.load(fid)
+    path_time_idx = _dic['od1']
+
+    arc_cond = 1
+    lower = {k: 0 for k, _ in cfg.infra['edges'].items()}
+    upper = {k: 1 for k, _ in cfg.infra['edges'].items()}
+
+    fl = trans.eval_sys_state(path_time_idx, lower, arc_cond)
+    fu = trans.eval_sys_state(path_time_idx, upper, arc_cond)
+
+    bstar = (lower, upper, fl, fu)
+
+    arcs = branch.get_arcs_given_bstar(bstar, path_time_idx, arc_cond)
+    sb = branch.get_set_of_branches(bstar, arcs, path_time_idx, arc_cond)
 

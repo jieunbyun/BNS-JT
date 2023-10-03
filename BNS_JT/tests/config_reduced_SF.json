@@ -1,7 +1,8 @@
 {
-	"CONFIGURATION_ID": null,
+	"CONFIGURATION_ID": "rSF",
     "MODEL_NAME": "model_reduced_SF.json",
     "SCENARIO_NAME": "scenarios_reduced_SF.json",
+    "OUTPUT_PATH": "../demos/SF/",
 
     "HAZARD_INPUT_METHOD": null,
     "HAZARD_TYPE": null,

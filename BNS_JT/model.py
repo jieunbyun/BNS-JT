@@ -1,5 +1,6 @@
 import numpy as np
 import itertools
+from dask.distributed import Variable
 
 from BNS_JT import variable, cpm, branch, trans
 
@@ -36,7 +37,6 @@ def get_branches(cfg, path_times):
     # set of branches by od pair
     branches = {}
     for k, v in cfg.infra['ODs'].items():
-
         values = [np.inf] + sorted([y for _, y in path_times[v]], reverse=True)
         varis = variable.Variable(name=k, B=np.eye(len(values)), values=values)
 
@@ -47,7 +47,10 @@ def get_branches(cfg, path_times):
 
         bstars = [(lower, upper, fl, fu)]
 
-        branches[k] = branch.branch_and_bound(bstars, path_time_idx, arc_cond=1)
+        branch.branch_and_bound(bstars, path_time_idx, arc_cond=1, output_path=cfg.output_path, key=cfg.key)
+
+        branches[k] = branch.get_sb_saved_from_job(cfg.output_path,
+                cfg.key)
 
     return branches
 
