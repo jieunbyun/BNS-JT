@@ -2,7 +2,7 @@
 Config module
 
 """
-
+import copy
 import logging
 import configparser
 import pandas as pd
@@ -118,5 +118,36 @@ def convert_csv_to_json(df, template):
         data[str(k)] = copy.deepcopy(template)
 
     return data
+
+
+def dict_to_json(dict_pf, damage_states, filename=None):
+    """
+    to create a json file for scenario
+    dict_pf: dict of prob. of failiure
+    damage_states: list of strings
+    """
+
+    assert isinstance(dict_pf, dict), 'dict_pf should be a dict'
+    assert isinstance(damage_states, list), 'damage_states should be a list'
+
+    no_scenarios = len(dict_pf[next(iter(dict_pf))])
+    df = []
+    for i in range(no_scenarios):
+        tmp = [(v[i][0], 1-v[i][0]) for _, v in dict_pf.items()]
+        df.append(tmp)
+
+    df = pd.DataFrame(df).T
+    df['index'] = dict_pf.keys()
+    df = df.set_index('index')
+    df = df.rename({k: f's{k+1}' for k in range(no_scenarios)}, axis=1)
+    json_str = json.loads(df.to_json())
+
+    if filename:
+        with open(filename, 'w') as w:
+            json.dump({'damage_states': damage_states,
+                       'scenarios': json_str}, w, indent=4)
+            print(f'{filename} is written')
+
+
 
 

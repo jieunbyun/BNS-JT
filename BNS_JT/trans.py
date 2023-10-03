@@ -95,7 +95,7 @@ def get_path_time_idx(path_time, vari):
         except IndexError:
             print('path_time incompatible with variable')
 
-    # sort by increasing number of edges
+    # sort by elapsed time
     path_time_idx = sorted(path_time_idx, key=lambda x: x[2], reverse=True)
 
     if not any([np.inf in x for x in path_timex]):
