@@ -209,161 +209,160 @@ def decomp_to_two_branches( br1, comp_bnb, st_bnb_up, comps_name_list ):
 
 def do_gen_bnb( sys_fun, varis, comps_name_list, max_br ):
 
-	### MAIN FUNCTION ####
-	"""
-	Input:
-	sys_fun: system function that takes in a component vector state and returns system function value, system state, and (optional: if unavailable, "None" can be returned) minimially component state to fulfill the obtained system function value.
-	varis: A dictionary of "Variable"s. All component events need to be defined with its "B matrix".
-	comps_name_list: A list of components' names. The name must be consistent with the names used in "varis".
-	max_br: max. number of branches (the algorithm stops when this number is met)
-	"""
+    ### MAIN FUNCTION ####
+    """
+    Input:
+    sys_fun: system function that takes in a component vector state and returns system function value, system state, and (optional: if unavailable, "None" can be returned) minimially component state to fulfill the obtained system function value.
+    varis: A dictionary of "Variable"s. All component events need to be defined with its "B matrix".
+    comps_name_list: A list of components' names. The name must be consistent with the names used in "varis".
+    max_br: max. number of branches (the algorithm stops when this number is met)
+    """
 
-	# Initialisation
-	no_comp = len(comps_name_list)
+    # Initialisation
+    no_comp = len(comps_name_list)
 
-	no_sf = 0 # number of system function runs so far
-	sys_res = pd.DataFrame(data={'sys_val': [], 'comps_st': [], 'comps_st_min': []}) # system function results 
+    no_sf = 0 # number of system function runs so far
+    sys_res = pd.DataFrame(data={'sys_val': [], 'comps_st': [], 'comps_st_min': []}) # system function results 
 
-	rules = [] # a list of known rules
-	rules_st = [] # a list of known rules' states
-
-
-	no_iter =  0
-	brs = [branch.Branch( [], [], is_complete=False )] # dummy branch to start the while loop
-	while sum( [1 if b.is_complete == False else 0 for b in brs ] ) > 0: 
-
-		no_iter += 1
-		###############
-		print( '[Iteration ', no_iter, ']..' ) 
-		print( 'The # of found non-dominated rules: ', len(rules) )
-		print( 'System function runs: ', no_sf )
-		print( '---' )
-		###############
-
-	    ## Start from the total event ##
-		down_list = [1] * no_comp # all components in the worst state
-		up_list = [len( varis[x].B[0] ) for x in comps_name_list] # all components in the best state
-
-		brs = [branch.Branch( down_list, up_list, is_complete=False )]
+    rules = [] # a list of known rules
+    rules_st = [] # a list of known rules' states
 
 
-		up_dict = comps_st_list_to_dict( up_list, comps_name_list )
-		cr_inds1, cst_state_up = get_compat_rules( up_dict, rules, rules_st )
-		brs[0].up_state = cst_state_up
+    no_iter =  0
+    brs = [branch.Branch( [], [], is_complete=False )] # dummy branch to start the while loop
+    while sum( [1 if b.is_complete == False else 0 for b in brs ] ) > 0 and len(brs) < max_br: 
 
-		down_dict = comps_st_list_to_dict( down_list, comps_name_list )
-		cr_inds1, cst_state1_down = get_compat_rules( down_dict, rules, rules_st )
-		brs[0].down_state = cst_state1_down
-		###############################
+        no_iter += 1
+        ###############
+        print( '[Iteration ', no_iter, ']..' ) 
+        print( 'The # of found non-dominated rules: ', len(rules) )
+        #print( 'System function runs: ', no_sf ) # Redundant with iteration number
+        print( 'The # of branches: ', len(brs) )
+        print( '---' )
+        ###############
+
+        ## Start from the total event ##
+        down_list = [1] * no_comp # all components in the worst state
+        up_list = [len( varis[x].B[0] ) for x in comps_name_list] # all components in the best state
+
+        brs = [branch.Branch( down_list, up_list, is_complete=False )]
 
 
-		stop_br = False
-		while sum( [1 if b.is_complete == False else 0 for b in brs ] ) > 0:
+        up_dict = comps_st_list_to_dict( up_list, comps_name_list )
+        cr_inds1, cst_state_up = get_compat_rules( up_dict, rules, rules_st )
+        brs[0].up_state = cst_state_up
+
+        down_dict = comps_st_list_to_dict( down_list, comps_name_list )
+        cr_inds1, cst_state1_down = get_compat_rules( down_dict, rules, rules_st )
+        brs[0].down_state = cst_state1_down
+        ###############################
+
+
+        stop_br = False
+        while sum( [1 if b.is_complete == False else 0 for b in brs ] ) > 0 and len(brs) < max_br:
 		    
-		    brs_new = []
+            brs_new = []
 
-		    for i in range(len( brs )):
+            for i in range(len( brs )):
 		        
-		        br_i = brs[i]
-		        up_dict = comps_st_list_to_dict( br_i.up, comps_name_list )
-		        down_dict = comps_st_list_to_dict( br_i.down, comps_name_list )
+                br_i = brs[i]
+                up_dict = comps_st_list_to_dict( br_i.up, comps_name_list )
+                down_dict = comps_st_list_to_dict( br_i.down, comps_name_list )
 
-		        cr_inds_up_i, up_st = get_compat_rules( up_dict, rules, rules_st )
-		        cr_inds_down_i, down_st = get_compat_rules( down_dict, rules, rules_st )
-
-
-		        if br_i.up_state == 'unk' and len(cr_inds_up_i) == 0:
-		            cst_list = br_i.up # perform analysis on this state
-		            stop_br = True
-		            break 
-
-		        elif br_i.down_state == 'unk' and len(cr_inds_down_i) == 0:
-		            cst_list = br_i.down # perform analysis on this state
-		            stop_br = True
-		            break 
-
-		        elif br_i.up_state == 'surv' and br_i.down_state == 'fail' :
-
-		            comp_bnb, st_bnb_up = get_comp_st_for_next_bnb( up_dict, down_dict, rules, rules_st )
-		            brs_new_i = decomp_to_two_branches( br_i, comp_bnb, st_bnb_up, comps_name_list )
-		            
-		            cr_inds_up_new_i = []
-		            cr_inds_down_new_i = []
-		            for b in brs_new_i:
-		                up_dict = comps_st_list_to_dict( b.up, comps_name_list )
-		                cr_inds1, cst_state_up = get_compat_rules( up_dict, rules, rules_st )
-
-		                if cst_state_up == 'unk' and len( cr_inds1 ) == 0:
-		                    cst_list = b.up # perform analysis on this state
-		                    stop_br = True
-		                    break 
-
-		                else:
-		                    b.up_state = cst_state_up
-
-		                
-		                down_dict = comps_st_list_to_dict( b.down, comps_name_list )
-		                cr_inds1, cst_state_down = get_compat_rules( down_dict, rules, rules_st )
-
-		                if cst_state_down == 'unk' and len( cr_inds1 ) == 0:
-		                    cst_list = b.down # perform analysis on this state
-		                    stop_br = True
-		                    break 
-
-		                else:
-		                    b.down_state = cst_state_down
-		                    if cst_state_down == cst_state_up:
-		                        b.is_complete = True
-
-		                    brs_new.append(b)
-		            
-		            if stop_br == True:
-		                break
-
-		        elif br_i.up_state != 'unk' and br_i.up_state == br_i.down_state:
-		            brs_new.append(br_i)
-
-		        elif br_i.is_complete == True:
-		            brs_new.append(br_i)
+                cr_inds_up_i, up_st = get_compat_rules( up_dict, rules, rules_st )
+                cr_inds_down_i, down_st = get_compat_rules( down_dict, rules, rules_st )
 
 
-		    if stop_br == False:        
-			    brs = copy.deepcopy(brs_new)
+                if br_i.up_state == 'unk' and len(cr_inds_up_i) == 0:
+                    cst_list = br_i.up # perform analysis on this state
+                    stop_br = True
+                    break 
 
-		    else:
-			    break
+                elif br_i.down_state == 'unk' and len(cr_inds_down_i) == 0:
+                    cst_list = br_i.down # perform analysis on this state
+                    stop_br = True
+                    break 
+
+                elif br_i.up_state == 'surv' and br_i.down_state == 'fail' :
+
+                    comp_bnb, st_bnb_up = get_comp_st_for_next_bnb( up_dict, down_dict, rules, rules_st )
+                    brs_new_i = decomp_to_two_branches( br_i, comp_bnb, st_bnb_up, comps_name_list )
+                    
+                    for b in brs_new_i:
+                        up_dict = comps_st_list_to_dict( b.up, comps_name_list )
+                        cr_inds1, cst_state_up = get_compat_rules( up_dict, rules, rules_st )
+
+                        if cst_state_up == 'unk' and len( cr_inds1 ) == 0:
+                            cst_list = b.up # perform analysis on this state
+                            stop_br = True
+                            break 
+
+                        else:
+                            b.up_state = cst_state_up
+
+                        
+                        down_dict = comps_st_list_to_dict( b.down, comps_name_list )
+                        cr_inds1, cst_state_down = get_compat_rules( down_dict, rules, rules_st )
+
+                        if cst_state_down == 'unk' and len( cr_inds1 ) == 0:
+                            cst_list = b.down # perform analysis on this state
+                            stop_br = True
+                            break 
+
+                        else:
+                            b.down_state = cst_state_down
+                            if cst_state_down == cst_state_up:
+                                b.is_complete = True
+
+                            brs_new.append(b)
+                    
+                    if stop_br == True:
+                        break
+
+                elif br_i.up_state != 'unk' and br_i.up_state == br_i.down_state:
+                    brs_new.append(br_i)
+
+                elif br_i.is_complete == True:
+                    brs_new.append(br_i)
 
 
-		cst_dict = comps_st_list_to_dict( cst_list, comps_name_list )
+            if stop_br == False:        
+                brs = copy.deepcopy(brs_new)
 
-		no_sf += 1
-		sys_val1, sys_st1, min_comps_st1 = sys_fun( cst_dict )
-		sys_res = pd.concat( [sys_res,
-		                    pd.DataFrame( {'sys_val': [sys_val1], 'comps_st': [cst_dict], 'comps_st_min': [min_comps_st1]} )],
-		                    ignore_index = True )
+            else:
+                break
 
-		if sys_st1 == 'surv':
-		    if min_comps_st1 is not None:
-		        rs_new = min_comps_st1
-		    else:
-		        rs_new = { k:v for k,v in cst_dict.items() if v > 1 } # the rule is the same as up_dict_i but includes only components whose state is greater than the worst one (i.e. 1)
-		    
-		    rules, rules_st = add_a_new_rule( rules, rules_st, rs_new, 'surv' )
 
-		else: # sys_st_i == 'fail'
-		    if min_comps_st1 is not None:
-		        rf_new = min_comps_st1
-		    else:
-		        rf_new = { k:v for k,v in cst_dict.items() if v < len(varis[k].B[0]) } # the rule is the same as up_dict_i but includes only components whose state is less than the best one
+        cst_dict = comps_st_list_to_dict( cst_list, comps_name_list )
 
-		    rules, rules_st = add_a_new_rule( rules, rules_st, rf_new, 'fail' )
+        no_sf += 1
+        sys_val1, sys_st1, min_comps_st1 = sys_fun( cst_dict )
+        sys_res = pd.concat( [sys_res,
+                            pd.DataFrame( {'sys_val': [sys_val1], 'comps_st': [cst_dict], 'comps_st_min': [min_comps_st1]} )],
+                            ignore_index = True )
 
-	###############
-	print( '[Algorithm completed.]' ) 
-	print( 'The # of found non-dominated rules: ', len(rules) )
-	print( 'System function runs: ', no_sf )
-	print( 'The total # of branches: ', len(brs) )
-	print( 'The # of incomplete branches: ', sum( [1 if b.is_complete == False else 0 for b in brs ] ) )
-	###############
+        if sys_st1 == 'surv':
+            if min_comps_st1 is not None:
+                rs_new = min_comps_st1
+            else:
+                rs_new = { k:v for k,v in cst_dict.items() if v > 1 } # the rule is the same as up_dict_i but includes only components whose state is greater than the worst one (i.e. 1)
+            
+            rules, rules_st = add_a_new_rule( rules, rules_st, rs_new, 'surv' )
 
-	return no_sf, rules, rules_st, brs, sys_res
+        else: # sys_st_i == 'fail'
+            if min_comps_st1 is not None:
+                rf_new = min_comps_st1
+            else:
+                rf_new = { k:v for k,v in cst_dict.items() if v < len(varis[k].B[0]) } # the rule is the same as up_dict_i but includes only components whose state is less than the best one
+
+            rules, rules_st = add_a_new_rule( rules, rules_st, rf_new, 'fail' )
+
+    ###############
+    print( '[Algorithm completed.]' ) 
+    print( 'The # of found non-dominated rules: ', len(rules) )
+    print( 'System function runs: ', no_sf )
+    print( 'The total # of branches: ', len(brs) )
+    print( 'The # of incomplete branches: ', sum( [1 if b.is_complete == False else 0 for b in brs ] ) )
+    ###############
+
+    return no_sf, rules, rules_st, brs, sys_res
