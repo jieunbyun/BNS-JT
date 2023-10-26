@@ -120,8 +120,8 @@ def get_comp_st_for_next_bnb( up_dict, down_dict, rules, rules_st ):
     # rules: a list of rules (in dictionary)
     # rules_st: a list of rules' state (the same length as rules)
 
-    cr_inds_up, _ = get_compat_rules( up_dict, rules, rules_st ) 
-    cr_inds_down, _ = get_compat_rules( down_dict, rules, rules_st ) 
+    cr_inds_up, _ = get_compat_rules( up_dict, rules, rules_st )
+    cr_inds_down, _ = get_compat_rules( down_dict, rules, rules_st )
 
     cr_inds = set( cr_inds_up + cr_inds_down )
     c_rules = [rules[i] for i in cr_inds]
@@ -229,13 +229,14 @@ def do_gen_bnb( sys_fun, varis, comps_name_list, max_br ):
 
     no_iter =  0
     brs = [branch.Branch( [], [], is_complete=False )] # dummy branch to start the while loop
-    while sum( [1 if b.is_complete == False else 0 for b in brs ] ) > 0: 
+    while sum( [1 if b.is_complete == False else 0 for b in brs ] ) > 0 and len(brs) < max_br:
 
         no_iter += 1
         ###############
-        print( '[Iteration ', no_iter, ']..' ) 
+        print( '[Iteration ', no_iter, ']..' )
         print( 'The # of found non-dominated rules: ', len(rules) )
-        print( 'System function runs: ', no_sf )
+        #print( 'System function runs: ', no_sf ) # Redundant with iteration number
+        print( 'The # of branches: ', len(brs) )
         print( '---' )
         ###############
 
@@ -257,12 +258,10 @@ def do_gen_bnb( sys_fun, varis, comps_name_list, max_br ):
 
 
         stop_br = False
-        while sum( [1 if b.is_complete == False else 0 for b in brs ] ) > 0:
-
+        while sum( [1 if b.is_complete == False else 0 for b in brs ] ) > 0 and len(brs) < max_br:
             brs_new = []
 
             for i in range(len( brs )):
-
                 br_i = brs[i]
                 up_dict = comps_st_list_to_dict( br_i.up, comps_name_list )
                 down_dict = comps_st_list_to_dict( br_i.down, comps_name_list )
@@ -270,8 +269,11 @@ def do_gen_bnb( sys_fun, varis, comps_name_list, max_br ):
                 cr_inds_up_i, up_st = get_compat_rules( up_dict, rules, rules_st )
                 cr_inds_down_i, down_st = get_compat_rules( down_dict, rules, rules_st )
 
+                br_i = brs[i]
+                up_dict = comps_st_list_to_dict( br_i.up, comps_name_list )
+                down_dict = comps_st_list_to_dict( br_i.down, comps_name_list )
 
-                if br_i.up_state == 'unk' and len(cr_inds_up_i) == 0:
+               if br_i.up_state == 'unk' and len(cr_inds_up_i) == 0:
                     cst_list = br_i.up # perform analysis on this state
                     stop_br = True
                     break
@@ -286,8 +288,6 @@ def do_gen_bnb( sys_fun, varis, comps_name_list, max_br ):
                     comp_bnb, st_bnb_up = get_comp_st_for_next_bnb( up_dict, down_dict, rules, rules_st )
                     brs_new_i = decomp_to_two_branches( br_i, comp_bnb, st_bnb_up, comps_name_list )
 
-                    cr_inds_up_new_i = []
-                    cr_inds_down_new_i = []
                     for b in brs_new_i:
                         up_dict = comps_st_list_to_dict( b.up, comps_name_list )
                         cr_inds1, cst_state_up = get_compat_rules( up_dict, rules, rules_st )
@@ -299,7 +299,6 @@ def do_gen_bnb( sys_fun, varis, comps_name_list, max_br ):
 
                         else:
                             b.up_state = cst_state_up
-
 
                         down_dict = comps_st_list_to_dict( b.down, comps_name_list )
                         cr_inds1, cst_state_down = get_compat_rules( down_dict, rules, rules_st )
@@ -325,6 +324,10 @@ def do_gen_bnb( sys_fun, varis, comps_name_list, max_br ):
                 elif br_i.is_complete == True:
                     brs_new.append(br_i)
 
+                        else:
+                            b.down_state = cst_state_down
+                            if cst_state_down == cst_state_up:
+                                b.is_complete = True
 
             if stop_br == False:
                 brs = copy.deepcopy(brs_new)
@@ -332,8 +335,10 @@ def do_gen_bnb( sys_fun, varis, comps_name_list, max_br ):
             else:
                 break
 
+                elif br_i.up_state != 'unk' and br_i.up_state == br_i.down_state:
+                    brs_new.append(br_i)
 
-        cst_dict = comps_st_list_to_dict( cst_list, comps_name_list )
+       cst_dict = comps_st_list_to_dict( cst_list, comps_name_list )
 
         no_sf += 1
         sys_val1, sys_st1, min_comps_st1 = sys_fun( cst_dict )
