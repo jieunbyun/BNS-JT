@@ -269,7 +269,7 @@ def do_gen_bnb( sys_fun, varis, comps_name_list, max_br ):
                 cr_inds_up_i, up_st = get_compat_rules( up_dict, rules, rules_st )
                 cr_inds_down_i, down_st = get_compat_rules( down_dict, rules, rules_st )
 
-               if br_i.up_state == 'unk' and len(cr_inds_up_i) == 0:
+                if br_i.up_state == 'unk' and len(cr_inds_up_i) == 0:
                     cst_list = br_i.up # perform analysis on this state
                     stop_br = True
                     break
@@ -367,3 +367,4 @@ def do_gen_bnb( sys_fun, varis, comps_name_list, max_br ):
     ###############
 
     return no_sf, rules, rules_st, brs, sys_res
+
