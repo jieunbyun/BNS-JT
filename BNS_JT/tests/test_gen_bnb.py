@@ -153,3 +153,8 @@ def test_do_gen_bnb(main_sys):
 
     #print(sys_res)
 
+@pytest.mark.skip('NYI')
+def test_comps_st():
+
+    states = []
+    comps_name = []
