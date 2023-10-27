@@ -1,6 +1,7 @@
 import pandas as pd
 import copy
 from BNS_JT import variable, branch
+import warnings
 
 
 def rule_dict_to_list( r_dict, r_st, no_comp, comps_name_list, worst_st = 1 ):
@@ -55,19 +56,32 @@ def get_compat_rules( cst_dict, rules, rules_st ):
     #rules_st: list of rules' state (either 'surv' or 'fail') -- must have the same length as rules
 
     cr_inds = [] # compatible rules--stored by their indices
-    cst_state = 'unk' # unknown
+    no_surv = 0 # number of compatible survival rules
+    no_fail = 0 # number of compatible failure rules
     for ind, r in enumerate(rules):
         if rules_st[ind] == 'surv':
             if all( [ cst_dict[k] >= r[k] for k in r] ): # the survival rule is satisfied
 
                 cr_inds.append( ind )
-                cst_state = 'surv'
+                no_surv+=1
 
         else: # rules_st[ind] == 'fail'
             if all( [ cst_dict[k] <= r[k] for k in r] ): # the failure rule is compatible
 
                 cr_inds.append( ind )
-                cst_state = 'fail'
+                no_fail += 1
+
+    if no_surv == 0 and no_fail == 0:
+        cst_state = 'unk' # unknown
+    else:
+        if no_surv > no_fail:
+            cst_state = 'surv'
+        else: 
+            cst_state = 'fail'
+        
+        if no_surv > 0 and no_fail > 0:
+            warnings.warn( "[get_compat_rules] Conflicting rules found. The given system is not coherent." )
+
 
     return cr_inds, cst_state
 
