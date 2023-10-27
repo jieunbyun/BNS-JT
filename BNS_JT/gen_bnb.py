@@ -320,10 +320,10 @@ def do_gen_bnb( sys_fun, varis, comps_name_list, max_br ):
                 elif br_i.is_complete == True:
                     brs_new.append(br_i)
 
-                        else:
-                            b.down_state = cst_state_down
-                            if cst_state_down == cst_state_up:
-                                b.is_complete = True
+                else:
+                    b.down_state = cst_state_down
+                    if cst_state_down == cst_state_up:
+                        b.is_complete = True
 
             if stop_br == False:
                 brs = copy.deepcopy(brs_new)
@@ -331,10 +331,7 @@ def do_gen_bnb( sys_fun, varis, comps_name_list, max_br ):
             else:
                 break
 
-                elif br_i.up_state != 'unk' and br_i.up_state == br_i.down_state:
-                    brs_new.append(br_i)
-
-       cst_dict = comps_st_list_to_dict( cst_list, comps_name_list )
+        cst_dict = comps_st_list_to_dict( cst_list, comps_name_list )
 
         no_sf += 1
         sys_val1, sys_st1, min_comps_st1 = sys_fun( cst_dict )
