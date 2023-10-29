@@ -69,12 +69,12 @@ def get_compat_rules(cst, rules, rules_st):
     no_fail = 0 # number of compatible failure rules
     for ind, r in enumerate(rules):
         if rules_st[ind] == 'surv':
-            if all([cst_dict[k] >= r[k] for k in r]): # the survival rule is satisfied
+            if all([cst[k] >= r[k] for k in r]): # the survival rule is satisfied
                 cr_inds.append(ind )
                 no_surv+=1
 
         else: # rules_st[ind] == 'fail'
-            if all([cst_dict[k] <= r[k] for k in r]): # the failure rule is compatible
+            if all([cst[k] <= r[k] for k in r]): # the failure rule is compatible
                 cr_inds.append(ind)
                 no_fail += 1
 
@@ -83,9 +83,9 @@ def get_compat_rules(cst, rules, rules_st):
     else:
         if no_surv > no_fail:
             cst_state = 'surv'
-        else: 
+        else:
             cst_state = 'fail'
-        
+
         if no_surv > 0 and no_fail > 0:
             warnings.warn("[get_compat_rules] Conflicting rules found. The given system is not coherent." )
 
