@@ -122,7 +122,7 @@ def run_pipes_fun(comps_st, edges, node_coords, es_idx, edges2comps, depots, var
         e_ind = es_idx[e]
 
         a_i = np.zeros((1,no_d_vars))
-        a_i[0][ e_ind ] = 1
+        a_i[0][ e_ind-1 ] = 1
         A = np.append(A, a_i, axis = 0)
         b_up = np.append(b_up, np.array(capa_e))
         b_down = np.append(b_down, np.array(0))
