@@ -2,6 +2,7 @@
 # coding: utf-8
 
 import pytest
+import pdb
 
 import numpy as np
 import networkx as nx
@@ -140,6 +141,7 @@ def test_do_gen_bnb(main_sys):
     sys_fun = lambda comps_st : sf_min_path(comps_st, od_pair, arcs, varis, thres, sys_val_itc) # FIXME: branch needs to have states defined in dictionary instead of list.
 
     # # Branch and bound
+    #pdb.set_trace()
     no_sf, rules, rules_st, brs, sys_res = gen_bnb.do_gen_bnb(sys_fun, varis, comps_name, max_br=1000)
 
     # Result
@@ -153,8 +155,68 @@ def test_do_gen_bnb(main_sys):
 
     #print(sys_res)
 
-@pytest.mark.skip('NYI')
-def test_comps_st():
+def test_get_compat_rules1():
 
-    states = []
-    comps_name = []
+    cst = {f'e{i}': 3 for i in range(1, 7)}
+    rules = []
+    rules_st = []
+
+    result = gen_bnb.get_compat_rules(cst, rules, rules_st)
+
+    assert result[0] == []
+    assert result[1] == 'unk'
+
+
+def test_get_compat_rules2():
+
+    cst = {f'e{i}': 3 for i in range(1, 7)}
+    rules = [{'e2': 3, 'e5': 3}]
+    rules_st = ['surv']
+
+    result = gen_bnb.get_compat_rules(cst, rules, rules_st)
+
+    assert result[0] == [0]
+    assert results[1] == 'surv'
+
+
+def test_get_compat_rules2():
+
+    cst = {f'e{i}': 1 for i in range(1, 7)}
+    rules = [{'e2': 3, 'e5': 3}]
+    rules_st = ['surv']
+
+    result = gen_bnb.get_compat_rules(cst, rules, rules_st)
+
+    assert result[0] == []
+    assert result[1] == 'unk'
+
+
+def test_add_a_new_rule():
+    rules = [{'e2':3, 'e5':3}]
+    rules_st = ['surv']
+    rule1 = {f'e{i}':1 for i in range(1, 7)}
+    fail_or_surv = 'fail'
+
+    result = gen_bnb.add_a_new_rule(rules, rules_st, rule1, fail_or_surv)
+
+    assert result[0] == [{'e2': 3, 'e5': 3}, {'e1': 1, 'e2': 1, 'e3': 1, 'e4': 1, 'e5':1, 'e6': 1}]
+    assert result[1] == ['surv', 'fail']
+
+
+@pytest.mark.skip('NYI')
+def test_get_comp_st_for_next_bnb():
+    up = []
+    down = [] 
+    rules = [] 
+    rules_st = [] 
+
+
+@pytest.mark.skip('NYI')
+def test_decomp_to_two_branches():
+    br = [] 
+    comp_bnb = [] 
+    st_bnb_up = [] 
+    comps_name = [] 
+
+
+
