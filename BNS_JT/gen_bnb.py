@@ -256,13 +256,12 @@ def do_gen_bnb(sys_fun, varis, comps_name, max_br):
     # Initialisation
     no_sf = 0 # number of system function runs so far
     sys_res = pd.DataFrame(data={'sys_val': [], 'comps_st': [], 'comps_st_min': []}) # system function results 
-
     rules = [] # a list of known rules
     rules_st = [] # a list of known rules' states
-
     no_iter =  0
     _sum = 1
     brs = []
+
     while _sum > 0 and len(brs) < max_br:
 
         no_iter += 1
@@ -311,8 +310,7 @@ def do_gen_bnb(sys_fun, varis, comps_name, max_br):
                     stop_br = True
                     break
 
-                elif br.up_state == 'surv' and br.down_state == 'fail' :
-
+                elif br.up_state == 'surv' and br.down_state == 'fail':
                     comp_bnb, st_bnb_up = get_comp_st_for_next_bnb(up_dict, down_dict, rules, rules_st)
                     brs_new_i = decomp_to_two_branches(br, comp_bnb, st_bnb_up, comps_name)
 
