@@ -191,13 +191,13 @@ def test_get_compat_rules2():
     assert result[1] == 'unk'
 
 
-def test_add_a_new_rule():
+def test_add_rule():
     rules = [{'e2':3, 'e5':3}]
     rules_st = ['surv']
     rule1 = {f'e{i}':1 for i in range(1, 7)}
     fail_or_surv = 'fail'
 
-    result = gen_bnb.add_a_new_rule(rules, rules_st, rule1, fail_or_surv)
+    result = gen_bnb.add_rule(rules, rules_st, rule1, fail_or_surv)
 
     assert result[0] == [{'e2': 3, 'e5': 3}, {'e1': 1, 'e2': 1, 'e3': 1, 'e4': 1, 'e5':1, 'e6': 1}]
     assert result[1] == ['surv', 'fail']
