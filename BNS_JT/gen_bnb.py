@@ -218,15 +218,15 @@ def get_comp_st_for_next_bnb(up, down, rules, rules_st):
     return comp_bnb, st_bnb_up
 
 
-def decomp_to_two_branches(br, comp_bnb, st_bnb_up, comps_name):
+def decomp_to_two_branches(br, comp_bnb, st_bnb_up):
     """
     br: a branch
     comp_bnb:
     st_bnb_up:
     comps_name:
     """
-    down = {y:x for x, y in zip(br.down, comps_name)}
-    up = {y:x for x, y in zip(br.up, comps_name)}
+    down = {y:x for x, y in zip(br.down, br.names)}
+    up = {y:x for x, y in zip(br.up, br.names)}
 
     up_bl = copy.deepcopy(up) # the branch on the lower side
     up_bl[comp_bnb] = st_bnb_up - 1
@@ -234,10 +234,10 @@ def decomp_to_two_branches(br, comp_bnb, st_bnb_up, comps_name):
     down_bu = copy.deepcopy(down) # the branch on the upper side
     down_bu[comp_bnb] = st_bnb_up
 
-    up_bl = [up_bl[x] for x in comps_name]
-    down_bu = [down_bu[x] for x in comps_name]
-    new_brs = [branch.Branch(br.down, up_bl, is_complete=False),
-               branch.Branch(down_bu, br.up, is_complete=False)]
+    up_bl = [up_bl[x] for x in br.names]
+    down_bu = [down_bu[x] for x in br.names]
+    new_brs = [branch.Branch(br.down, up_bl, names=br.names, is_complete=False),
+               branch.Branch(down_bu, br.up, names=br.names, is_complete=False)]
 
     return new_brs
 
@@ -302,7 +302,7 @@ def core(brs, comps_name, rules, rules_st, cst, stop_br):
 
         elif br.up_state == 'surv' and br.down_state == 'fail':
             comp_bnb, st_bnb_up = get_comp_st_for_next_bnb(up, down, rules, rules_st)
-            brs_new_i = decomp_to_two_branches(br, comp_bnb, st_bnb_up, comps_name)
+            brs_new_i = decomp_to_two_branches(br, comp_bnb, st_bnb_up)
 
             for b in brs_new_i:
                 up = {y:x for x, y in zip(b.up, comps_name)}
@@ -352,7 +352,7 @@ def init_brs(comps_name, varis, rules, rules_st):
     down = {x:1 for x in comps_name} # all components in the worst state
     up = {x:len(varis[x].B[0]) for x in comps_name} # all components in the best state
 
-    brs = [branch.Branch(list(down.values()), list(up.values()), is_complete=False)]
+    brs = [branch.Branch(list(down.values()), list(up.values()), is_complete=False, names=comps_name)]
 
     _, brs[0].up_state = get_compat_rules(up, rules, rules_st)
     _, brs[0].down_state = get_compat_rules(down, rules, rules_st)

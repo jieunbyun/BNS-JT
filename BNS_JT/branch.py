@@ -28,7 +28,7 @@ class Branch(object):
     up_val # (optional) a representative value of an associated state
     """
 
-    def __init__(self, down, up, is_complete=False, down_state=1, up_state=1, down_val=None, up_val=None):
+    def __init__(self, down, up, names, is_complete=False, down_state=1, up_state=1, down_val=None, up_val=None):
 
         self.down = down
         self.up = up
@@ -37,12 +37,16 @@ class Branch(object):
         self.up_state = up_state
         self.down_val = down_val
         self.up_val = up_val
-
+        self.names = names
         assert isinstance(down, list), 'down should be a list-like'
 
         assert isinstance(up, list), 'down should be a list-like'
 
+        assert isinstance(names, list), 'names should be a list'
+
         assert len(down) == len(up), 'Vectors "down" and "up" must have the same length.'
+
+        assert len(down) == len(names), 'Vectors "down/up" and "names" must have the same length.'
 
         assert isinstance(is_complete, bool), '"is_complete" must be either true (or 1) or false (or 0)'
 
@@ -59,12 +63,12 @@ class Branch(object):
         if isinstance(other, Branch):
             return all([self.down == other.down,
                         self.up == other.up,
+                        self.names == other.names,
                         self.is_complete == other.is_complete,
                         self.down_state == other.down_state,
                         self.up_state == other.up_state])
 
         return NotImplemented
-
 
 
 def get_cmat(branches, comp_var, flag=True):
@@ -165,7 +169,8 @@ def run_bnb(sys_fn, next_comp_fn, next_state_fn, info, comp_max_states):
 
     branches = [Branch(down=init_down,
                        up=init_up,
-                       is_complete=False)]
+                       is_complete=False,
+                       names=info['arcs'])]
 
     incmp_br_idx = get_idx(branches, False)
 

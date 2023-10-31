@@ -217,18 +217,18 @@ def test_get_comp_st_for_next_bnb():
 
 
 def test_decomp_to_two_branches():
-    br = branch.Branch(down=[1, 1, 1, 1, 1, 1], up=[3, 3, 3, 3, 3, 3], is_complete=False)
+    comps_name = ['e1', 'e2', 'e3', 'e4', 'e5' ,'e6']
+    br = branch.Branch(down=[1, 1, 1, 1, 1, 1], up=[3, 3, 3, 3, 3, 3], is_complete=False, names=comps_name)
     br.down_state='fail' # FIXME
     br.up_state='surv' # FIXME
     comp_bnb = 'e5'
     st_bnb_up = 3
-    comps_name = ['e1', 'e2', 'e3', 'e4', 'e5' ,'e6']
 
-    result = gen_bnb.decomp_to_two_branches(br, comp_bnb, st_bnb_up, comps_name)
+    result = gen_bnb.decomp_to_two_branches(br, comp_bnb, st_bnb_up)
 
-    assert result[0] == branch.Branch(down=[1, 1, 1, 1, 1, 1], up=[3, 3, 3, 3, 2, 3], is_complete=False, down_state=1, up_state=1)
+    assert result[0] == branch.Branch(down=[1, 1, 1, 1, 1, 1], up=[3, 3, 3, 3, 2, 3], names=comps_name, is_complete=False, down_state=1, up_state=1)
 
-    assert result[1] == branch.Branch(down=[1, 1, 1, 1, 3, 1], up=[3, 3, 3, 3, 3, 3], is_complete=False, down_state=1, up_state=1)
+    assert result[1] == branch.Branch(down=[1, 1, 1, 1, 3, 1], up=[3, 3, 3, 3, 3, 3], names=comps_name, is_complete=False, down_state=1, up_state=1)
 
 
 

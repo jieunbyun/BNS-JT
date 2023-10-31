@@ -39,6 +39,7 @@ def test_run_bnb():
     assert branches[0].up_state==3-1
     assert branches[0].down_val==np.inf
     assert branches[0].up_val==np.inf
+    assert branches[0].names == info['arcs']
 
     assert branches[1].down==[1, 2, 1, 1, 1, 1]
     assert branches[1].up==[1, 2, 2, 2, 2, 2]
@@ -47,6 +48,7 @@ def test_run_bnb():
     assert branches[1].up_state==1-1
     assert branches[1].down_val==0.0901
     assert branches[1].up_val==0.0901
+    assert branches[1].names == info['arcs']
 
     assert branches[2].down==[2, 2, 1, 1, 1, 1]
     assert branches[2].up, [2, 2, 2, 2, 2, 2]
@@ -55,6 +57,7 @@ def test_run_bnb():
     assert branches[2].up_state==1-1
     assert branches[2].down_val==0.0901
     assert branches[2].up_val==0.0901
+    assert branches[2].names == info['arcs']
 
     assert branches[3].down==[2, 1, 1, 1, 1, 1]
     assert branches[3].up==[2, 1, 1, 2, 2, 2]
@@ -63,6 +66,7 @@ def test_run_bnb():
     assert branches[3].up_state==3-1
     assert branches[3].down_val==np.inf
     assert branches[3].up_val==np.inf
+    assert branches[3].names == info['arcs']
 
     assert branches[4].down==[2, 1, 2, 1, 1, 1]
     assert branches[4].up==[2, 1, 2, 2, 2, 2]
@@ -71,6 +75,7 @@ def test_run_bnb():
     assert branches[4].up_state==2-1
     assert branches[4].down_val==0.2401
     assert branches[4].up_val, 0.2401
+    assert branches[4].names == info['arcs']
 
 def test_run_bnbs():
     info = {'path': [['2'], ['3', '1']],
@@ -95,6 +100,7 @@ def test_run_bnbs():
     assert branches[0].up_state==3-1
     assert branches[0].down_val==np.inf
     assert branches[0].up_val==np.inf
+    assert branches[0].names == info['arcs']
 
     assert branches[1].down==[1, 2, 1, 1, 1, 1]
     assert branches[1].up==[1, 2, 2, 2, 2, 2]
@@ -103,6 +109,7 @@ def test_run_bnbs():
     assert branches[1].up_state==1-1
     assert branches[1].down_val==0.0901
     assert branches[1].up_val==0.0901
+    assert branches[1].names == info['arcs']
 
     assert branches[2].down==[2, 2, 1, 1, 1, 1]
     assert branches[2].up, [2, 2, 2, 2, 2, 2]
@@ -111,6 +118,7 @@ def test_run_bnbs():
     assert branches[2].up_state==1-1
     assert branches[2].down_val==0.0901
     assert branches[2].up_val==0.0901
+    assert branches[2].names == info['arcs']
 
     assert branches[3].down==[2, 1, 1, 1, 1, 1]
     assert branches[3].up==[2, 1, 1, 2, 2, 2]
@@ -119,6 +127,7 @@ def test_run_bnbs():
     assert branches[3].up_state==3-1
     assert branches[3].down_val==np.inf
     assert branches[3].up_val==np.inf
+    assert branches[3].names == info['arcs']
 
     assert branches[4].down==[2, 1, 2, 1, 1, 1]
     assert branches[4].up==[2, 1, 2, 2, 2, 2]
@@ -127,9 +136,13 @@ def test_run_bnbs():
     assert branches[4].up_state==2-1
     assert branches[4].down_val==0.2401
     assert branches[4].up_val, 0.2401
+    assert branches[4].names == info['arcs']
+
 
 @pytest.fixture()
 def setup_branch():
+
+    names = [1, 2, 3, 4, 5, 6]
 
     branches = {}
     branches[0] = branch.Branch(down=[1, 1, 1, 1, 1, 1],
@@ -138,7 +151,8 @@ def setup_branch():
     down_state=3-1,
     up_state=3-1,
     down_val=np.inf,
-    up_val=np.inf)
+    up_val=np.inf,
+    names=names)
 
     branches[1] = branch.Branch(down=[1, 2, 1, 1, 1, 1],
     up=[1, 2, 2, 2, 2, 2],
@@ -146,7 +160,8 @@ def setup_branch():
     down_state=1-1,
     up_state=1-1,
     down_val=0.0901,
-    up_val=0.0901)
+    up_val=0.0901,
+    names=names)
 
     branches[2] = branch.Branch(down=[2, 2, 1, 1, 1, 1],
     up= [2, 2, 2, 2, 2, 2],
@@ -154,7 +169,8 @@ def setup_branch():
     down_state=1-1,
     up_state=1-1,
     down_val=0.0901,
-    up_val=0.0901)
+    up_val=0.0901,
+    names=names)
 
     branches[3] = branch.Branch(down=[2, 1, 1, 1, 1, 1],
     up=[2, 1, 1, 2, 2, 2],
@@ -162,7 +178,8 @@ def setup_branch():
     down_state=3-1,
     up_state=3-1,
     down_val=np.inf,
-    up_val=np.inf)
+    up_val=np.inf,
+    names=names)
 
     branches[4] = branch.Branch(down=[2, 1, 2, 1, 1, 1],
     up=[2, 1, 2, 2, 2, 2],
@@ -170,7 +187,8 @@ def setup_branch():
     down_state=2-1,
     up_state=2-1,
     down_val=0.2401,
-    up_val= 0.2401)
+    up_val= 0.2401,
+    names=names)
 
     return list(branches.values())
 
