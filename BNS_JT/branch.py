@@ -54,6 +54,18 @@ class Branch(object):
         return textwrap.dedent(f'''\
 {self.__class__.__name__}(down={self.down}, up={self.up}, is_complete={self.is_complete}, down_state={self.down_state}, up_state={self.up_state}, down_val={self.down_val}, up_val={self.up_val}''')
 
+    def __eq__(self, other):
+        """Overrides the default implementation"""
+        if isinstance(other, Branch):
+            return all([self.down == other.down,
+                        self.up == other.up,
+                        self.is_complete == other.is_complete,
+                        self.down_state == other.down_state,
+                        self.up_state == other.up_state])
+
+        return NotImplemented
+
+
 
 def get_cmat(branches, comp_var, flag=True):
     """
