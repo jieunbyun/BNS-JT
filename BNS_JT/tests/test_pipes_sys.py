@@ -140,6 +140,12 @@ def test_sys_fun_pipes(main_sys, sub_sys):
     assert min_comps_st == {'x1': 3, 'n1': 2, 'n2': 2, 'x3': 3, 'n4': 2, 'x4': 3, 'n5': 2, 'x5': 3, 'n6': 2, 'x9': 3, 'n10': 2}
 
 
+def sys_fun_wrap(thres, edges, node_coords, es_idx, edges2comps, depots, varis, sub_bw_nodes, sub_bw_edges):
+    def sys_fun2(comps_st):
+        return pipes_sys.sys_fun_pipes(comps_st, thres, edges, node_coords, es_idx, edges2comps, depots, varis, sub_bw_nodes, sub_bw_edges)
+    return sys_fun2
+
+
 #@pytest.mark.skip('too long')
 def test_do_gen_bnb(main_sys, sub_sys):
 
@@ -149,7 +155,8 @@ def test_do_gen_bnb(main_sys, sub_sys):
     sub_bw_nodes, sub_bw_edges = sub_sys
 
     thres = 2
-    sys_fun = lambda comps_st : pipes_sys.sys_fun_pipes(comps_st, thres, edges, node_coords, es_idx, edges2comps, depots, varis, sub_bw_nodes, sub_bw_edges)
+
+    sys_fun = sys_fun_wrap(thres, edges, node_coords, es_idx, edges2comps, depots, varis, sub_bw_nodes, sub_bw_edges)
 
     comps_name = list(comps_st.keys())
 
