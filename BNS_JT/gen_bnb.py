@@ -324,11 +324,11 @@ def do_gen_bnb(sys_fun, varis, max_br):
     rules = [] # a list of known rules
     rules_st = [] # a list of known rules' states
     no_iter =  0
-    _sum = 1
+    ok = True
     brs = []
     cst = []
 
-    while _sum > 0 and len(brs) < max_br:
+    while ok and len(brs) < max_br:
 
         no_iter += 1
         ###############
@@ -341,18 +341,16 @@ def do_gen_bnb(sys_fun, varis, max_br):
 
         ## Start from the total event ##
         brs = init_brs(varis, rules, rules_st)
-        _sum = 1
         stop_br = False
 
-        while _sum > 0 and len(brs) < max_br:
+        while ok:
 
             brs, cst, stop_br = core(brs, rules, rules_st, cst, stop_br)
 
             if stop_br:
                 break
             else:
-                #brs = copy.deepcopy(brs_new)
-                _sum = sum([not b.is_complete for b in brs])
+                ok = any([not b.is_complete for b in brs])
 
         # update rules, rules_st
         sys_res_, rules, rules_st = get_sys_rules(cst, sys_fun, rules, rules_st, varis)

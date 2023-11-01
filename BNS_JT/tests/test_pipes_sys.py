@@ -140,7 +140,7 @@ def test_sys_fun_pipes(main_sys, sub_sys):
     assert min_comps_st == {'x1': 3, 'n1': 2, 'n2': 2, 'x3': 3, 'n4': 2, 'x4': 3, 'n5': 2, 'x5': 3, 'n6': 2, 'x9': 3, 'n10': 2}
 
 
-@pytest.mark.skip('too long')
+#@pytest.mark.skip('too long')
 def test_do_gen_bnb(main_sys, sub_sys):
 
     # Branch and Bound
@@ -153,19 +153,7 @@ def test_do_gen_bnb(main_sys, sub_sys):
 
     comps_name = list(comps_st.keys())
 
-    start = time.time()
-    no_sf, rules, rules_st, brs, sys_res = gen_bnb.do_gen_bnb( sys_fun, varis, comps_name, max_br=1000 )
-    print(time.time() - start)
-
-    # Result
-    print(no_sf)
-    print(len(rules))
-    print(len(brs))
-    print( min([len(r) for r in rules]) )
-    print( [r for r in rules if len(r)<3 ] )
-
-    print(brs[0])
-    print(brs[1])
-    print(brs[2])
+    # originally max_br = 1000
+    no_sf, rules, rules_st, brs, sys_res = gen_bnb.do_gen_bnb( sys_fun, varis, max_br=50)
 
 
