@@ -45,7 +45,7 @@ def main_sys():
     arc_lens_km = trans.get_arcs_length(arcs, node_coords)
     arc_times_h = {k: v/arcs_avg_kmh[k] for k, v in arc_lens_km.items()}
 
-    comps_name = [k for k in arcs] # *FIXME* this is not necessary if branch's down and up are defined by dictionary (instead of list)
+    #comps_name = [k for k in arcs] # *FIXME* this is not necessary if branch's down and up are defined by dictionary (instead of list)
 
     # Component events
     no_arc_st = 3 # number of component states 
@@ -71,7 +71,7 @@ def main_sys():
     nx.draw_networkx_edge_labels(G, pos, edge_labels=edge_labels, ax=ax)
     fig.savefig(HOME.joinpath('graph_test_gen_bnb.png'), dpi=200)
 
-    return od_pair, arcs, varis, comps_name
+    return od_pair, arcs, varis
 
 # # Define system function
 def get_time_and_path(comps_st, od_pair, arcs, vari):
@@ -128,7 +128,8 @@ def test_do_gen_bnb(main_sys):
     # Here, We define the system failure event as a travel time longer than thres*(normal time). <br>
     # It is noted that for a failure event, it returns 'None' for minimal (failure) rule since there is no efficient way to identify one.
 
-    od_pair, arcs, varis, comps_name = main_sys
+    od_pair, arcs, varis = main_sys
+    comps_name = list(arcs.keys())
 
     # Intact state of component vector
     comps_st_itc = {k: len(varis[k].B[0]) for k in arcs} # intact state (i.e. the highest state)
@@ -142,7 +143,7 @@ def test_do_gen_bnb(main_sys):
 
     # # Branch and bound
     #pdb.set_trace()
-    no_sf, rules, rules_st, brs, sys_res = gen_bnb.do_gen_bnb(sys_fun, varis, comps_name, max_br=1000)
+    no_sf, rules, rules_st, brs, sys_res = gen_bnb.do_gen_bnb(sys_fun, varis, max_br=1000)
 
     # Result
     assert no_sf == 23
