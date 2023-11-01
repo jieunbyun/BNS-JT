@@ -3,61 +3,10 @@ import copy
 from BNS_JT import variable, branch
 import warnings
 
-"""
-def rule_dict_to_list(r_dict, r_st, no_comp, comps_name_list, worst_st = 1):
-
-    # TODO: this function is unnecessary if branch's up and down are defined in Dictionary, instead of List.
-
-    if r_st == 'surv':
-        r_list = [worst_st] * no_comp
-
-        for i in range(no_comp):
-            name_i = comps_name_list[i]
-
-            if name_i in r_dict:
-                r_list[i] = r_dict[name_i]
-
-    else: # r_st == 'fail'
-
-        r_list = [best_st] * no_comp
-
-        for i in range(no_comp):
-            name_i = comps_name_list[i]
-
-            if name_i in r_dict:
-                r_list[i] = r_dict[name_i]
-
-    return r_list
-
-def comps_st_list_to_dict(states, comps_name):
-
-    # function that converts list representation of a component vector state to dictionary
-    _states = {comps_name[i]: states[i] for i in range(len(states))}
-
-    return _states
-
-def comps_st_dict_to_list(st_dict, comps_name_list):
-
-    no_comp = len(comps_name_list)
-    st_list = [None] * no_comp
-    for i in range(no_comp):
-        name_i = comps_name_list[i]
-        st_list[ i ] = st_dict[name_i]
-
-    return st_list
-
-def comps_st_dict_to_list(states, comps_name):
-
-    assert isinstance(states, dict)
-    assert isinstance(comps_name, list)
-
-    return [states.get(x) for x in comps_name]
-
-"""
 
 def get_compat_rules(cst, rules, rules_st):
     #cst: component vector state in dictionary
-    #rules: list of rules in dictionary
+    #rules: list of rules
     #rules_st: list of rules' state (either 'surv' or 'fail') -- must have the same length as rules
 
     assert isinstance(cst, dict), f'cst should be a dict: {type(cst)}'
@@ -94,11 +43,13 @@ def get_compat_rules(cst, rules, rules_st):
 
 def add_rule(rules, rules_st, rule1, fail_or_surv):
     """
-    rules:
-    rules_st:
-    rule1:
+    rules: list of rules
+    rules_st: list of rules' state
+    rule1: dict
     fail_or_surv:
     """
+    assert isinstance(rule1, dict), f'rule should be a dict: {type(rule1)}'
+
     # Update a rules list by removing dominated rules and adding a new rule
     r_rmv_inds = []
     add_rule1 = True
@@ -140,10 +91,10 @@ def add_rule(rules, rules_st, rule1, fail_or_surv):
 
 def get_comp_st_for_next_bnb(up, down, rules, rules_st):
     """
-    up:
-    down:
-    rules:
-    rules_st:
+    up: dict
+    down: dict
+    rules: list
+    rules_st: list
     """
 
     assert isinstance(up, dict), f'up must be a dict: {type(up)}'
@@ -218,15 +169,14 @@ def get_comp_st_for_next_bnb(up, down, rules, rules_st):
     return comp_bnb, st_bnb_up
 
 
-def decomp_to_two_branches(br, comp_bnb, st_bnb_up, comps_name):
+def decomp_to_two_branches(br, comp_bnb, st_bnb_up):
     """
     br: a branch
     comp_bnb:
     st_bnb_up:
-    comps_name:
     """
-    down = {y:x for x, y in zip(br.down, comps_name)}
-    up = {y:x for x, y in zip(br.up, comps_name)}
+    down = {y:x for x, y in zip(br.down, br.names)}
+    up = {y:x for x, y in zip(br.up, br.names)}
 
     up_bl = copy.deepcopy(up) # the branch on the lower side
     up_bl[comp_bnb] = st_bnb_up - 1
@@ -234,17 +184,20 @@ def decomp_to_two_branches(br, comp_bnb, st_bnb_up, comps_name):
     down_bu = copy.deepcopy(down) # the branch on the upper side
     down_bu[comp_bnb] = st_bnb_up
 
-    up_bl = [up_bl[x] for x in comps_name]
-    down_bu = [down_bu[x] for x in comps_name]
-    new_brs = [branch.Branch(br.down, up_bl, is_complete=False),
-               branch.Branch(down_bu, br.up, is_complete=False)]
+    up_bl = [up_bl[x] for x in br.names]
+    down_bu = [down_bu[x] for x in br.names]
+    new_brs = [branch.Branch(br.down, up_bl, names=br.names, is_complete=False),
+               branch.Branch(down_bu, br.up, names=br.names, is_complete=False)]
 
     return new_brs
 
 
-def get_sys_rules(cst, comps_name, sys_fun, rules, rules_st, varis):
+def get_sys_rules(cst, sys_fun, rules, rules_st, varis):
+    """
+    cst:
 
-    cst = {y:x for x, y in zip(cst, comps_name)}
+    """
+    cst = {y:x for x, y in zip(cst, varis.keys())}
     #no_sf += 1
     sys_val, sys_st, min_comps_st = sys_fun(cst)
     sys_res = pd.DataFrame({'sys_val': [sys_val], 'comps_st': [cst], 'comps_st_min': [min_comps_st]})
@@ -252,29 +205,22 @@ def get_sys_rules(cst, comps_name, sys_fun, rules, rules_st, varis):
     #                    pd.DataFrame({'sys_val': [sys_val], 'comps_st': [cst], 'comps_st_min': [min_comps_st]})],
     #                    ignore_index = True)
 
-    if sys_st == 'surv':
-        if min_comps_st is not None:
-            rs_new = min_comps_st
+    if min_comps_st is not None:
+        r_new = min_comps_st
+    else:
+        if sys_st == 'surv':
+            r_new = {k:v for k,v in cst.items() if v > 1} # the rule is the same as up_dict_i but includes only components whose state is greater than the worst one (i.e. 1)
         else:
-            rs_new = {k:v for k,v in cst.items() if v > 1} # the rule is the same as up_dict_i but includes only components whose state is greater than the worst one (i.e. 1)
+            r_new = {k:v for k,v in cst.items() if v < len(varis[k].B[0])} # the rule is the same as up_dict_i but includes only components whose state is less than the best one
 
-        rules, rules_st = add_rule(rules, rules_st, rs_new, 'surv')
-
-    else: # sys_st_i == 'fail'
-        if min_comps_st is not None:
-            rf_new = min_comps_st
-        else:
-            rf_new = {k:v for k,v in cst.items() if v < len(varis[k].B[0])} # the rule is the same as up_dict_i but includes only components whose state is less than the best one
-
-        rules, rules_st = add_rule(rules, rules_st, rf_new, 'fail')
+    rules, rules_st = add_rule(rules, rules_st, r_new, sys_st)
 
     return sys_res, rules, rules_st
 
 
-def core(brs, comps_name, rules, rules_st, cst, stop_br):
+def core(brs, rules, rules_st, cst, stop_br):
     """
-    brs:
-    comps_name:
+    brs: list of Branch instance
     rules_st:
     cst: changed or passed
     stop_br: changed or passed
@@ -284,8 +230,8 @@ def core(brs, comps_name, rules, rules_st, cst, stop_br):
 
     for i, br in enumerate(brs):
 
-        up = {y:x for x, y in zip(br.up, comps_name)}
-        down = {y:x for x, y in zip(br.down, comps_name)}
+        up = {y:x for x, y in zip(br.up, br.names)}
+        down = {y:x for x, y in zip(br.down, br.names)}
 
         cr_inds_up, up_st = get_compat_rules(up, rules, rules_st)
         cr_inds_down, down_st = get_compat_rules(down, rules, rules_st)
@@ -302,10 +248,10 @@ def core(brs, comps_name, rules, rules_st, cst, stop_br):
 
         elif br.up_state == 'surv' and br.down_state == 'fail':
             comp_bnb, st_bnb_up = get_comp_st_for_next_bnb(up, down, rules, rules_st)
-            brs_new_i = decomp_to_two_branches(br, comp_bnb, st_bnb_up, comps_name)
+            brs_new_i = decomp_to_two_branches(br, comp_bnb, st_bnb_up)
 
             for b in brs_new_i:
-                up = {y:x for x, y in zip(b.up, comps_name)}
+                up = {y:x for x, y in zip(b.up, br.names)}
                 cr_inds1, cst_state_up = get_compat_rules(up, rules, rules_st)
 
                 if cst_state_up == 'unk' and len(cr_inds1) == 0:
@@ -316,7 +262,7 @@ def core(brs, comps_name, rules, rules_st, cst, stop_br):
                 else:
                     b.up_state = cst_state_up
 
-                down = {y:x for x, y in zip(b.down, comps_name)}
+                down = {y:x for x, y in zip(b.down, br.names)}
                 cr_inds1, cst_state_down = get_compat_rules(down, rules, rules_st)
 
                 if cst_state_down == 'unk' and len(cr_inds1) == 0:
@@ -347,28 +293,30 @@ def core(brs, comps_name, rules, rules_st, cst, stop_br):
 
     return brs_new, cst, stop_br
 
-def init_brs(comps_name, varis, rules, rules_st):
 
-    down = {x:1 for x in comps_name} # all components in the worst state
-    up = {x:len(varis[x].B[0]) for x in comps_name} # all components in the best state
+def init_brs(varis, rules, rules_st):
 
-    brs = [branch.Branch(list(down.values()), list(up.values()), is_complete=False)]
+    down = {x:1 for x in varis.keys()} # all components in the worst state
+    up = {k:v.B.shape[1] for k, v in varis.items()} # all components in the best state
+
+    brs = [branch.Branch(list(down.values()), list(up.values()), is_complete=False, names=list(varis.keys()))]
 
     _, brs[0].up_state = get_compat_rules(up, rules, rules_st)
     _, brs[0].down_state = get_compat_rules(down, rules, rules_st)
 
     return brs
 
-def do_gen_bnb(sys_fun, varis, comps_name, max_br):
 
+def do_gen_bnb(sys_fun, varis, max_br):
     ### MAIN FUNCTION ####
     """
     Input:
     sys_fun: system function that takes in a component vector state and returns system function value, system state, and (optional: if unavailable, "None" can be returned) minimially component state to fulfill the obtained system function value.
     varis: A dictionary of "Variable"s. All component events need to be defined with its "B matrix".
-    comps_name: A list of components' names. The name must be consistent with the names used in "varis".
     max_br: max. number of branches (the algorithm stops when this number is met)
     """
+
+    assert isinstance(varis, dict), f'varis must be a dict: {type(varis)}'
 
     # Initialisation
     #no_sf = 0 # number of system function runs so far
@@ -376,11 +324,11 @@ def do_gen_bnb(sys_fun, varis, comps_name, max_br):
     rules = [] # a list of known rules
     rules_st = [] # a list of known rules' states
     no_iter =  0
-    _sum = 1
+    ok = True
     brs = []
     cst = []
 
-    while _sum > 0 and len(brs) < max_br:
+    while ok and len(brs) < max_br:
 
         no_iter += 1
         ###############
@@ -392,22 +340,20 @@ def do_gen_bnb(sys_fun, varis, comps_name, max_br):
         ###############
 
         ## Start from the total event ##
-        brs = init_brs(comps_name, varis, rules, rules_st)
-        _sum = 1
+        brs = init_brs(varis, rules, rules_st)
         stop_br = False
 
-        while _sum > 0 and len(brs) < max_br:
+        while ok:
 
-            brs_new, cst, stop_br = core(brs, comps_name, rules, rules_st, cst, stop_br)
+            brs, cst, stop_br = core(brs, rules, rules_st, cst, stop_br)
 
             if stop_br:
                 break
             else:
-                brs = copy.deepcopy(brs_new)
-                _sum = sum([not b.is_complete for b in brs])
+                ok = any([not b.is_complete for b in brs])
 
         # update rules, rules_st
-        sys_res_, rules, rules_st = get_sys_rules(cst, comps_name, sys_fun, rules, rules_st, varis)
+        sys_res_, rules, rules_st = get_sys_rules(cst, sys_fun, rules, rules_st, varis)
 
         sys_res = pd.concat([sys_res, sys_res_], ignore_index=True)
 
