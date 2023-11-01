@@ -296,8 +296,8 @@ def core(brs, rules, rules_st, cst, stop_br):
 
 def init_brs(varis, rules, rules_st):
 
-    down = {x:1 for x in varis.keys()} # all components in the worst state
-    up = {k:v.B.shape[1] for k, v in varis.items()} # all components in the best state
+    down = {x: 1 for x in varis.keys()} # all components in the worst state
+    up = {k: v.B.shape[1] for k, v in varis.items()} # all components in the best state
 
     brs = [branch.Branch(list(down.values()), list(up.values()), is_complete=False, names=list(varis.keys()))]
 

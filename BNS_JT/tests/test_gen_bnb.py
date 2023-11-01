@@ -110,8 +110,13 @@ def sf_min_path(comps_st, od_pair, arcs, vari, thres, sys_val_itc):
     return sys_val, sys_st, min_comps_st
 
 
-def test_do_gen_bnb(main_sys):
+def sys_fun_wrap(od_pair, arcs, varis, thres, sys_val_itc):
+    def sys_fun2(comps_st):
+        return sf_min_path(comps_st, od_pair, arcs, varis, thres, sys_val_itc)
+    return sys_fun2
 
+
+def test_do_gen_bnb(main_sys):
     # ## System function as an input
     # 
     # A system function needs to return (1) system function value, (2) system state, and (3) minimally required component state to fulfill the obtained system function value. If (3) is unavailable, it can be returned as None. <br>
@@ -129,17 +134,17 @@ def test_do_gen_bnb(main_sys):
     # It is noted that for a failure event, it returns 'None' for minimal (failure) rule since there is no efficient way to identify one.
 
     od_pair, arcs, varis = main_sys
-    comps_name = list(arcs.keys())
+    #comps_name = list(arcs.keys())
 
     # Intact state of component vector
-    comps_st_itc = {k: len(varis[k].B[0]) for k in arcs} # intact state (i.e. the highest state)
+    comps_st_itc = {k: v.B.shape[1] for k, v in varis.items()} # intact state (i.e. the highest state)
     sys_val_itc, path_itc = get_time_and_path(comps_st_itc, od_pair, arcs, varis)
 
     # defines the system failure event
     thres = 2
 
     # Given a system function, i.e. sf_min_path, it should be represented by a function that only has "comps_st" as input.
-    sys_fun = lambda comps_st : sf_min_path(comps_st, od_pair, arcs, varis, thres, sys_val_itc) # FIXME: branch needs to have states defined in dictionary instead of list.
+    sys_fun = sys_fun_wrap(od_pair, arcs, varis, thres, sys_val_itc)
 
     # # Branch and bound
     #pdb.set_trace()
