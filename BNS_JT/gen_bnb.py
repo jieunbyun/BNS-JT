@@ -27,7 +27,7 @@ def get_compat_rules(cst, rules, rules_st):
                 cr_inds.append(ind)
                 no_fail += 1
 
-    if no_surv == 0 and no_fail == 0:
+    if no_surv == no_fail == 0:
         cst_state = 'unk' # unknown
     else:
         if no_surv > no_fail:
@@ -41,52 +41,56 @@ def get_compat_rules(cst, rules, rules_st):
     return cr_inds, cst_state
 
 
-def add_rule(rules, rules_st, rule1, fail_or_surv):
+def add_rule(rules, rules_st, rule_new, fail_or_surv):
     """
     rules: list of rules
     rules_st: list of rules' state
-    rule1: dict
+    rule_new: dict
     fail_or_surv:
     """
-    assert isinstance(rule1, dict), f'rule should be a dict: {type(rule1)}'
+    assert isinstance(rule_new, dict), f'rule should be a dict: {type(rule_new)}'
 
     # Update a rules list by removing dominated rules and adding a new rule
-    r_rmv_inds = []
-    add_rule1 = True
+    rmv_inds = []
+    add_rule = True
 
     for i, rule in enumerate(rules):
 
-        if all([k in rule for k in rule1.keys()]): # does all keys in rule 1 exist for rule_i?
+        if all([k in rule for k in rule_new.keys()]):# does all keys in rule 1 exist for rule_i?
 
-            if fail_or_surv == 'surv' and rules_st[i] == 'surv':
-                if all([rule[k] >= v for k,v in rule1.items()]): # this rule is dominated by the new rule
-                    r_rmv_inds += [i]
-                elif all([k in rule1 for k in rule.keys()]) and all([rule1[k] >= v for k,v in rule.items()]):
-                    add_rule1 = False
+            if fail_or_surv == rules_st[i] == 'surv':
+
+                if all([rule[k] >= v for k, v in rule_new.items()]): # this rule is dominated by the new rule
+                    rmv_inds.append(i)
+
+                elif all([k in rule_new for k in rule.keys()]) and all([rule_new[k] >= v for k,v in rule.items()]):
+                    add_rule = False
                     break # the new rule is dominated by an existing one. no further investigation required (assuming that a given list is a set of non-dominated rules)
 
-            elif fail_or_surv == 'fail' and rules_st[i] == 'fail':
-                if all([rule[k] <= v for k,v in rule1.items()]): # this rule is dominated by the new rule
-                    r_rmv_inds += [i]
-                elif all([k in rule1 for k in rule.keys()]) and all([rule1[k] <= v for k,v in rule.items()]):
-                    add_rule1 = False
+            elif fail_or_surv == rules_st[i] == 'fail':
+
+                if all([rule[k] <= v for k,v in rule_new.items()]): # this rule is dominated by the new rule
+                    rmv_inds.append(i)
+
+                elif all([k in rule_new for k in rule.keys()]) and all([rule_new[k] <= v for k,v in rule.items()]):
+                    add_rule = False
                     break # the new rule is dominated by an existing one. no further investigation required (assuming that a given list is a set of non-dominated rules)
 
-    rules_new = copy.deepcopy(rules)
-    rules_st_new = copy.deepcopy(rules_st)
+    #rules_new = copy.deepcopy(rules)
+    #rules_st_new = copy.deepcopy(rules_st)
 
-    for i in r_rmv_inds[::-1]:
+    for i in rmv_inds[::-1]:
         try:
-            del rules_new[i]
-            del rules_st_new[i]
+            del rules[i]
+            del rules_st[i]
         except:
             pass
 
-    if add_rule1 == True:
-        rules_new += [rule1]
-        rules_st_new += [fail_or_surv]
+    if add_rule == True:
+        rules.append(rule_new)
+        rules_st.append(fail_or_surv)
 
-    return rules_new, rules_st_new
+    return rules, rules_st
 
 
 def get_comp_st_for_next_bnb(up, down, rules, rules_st):
@@ -169,27 +173,30 @@ def get_comp_st_for_next_bnb(up, down, rules, rules_st):
     return comp_bnb, st_bnb_up
 
 
-def decomp_to_two_branches(br, comp_bnb, st_bnb_up):
+def decomp_to_two_branches(br, comp, state):
     """
-    br: a branch
-    comp_bnb:
-    st_bnb_up:
+    br: an instance of branch
+    comp: component name
+    state: component state (integer)
     """
-    down = {y:x for x, y in zip(br.down, br.names)}
-    up = {y:x for x, y in zip(br.up, br.names)}
+    assert isinstance(br, branch.Branch), f'br must be an instance of Branch: f{type(br)}'
+    assert isinstance(comp, str), f'comp must be a string: f{type(comp)}'
+    assert comp in br.names, f'comp must exist in br.names: {comp}'
+    assert isinstance(state, int), f'state must be an integer: f{type(state)}'
 
-    up_bl = copy.deepcopy(up) # the branch on the lower side
-    up_bl[comp_bnb] = st_bnb_up - 1
+    down = {y: x for x, y in zip(br.down, br.names)}
+    up = {y: x for x, y in zip(br.up, br.names)}
 
-    down_bu = copy.deepcopy(down) # the branch on the upper side
-    down_bu[comp_bnb] = st_bnb_up
+    #up_bl = copy.deepcopy(up) # the branch on the lower side
+    up[comp] = state - 1
 
-    up_bl = [up_bl[x] for x in br.names]
-    down_bu = [down_bu[x] for x in br.names]
-    new_brs = [branch.Branch(br.down, up_bl, names=br.names, is_complete=False),
-               branch.Branch(down_bu, br.up, names=br.names, is_complete=False)]
+    #down = copy.deepcopy(down) # the branch on the upper side
+    down[comp] = state
 
-    return new_brs
+    brs = [branch.Branch(br.down, list(up.values()), names=br.names, is_complete=False),
+           branch.Branch(list(down.values()), br.up, names=br.names, is_complete=False)]
+
+    return brs
 
 
 def get_sys_rules(cst, sys_fun, rules, rules_st, varis):
@@ -197,23 +204,20 @@ def get_sys_rules(cst, sys_fun, rules, rules_st, varis):
     cst:
 
     """
-    cst = {y:x for x, y in zip(cst, varis.keys())}
+    cst = {x: y for x, y in zip(varis.keys(), cst)}
     #no_sf += 1
     sys_val, sys_st, min_comps_st = sys_fun(cst)
     sys_res = pd.DataFrame({'sys_val': [sys_val], 'comps_st': [cst], 'comps_st_min': [min_comps_st]})
-    #sys_res = pd.concat([sys_res,
-    #                    pd.DataFrame({'sys_val': [sys_val], 'comps_st': [cst], 'comps_st_min': [min_comps_st]})],
-    #                    ignore_index = True)
 
-    if min_comps_st is not None:
-        r_new = min_comps_st
-    else:
+    if min_comps_st:
         if sys_st == 'surv':
-            r_new = {k:v for k,v in cst.items() if v > 1} # the rule is the same as up_dict_i but includes only components whose state is greater than the worst one (i.e. 1)
+            rule = {k: v for k, v in cst.items() if v} # the rule is the same as up_dict_i but includes only components whose state is greater than the worst one (i.e. 0)
         else:
-            r_new = {k:v for k,v in cst.items() if v < len(varis[k].B[0])} # the rule is the same as up_dict_i but includes only components whose state is less than the best one
+            rule = {k: v for k, v in cst.items() if v < len(varis[k].B[0]) - 1} # the rule is the same as up_dict_i but includes only components whose state is less than the best one
+    else:
+        rule = min_comps_st
 
-    rules, rules_st = add_rule(rules, rules_st, r_new, sys_st)
+    rules, rules_st = add_rule(rules, rules_st, rule, sys_st)
 
     return sys_res, rules, rules_st
 
@@ -230,31 +234,32 @@ def core(brs, rules, rules_st, cst, stop_br):
 
     for i, br in enumerate(brs):
 
-        up = {y:x for x, y in zip(br.up, br.names)}
-        down = {y:x for x, y in zip(br.down, br.names)}
+        up = {x: y for x, y in zip(br.names, br.up)}
+        idx, _ = get_compat_rules(up, rules, rules_st)
 
-        cr_inds_up, up_st = get_compat_rules(up, rules, rules_st)
-        cr_inds_down, down_st = get_compat_rules(down, rules, rules_st)
-
-        if br.up_state == 'unk' and len(cr_inds_up) == 0:
+        if br.up_state == 'unk' and len(idx) == 0:
             cst = br.up # perform analysis on this state
             stop_br = True
             break
 
-        elif br.down_state == 'unk' and len(cr_inds_down) == 0:
+        down = {x: y for x, y in zip(br.names, br.down)}
+        idx, _ = get_compat_rules(down, rules, rules_st)
+
+        if br.down_state == 'unk' and len(idx) == 0:
             cst = br.down # perform analysis on this state
             stop_br = True
             break
 
-        elif br.up_state == 'surv' and br.down_state == 'fail':
+        if br.up_state == 'surv' and br.down_state == 'fail':
             comp_bnb, st_bnb_up = get_comp_st_for_next_bnb(up, down, rules, rules_st)
-            brs_new_i = decomp_to_two_branches(br, comp_bnb, st_bnb_up)
+            brs2 = decomp_to_two_branches(br, comp_bnb, st_bnb_up)
 
-            for b in brs_new_i:
-                up = {y:x for x, y in zip(b.up, br.names)}
-                cr_inds1, cst_state_up = get_compat_rules(up, rules, rules_st)
+            for b in brs2:
 
-                if cst_state_up == 'unk' and len(cr_inds1) == 0:
+                up = {x: y for x, y in zip(br.names, b.up)}
+                idx, cst_state_up = get_compat_rules(up, rules, rules_st)
+
+                if cst_state_up == 'unk' and len(idx) == 0:
                     cst = b.up # perform analysis on this state
                     stop_br = True
                     break
@@ -262,10 +267,10 @@ def core(brs, rules, rules_st, cst, stop_br):
                 else:
                     b.up_state = cst_state_up
 
-                down = {y:x for x, y in zip(b.down, br.names)}
-                cr_inds1, cst_state_down = get_compat_rules(down, rules, rules_st)
+                down = {x: y for x, y in zip(br.names, b.down)}
+                idx, cst_state_down = get_compat_rules(down, rules, rules_st)
 
-                if cst_state_down == 'unk' and len(cr_inds1) == 0:
+                if cst_state_down == 'unk' and len(idx) == 0:
                     cst = b.down # perform analysis on this state
                     stop_br = True
                     break
@@ -296,8 +301,8 @@ def core(brs, rules, rules_st, cst, stop_br):
 
 def init_brs(varis, rules, rules_st):
 
-    down = {x: 1 for x in varis.keys()} # all components in the worst state
-    up = {k: v.B.shape[1] for k, v in varis.items()} # all components in the best state
+    down = {x: 0 for x in varis.keys()} # all components in the worst state
+    up = {k: v.B.shape[1] - 1 for k, v in varis.items()} # all components in the best state
 
     brs = [branch.Branch(list(down.values()), list(up.values()), is_complete=False, names=list(varis.keys()))]
 
@@ -324,11 +329,11 @@ def do_gen_bnb(sys_fun, varis, max_br):
     rules = [] # a list of known rules
     rules_st = [] # a list of known rules' states
     no_iter =  0
-    ok = True
+    flag = True
     brs = []
     cst = []
 
-    while ok and len(brs) < max_br:
+    while flag and len(brs) < max_br:
 
         no_iter += 1
         ###############
@@ -343,14 +348,14 @@ def do_gen_bnb(sys_fun, varis, max_br):
         brs = init_brs(varis, rules, rules_st)
         stop_br = False
 
-        while ok:
+        while flag:
 
             brs, cst, stop_br = core(brs, rules, rules_st, cst, stop_br)
 
             if stop_br:
                 break
             else:
-                ok = any([not b.is_complete for b in brs])
+                flag = any([not b.is_complete for b in brs])
 
         # update rules, rules_st
         sys_res_, rules, rules_st = get_sys_rules(cst, sys_fun, rules, rules_st, varis)

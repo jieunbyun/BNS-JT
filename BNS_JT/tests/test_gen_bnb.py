@@ -3,7 +3,7 @@
 
 import pytest
 import pdb
-
+import pandas as pd
 import numpy as np
 import networkx as nx
 import matplotlib.pyplot as plt
@@ -15,6 +15,30 @@ from BNS_JT import gen_bnb
 
 
 HOME = Path(__file__).parent
+
+
+def sf_min_path(comps_st, od_pair, arcs, vari, thres):
+    """
+    comps_st:
+    od_pair:
+    arcs:
+    vari:
+    thres:
+    """
+    elapsed, path = get_time_and_path(comps_st, od_pair, arcs, vari)
+
+    # fail, surv corresponds to 0 and 1
+    min_comps_st = {}
+    if elapsed > thres:
+        sys_st = 'fail'
+    else:
+        sys_st = 'surv'
+        for n0, n1 in zip(path[:-1], path[1:]):
+            arc = next((k for k, v in arcs.items() if v == [n0, n1] or v == [n1, n0]), None)
+            min_comps_st[arc] = comps_st[arc]
+
+    return elapsed, sys_st, min_comps_st
+
 
 @pytest.fixture()
 def main_sys():
@@ -57,7 +81,7 @@ def main_sys():
     # plot graph
     G = nx.Graph()
     for k, x in arcs.items():
-        G.add_edge(x[0], x[1], time=arc_times_h[k], label=k)
+        G.add_edge(x[0], x[1], label=k)
 
     for k, v in node_coords.items():
         G.add_node(k, pos=v)
@@ -71,49 +95,194 @@ def main_sys():
     nx.draw_networkx_edge_labels(G, pos, edge_labels=edge_labels, ax=ax)
     fig.savefig(HOME.joinpath('graph_test_gen_bnb.png'), dpi=200)
 
+    """
+    e1: 1.5, 0.3, 0.15
+    e2: 0.901, 0.1803, 0.0901
+    e3: 0.901, 0.1803, 0.0901
+    e4: 1.054, 0.211, 0.1054
+    e5: 0.943, 0.189, 0.0943
+    e6: 0.707, 0.141, 0.0707
+    """
     return od_pair, arcs, varis
+
 
 # # Define system function
 def get_time_and_path(comps_st, od_pair, arcs, vari):
+    """
+    comps_st: starting from 0
+    od_pair:
+    arcs:
+    vari:
+    """
+    assert isinstance(comps_st, dict)
+    assert all([comps_st[k] < len(v.values) for k, v in vari.items()])
 
     G = nx.Graph()
     for k, x in arcs.items():
-        c_st = comps_st[k]
-        G.add_edge(x[0], x[1], time=vari[k].values[c_st-1])
+        G.add_edge(x[0], x[1], time=vari[k].values[comps_st[k]])
 
     path = nx.shortest_path(G, source = od_pair[0], target = od_pair[1], weight = 'time')
-    time = nx.shortest_path_length(G, source = od_pair[0], target = od_pair[1], weight = 'time')
+    elapsed = nx.shortest_path_length(G, source = od_pair[0], target = od_pair[1], weight = 'time')
 
-    return time, path
-
-
-def sf_min_path(comps_st, od_pair, arcs, vari, thres, sys_val_itc):
-
-    sys_val, path = get_time_and_path(comps_st, od_pair, arcs, vari)
-
-    if sys_val > thres*sys_val_itc:
-        sys_st = 'fail'
-    else:
-        sys_st = 'surv'
-
-    if sys_st == 'surv': # in this case we know how to find out minimally required component state
-        min_comps_st = {}
-        for i in range(len(path)-1):
-            nodes_i = [path[i], path[i+1]]
-            nodes_i_rev = [path[i+1], path[i]] # reversed pair (arcs are bi-directional)
-            arc_i = next((k for k, v in arcs.items() if v == nodes_i or v == nodes_i_rev), None)
-            min_comps_st[arc_i] = comps_st[arc_i]
-
-    else: # sys_st == 'fail'
-        min_comps_st = None
-
-    return sys_val, sys_st, min_comps_st
+    return elapsed, path
 
 
-def sys_fun_wrap(od_pair, arcs, varis, thres, sys_val_itc):
+def sys_fun_wrap(od_pair, arcs, varis, thres):
     def sys_fun2(comps_st):
-        return sf_min_path(comps_st, od_pair, arcs, varis, thres, sys_val_itc)
+        return sf_min_path(comps_st, od_pair, arcs, varis, thres)
     return sys_fun2
+
+
+def test_get_time_and_path1(main_sys):
+
+    od_pair, arcs, varis = main_sys
+
+    # all surv: e2 - e5 
+    comps_st = {x: 2 for x in arcs.keys()}
+    expected = varis['e2'].values[2] + varis['e5'].values[2]
+
+    elapsed, path = get_time_and_path(comps_st, od_pair, arcs, varis)
+
+    assert elapsed == expected
+    assert path == ['n1', 'n5', 'n3']
+
+
+def test_get_time_and_path2(main_sys):
+
+    od_pair, arcs, varis = main_sys
+
+    # e2 failed; e1 - e3 - e5
+    comps_st = {'e1': 2, 'e2': 0, 'e3': 2, 'e4': 2, 'e5': 2, 'e6': 2}
+    expected = varis['e1'].values[2] + varis['e5'].values[2] + varis['e3'].values[2]
+
+    elapsed, path = get_time_and_path(comps_st, od_pair, arcs, varis)
+
+    assert pytest.approx(elapsed, 1.0e-3) == expected
+    assert path == ['n1', 'n2', 'n5', 'n3']
+
+
+def test_get_time_and_path3(main_sys):
+
+    od_pair, arcs, varis = main_sys
+
+    # e1 failed; e2-e5
+    comps_st = {'e1':0, 'e2':2, 'e3':1, 'e4':2, 'e5':1, 'e6': 1}
+    expected = min(varis['e2'].values[2] + varis['e6'].values[1] + varis['e4'].values[2], varis['e2'].values[2] + varis['e5'].values[1])
+
+    elapsed, path = get_time_and_path(comps_st, od_pair, arcs, varis)
+
+    assert pytest.approx(elapsed, 1.0e-3) == expected
+    assert path == ['n1', 'n5', 'n3']
+
+
+def test_sf_min_path1(main_sys):
+
+    od_pair, arcs, varis = main_sys
+
+    # 0, 1, 2 (higher, better)
+    comps_st = {k: v.B.shape[1] - 1 for k, v in varis.items()} # intact state (i.e. the highest state)
+    elapsed, path = get_time_and_path(comps_st, od_pair, arcs, varis)
+
+    thres = 2 * elapsed
+    result = sf_min_path(comps_st, od_pair, arcs, varis, thres)
+
+    assert pytest.approx(result[0], 0.001) == 0.1844
+    assert result[1] == 'surv'
+    assert result[2] == {'e2': 2, 'e5': 2}
+
+
+def test_sf_min_path2(main_sys):
+
+    od_pair, arcs, varis = main_sys
+
+    # 0, 1, 2 (higher, better)
+    comps_st = {'e1': 2, 'e2': 0, 'e3': 2, 'e4': 2, 'e5': 2, 'e6': 2}
+    thres = 2 * 0.1844
+    result = sf_min_path(comps_st, od_pair, arcs, varis, thres)
+
+    assert pytest.approx(result[0], 0.001) == 0.3344
+    assert result[1] == 'surv'
+    assert result[2] == {'e1': 2, 'e3': 2 , 'e5': 2}
+
+
+def test_sf_min_path3(main_sys):
+
+    od_pair, arcs, varis = main_sys
+    thres = 2 * 0.1844
+
+    # 0, 1, 2 (higher, better)
+    comps_st = {'e1':0, 'e2':2, 'e3':1, 'e4':2, 'e5':1, 'e6': 1}
+
+    result = sf_min_path(comps_st, od_pair, arcs, varis, thres)
+
+    assert pytest.approx(result[0], 0.001) == 0.2787
+    assert result[1] == 'surv'
+    assert result[2] == {'e2': 2, 'e5': 1}
+
+
+def test_init_brs(main_sys):
+
+    _, _, varis = main_sys
+    rules = []
+    rules_st = []
+
+    brs = gen_bnb.init_brs(varis, rules, rules_st)
+
+    assert len(brs) == 1
+    assert brs[0].up_state == 'unk'
+    assert brs[0].down_state == 'unk'
+    assert brs[0].down == [0, 0, 0, 0, 0, 0]
+    assert brs[0].up == [2, 2, 2, 2, 2, 2]
+
+
+def test_core1(main_sys):
+
+    _, _, varis = main_sys
+    rules = []
+    rules_st = []
+    cst = []
+    stop_br = False
+    brs = gen_bnb.init_brs(varis, rules, rules_st)
+
+    brs, cst, stop_br = gen_bnb.core(brs, rules, rules_st, cst, stop_br)
+
+    assert brs == []
+    assert cst == [2, 2, 2, 2, 2, 2]
+    assert stop_br == True
+
+
+def test_core2(main_sys):
+
+    od_pair, arcs, varis = main_sys
+
+    cst = [2, 2, 2, 2, 2, 2]
+    stop_br = True
+    rules = [{k: 2 for k in varis.keys()}]
+    rules_st = ['surv']
+    brs = gen_bnb.init_brs(varis, rules, rules_st)
+
+    #pdb.set_trace()
+    brs, cst, stop_br = gen_bnb.core(brs, rules, rules_st, cst, stop_br)
+    assert brs == []
+    assert cst == [0, 0, 0, 0, 0, 0]
+    assert stop_br == True
+
+def test_core3(main_sys):
+
+    od_pair, arcs, varis = main_sys
+
+    cst = [0, 0, 0, 0, 0, 0]
+    stop_br = True
+    rules = [{k: 2 for k in varis.keys()}]
+    rules_st = ['surv']
+    brs = gen_bnb.init_brs(varis, rules, rules_st)
+
+    #pdb.set_trace()
+    brs, cst, stop_br = gen_bnb.core(brs, rules, rules_st, cst, stop_br)
+    assert brs == []
+    assert cst == [0, 0, 0, 0, 0, 0]
+    assert stop_br == True
+
 
 
 def test_do_gen_bnb(main_sys):
@@ -136,15 +305,15 @@ def test_do_gen_bnb(main_sys):
     od_pair, arcs, varis = main_sys
     #comps_name = list(arcs.keys())
 
-    # Intact state of component vector
-    comps_st_itc = {k: v.B.shape[1] for k, v in varis.items()} # intact state (i.e. the highest state)
-    sys_val_itc, path_itc = get_time_and_path(comps_st_itc, od_pair, arcs, varis)
+    # Intact state of component vector: zero-based index 
+    comps_st_itc = {k: v.B.shape[1] - 1 for k, v in varis.items()} # intact state (i.e. the highest state)
+    elapsed_itc, path_itc = get_time_and_path(comps_st_itc, od_pair, arcs, varis)
 
     # defines the system failure event
     thres = 2
 
     # Given a system function, i.e. sf_min_path, it should be represented by a function that only has "comps_st" as input.
-    sys_fun = sys_fun_wrap(od_pair, arcs, varis, thres, sys_val_itc)
+    sys_fun = sys_fun_wrap(od_pair, arcs, varis, thres * elapsed_itc)
 
     # # Branch and bound
     #pdb.set_trace()
@@ -163,7 +332,7 @@ def test_do_gen_bnb(main_sys):
 
 def test_get_compat_rules1():
 
-    cst = {f'e{i}': 3 for i in range(1, 7)}
+    cst = {f'e{i}': 2 for i in range(1, 7)}
     rules = []
     rules_st = []
 
@@ -175,20 +344,20 @@ def test_get_compat_rules1():
 
 def test_get_compat_rules2():
 
-    cst = {f'e{i}': 3 for i in range(1, 7)}
-    rules = [{'e2': 3, 'e5': 3}]
+    cst = {f'e{i}': 2 for i in range(1, 7)}
+    rules = [{'e2': 2, 'e5': 2}]
     rules_st = ['surv']
 
     result = gen_bnb.get_compat_rules(cst, rules, rules_st)
 
     assert result[0] == [0]
-    assert results[1] == 'surv'
+    assert result[1] == 'surv'
 
 
-def test_get_compat_rules2():
+def test_get_compat_rules3():
 
-    cst = {f'e{i}': 1 for i in range(1, 7)}
-    rules = [{'e2': 3, 'e5': 3}]
+    cst = {f'e{i}': 0 for i in range(1, 7)}
+    rules = [{'e2': 2, 'e5': 2}]
     rules_st = ['surv']
 
     result = gen_bnb.get_compat_rules(cst, rules, rules_st)
@@ -197,13 +366,13 @@ def test_get_compat_rules2():
     assert result[1] == 'unk'
 
 
-def test_add_rule():
+def test_add_rule1():
     rules = [{'e2':3, 'e5':3}]
     rules_st = ['surv']
-    rule1 = {f'e{i}':1 for i in range(1, 7)}
+    rule_new = {f'e{i}':1 for i in range(1, 7)}
     fail_or_surv = 'fail'
 
-    result = gen_bnb.add_rule(rules, rules_st, rule1, fail_or_surv)
+    result = gen_bnb.add_rule(rules, rules_st, rule_new, fail_or_surv)
 
     assert result[0] == [{'e2': 3, 'e5': 3}, {'e1': 1, 'e2': 1, 'e3': 1, 'e4': 1, 'e5':1, 'e6': 1}]
     assert result[1] == ['surv', 'fail']
@@ -237,4 +406,21 @@ def test_decomp_to_two_branches():
     assert result[1] == branch.Branch(down=[1, 1, 1, 1, 3, 1], up=[3, 3, 3, 3, 3, 3], names=comps_name, is_complete=False, down_state=1, up_state=1)
 
 
+def test_get_sys_rules(main_sys):
 
+    od_pair, arcs, varis = main_sys
+
+    cst = [2, 2, 2, 2, 2, 2]
+    thres = 2 * 0.1844
+    sys_fun = sys_fun_wrap(od_pair, arcs, varis, thres)
+    rules = []
+    rules_st = []
+
+    #pdb.set_trace()
+    sys_res, rules, rules_st = gen_bnb.get_sys_rules(cst, sys_fun, rules, rules_st, varis)
+
+    np.testing.assert_almost_equal(sys_res['sys_val'].values, np.array([0.18442]), decimal=5)
+    assert sys_res['comps_st'].values == [{k: 2 for k in varis.keys()}]
+    assert sys_res['comps_st_min'].values == [{'e2': 2, 'e5': 2}]
+    assert rules == [{k: 2 for k in varis.keys()}]
+    assert rules_st == ['surv']
