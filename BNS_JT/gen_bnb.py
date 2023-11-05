@@ -184,8 +184,8 @@ def decomp_to_two_branches(br, comp, state):
     assert comp in br.names, f'comp must exist in br.names: {comp}'
     assert isinstance(state, int), f'state must be an integer: f{type(state)}'
 
-    down = {y: x for x, y in zip(br.down, br.names)}
-    up = {y: x for x, y in zip(br.up, br.names)}
+    down = {x: y for x, y in zip(br.names, br.down)}
+    up = {x: y for x, y in zip(br.names, br.up)}
 
     #up_bl = copy.deepcopy(up) # the branch on the lower side
     up[comp] = state - 1

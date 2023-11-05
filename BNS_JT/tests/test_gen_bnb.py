@@ -316,7 +316,7 @@ def test_do_gen_bnb(main_sys):
     sys_fun = sys_fun_wrap(od_pair, arcs, varis, thres * elapsed_itc)
 
     # # Branch and bound
-    #pdb.set_trace()
+    pdb.set_trace()
     no_sf, rules, rules_st, brs, sys_res = gen_bnb.do_gen_bnb(sys_fun, varis, max_br=1000)
 
     # Result
@@ -367,43 +367,43 @@ def test_get_compat_rules3():
 
 
 def test_add_rule1():
-    rules = [{'e2':3, 'e5':3}]
+    rules = [{'e2':2, 'e5':2}]
     rules_st = ['surv']
     rule_new = {f'e{i}':1 for i in range(1, 7)}
     fail_or_surv = 'fail'
 
     result = gen_bnb.add_rule(rules, rules_st, rule_new, fail_or_surv)
 
-    assert result[0] == [{'e2': 3, 'e5': 3}, {'e1': 1, 'e2': 1, 'e3': 1, 'e4': 1, 'e5':1, 'e6': 1}]
+    assert result[0] == [{'e2': 2, 'e5': 2}, {'e1': 0, 'e2': 0, 'e3': 0, 'e4': 0, 'e5':0, 'e6': 0}]
     assert result[1] == ['surv', 'fail']
 
 
 def test_get_comp_st_for_next_bnb():
-    up = {'e1': 3, 'e2': 3, 'e3': 3, 'e4': 3, 'e5': 3, 'e6': 3}
-    down = {'e1': 1, 'e2': 1, 'e3': 1, 'e4': 1, 'e5': 1, 'e6': 1}
-    rules = [{'e2': 3, 'e5': 3},
-             {'e1': 1, 'e2': 1, 'e3': 1, 'e4': 1, 'e5': 1, 'e6': 1}]
+    up = {'e1': 2, 'e2': 2, 'e3': 2, 'e4': 2, 'e5': 2, 'e6': 2}
+    down = {'e1': 0, 'e2': 0, 'e3': 0, 'e4': 0, 'e5': 0, 'e6': 0}
+    rules = [{'e2': 2, 'e5': 2},
+             {'e1': 0, 'e2': 0, 'e3': 0, 'e4': 0, 'e5': 0, 'e6': 0}]
     rules_st = ['surv', 'fail']
 
     result = gen_bnb.get_comp_st_for_next_bnb(up, down, rules, rules_st)
 
     assert result[0] == 'e5'
-    assert result[1] == 3
+    assert result[1] == 2
 
 
 def test_decomp_to_two_branches():
     comps_name = ['e1', 'e2', 'e3', 'e4', 'e5' ,'e6']
-    br = branch.Branch(down=[1, 1, 1, 1, 1, 1], up=[3, 3, 3, 3, 3, 3], is_complete=False, names=comps_name)
+    br = branch.Branch(down=[0, 0, 0, 0, 0, 0], up=[2, 2, 2, 2, 2, 2], is_complete=False, names=comps_name)
     br.down_state='fail' # FIXME
     br.up_state='surv' # FIXME
     comp_bnb = 'e5'
-    st_bnb_up = 3
+    st_bnb_up = 2
 
     result = gen_bnb.decomp_to_two_branches(br, comp_bnb, st_bnb_up)
 
-    assert result[0] == branch.Branch(down=[1, 1, 1, 1, 1, 1], up=[3, 3, 3, 3, 2, 3], names=comps_name, is_complete=False, down_state=1, up_state=1)
+    assert result[0] == branch.Branch(down=[0, 0, 0, 0, 0, 0], up=[2, 2, 2, 2, 2, 2], names=comps_name, is_complete=False, down_state=1, up_state=1)
 
-    assert result[1] == branch.Branch(down=[1, 1, 1, 1, 3, 1], up=[3, 3, 3, 3, 3, 3], names=comps_name, is_complete=False, down_state=1, up_state=1)
+    assert result[1] == branch.Branch(down=[0, 0, 0, 0, 2, 0], up=[2, 2, 2, 2, 2, 2], names=comps_name, is_complete=False, down_state=1, up_state=1)
 
 
 def test_get_sys_rules(main_sys):
