@@ -180,7 +180,7 @@ def test_sf_min_path1(main_sys):
     od_pair, arcs, varis = main_sys
 
     # 0, 1, 2 (higher, better)
-    comps_st = {k: v.B.shape[1] - 1 for k, v in varis.items()} # intact state (i.e. the highest state)
+    comps_st = {k: 2 for k, v in varis.items()} # intact state (i.e. the highest state)
     elapsed, path = get_time_and_path(comps_st, od_pair, arcs, varis)
 
     thres = 2 * elapsed
@@ -220,7 +220,7 @@ def test_sf_min_path3(main_sys):
     assert result[2] == {'e2': 2, 'e5': 1}
 
 
-def test_init_brs(main_sys):
+def test_init_brs1(main_sys):
 
     _, _, varis = main_sys
     rules = []
@@ -231,6 +231,49 @@ def test_init_brs(main_sys):
     assert len(brs) == 1
     assert brs[0].up_state == 'unk'
     assert brs[0].down_state == 'unk'
+    assert brs[0].down == [0, 0, 0, 0, 0, 0]
+    assert brs[0].up == [2, 2, 2, 2, 2, 2]
+
+
+def test_init_brs2(main_sys):
+
+    _, _, varis = main_sys
+    rules = [{'e2': 2, 'e5': 2}]
+    rules_st = ['surv']
+
+    brs = gen_bnb.init_brs(varis, rules, rules_st)
+
+    assert len(brs) == 1
+    assert brs[0].up_state == 'surv'
+    assert brs[0].down_state == 'unk'
+    assert brs[0].down == [0, 0, 0, 0, 0, 0]
+    assert brs[0].up == [2, 2, 2, 2, 2, 2]
+
+def test_init_brs3(main_sys):
+
+    _, _, varis = main_sys
+    rules = [{'e2': 2, 'e5': 2}, {x: 0 for x in varis.keys()}]
+    rules_st = ['surv', 'fail']
+
+    brs = gen_bnb.init_brs(varis, rules, rules_st)
+
+    assert len(brs) == 1
+    assert brs[0].up_state == 'surv'
+    assert brs[0].down_state == 'fail'
+    assert brs[0].down == [0, 0, 0, 0, 0, 0]
+    assert brs[0].up == [2, 2, 2, 2, 2, 2]
+
+def test_init_brs4(main_sys):
+
+    _, _, varis = main_sys
+    rules = [{'e2': 2, 'e5': 2}, {x: 0 for x in varis.keys()}, {'e2': 2, 'e6': 2, 'e4': 2}]
+    rules_st = ['surv', 'fail', 'surv']
+
+    brs = gen_bnb.init_brs(varis, rules, rules_st)
+
+    assert len(brs) == 1
+    assert brs[0].up_state == 'surv'
+    assert brs[0].down_state == 'fail'
     assert brs[0].down == [0, 0, 0, 0, 0, 0]
     assert brs[0].up == [2, 2, 2, 2, 2, 2]
 
@@ -257,7 +300,7 @@ def test_core2(main_sys):
 
     cst = [2, 2, 2, 2, 2, 2]
     stop_br = True
-    rules = [{k: 2 for k in varis.keys()}]
+    rules = [{'e2': 2, 'e5': 2}]
     rules_st = ['surv']
     brs = gen_bnb.init_brs(varis, rules, rules_st)
 
@@ -273,16 +316,31 @@ def test_core3(main_sys):
 
     cst = [0, 0, 0, 0, 0, 0]
     stop_br = True
-    rules = [{k: 2 for k in varis.keys()}]
-    rules_st = ['surv']
+    rules = [{'e2': 2, 'e5': 2}, {x: 0 for x in varis.keys()}]
+    rules_st = ['surv', 'fail']
     brs = gen_bnb.init_brs(varis, rules, rules_st)
 
     #pdb.set_trace()
     brs, cst, stop_br = gen_bnb.core(brs, rules, rules_st, cst, stop_br)
     assert brs == []
-    assert cst == [0, 0, 0, 0, 0, 0]
+    assert cst == [2, 2, 2, 2, 1, 2]
     assert stop_br == True
 
+def test_core4(main_sys):
+
+    od_pair, arcs, varis = main_sys
+
+    cst = [2, 2, 2, 2, 1, 2]
+    stop_br = True
+    rules = [{'e2': 2, 'e5': 2}, {x: 0 for x in varis.keys()}, {'e2': 2, 'e6': 2, 'e4': 2}]
+    rules_st = ['surv', 'fail', 'surv']
+    brs = gen_bnb.init_brs(varis, rules, rules_st)
+
+    #pdb.set_trace()
+    brs, cst, stop_br = gen_bnb.core(brs, rules, rules_st, cst, stop_br)
+    assert brs == []
+    assert cst == [2, 1, 2, 2, 2, 2]
+    assert stop_br == True
 
 
 def test_do_gen_bnb(main_sys):
@@ -316,7 +374,7 @@ def test_do_gen_bnb(main_sys):
     sys_fun = sys_fun_wrap(od_pair, arcs, varis, thres * elapsed_itc)
 
     # # Branch and bound
-    pdb.set_trace()
+    #pdb.set_trace()
     no_sf, rules, rules_st, brs, sys_res = gen_bnb.do_gen_bnb(sys_fun, varis, max_br=1000)
 
     # Result
@@ -369,7 +427,7 @@ def test_get_compat_rules3():
 def test_add_rule1():
     rules = [{'e2':2, 'e5':2}]
     rules_st = ['surv']
-    rule_new = {f'e{i}':1 for i in range(1, 7)}
+    rule_new = {f'e{i}':0 for i in range(1, 7)}
     fail_or_surv = 'fail'
 
     result = gen_bnb.add_rule(rules, rules_st, rule_new, fail_or_surv)
@@ -401,18 +459,19 @@ def test_decomp_to_two_branches():
 
     result = gen_bnb.decomp_to_two_branches(br, comp_bnb, st_bnb_up)
 
-    assert result[0] == branch.Branch(down=[0, 0, 0, 0, 0, 0], up=[2, 2, 2, 2, 2, 2], names=comps_name, is_complete=False, down_state=1, up_state=1)
+    assert result[0] == branch.Branch(down=[0, 0, 0, 0, 0, 0], up=[2, 2, 2, 2, 1, 2], names=comps_name, is_complete=False, down_state=1, up_state=1)
 
     assert result[1] == branch.Branch(down=[0, 0, 0, 0, 2, 0], up=[2, 2, 2, 2, 2, 2], names=comps_name, is_complete=False, down_state=1, up_state=1)
 
 
-def test_get_sys_rules(main_sys):
+def test_get_sys_rules1(main_sys):
 
     od_pair, arcs, varis = main_sys
 
-    cst = [2, 2, 2, 2, 2, 2]
     thres = 2 * 0.1844
     sys_fun = sys_fun_wrap(od_pair, arcs, varis, thres)
+
+    cst = [2, 2, 2, 2, 2, 2]
     rules = []
     rules_st = []
 
@@ -422,5 +481,50 @@ def test_get_sys_rules(main_sys):
     np.testing.assert_almost_equal(sys_res['sys_val'].values, np.array([0.18442]), decimal=5)
     assert sys_res['comps_st'].values == [{k: 2 for k in varis.keys()}]
     assert sys_res['comps_st_min'].values == [{'e2': 2, 'e5': 2}]
-    assert rules == [{k: 2 for k in varis.keys()}]
+    assert rules == [{'e2': 2, 'e5': 2}]
     assert rules_st == ['surv']
+
+
+def test_get_sys_rules2(main_sys):
+
+    od_pair, arcs, varis = main_sys
+
+    thres = 2 * 0.1844
+    sys_fun = sys_fun_wrap(od_pair, arcs, varis, thres)
+
+    cst = [0, 0, 0, 0, 0, 0]
+    rules = [{'e2': 2, 'e5': 2}]
+    rules_st = ['surv']
+
+    #pdb.set_trace()
+    sys_res, rules, rules_st = gen_bnb.get_sys_rules(cst, sys_fun, rules, rules_st, varis)
+
+    np.testing.assert_almost_equal(sys_res['sys_val'].values, np.array([1.8442]), decimal=4)
+    assert sys_res['comps_st'].values[0] == {k: 0 for k in varis.keys()}
+    assert sys_res['comps_st_min'].values == [{}]
+    assert rules[0] == {'e2': 2, 'e5': 2}
+    assert rules[1] == {k: 0 for k in varis.keys()}
+    assert rules_st == ['surv', 'fail']
+
+
+def test_get_sys_rules3(main_sys):
+
+    od_pair, arcs, varis = main_sys
+
+    thres = 2 * 0.1844
+    sys_fun = sys_fun_wrap(od_pair, arcs, varis, thres)
+
+    cst = [2, 2, 2, 2, 1, 2]
+    rules = [{'e2': 2, 'e5': 2}, {k: 0 for k in varis.keys()}]
+    rules_st = ['surv', 'fail']
+
+    #pdb.set_trace()
+    sys_res, rules, rules_st = gen_bnb.get_sys_rules(cst, sys_fun, rules, rules_st, varis)
+
+    np.testing.assert_almost_equal(sys_res['sys_val'].values, np.array([0.266]), decimal=3)
+    assert sys_res['comps_st'].values[0] == {'e1': 2, 'e2': 2, 'e3': 2, 'e4': 2, 'e5': 1, 'e6': 2}
+    assert sys_res['comps_st_min'].values == [{'e2': 2, 'e6': 2, 'e4': 2}]
+    assert rules[0] == {'e2': 2, 'e5': 2}
+    assert rules[1] == {k: 0 for k in varis.keys()}
+    assert rules[2] == {'e2': 2, 'e6': 2, 'e4': 2}
+    assert rules_st == ['surv', 'fail', 'surv']

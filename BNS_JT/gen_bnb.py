@@ -210,12 +210,12 @@ def get_sys_rules(cst, sys_fun, rules, rules_st, varis):
     sys_res = pd.DataFrame({'sys_val': [sys_val], 'comps_st': [cst], 'comps_st_min': [min_comps_st]})
 
     if min_comps_st:
+        rule = min_comps_st
+    else:
         if sys_st == 'surv':
             rule = {k: v for k, v in cst.items() if v} # the rule is the same as up_dict_i but includes only components whose state is greater than the worst one (i.e. 0)
         else:
             rule = {k: v for k, v in cst.items() if v < len(varis[k].B[0]) - 1} # the rule is the same as up_dict_i but includes only components whose state is less than the best one
-    else:
-        rule = min_comps_st
 
     rules, rules_st = add_rule(rules, rules_st, rule, sys_st)
 
