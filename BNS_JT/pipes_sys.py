@@ -183,7 +183,7 @@ def sys_fun_pipes(comps_st, thres, edges, node_coords, es_idx, edges2comps, depo
 
             e_idx = es_idx[e]
 
-            if res.x[e_idx-1] > 0:
+            if res.x[e_idx] > 0:
                 x_name = edges2comps[e]
 
                 if x_name not in min_comps_st:

@@ -355,10 +355,9 @@ def test_run_pipes_fun(main_sys, sub_sys):
     assert res.success == True
     assert res.status == 0
     assert res.fun == -2.0
-    print(res.x)
+    np.testing.assert_array_almost_equal(res.x, np.array([2.,  0.,  2.,  2.,  2.,  0.,  0.,  0.,  2.,  0.,  0.,  0.,  0.,  2.,  0.,  0.,  0.,  2.,  0., ]))
 
 
-#@pytest.mark.skip('FIXME')
 def test_sys_fun_pipes(main_sys, sub_sys):
 
     comps_st, edges, node_coords, es_idx, edges2comps, depots, varis = main_sys
@@ -370,8 +369,7 @@ def test_sys_fun_pipes(main_sys, sub_sys):
 
     assert sys_val == 2.0
     assert sys_st == 'surv'
-    #FIXME
-    #assert min_comps_st == {'x1': 2, 'n1': 1, 'n2': 1, 'x3': 2, 'n4': 1, 'x4': 2, 'n5': 1, 'x5': 2, 'n6': 1, 'x9': 2, 'n10': 1}
+    assert min_comps_st == {'x1': 2, 'n1': 1, 'n2': 1, 'x3': 2, 'n4': 1, 'x4': 2, 'n5': 1, 'x5': 2, 'n6': 1, 'x9': 2, 'n10': 1}
 
 
 def sys_fun_wrap(thres, edges, node_coords, es_idx, edges2comps, depots, varis, sub_bw_nodes, sub_bw_edges):
@@ -380,7 +378,7 @@ def sys_fun_wrap(thres, edges, node_coords, es_idx, edges2comps, depots, varis, 
     return sys_fun2
 
 
-@pytest.mark.skip('too long')
+#@pytest.mark.skip('too long')
 def test_do_gen_bnb(main_sys, sub_sys):
 
     # Branch and Bound
