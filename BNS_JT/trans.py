@@ -52,6 +52,57 @@ system_meta = {'system_meta': {
         }
 
 
+def sys_fun_wrap(od_pair, arcs, varis, thres):
+
+    def sys_fun2(comps_st):
+        return sf_min_path(comps_st, od_pair, arcs, varis, thres)
+    return sys_fun2
+
+
+def sf_min_path(comps_st, od_pair, arcs, vari, thres):
+    """
+    comps_st:
+    od_pair:
+    arcs:
+    vari:
+    thres:
+    """
+    d_time, path = get_time_and_path_given_comps(comps_st, od_pair, arcs, vari)
+
+    # fail, surv corresponds to 0 and 1
+    min_comps_st = {}
+    if d_time > thres:
+        sys_st = 'fail'
+    else:
+        sys_st = 'surv'
+        for n0, n1 in zip(path[:-1], path[1:]):
+            arc = next((k for k, v in arcs.items() if v == [n0, n1] or v == [n1, n0]), None)
+            min_comps_st[arc] = comps_st[arc]
+
+    return d_time, sys_st, min_comps_st
+
+
+
+def get_time_and_path_given_comps(comps_st, od_pair, arcs, vari):
+    """
+    comps_st: starting from 0
+    od_pair:
+    arcs:
+    vari:
+    """
+    assert isinstance(comps_st, dict)
+    assert all([comps_st[k] < len(v.values) for k, v in vari.items()])
+
+    G = nx.Graph()
+    for k, x in arcs.items():
+        G.add_edge(x[0], x[1], time=vari[k].values[comps_st[k]])
+
+    path = nx.shortest_path(G, source = od_pair[0], target = od_pair[1], weight = 'time')
+    d_time = nx.shortest_path_length(G, source = od_pair[0], target = od_pair[1], weight = 'time')
+
+    return d_time, path
+
+
 def get_all_paths_and_times(ODs, G, key='time'):
     """
     ODs: list of OD pairs
