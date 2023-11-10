@@ -56,7 +56,7 @@ class Branch(object):
 
     def __repr__(self):
         return textwrap.dedent(f'''\
-{self.__class__.__name__}(down={self.down}, up={self.up}, is_complete={self.is_complete}, down_state={self.down_state}, up_state={self.up_state}, down_val={self.down_val}, up_val={self.up_val}''')
+{self.__class__.__name__}(down={self.down}, up={self.up}, is_complete={self.is_complete}, down_state={self.down_state}, up_state={self.up_state}, down_val={self.down_val}, up_val={self.up_val})''')
 
     def __eq__(self, other):
         """Overrides the default implementation"""

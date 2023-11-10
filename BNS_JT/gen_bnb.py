@@ -109,48 +109,48 @@ def get_comp_st_for_next_bnb(up, down, rules, rules_st):
     # rules: a list of rules (in dictionary)
     # rules_st: a list of rules' state (the same length as rules)
 
-    cr_inds_up, _ = get_compat_rules(up, rules, rules_st)
-    cr_inds_down, _ = get_compat_rules(down, rules, rules_st)
+    idx_up, _ = get_compat_rules(up, rules, rules_st)
+    idx_down, _ = get_compat_rules(down, rules, rules_st)
 
-    cr_inds = set(cr_inds_up + cr_inds_down)
-    c_rules = [rules[i] for i in cr_inds]
-    c_rules_st = [rules_st[i] for i in cr_inds]
+    c_rules = [rules[i] for i in set(idx_up + idx_down)]
+    _len = [len(x) for x in c_rules]
 
-    r_len = [len(x) for x in c_rules]
-    r_len_sort_ind = [i[0] for i in sorted(enumerate(r_len), key=lambda x:x[1])]
+    idx = sorted(range(len(_len)), key=lambda y: _len[y])
+    c_rules = [c_rules[i] for i in idx]
+    c_st = [rules_st[i] for i in idx]
 
     comps_cnt = {}
     comp_bnb = None
-    for i in r_len_sort_ind:
-        r_i = c_rules[i]
-        r_i_st = c_rules_st[i]
-        comps_i = [k for k in r_i]
+    for r, r_st in zip(c_rules, c_st):
 
-        comps_i_cnt = [] # counts of components' appearance across rules
-        for x in comps_i:
+        comps = list(r.keys())
+
+        _comps_cnt = [] # counts of components' appearance across rules
+        for x in comps:
             if x not in comps_cnt:
-                x_cnt = sum([x in r for r in c_rules])
+                x_cnt = sum([x in y for y in c_rules])
                 comps_cnt[x] = x_cnt
             else:
                 x_cnt = comps_cnt[x]
 
-            comps_i_cnt.append(x_cnt)
+            _comps_cnt.append(x_cnt)
 
-        c_i_sort_ind = [j[0] for j in sorted(enumerate(comps_i_cnt), key=lambda x:x[1])] # order components by their frequency in rules set
-        for j in c_i_sort_ind[::-1]:
-            x_ij = comps_i[j]
-            x_ij_st = r_i[x_ij]
+        #c_i_sort_ind = [j[0] for j in sorted(enumerate(comps_i_cnt), key=lambda x:x[1])] # order components by their frequency in rules set
+        c_ind = sorted(range(len(_comps_cnt)), key=lambda y: _comps_cnt[y])# order components by their frequency in rules set
+        for j in c_ind[::-1]:
+            comp = comps[j]
+            comp_st = r[comp]
 
-            if r_i_st == 'surv':
-                if x_ij_st > down[x_ij]:
-                    comp_bnb = x_ij
-                    st_bnb_up = x_ij_st # this is always the upper branch's lower state
+            if r_st == 'surv':
+                if comp_st > down[comp]:
+                    comp_bnb = comp
+                    st_bnb_up = comp_st # this is always the upper branch's lower state
                     break
 
             else: # r_i_st == 'fail'
-                if x_ij_st < up[x_ij]:
-                    comp_bnb = x_ij
-                    st_bnb_up = x_ij_st + 1 # this is always the upper branch's lower state
+                if comp_st < up[comp]:
+                    comp_bnb = comp
+                    st_bnb_up = comp_st + 1 # this is always the upper branch's lower state
                     break
 
         if comp_bnb is not None:

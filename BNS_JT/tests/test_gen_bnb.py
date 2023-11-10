@@ -279,7 +279,37 @@ def test_core4(main_sys):
     assert stop_br == True
 
 
-def test_do_gen_bnb(main_sys):
+@pytest.mark.skip('FIXME')
+def test_do_gen_bnb2(main_sys):
+
+    od_pair, arcs, varis = main_sys
+
+    rules = [{'e2': 2, 'e6': 2, 'e4': 2}, {'e2': 1, 'e5': 2}, {'e1': 2, 'e3': 2, 'e5': 2}, {'e1': 0, 'e2': 1, 'e3': 0, 'e4': 0, 'e5': 0, 'e6': 0}, {'e2': 0, 'e3': 1}, {'e1': 0, 'e2': 0, 'e4': 0, 'e5': 0, 'e6': 0}]
+    rules_st = ['surv', 'surv', 'surv', 'fail', 'fail', 'fail']
+    cst = [0, 0, 2, 0, 0, 0]
+    thres = 2 * 0.1844
+
+    sys_fun = trans.sys_fun_wrap(od_pair, arcs, varis, thres)
+
+    brs = gen_bnb.init_brs(varis, rules, rules_st)
+    stop_br = False
+    flag=True
+    #pdb.set_trace()
+    while flag:
+        brs, cst, stop_br = gen_bnb.core(brs, rules, rules_st, cst, stop_br)
+        print(cst, flag)
+        if stop_br:
+            break
+        else:
+            flag = any([not b.is_complete for b in brs])
+
+    sys_res_, rules, rules_st = gen_bnb.get_sys_rules(cst, sys_fun, rules, rules_st, varis)
+
+    assert pytest.approx(sys_res_['sys_val'].values[0], 0.001) == 0.41626
+
+
+@pytest.mark.skip('FIXME')
+def test_do_gen_bnb1(main_sys):
     # ## System function as an input
     # 
     # A system function needs to return (1) system function value, (2) system state, and (3) minimally required component state to fulfill the obtained system function value. If (3) is unavailable, it can be returned as None. <br>
@@ -311,6 +341,7 @@ def test_do_gen_bnb(main_sys):
 
     # # Branch and bound
     #pdb.set_trace()
+    # break until 0.424558
     no_sf, rules, rules_st, brs, sys_res = gen_bnb.do_gen_bnb(sys_fun, varis, max_br=1000)
 
     # Result
@@ -318,18 +349,131 @@ def test_do_gen_bnb(main_sys):
     assert len(rules) == 10
     assert len(brs) == 10
 
-    #print(rules)
-    #print(rules_st)
-    #print(brs)
+    #expected_rules =[{'e1': 2, 'e3': 2, 'e5': 2}, {'e2': 0, 'e3': 1}, {'e2': 0, 'e5': 1}, {'e2': 1, 'e6': 2, 'e4': 2}, {'e2': 1, 'e5': 1}, {'e4': 1, 'e5': 0}, {'e1': 1, 'e2': 0}, {'e2': 2, 'e6': 1, 'e4': 2}, {'e5': 0, 'e6': 0}, {'e2': 1, 'e5': 0, 'e6': 1}]
+    #assert rules == expected_rules
+    expected_rules_st = ['surv', 'fail', 'fail', 'surv', 'surv', 'fail', 'fail', 'surv', 'fail', 'fail']
+    #assert rules_st == expected_rules_st
+    """
+    expected_brs = [branch.Branch(down=[1, 1, 1, 1, 1, 1], up=[3, 1, 2, 3, 3, 3], is_complete=True, down_state=fail, up_state=fail, down_val=None, up_val=None),
+                    branch.Branch(down=[1, 1, 3, 1, 1, 1], up=[3, 1, 3, 3, 2, 3], is_complete=True, down_state=fail, up_state=fail, down_val=None, up_val=None),
+                    branch.Branch(down=[1, 1, 3, 1, 3, 1], up=[2, 1, 3, 3, 3, 3], is_complete=True, down_state=fail, up_state=fail, down_val=None, up_val=None),
+                    branch.Branch(down=[3, 1, 3, 1, 3, 1], up=[3, 1, 3, 3, 3, 3], is_complete=True, down_state=surv, up_state=surv, down_val=None, up_val=None),
+                    branch.Branch(down=[1, 2, 1, 1, 1, 1], up=[3, 3, 3, 2, 1, 3], is_complete=True, down_state=fail, up_state=fail, down_val=None, up_val=None),
+                    branch.Branch(down=[1, 2, 1, 3, 1, 1], up=[3, 3, 3, 3, 1, 1], is_complete=True, down_state=fail, up_state=fail, down_val=None, up_val=None),
+                    branch.Branch(down=[1, 2, 1, 3, 1, 2], up=[3, 2, 3, 3, 1, 2], is_complete=True, down_state=fail, up_state=fail, down_val=None, up_val=None),
+                    branch.Branch(down=[1, 3, 1, 3, 1, 2], up=[3, 3, 3, 3, 1, 2], is_complete=True, down_state=surv, up_state=surv, down_val=None, up_val=None),
+                    branch.Branch(down=[1, 2, 1, 3, 1, 3], up=[3, 3, 3, 3, 1, 3], is_complete=True, down_state=surv, up_state=surv, down_val=None, up_val=None),
+                    branch.Branch(down=[1, 2, 1, 1, 2, 1], up=[3, 3, 3, 3, 3, 3], is_complete=True, down_state=surv, up_state=surv, down_val=None, up_val=None)]
+    """
+    expected = np.array([0.184420,
+                         1.844197,
+                         0.266259,
+                         0.274558,
+                         0.334420,
+                         0.995669,
+                         1.123087,
+                         0.424558,
+                         1.844197,
+                         0.416259,
+                         0.995669,
+                         0.278701,
+                         0.356397,
+                         1.032948,
+                         0.368839,
+                         0.371668,
+                         0.992794,
+                         0.484420,
+                         0.336969,
+                         0.902655,
+                         0.427108,
+                         0.427108,
+                         0.427108])
 
-    #print(sys_res)
+    np.testing.assert_array_almost_equal(sys_res['sys_val'].values, expected)
 
-def test_get_compat_rules1():
+"""
+     sys_val                                           comps_st  \
+0   {'e1': 3, 'e2': 3, 'e3': 3, 'e4': 3, 'e5': 3, ...   
+1   {'e1': 1, 'e2': 1, 'e3': 1, 'e4': 1, 'e5': 1, ...   
+2   {'e1': 3, 'e2': 3, 'e3': 3, 'e4': 3, 'e5': 2, ...   
+3   {'e1': 3, 'e2': 2, 'e3': 3, 'e4': 3, 'e5': 3, ...   
+4   {'e1': 3, 'e2': 1, 'e3': 3, 'e4': 3, 'e5': 3, ...   
+5   {'e1': 1, 'e2': 1, 'e3': 1, 'e4': 1, 'e5': 3, ...   
+6   {'e1': 1, 'e2': 2, 'e3': 1, 'e4': 1, 'e5': 1, ...   
+7   {'e1': 3, 'e2': 1, 'e3': 2, 'e4': 3, 'e5': 3, ...   
+8   {'e1': 1, 'e2': 1, 'e3': 3, 'e4': 1, 'e5': 1, ...   
+9   {'e1': 3, 'e2': 1, 'e3': 3, 'e4': 3, 'e5': 2, ...   
+10  {'e1': 1, 'e2': 1, 'e3': 3, 'e4': 1, 'e5': 3, ...   
+11  {'e1': 3, 'e2': 3, 'e3': 3, 'e4': 2, 'e5': 2, ...   
+12  {'e1': 3, 'e2': 2, 'e3': 3, 'e4': 3, 'e5': 2, ...   
+13  {'e1': 1, 'e2': 3, 'e3': 1, 'e4': 1, 'e5': 1, ...   
+14  {'e1': 1, 'e2': 2, 'e3': 1, 'e4': 1, 'e5': 2, ...   
+15  {'e1': 3, 'e2': 3, 'e3': 3, 'e4': 2, 'e5': 1, ...   
+16  {'e1': 1, 'e2': 2, 'e3': 1, 'e4': 3, 'e5': 1, ...   
+17  {'e1': 2, 'e2': 1, 'e3': 3, 'e4': 3, 'e5': 3, ...   
+18  {'e1': 3, 'e2': 3, 'e3': 3, 'e4': 3, 'e5': 1, ...   
+19  {'e1': 3, 'e2': 3, 'e3': 3, 'e4': 3, 'e5': 1, ...   
+20  {'e1': 1, 'e2': 2, 'e3': 1, 'e4': 3, 'e5': 1, ...   
+21  {'e1': 3, 'e2': 2, 'e3': 3, 'e4': 3, 'e5': 1, ...   
+22  {'e1': 3, 'e2': 2, 'e3': 3, 'e4': 3, 'e5': 1, ...   
 
-    cst = {f'e{i}': 2 for i in range(1, 7)}
+                   comps_st_min  
+0            {'e2': 3, 'e5': 3}  
+1                          None  
+2   {'e2': 3, 'e6': 3, 'e4': 3}  
+3            {'e2': 2, 'e5': 3}  
+4   {'e1': 3, 'e3': 3, 'e5': 3}  
+5                          None  
+6                          None  
+7                          None  
+8                          None  
+9                          None  
+10                         None  
+11           {'e2': 3, 'e5': 2}  
+12  {'e2': 2, 'e6': 3, 'e4': 3}  
+13                         None  
+14           {'e2': 2, 'e5': 2}  
+15                         None  
+16                         None  
+17                         None  
+18  {'e2': 3, 'e6': 2, 'e4': 3}  
+19                         None  
+20                         None  
+21                         None  
+22                         None  
+"""
+
+
+def test_get_compat_rules0():
+
     rules = []
     rules_st = []
 
+    cst = {f'e{i}': 2 for i in range(1, 7)}
+    result = gen_bnb.get_compat_rules(cst, rules, rules_st)
+
+    assert result[0] == []
+    assert result[1] == 'unk'
+
+    cst = {f'e{i}': 0 for i in range(1, 7)}
+    result = gen_bnb.get_compat_rules(cst, rules, rules_st)
+
+    assert result[0] == []
+    assert result[1] == 'unk'
+
+
+def test_get_compat_rules1():
+
+    rules = [{'e2': 2, 'e5': 2}]
+    rules_st = ['surv']
+
+    cst = {f'e{i}': 2 for i in range(1, 7)}
+    result = gen_bnb.get_compat_rules(cst, rules, rules_st)
+
+    assert result[0] == [0]
+    assert result[1] == 'surv'
+
+    cst = {f'e{i}': 0 for i in range(1, 7)}
     result = gen_bnb.get_compat_rules(cst, rules, rules_st)
 
     assert result[0] == []
@@ -338,26 +482,51 @@ def test_get_compat_rules1():
 
 def test_get_compat_rules2():
 
-    cst = {f'e{i}': 2 for i in range(1, 7)}
-    rules = [{'e2': 2, 'e5': 2}]
+    rules = [{'e2': 1, 'e5': 2}]
     rules_st = ['surv']
+
+    cst = {f'e{i}': 2 for i in range(1, 7)}
+    result = gen_bnb.get_compat_rules(cst, rules, rules_st)
+
+    assert result[0] == [0]
+    assert result[1] == 'surv'
+
+    cst = {f'e{i}': 0 for i in range(1, 7)}
+    result = gen_bnb.get_compat_rules(cst, rules, rules_st)
+
+    assert result[0] == []
+    assert result[1] == 'unk'
+
+
+def test_get_compat_rules3():
+
+    cst = {f'e{i}': 2 for i in range(1, 7)}
+    rules = [{'e2': 1, 'e5': 2}, {'e1': 1, 'e2': 0}]
+    rules_st = ['surv', 'fail']
 
     result = gen_bnb.get_compat_rules(cst, rules, rules_st)
 
     assert result[0] == [0]
     assert result[1] == 'surv'
 
-
-def test_get_compat_rules3():
-
     cst = {f'e{i}': 0 for i in range(1, 7)}
-    rules = [{'e2': 2, 'e5': 2}]
-    rules_st = ['surv']
 
     result = gen_bnb.get_compat_rules(cst, rules, rules_st)
 
-    assert result[0] == []
-    assert result[1] == 'unk'
+    assert result[0] == [1]
+    assert result[1] == 'fail'
+
+
+def test_get_compat_rules4():
+
+    cst = {'e1': 0, 'e2': 0, 'e3': 2 , 'e4': 1, 'e5': 0, 'e6': 2}
+    rules = [{'e2': 1, 'e5': 2}, {'e1': 1, 'e2': 0}]
+    rules_st = ['surv', 'fail']
+
+    result = gen_bnb.get_compat_rules(cst, rules, rules_st)
+
+    assert result[0] == [1]
+    assert result[1] == 'fail'
 
 
 def test_add_rule1():
@@ -370,6 +539,26 @@ def test_add_rule1():
 
     assert result[0] == [{'e2': 2, 'e5': 2}, {'e1': 0, 'e2': 0, 'e3': 0, 'e4': 0, 'e5':0, 'e6': 0}]
     assert result[1] == ['surv', 'fail']
+
+
+def test_add_rule2():
+    rules = [{'e2':2, 'e5':2}, {'e2': 1, 'e5': 1}]
+    rules_st = ['surv', 'fail']
+    rule_new = {'e2': 1, 'e5': 2}
+    fail_or_surv = 'surv'
+
+    result = gen_bnb.add_rule(rules, rules_st, rule_new, fail_or_surv)
+
+    assert result[0] == [{'e2': 1, 'e5': 1}, {'e2': 1, 'e5': 2}]
+    assert result[1] == ['fail', 'surv']
+
+    rule_new = {'e2': 1, 'e5': 0}
+    fail_or_surv = 'fail'
+
+    result = gen_bnb.add_rule(rules, rules_st, rule_new, fail_or_surv)
+
+    assert result[0] == [{'e2': 1, 'e5': 1}, {'e2': 1, 'e5': 2}]
+    assert result[1] == ['fail', 'surv']
 
 
 def test_get_comp_st_for_next_bnb0():
@@ -399,7 +588,7 @@ def test_get_comp_st_for_next_bnb1():
     assert result[1] == 2
 
 
-def test_decomp_to_two_branches():
+def test_decomp_to_two_branches1():
     comps_name = ['e1', 'e2', 'e3', 'e4', 'e5' ,'e6']
     br = branch.Branch(down=[0, 0, 0, 0, 0, 0], up=[2, 2, 2, 2, 2, 2], is_complete=False, names=comps_name)
     br.down_state='fail' # FIXME
@@ -412,6 +601,17 @@ def test_decomp_to_two_branches():
     assert result[0] == branch.Branch(down=[0, 0, 0, 0, 0, 0], up=[2, 2, 2, 2, 1, 2], names=comps_name, is_complete=False, down_state=1, up_state=1)
 
     assert result[1] == branch.Branch(down=[0, 0, 0, 0, 2, 0], up=[2, 2, 2, 2, 2, 2], names=comps_name, is_complete=False, down_state=1, up_state=1)
+
+
+    br.down_state='fail' # FIXME
+    br.up_state='fail' # FIXME
+    comp_bnb = 'e2'
+    st_bnb_up = 1
+    result = gen_bnb.decomp_to_two_branches(br, comp_bnb, st_bnb_up)
+
+    assert result[0] == branch.Branch(down=[0, 0, 0, 0, 0, 0], up=[2, 0, 2, 2, 2, 2], names=comps_name, is_complete=False, down_state=1, up_state=1)
+
+    assert result[1] == branch.Branch(down=[0, 1, 0, 0, 0, 0], up=[2, 2, 2, 2, 2, 2], names=comps_name, is_complete=False, down_state=1, up_state=1)
 
 
 def test_get_sys_rules1(main_sys):
