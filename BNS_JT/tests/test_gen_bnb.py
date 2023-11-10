@@ -279,7 +279,6 @@ def test_core4(main_sys):
     assert stop_br == True
 
 
-@pytest.mark.skip('FIXME')
 def test_do_gen_bnb2(main_sys):
 
     od_pair, arcs, varis = main_sys
@@ -297,7 +296,33 @@ def test_do_gen_bnb2(main_sys):
     #pdb.set_trace()
     while flag:
         brs, cst, stop_br = gen_bnb.core(brs, rules, rules_st, cst, stop_br)
-        print(cst, flag)
+        if stop_br:
+            break
+        else:
+            flag = any([not b.is_complete for b in brs])
+
+    sys_res_, rules, rules_st = gen_bnb.get_sys_rules(cst, sys_fun, rules, rules_st, varis)
+
+    assert pytest.approx(sys_res_['sys_val'].values[0], 0.001) == 0.41626
+
+
+def test_do_gen_bnb3(main_sys):
+    # iteration 21
+    od_pair, arcs, varis = main_sys
+
+    rules = [{'e1': 2, 'e3': 2, 'e5': 2}, {'e2': 0, 'e3': 1}, {'e2': 0, 'e5': 1}, {'e2': 1, 'e6': 2, 'e4': 2}, {'e2': 1, 'e5': 1}, {'e4': 1, 'e5': 0}, {'e1': 1, 'e2': 0}, {'e2': 2, 'e6': 1, 'e4': 2}, {'e5': 0, 'e6': 0}]
+    rules_st = ['surv', 'fail', 'fail', 'surv', 'surv', 'fail', 'fail', 'surv', 'fail']
+    cst = [0, 0, 2, 0, 0, 0]
+    thres = 2 * 0.1844
+
+    sys_fun = trans.sys_fun_wrap(od_pair, arcs, varis, thres)
+
+    brs = gen_bnb.init_brs(varis, rules, rules_st)
+    stop_br = False
+    flag=True
+    #pdb.set_trace()
+    while flag:
+        brs, cst, stop_br = gen_bnb.core(brs, rules, rules_st, cst, stop_br)
         if stop_br:
             break
         else:
@@ -349,9 +374,9 @@ def test_do_gen_bnb1(main_sys):
     assert len(rules) == 10
     assert len(brs) == 10
 
-    #expected_rules =[{'e1': 2, 'e3': 2, 'e5': 2}, {'e2': 0, 'e3': 1}, {'e2': 0, 'e5': 1}, {'e2': 1, 'e6': 2, 'e4': 2}, {'e2': 1, 'e5': 1}, {'e4': 1, 'e5': 0}, {'e1': 1, 'e2': 0}, {'e2': 2, 'e6': 1, 'e4': 2}, {'e5': 0, 'e6': 0}, {'e2': 1, 'e5': 0, 'e6': 1}]
-    #assert rules == expected_rules
-    expected_rules_st = ['surv', 'fail', 'fail', 'surv', 'surv', 'fail', 'fail', 'surv', 'fail', 'fail']
+    expected_rules =[{'e1': 2, 'e3': 2, 'e5': 2}, {'e2': 0, 'e3': 1}, {'e2': 0, 'e5': 1}, {'e2': 1, 'e6': 2, 'e4': 2}, {'e2': 1, 'e5': 1}, {'e4': 1, 'e5': 0}, {'e1': 1, 'e2': 0}, {'e2': 2, 'e6': 1, 'e4': 2}, {'e5': 0, 'e6': 0}, {'e2': 1, 'e5': 0, 'e6': 1}]
+    assert rules == expected_rules
+    #expected_rules_st = ['surv', 'fail', 'fail', 'surv', 'surv', 'fail', 'fail', 'surv', 'fail', 'fail']
     #assert rules_st == expected_rules_st
     """
     expected_brs = [branch.Branch(down=[1, 1, 1, 1, 1, 1], up=[3, 1, 2, 3, 3, 3], is_complete=True, down_state=fail, up_state=fail, down_val=None, up_val=None),

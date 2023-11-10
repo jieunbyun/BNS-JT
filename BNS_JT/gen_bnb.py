@@ -213,7 +213,7 @@ def get_sys_rules(cst, sys_fun, rules, rules_st, varis):
         rule = min_comps_st
     else:
         if sys_st == 'surv':
-            rule = {k: v for k, v in cst.items() if v} # the rule is the same as up_dict_i but includes only components whose state is greater than the worst one (i.e. 0)
+            rule = {k: v for k, v in cst.items() if v > 0} # the rule is the same as up_dict_i but includes only components whose state is greater than the worst one (i.e. 0)
         else:
             rule = {k: v for k, v in cst.items() if v < len(varis[k].B[0]) - 1} # the rule is the same as up_dict_i but includes only components whose state is less than the best one
 
@@ -251,6 +251,7 @@ def core(brs, rules, rules_st, cst, stop_br):
             break
 
         if br.up_state == 'surv' and br.down_state == 'fail':
+
             comp_bnb, st_bnb_up = get_comp_st_for_next_bnb(up, down, rules, rules_st)
             brs2 = decomp_to_two_branches(br, comp_bnb, st_bnb_up)
 
@@ -277,13 +278,14 @@ def core(brs, rules, rules_st, cst, stop_br):
 
                 else:
                     b.down_state = cst_state_down
+
                     if cst_state_down == cst_state_up:
                         b.is_complete = True
 
                     brs_new.append(b)
 
-            #if stop_br == True:
-            #    break
+            if stop_br == True:
+                break
 
         elif br.up_state != 'unk' and br.up_state == br.down_state:
             brs_new.append(br)
@@ -291,10 +293,10 @@ def core(brs, rules, rules_st, cst, stop_br):
         elif br.is_complete == True:
             brs_new.append(br)
 
-        else:
-            b.down_state = cst_state_down
-            if cst_state_down == cst_state_up:
-                b.is_complete = True
+        #else:
+        #    b.down_state = cst_state_down
+        #    if cst_state_down == cst_state_up:
+        #        b.is_complete = True
 
     return brs_new, cst, stop_br
 
