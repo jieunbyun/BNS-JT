@@ -280,7 +280,7 @@ def test_core4(main_sys):
 
 
 def test_do_gen_bnb2(main_sys):
-
+    # no_iter: 10
     od_pair, arcs, varis = main_sys
 
     rules = [{'e2': 2, 'e6': 2, 'e4': 2}, {'e2': 1, 'e5': 2}, {'e1': 2, 'e3': 2, 'e5': 2}, {'e1': 0, 'e2': 1, 'e3': 0, 'e4': 0, 'e5': 0, 'e6': 0}, {'e2': 0, 'e3': 1}, {'e1': 0, 'e2': 0, 'e4': 0, 'e5': 0, 'e6': 0}]
@@ -306,13 +306,13 @@ def test_do_gen_bnb2(main_sys):
     assert pytest.approx(sys_res_['sys_val'].values[0], 0.001) == 0.41626
 
 
-def test_do_gen_bnb3(main_sys):
-    # iteration 21
+def test_do_gen_bnb11(main_sys):
+    # iteration 11
     od_pair, arcs, varis = main_sys
 
-    rules = [{'e1': 2, 'e3': 2, 'e5': 2}, {'e2': 0, 'e3': 1}, {'e2': 0, 'e5': 1}, {'e2': 1, 'e6': 2, 'e4': 2}, {'e2': 1, 'e5': 1}, {'e4': 1, 'e5': 0}, {'e1': 1, 'e2': 0}, {'e2': 2, 'e6': 1, 'e4': 2}, {'e5': 0, 'e6': 0}]
-    rules_st = ['surv', 'fail', 'fail', 'surv', 'surv', 'fail', 'fail', 'surv', 'fail']
-    cst = [0, 0, 2, 0, 0, 0]
+    rules = [{'e2': 2, 'e6': 2, 'e4': 2}, {'e2': 1, 'e5': 2}, {'e1': 2, 'e3': 2, 'e5': 2}, {'e1': 0, 'e2': 1, 'e3': 0, 'e4': 0, 'e5': 0, 'e6': 0}, {'e2': 0, 'e3': 1}, {'e2': 0, 'e5': 1}]
+    rules_st = ['surv', 'surv', 'surv', 'fail', 'fail', 'fail']
+    cst = [2, 0, 2, 2, 1, 2]
     thres = 2 * 0.1844
 
     sys_fun = trans.sys_fun_wrap(od_pair, arcs, varis, thres)
@@ -330,10 +330,35 @@ def test_do_gen_bnb3(main_sys):
 
     sys_res_, rules, rules_st = gen_bnb.get_sys_rules(cst, sys_fun, rules, rules_st, varis)
 
-    assert pytest.approx(sys_res_['sys_val'].values[0], 0.001) == 0.41626
+    assert pytest.approx(sys_res_['sys_val'].values[0], 0.001) == 0.9957
 
 
-@pytest.mark.skip('FIXME')
+def test_do_gen_bnb3(main_sys):
+    # iteration 21
+    od_pair, arcs, varis = main_sys
+
+    rules = [{'e1': 2, 'e3': 2, 'e5': 2}, {'e2': 0, 'e3': 1}, {'e2': 0, 'e5': 1}, {'e2': 1, 'e6': 2, 'e4': 2}, {'e2': 1, 'e5': 1}, {'e4': 1, 'e5': 0}, {'e1': 1, 'e2': 0}, {'e2': 2, 'e6': 1, 'e4': 2}, {'e5': 0, 'e6': 0}]
+    rules_st = ['surv', 'fail', 'fail', 'surv', 'surv', 'fail', 'fail', 'surv', 'fail']
+    cst = [2, 2, 2, 2, 0, 0]
+    thres = 2 * 0.1844
+
+    sys_fun = trans.sys_fun_wrap(od_pair, arcs, varis, thres)
+
+    brs = gen_bnb.init_brs(varis, rules, rules_st)
+    stop_br = False
+    flag=True
+    while flag:
+        brs, cst, stop_br = gen_bnb.core(brs, rules, rules_st, cst, stop_br)
+        if stop_br:
+            break
+        else:
+            flag = any([not b.is_complete for b in brs])
+
+    sys_res_, rules, rules_st = gen_bnb.get_sys_rules(cst, sys_fun, rules, rules_st, varis)
+
+    assert pytest.approx(sys_res_['sys_val'].values[0], 0.001) == 0.4271
+
+
 def test_do_gen_bnb1(main_sys):
     # ## System function as an input
     # 
