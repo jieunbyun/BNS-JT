@@ -624,17 +624,17 @@ def test_get_comp_st_for_next_bnb0():
     assert result[1] == 2
 
 
-@pytest.mark.skip('NYI')
+#@pytest.mark.skip('NYI')
 def test_get_comp_st_for_next_bnb1():
-    up = {'e1': 2, 'e2': 2, 'e3': 2, 'e4': 2, 'e5': 2, 'e6': 2}
+    up = {'e1': 2, 'e2': 0, 'e3': 2, 'e4': 2, 'e5': 2, 'e6': 2}
     down = {'e1': 0, 'e2': 0, 'e3': 0, 'e4': 0, 'e5': 0, 'e6': 0}
-    rules = [{'e2': 2, 'e5': 2},
-             {'e1': 0, 'e2': 0, 'e3': 0, 'e4': 0, 'e5': 0, 'e6': 0}]
-    rules_st = ['surv', 'fail']
+    rules = [{'e2': 2, 'e6': 2, 'e4': 2}, {'e2': 1, 'e5': 2}, {'e1': 2, 'e3': 2, 'e5': 2}, {'e1': 0, 'e2': 1, 'e3': 0, 'e4': 0, 'e5': 0, 'e6': 0}, {'e2': 0, 'e3': 1}, {'e2': 0, 'e5': 1}]
+    rules_st = ['surv', 'surv', 'surv', 'fail', 'fail', 'fail']
 
+    pdb.set_trace()
     result = gen_bnb.get_comp_st_for_next_bnb(up, down, rules, rules_st)
 
-    assert result[0] == 'e5'
+    assert result[0] == 'e3'
     assert result[1] == 2
 
 
