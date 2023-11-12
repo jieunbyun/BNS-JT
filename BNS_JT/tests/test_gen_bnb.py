@@ -664,6 +664,21 @@ def test_decomp_to_two_branches1():
     assert result[1] == branch.Branch(down=[0, 1, 0, 0, 0, 0], up=[2, 2, 2, 2, 2, 2], names=comps_name, is_complete=False, down_state=1, up_state=1)
 
 
+def test_decomp_to_two_branches2():
+    comps_name = ['e1', 'e2', 'e3', 'e4', 'e5' ,'e6']
+    br = branch.Branch(down=[0, 0, 0, 0, 0, 0], up=[2, 2, 2, 2, 2, 2], is_complete=False, names=comps_name)
+    br.down_state='fail' # FIXME
+    br.up_state='surv' # FIXME
+    comp_bnb = 'e2'
+    st_bnb_up = 2
+
+    result = gen_bnb.decomp_to_two_branches(br, comp_bnb, st_bnb_up)
+
+    assert result[0] == branch.Branch(down=[1, 0, 0, 0, 0, 0], up=[2, 1, 2, 2, 2, 2], names=comps_name, is_complete=False, down_state=1, up_state=1)
+
+    assert result[1] == branch.Branch(down=[0, 1, 0, 0, 2, 0], up=[2, 2, 2, 2, 2, 2], names=comps_name, is_complete=False, down_state=1, up_state=1)
+
+
 def test_get_sys_rules1(main_sys):
 
     od_pair, arcs, varis = main_sys
