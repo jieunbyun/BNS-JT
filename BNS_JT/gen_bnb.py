@@ -256,7 +256,7 @@ def core(brs, rules, rules_st, cst, stop_br):
             brs2 = decomp_to_two_branches(br, comp_bnb, st_bnb_up)
 
             for b in brs2:
-
+                print(f'b: {b}')
                 up = {x: y for x, y in zip(br.names, b.up)}
                 idx, cst_state_up = get_compat_rules(up, rules, rules_st)
 
@@ -293,10 +293,15 @@ def core(brs, rules, rules_st, cst, stop_br):
         elif br.is_complete == True:
             brs_new.append(br)
 
-        #else:
-        #    b.down_state = cst_state_down
-        #    if cst_state_down == cst_state_up:
-        #        b.is_complete = True
+        else:
+            b.down_state = cst_state_down
+            if cst_state_down == cst_state_up:
+                b.is_complete = True
+
+        if stop_br == False:
+            brs = copy.deepcopy(brs_new)
+        else:
+            break
 
     return brs_new, cst, stop_br
 

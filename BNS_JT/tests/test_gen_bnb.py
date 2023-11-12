@@ -11,7 +11,7 @@ from pathlib import Path
 
 from BNS_JT import trans, branch
 from BNS_JT import variable
-from BNS_JT import gen_bnb
+from BNS_JT import gen_bnb, gen_bnb_old
 
 
 HOME = Path(__file__).parent
@@ -320,7 +320,7 @@ def test_do_gen_bnb11(main_sys):
     brs = gen_bnb.init_brs(varis, rules, rules_st)
     stop_br = False
     flag=True
-    #pdb.set_trace()
+    pdb.set_trace()
     while flag:
         brs, cst, stop_br = gen_bnb.core(brs, rules, rules_st, cst, stop_br)
         if stop_br:
@@ -377,10 +377,10 @@ def test_do_gen_bnb1(main_sys):
     # It is noted that for a failure event, it returns 'None' for minimal (failure) rule since there is no efficient way to identify one.
 
     od_pair, arcs, varis = main_sys
-    #comps_name = list(arcs.keys())
+    comps_name = list(arcs.keys())
 
     # Intact state of component vector: zero-based index 
-    comps_st_itc = {k: v.B.shape[1] - 1 for k, v in varis.items()} # intact state (i.e. the highest state)
+    comps_st_itc = {k: v.B.shape[1] for k, v in varis.items()} # intact state (i.e. the highest state)
     d_time_itc, path_itc = trans.get_time_and_path_given_comps(comps_st_itc, od_pair, arcs, varis)
 
     # defines the system failure event
@@ -392,7 +392,7 @@ def test_do_gen_bnb1(main_sys):
     # # Branch and bound
     #pdb.set_trace()
     # break until 0.424558
-    no_sf, rules, rules_st, brs, sys_res = gen_bnb.do_gen_bnb(sys_fun, varis, max_br=1000)
+    no_sf, rules, rules_st, brs, sys_res = gen_bnb_old.do_gen_bnb(sys_fun, varis, comps_name, max_br=1000)
 
     # Result
     assert no_sf == 23
