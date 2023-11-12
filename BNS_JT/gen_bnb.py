@@ -112,12 +112,14 @@ def get_comp_st_for_next_bnb(up, down, rules, rules_st):
     idx_up, _ = get_compat_rules(up, rules, rules_st)
     idx_down, _ = get_compat_rules(down, rules, rules_st)
 
-    c_rules = [rules[i] for i in set(idx_up + idx_down)]
+    idx = set(idx_up + idx_down)
+    c_rules = [rules[i] for i in idx]
+    c_st = [rules_st[i] for i in idx]
     _len = [len(x) for x in c_rules]
 
     idx = sorted(range(len(_len)), key=lambda y: _len[y])
     c_rules = [c_rules[i] for i in idx]
-    c_st = [rules_st[i] for i in idx]
+    c_st = [c_st[i] for i in idx]
 
     comps_cnt = {}
     comp_bnb = None
@@ -244,7 +246,7 @@ def core(brs, rules, rules_st, cst, stop_br):
 
         down = {x: y for x, y in zip(br.names, br.down)}
         idx, _ = get_compat_rules(down, rules, rules_st)
-        print(f'up: {up}, down, {down}')
+
         if br.down_state == 'unk' and len(idx) == 0:
             cst = br.down # perform analysis on this state
             stop_br = True
@@ -256,7 +258,7 @@ def core(brs, rules, rules_st, cst, stop_br):
             brs2 = decomp_to_two_branches(br, comp_bnb, st_bnb_up)
 
             for b in brs2:
-                print(f'b: {b}')
+
                 up = {x: y for x, y in zip(br.names, b.up)}
                 idx, cst_state_up = get_compat_rules(up, rules, rules_st)
 
@@ -354,11 +356,11 @@ def do_gen_bnb(sys_fun, varis, max_br):
         ## Start from the total event ##
         brs = init_brs(varis, rules, rules_st)
         stop_br = False
-        print(f"""cst: {cst}
-        rules: {rules}
-        rules_st: {rules_st}
-        brs: {brs}"""
-        )
+        #print(f"""cst: {cst}
+        #rules: {rules}
+        #rules_st: {rules_st}
+        #brs: {brs}"""
+        #)
         while flag:
 
             brs, cst, stop_br = core(brs, rules, rules_st, cst, stop_br)
@@ -372,11 +374,11 @@ def do_gen_bnb(sys_fun, varis, max_br):
         sys_res_, rules, rules_st = get_sys_rules(cst, sys_fun, rules, rules_st, varis)
         print(f'go next iteration: {sys_res_["sys_val"].values[0]}')
         sys_res = pd.concat([sys_res, sys_res_], ignore_index=True)
-        print(f"""cst: {cst}
-                rules: {rules}
-                rules_st: {rules_st}
-                brs: {brs}"""
-                )
+        #print(f"""cst: {cst}
+        #        rules: {rules}
+        #        rules_st: {rules_st}
+        #        brs: {brs}"""
+        #        )
 
     ###############
     print('[Algorithm completed.]')

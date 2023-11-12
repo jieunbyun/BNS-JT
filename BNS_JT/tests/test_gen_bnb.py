@@ -11,7 +11,7 @@ from pathlib import Path
 
 from BNS_JT import trans, branch
 from BNS_JT import variable
-from BNS_JT import gen_bnb, gen_bnb_old
+from BNS_JT import gen_bnb
 
 
 HOME = Path(__file__).parent
@@ -81,7 +81,6 @@ def main_sys():
     e6: 0.707, 0.141, 0.0707
     """
     return od_pair, arcs, varis
-
 
 
 @pytest.fixture()
@@ -320,7 +319,7 @@ def test_do_gen_bnb11(main_sys):
     brs = gen_bnb.init_brs(varis, rules, rules_st)
     stop_br = False
     flag=True
-    pdb.set_trace()
+    #pdb.set_trace()
     while flag:
         brs, cst, stop_br = gen_bnb.core(brs, rules, rules_st, cst, stop_br)
         if stop_br:
@@ -380,7 +379,7 @@ def test_do_gen_bnb1(main_sys):
     comps_name = list(arcs.keys())
 
     # Intact state of component vector: zero-based index 
-    comps_st_itc = {k: v.B.shape[1] for k, v in varis.items()} # intact state (i.e. the highest state)
+    comps_st_itc = {k: v.B.shape[1] - 1 for k, v in varis.items()} # intact state (i.e. the highest state)
     d_time_itc, path_itc = trans.get_time_and_path_given_comps(comps_st_itc, od_pair, arcs, varis)
 
     # defines the system failure event
@@ -392,7 +391,7 @@ def test_do_gen_bnb1(main_sys):
     # # Branch and bound
     #pdb.set_trace()
     # break until 0.424558
-    no_sf, rules, rules_st, brs, sys_res = gen_bnb_old.do_gen_bnb(sys_fun, varis, comps_name, max_br=1000)
+    no_sf, rules, rules_st, brs, sys_res = gen_bnb.do_gen_bnb(sys_fun, varis, max_br=1000)
 
     # Result
     assert no_sf == 23
@@ -401,19 +400,21 @@ def test_do_gen_bnb1(main_sys):
 
     expected_rules =[{'e1': 2, 'e3': 2, 'e5': 2}, {'e2': 0, 'e3': 1}, {'e2': 0, 'e5': 1}, {'e2': 1, 'e6': 2, 'e4': 2}, {'e2': 1, 'e5': 1}, {'e4': 1, 'e5': 0}, {'e1': 1, 'e2': 0}, {'e2': 2, 'e6': 1, 'e4': 2}, {'e5': 0, 'e6': 0}, {'e2': 1, 'e5': 0, 'e6': 1}]
     assert rules == expected_rules
-    #expected_rules_st = ['surv', 'fail', 'fail', 'surv', 'surv', 'fail', 'fail', 'surv', 'fail', 'fail']
-    #assert rules_st == expected_rules_st
+
+    expected_rules_st = ['surv', 'fail', 'fail', 'surv', 'surv', 'fail', 'fail', 'surv', 'fail', 'fail']
+    assert rules_st == expected_rules_st
     """
-    expected_brs = [branch.Branch(down=[1, 1, 1, 1, 1, 1], up=[3, 1, 2, 3, 3, 3], is_complete=True, down_state=fail, up_state=fail, down_val=None, up_val=None),
-                    branch.Branch(down=[1, 1, 3, 1, 1, 1], up=[3, 1, 3, 3, 2, 3], is_complete=True, down_state=fail, up_state=fail, down_val=None, up_val=None),
-                    branch.Branch(down=[1, 1, 3, 1, 3, 1], up=[2, 1, 3, 3, 3, 3], is_complete=True, down_state=fail, up_state=fail, down_val=None, up_val=None),
-                    branch.Branch(down=[3, 1, 3, 1, 3, 1], up=[3, 1, 3, 3, 3, 3], is_complete=True, down_state=surv, up_state=surv, down_val=None, up_val=None),
-                    branch.Branch(down=[1, 2, 1, 1, 1, 1], up=[3, 3, 3, 2, 1, 3], is_complete=True, down_state=fail, up_state=fail, down_val=None, up_val=None),
-                    branch.Branch(down=[1, 2, 1, 3, 1, 1], up=[3, 3, 3, 3, 1, 1], is_complete=True, down_state=fail, up_state=fail, down_val=None, up_val=None),
-                    branch.Branch(down=[1, 2, 1, 3, 1, 2], up=[3, 2, 3, 3, 1, 2], is_complete=True, down_state=fail, up_state=fail, down_val=None, up_val=None),
-                    branch.Branch(down=[1, 3, 1, 3, 1, 2], up=[3, 3, 3, 3, 1, 2], is_complete=True, down_state=surv, up_state=surv, down_val=None, up_val=None),
-                    branch.Branch(down=[1, 2, 1, 3, 1, 3], up=[3, 3, 3, 3, 1, 3], is_complete=True, down_state=surv, up_state=surv, down_val=None, up_val=None),
-                    branch.Branch(down=[1, 2, 1, 1, 2, 1], up=[3, 3, 3, 3, 3, 3], is_complete=True, down_state=surv, up_state=surv, down_val=None, up_val=None)]
+    expected_brs = [branch.Branch(down=[1, 1, 1, 1, 1, 1], up=[3, 1, 2, 3, 3, 3], is_complete=True, down_state='fail', up_state='fail', down_val=None, up_val=None, names=comps_name),
+                    branch.Branch(down=[1, 1, 3, 1, 1, 1], up=[3, 1, 3, 3, 2, 3], is_complete=True, down_state='fail', up_state='fail', down_val=None, up_val=None, names=comps_name),
+                    branch.Branch(down=[1, 1, 3, 1, 3, 1], up=[2, 1, 3, 3, 3, 3], is_complete=True, down_state='fail', up_state='fail', down_val=None, up_val=None, names=comps_name),
+                    branch.Branch(down=[3, 1, 3, 1, 3, 1], up=[3, 1, 3, 3, 3, 3], is_complete=True, down_state='surv', up_state='surv', down_val=None, up_val=None, names=comps_name),
+                    branch.Branch(down=[1, 2, 1, 1, 1, 1], up=[3, 3, 3, 2, 1, 3], is_complete=True, down_state='fail', up_state='fail', down_val=None, up_val=None, names=comps_name),
+                    branch.Branch(down=[1, 2, 1, 3, 1, 1], up=[3, 3, 3, 3, 1, 1], is_complete=True, down_state='fail', up_state='fail', down_val=None, up_val=None, names=comps_name),
+                    branch.Branch(down=[1, 2, 1, 3, 1, 2], up=[3, 2, 3, 3, 1, 2], is_complete=True, down_state='fail', up_state='fail', down_val=None, up_val=None, names=comps_name),
+                    branch.Branch(down=[1, 3, 1, 3, 1, 2], up=[3, 3, 3, 3, 1, 2], is_complete=True, down_state='surv', up_state='surv', down_val=None, up_val=None, names=comps_name),
+                    branch.Branch(down=[1, 2, 1, 3, 1, 3], up=[3, 3, 3, 3, 1, 3], is_complete=True, down_state='surv', up_state='surv', down_val=None, up_val=None, names=comps_name),
+                    branch.Branch(down=[1, 2, 1, 1, 2, 1], up=[3, 3, 3, 3, 3, 3], is_complete=True, down_state='surv', up_state='surv', down_val=None, up_val=None, names=comps_name)]
+    assert all([x == y for x, y in zip(expected_brs, brs)])
     """
     expected = np.array([0.184420,
                          1.844197,
@@ -441,57 +442,31 @@ def test_do_gen_bnb1(main_sys):
 
     np.testing.assert_array_almost_equal(sys_res['sys_val'].values, expected)
 
-"""
-     sys_val                                           comps_st  \
-0   {'e1': 3, 'e2': 3, 'e3': 3, 'e4': 3, 'e5': 3, ...   
-1   {'e1': 1, 'e2': 1, 'e3': 1, 'e4': 1, 'e5': 1, ...   
-2   {'e1': 3, 'e2': 3, 'e3': 3, 'e4': 3, 'e5': 2, ...   
-3   {'e1': 3, 'e2': 2, 'e3': 3, 'e4': 3, 'e5': 3, ...   
-4   {'e1': 3, 'e2': 1, 'e3': 3, 'e4': 3, 'e5': 3, ...   
-5   {'e1': 1, 'e2': 1, 'e3': 1, 'e4': 1, 'e5': 3, ...   
-6   {'e1': 1, 'e2': 2, 'e3': 1, 'e4': 1, 'e5': 1, ...   
-7   {'e1': 3, 'e2': 1, 'e3': 2, 'e4': 3, 'e5': 3, ...   
-8   {'e1': 1, 'e2': 1, 'e3': 3, 'e4': 1, 'e5': 1, ...   
-9   {'e1': 3, 'e2': 1, 'e3': 3, 'e4': 3, 'e5': 2, ...   
-10  {'e1': 1, 'e2': 1, 'e3': 3, 'e4': 1, 'e5': 3, ...   
-11  {'e1': 3, 'e2': 3, 'e3': 3, 'e4': 2, 'e5': 2, ...   
-12  {'e1': 3, 'e2': 2, 'e3': 3, 'e4': 3, 'e5': 2, ...   
-13  {'e1': 1, 'e2': 3, 'e3': 1, 'e4': 1, 'e5': 1, ...   
-14  {'e1': 1, 'e2': 2, 'e3': 1, 'e4': 1, 'e5': 2, ...   
-15  {'e1': 3, 'e2': 3, 'e3': 3, 'e4': 2, 'e5': 1, ...   
-16  {'e1': 1, 'e2': 2, 'e3': 1, 'e4': 3, 'e5': 1, ...   
-17  {'e1': 2, 'e2': 1, 'e3': 3, 'e4': 3, 'e5': 3, ...   
-18  {'e1': 3, 'e2': 3, 'e3': 3, 'e4': 3, 'e5': 1, ...   
-19  {'e1': 3, 'e2': 3, 'e3': 3, 'e4': 3, 'e5': 1, ...   
-20  {'e1': 1, 'e2': 2, 'e3': 1, 'e4': 3, 'e5': 1, ...   
-21  {'e1': 3, 'e2': 2, 'e3': 3, 'e4': 3, 'e5': 1, ...   
-22  {'e1': 3, 'e2': 2, 'e3': 3, 'e4': 3, 'e5': 1, ...   
+    expected_comps_min = [{'e2': 2, 'e5': 2},
+                          {},
+                          {'e2': 2, 'e6': 2, 'e4': 2},
+                          {'e2': 1, 'e5': 2},
+                          {'e1': 2, 'e3': 2, 'e5': 2},
+                          {},
+                          {},
+                          {},
+                          {},
+                          {},
+                          {},
+                          {'e2': 2, 'e5': 1},
+                          {'e2': 1, 'e6': 2, 'e4': 2},
+                          {},
+                          {'e2': 1, 'e5': 1},
+                          {},
+                          {},
+                          {},
+                          {'e2': 2, 'e6': 1, 'e4': 2},
+                          {},
+                          {},
+                          {},
+                          {}]
 
-                   comps_st_min  
-0            {'e2': 3, 'e5': 3}  
-1                          None  
-2   {'e2': 3, 'e6': 3, 'e4': 3}  
-3            {'e2': 2, 'e5': 3}  
-4   {'e1': 3, 'e3': 3, 'e5': 3}  
-5                          None  
-6                          None  
-7                          None  
-8                          None  
-9                          None  
-10                         None  
-11           {'e2': 3, 'e5': 2}  
-12  {'e2': 2, 'e6': 3, 'e4': 3}  
-13                         None  
-14           {'e2': 2, 'e5': 2}  
-15                         None  
-16                         None  
-17                         None  
-18  {'e2': 3, 'e6': 2, 'e4': 3}  
-19                         None  
-20                         None  
-21                         None  
-22                         None  
-"""
+    assert all([x == y for x, y in zip(expected_comps_min, sys_res['comps_st_min'].values)])
 
 
 def test_get_compat_rules0():
@@ -631,7 +606,7 @@ def test_get_comp_st_for_next_bnb1():
     rules = [{'e2': 2, 'e6': 2, 'e4': 2}, {'e2': 1, 'e5': 2}, {'e1': 2, 'e3': 2, 'e5': 2}, {'e1': 0, 'e2': 1, 'e3': 0, 'e4': 0, 'e5': 0, 'e6': 0}, {'e2': 0, 'e3': 1}, {'e2': 0, 'e5': 1}]
     rules_st = ['surv', 'surv', 'surv', 'fail', 'fail', 'fail']
 
-    pdb.set_trace()
+    #pdb.set_trace()
     result = gen_bnb.get_comp_st_for_next_bnb(up, down, rules, rules_st)
 
     assert result[0] == 'e3'
@@ -670,13 +645,13 @@ def test_decomp_to_two_branches2():
     br.down_state='fail' # FIXME
     br.up_state='surv' # FIXME
     comp_bnb = 'e2'
-    st_bnb_up = 2
+    st_bnb_up = 1
 
     result = gen_bnb.decomp_to_two_branches(br, comp_bnb, st_bnb_up)
 
-    assert result[0] == branch.Branch(down=[1, 0, 0, 0, 0, 0], up=[2, 1, 2, 2, 2, 2], names=comps_name, is_complete=False, down_state=1, up_state=1)
+    assert result[0] == branch.Branch(down=[0, 0, 0, 0, 0, 0], up=[2, 0, 2, 2, 2, 2], names=comps_name, is_complete=False, down_state=1, up_state=1)
 
-    assert result[1] == branch.Branch(down=[0, 1, 0, 0, 2, 0], up=[2, 2, 2, 2, 2, 2], names=comps_name, is_complete=False, down_state=1, up_state=1)
+    assert result[1] == branch.Branch(down=[0, 1, 0, 0, 0, 0], up=[2, 2, 2, 2, 2, 2], names=comps_name, is_complete=False, down_state=1, up_state=1)
 
 
 def test_get_sys_rules1(main_sys):
