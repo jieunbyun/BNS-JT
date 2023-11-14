@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import pytest
+import pdb
 import time
 
 import networkx as nx
@@ -59,20 +60,20 @@ def main_sys():
     edges2comps = {}
     c_idx = 0
     for e, pair in edges.items():
-        c_rev = [x1 for e1,x1 in edges2comps.items() if edges[e1] == pair or edges[e1]==[pair[1], pair[0]]]
+        c_rev = [x1 for e1, x1 in edges2comps.items() if edges[e1] == pair or edges[e1]==[pair[1], pair[0]]]
         if len(c_rev) == 0:
             c_idx += 1
             edges2comps[e] = 'x' + str(c_idx)
         else:
             edges2comps[e] = c_rev[0]
     no_comp = c_idx
-    es_idx = {e: idx for idx, e in enumerate(edges, 1)}
+    es_idx = {e: idx for idx, e in enumerate(edges)}
 
     no_comp_st = 3 # Number of a comp's states
     comp_st_fval = [0, 1, 2] # state index to actual flow capacity (e.g. state 1 stands for flow capacity 0, etc.)
     for e, x in edges2comps.items():
         if x not in varis:
-            varis[x] = variable.Variable( name=k, B = np.eye( no_comp_st ), values = comp_st_fval )
+            varis[x] = variable.Variable(name=k, B = np.eye(no_comp_st), values = comp_st_fval )
 
     #no_sub = len(sub_bw_nodes) + 1
 
@@ -87,11 +88,11 @@ def main_sys():
     pos = nx.get_node_attributes(G, 'pos')
     edge_labels = nx.get_edge_attributes(G, 'label')
 
-    comps_st = {n: len(varis[n].B[0]) for n in node_coords}
+    comps_st = {n: len(varis[n].B[0]) - 1 for n in node_coords}
 
     for c_idx in range(no_comp):
-        c_name = 'x' + str(c_idx+1)
-        comps_st[c_name] = len(varis[c_name].B[0])
+        c_name = 'x' + str(c_idx + 1)
+        comps_st[c_name] = len(varis[c_name].B[0]) - 1
 
     fig = plt.figure()
     ax = fig.add_subplot()
@@ -114,7 +115,232 @@ def sub_sys():
 
     return sub_bw_nodes, sub_bw_edges
 
+
+def test_do_node(main_sys):
 # # System analysis
+
+    expected = {}
+    expected['A'] = np.array([[1.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,-1.,0.],
+                              [0.,1.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,-1.]])
+    expected['b_up'] = np.array([0., 0.])
+    expected['b_down'] = np.array([0., 0.])
+
+    comps_st, edges, node_coords, es_idx, edges2comps, depots, varis = main_sys
+
+    no_x = len(edges)
+
+    orig_end = depots[0]
+    dest_end = depots[-1]
+
+    orig_end_inds = {n: i for i, n in enumerate(orig_end)}
+    dest_end_inds = {n: i for i, n in enumerate(dest_end)}
+
+    no_u = len(orig_end)
+
+    no_d_vars = no_x + no_u
+
+    A = np.empty(shape=(0, no_d_vars))
+    b_up = np.empty(shape=(0,))
+    b_down = np.empty(shape=(0,))
+
+    result = pipes_sys.do_node(orig_end, orig_end_inds, es_idx, edges, A, b_up, b_down)
+
+    np.testing.assert_array_almost_equal(result[0], expected['A'])
+    np.testing.assert_array_almost_equal(result[1], expected['b_up'])
+    np.testing.assert_array_almost_equal(result[2], expected['b_down'])
+
+
+def test_do_sub(main_sys, sub_sys):
+
+    comps_st, edges, node_coords, es_idx, edges2comps, depots, varis = main_sys
+
+    sub_bw_nodes, sub_bw_edges = sub_sys
+
+    no_x = len(edges)
+
+    orig_end = depots[0]
+    dest_end = depots[-1]
+
+    orig_end_inds = {n: i for i, n in enumerate(orig_end)}
+    dest_end_inds = {n: i for i, n in enumerate(dest_end)}
+
+    no_u = len(orig_end)
+
+    no_d_vars = no_x + no_u
+
+    prev = {}
+    prev['A'] = np.array([[1.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,-1.,0.],
+                              [0.,1.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,-1.]])
+    prev['b_up'] = np.array([0., 0.])
+    prev['b_down'] = np.array([0., 0.])
+
+    result = pipes_sys.do_sub(sub_bw_nodes, sub_bw_edges, edges, es_idx, depots, no_d_vars, prev['A'], prev['b_up'], prev['b_down'])
+
+    expected = {}
+    expected['A'] = np.array([[ 1., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., -1., 0.],
+                              [ 0., 1., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., -1.],
+                              [-1.,-1., 1., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],
+                              [ 0., 0.,-1., 1., 0., 1., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],
+                              [ 0., 0., 0.,-1., 1., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],
+                              [ 0., 0., 0., 0., 0.,-1., 1., 1., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],
+                              [ 0., 0., 0., 0., 1., 0., 1., 1., 0., 0., 0., 0., 0., 0., 0., 0., 0.,-1., -1.],
+                              [ 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,-1.,-1., 0., 0., 1., 1., 0., 0.],
+                              [ 0., 0., 0., 0., 0., 0., 0., 0.,-1., 0., 0., 0., 1., 1., 0.,-1., 0., 0., 0.],
+                              [ 0., 0., 0., 0., 0., 0., 0., 0., 0.,-1.,-1., 1., 0., 0., 1., 0.,-1., 0., 0.],
+                              [ 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 1., 1., 0., 0., -1., -1.]])
+    expected['b_up'] =  np.array([0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.])
+    expected['b_down'] = np.array([0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.])
+
+    try:
+        np.testing.assert_array_almost_equal(result[0], expected['A'])
+    except AssertionError:
+        unequal = np.where(result[0] != expected['A'])
+        print(unequal)
+        print(result[0][unequal])
+        print(expected['A'][unequal])
+    np.testing.assert_array_almost_equal(result[1], expected['b_up'])
+    np.testing.assert_array_almost_equal(result[2], expected['b_down'])
+
+
+def test_do_incoming(main_sys, sub_sys):
+
+    comps_st, edges, node_coords, es_idx, edges2comps, depots, varis = main_sys
+
+    sub_bw_nodes, sub_bw_edges = sub_sys
+
+    no_x = len(edges)
+    no_sub = len(sub_bw_nodes)
+
+    orig_end = depots[0]
+    dest_end = depots[-1]
+
+    orig_end_inds = {n: i for i, n in enumerate(orig_end)}
+    dest_end_inds = {n: i for i, n in enumerate(dest_end)}
+
+    no_u = len(orig_end)
+
+    no_d_vars = no_x + no_u
+
+    prev = {}
+    prev['A'] = np.array([[ 1., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., -1., 0.],
+                              [ 0., 1., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., -1.],
+                              [-1.,-1., 1., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],
+                              [ 0., 0.,-1., 1., 0., 1., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],
+                              [ 0., 0., 0.,-1., 1., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],
+                              [ 0., 0., 0., 0., 0.,-1., 1., 1., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],
+                              [ 0., 0., 0., 0., 1., 0., 1., 1., 0., 0., 0., 0., 0., 0., 0., 0., 0.,-1., -1.],
+                              [ 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,-1.,-1., 0., 0., 1., 1., 0., 0.],
+                              [ 0., 0., 0., 0., 0., 0., 0., 0.,-1., 0., 0., 0., 1., 1., 0.,-1., 0., 0., 0.],
+                              [ 0., 0., 0., 0., 0., 0., 0., 0., 0.,-1.,-1., 1., 0., 0., 1., 0.,-1., 0., 0.],
+                              [ 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 1., 1., 0., 0., -1., -1.]])
+    prev['b_up'] =  np.array([0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.])
+    prev['b_down'] = np.array([0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.])
+
+    result = pipes_sys.do_incoming(no_sub, depots, no_d_vars, edges, es_idx, prev['A'], prev['b_up'], prev['b_down'])
+
+    expected = {}
+    expected['A'] = np.array([[1., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., -1., 0.],
+                              [0., 1., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., -1.],
+                              [-1., -1., 1., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],
+                              [0., 0., -1., 1., 0., 1., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],
+                              [0., 0., 0., -1., 1., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],
+                              [0., 0., 0., 0., 0.,-1., 1., 1., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],
+                              [0., 0., 0., 0., 1., 0., 1., 1., 0., 0., 0., 0., 0., 0., 0., 0., 0., -1., -1.],
+                              [0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,-1.,-1., 0., 0., 1., 1., 0., 0.],
+                              [0., 0., 0., 0., 0., 0., 0., 0.,-1., 0., 0., 0., 1., 1., 0.,-1., 0., 0., 0.],
+                              [0., 0., 0., 0., 0., 0., 0., 0., 0.,-1.,-1., 1., 0., 0., 1., 0.,-1., 0., 0.],
+                              [0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 1., 1., 0., 0., -1., -1.],
+                              [0., 0., 0., 0.,-1., 0., 0., 0., 1., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],
+                              [0., 0., 0., 0., 0., 0.,-1., 0., 0., 1., 0., 0., 0., 0., 0., 0., 0., 0., 0.],
+                              [0., 0., 0., 0., 0., 0., 0.,-1., 0., 0., 1., 0., 0., 0., 0., 0., 0., 0., 0.]])
+
+    expected['b_up'] = np.array([0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.])
+    expected['b_down'] = np.array([0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.])
+
+    np.testing.assert_array_almost_equal(result[0], expected['A'])
+    np.testing.assert_array_almost_equal(result[1], expected['b_up'])
+    np.testing.assert_array_almost_equal(result[2], expected['b_down'])
+
+
+def test_do_capacity(main_sys, sub_sys):
+
+    comps_st, edges, node_coords, es_idx, edges2comps, depots, varis = main_sys
+
+    sub_bw_nodes, sub_bw_edges = sub_sys
+
+    no_x = len(edges)
+    no_sub = len(sub_bw_nodes)
+
+    orig_end = depots[0]
+    dest_end = depots[-1]
+
+    orig_end_inds = {n: i for i, n in enumerate(orig_end)}
+    dest_end_inds = {n: i for i, n in enumerate(dest_end)}
+
+    no_u = len(orig_end)
+
+    no_d_vars = no_x + no_u
+
+    prev = {}
+    prev['A'] = np.array([[1., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., -1., 0.],
+                              [0., 1., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., -1.],
+                              [-1., -1., 1., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],
+                              [0., 0., -1., 1., 0., 1., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],
+                              [0., 0., 0., -1., 1., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],
+                              [0., 0., 0., 0., 0.,-1., 1., 1., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],
+                              [0., 0., 0., 0., 1., 0., 1., 1., 0., 0., 0., 0., 0., 0., 0., 0., 0., -1., -1.],
+                              [0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,-1.,-1., 0., 0., 1., 1., 0., 0.],
+                              [0., 0., 0., 0., 0., 0., 0., 0.,-1., 0., 0., 0., 1., 1., 0.,-1., 0., 0., 0.],
+                              [0., 0., 0., 0., 0., 0., 0., 0., 0.,-1.,-1., 1., 0., 0., 1., 0.,-1., 0., 0.],
+                              [0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 1., 1., 0., 0., -1., -1.],
+                              [0., 0., 0., 0.,-1., 0., 0., 0., 1., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],
+                              [0., 0., 0., 0., 0., 0.,-1., 0., 0., 1., 0., 0., 0., 0., 0., 0., 0., 0., 0.],
+                              [0., 0., 0., 0., 0., 0., 0.,-1., 0., 0., 1., 0., 0., 0., 0., 0., 0., 0., 0.]])
+
+    prev['b_up'] = np.array([0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.])
+    prev['b_down'] = np.array([0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.])
+
+    result = pipes_sys.do_capacity(edges, edges2comps, varis, comps_st, es_idx, no_d_vars, prev['A'], prev['b_up'], prev['b_down'])
+
+    expected = {}
+    expected['A'] = np.array([[1., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., -1., 0.],
+                              [ 0., 1., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., -1.],
+                              [-1.,-1., 1., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],
+                              [ 0., 0.,-1., 1., 0., 1., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],
+                              [ 0., 0., 0.,-1., 1., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],
+                              [ 0., 0., 0., 0., 0.,-1., 1., 1., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],
+                              [ 0., 0., 0., 0., 1., 0., 1., 1., 0., 0., 0., 0., 0., 0., 0., 0., 0.,-1., -1.],
+                              [ 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,-1.,-1., 0., 0., 1., 1., 0., 0.],
+                              [ 0., 0., 0., 0., 0., 0., 0., 0.,-1., 0., 0., 0., 1., 1., 0., -1., 0., 0., 0.],
+                              [ 0., 0., 0., 0., 0., 0., 0., 0., 0., -1., -1., 1., 0., 0., 1., 0., -1., 0., 0.],
+                              [ 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 1., 1., 0., 0., -1., -1.],
+                              [ 0., 0., 0., 0., -1., 0., 0., 0., 1., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],
+                              [ 0., 0., 0., 0., 0., 0., -1., 0., 0., 1., 0., 0., 0., 0., 0., 0., 0., 0., 0.],
+                              [ 0., 0., 0., 0., 0., 0., 0., -1., 0., 0., 1., 0., 0., 0., 0., 0., 0., 0., 0.],
+                              [ 1., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],
+                              [ 0., 1., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],
+                              [ 0., 0., 1., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],
+                              [ 0., 0., 0., 1., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],
+                              [ 0., 0., 0., 0., 1., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],
+                              [ 0., 0., 0., 0., 0., 1., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],
+                              [ 0., 0., 0., 0., 0., 0., 1., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],
+                              [ 0., 0., 0., 0., 0., 0., 0., 1., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],
+                              [ 0., 0., 0., 0., 0., 0., 0., 0., 1., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],
+                              [ 0., 0., 0., 0., 0., 0., 0., 0., 0., 1., 0., 0., 0., 0., 0., 0., 0., 0., 0.],
+                              [ 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 1., 0., 0., 0., 0., 0., 0., 0., 0.],
+                              [ 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 1., 0., 0., 0., 0., 0., 0., 0.],
+                              [ 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 1., 0., 0., 0., 0., 0., 0.],
+                              [ 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 1., 0., 0., 0., 0., 0.],
+                              [ 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 1., 0., 0., 0., 0.],
+                              [ 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 1., 0., 0., 0.],
+                              [ 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 1., 0., 0.]])
+    expected['b_up'] = np.array([0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 2., 2., 2., 2., 2., 2., 2., 2., 2., 2., 2., 2., 2., 2., 2., 2., 2.])
+    expected['b_down'] = np.array([0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.])
+
+    np.testing.assert_array_almost_equal(result[0], expected['A'])
+    np.testing.assert_array_almost_equal(result[1], expected['b_up'])
+    np.testing.assert_array_almost_equal(result[2], expected['b_down'])
+
 
 def test_run_pipes_fun(main_sys, sub_sys):
 
@@ -123,13 +349,19 @@ def test_run_pipes_fun(main_sys, sub_sys):
     sub_bw_nodes, sub_bw_edges = sub_sys
 
     ### Example 1: all in the highest state
+    #pdb.set_trace()
     res = pipes_sys.run_pipes_fun(comps_st, edges, node_coords, es_idx, edges2comps, depots, varis, sub_bw_nodes, sub_bw_edges )
-    print(res)
+
+    assert res.success == True
+    assert res.status == 0
+    assert res.fun == -2.0
+    np.testing.assert_array_almost_equal(res.x, np.array([2.,  0.,  2.,  2.,  2.,  0.,  0.,  0.,  2.,  0.,  0.,  0.,  0.,  2.,  0.,  0.,  0.,  2.,  0., ]))
+
 
 def test_sys_fun_pipes(main_sys, sub_sys):
 
     comps_st, edges, node_coords, es_idx, edges2comps, depots, varis = main_sys
-
+    #pdb.set_trace()
     sub_bw_nodes, sub_bw_edges = sub_sys
 
     thres = 2
@@ -137,7 +369,7 @@ def test_sys_fun_pipes(main_sys, sub_sys):
 
     assert sys_val == 2.0
     assert sys_st == 'surv'
-    assert min_comps_st == {'x1': 3, 'n1': 2, 'n2': 2, 'x3': 3, 'n4': 2, 'x4': 3, 'n5': 2, 'x5': 3, 'n6': 2, 'x9': 3, 'n10': 2}
+    assert min_comps_st == {'x1': 2, 'n1': 1, 'n2': 1, 'x3': 2, 'n4': 1, 'x4': 2, 'n5': 1, 'x5': 2, 'n6': 1, 'x9': 2, 'n10': 1}
 
 
 def sys_fun_wrap(thres, edges, node_coords, es_idx, edges2comps, depots, varis, sub_bw_nodes, sub_bw_edges):
