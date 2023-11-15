@@ -158,12 +158,13 @@ def get_comp_st_for_next_bnb(up, down, rules, rules_st):
             break
 
     # in case nothing has been selected from above
+    comps_cnt = {}
     if comp_bnb is None: # just randomly select from the components that have higher frequencies
         for r in rules:
             for k in r:
                 if k not in comps_cnt:
-                    # FIXME: x?
-                    comps_cnt[k] = sum([x in r for r in rules])
+                    # FIXME: x? --> FIXED: to k
+                    comps_cnt[k] = sum([k in r for r in rules])
 
         cnt_sort_xs = sorted(comps_cnt)
         for x in cnt_sort_xs[::-1]:
