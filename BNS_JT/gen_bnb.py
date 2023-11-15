@@ -2,6 +2,7 @@ import pandas as pd
 import copy
 from BNS_JT import variable, branch
 import warnings
+import numpy as np
 
 
 def get_compat_rules(cst, rules, rules_st):
@@ -377,3 +378,64 @@ def do_gen_bnb(sys_fun, varis, max_br):
 
     return no_iter, rules, rules_st, brs, sys_res
 
+def get_c1_from_br1( br1, varis, st_br_to_cs ):
+    # br1: a single branch
+    # varis: a dictionary of variables
+    # st_br_to_cs: a dictionary that maps state in br to state in C matrix of a system event
+
+    comps_name = br1.names
+
+    cs_nvar = 1 + len(comps_name) # (system, compponents)
+    c1 = np.zeros( cs_nvar, int )
+
+    if br1.is_complete == True:
+        c1[0] = st_br_to_cs[ br1.down_state ]
+    else:
+        c1[0] = st_br_to_cs[ 'unk' ]
+
+    for (i,x) in enumerate( comps_name ):
+        x_d = br1.down[i]
+        x_u = br1.up[i]
+
+        if x_u > x_d:
+            varis[x], x_st = get_compsite_state( varis[x], list((range(x_d,x_u+1))  ))
+        else:
+            x_st = x_u
+
+        c1[i+1] = x_st
+
+    return varis, c1
+
+def get_Csys_from_brs( brs, varis, st_br_to_cs ):
+
+    comps_name = brs[0].names
+
+    cs_nvar = 1 + len(comps_name) # (system, compponents)
+
+    Csys = np.empty( (0,cs_nvar), int )
+    
+    for br1 in brs:
+        varis, c1 = get_c1_from_br1( br1, varis, st_br_to_cs )
+        Csys = np.vstack( (Csys, c1) )
+
+    return Csys, varis
+
+def get_compsite_state( var1, st_list ):
+    # Input: var1-one Variable object, st_list: list of states (starting from zero) 
+    # TODO: states start from 0 in Cpm and from 1 in B&B -- will be fixed later so that all start from 0
+
+    n_st = len( var1.B[0] )
+    b1 = np.zeros( (n_st,), dtype = int )
+    for s in st_list:
+        b1[s] = 1
+
+    comp_st_list = np.where((var1.B == b1).all(axis=1))[0]
+    if len(comp_st_list) > 0:
+        comp_st = comp_st_list[0]
+    else:
+        B_old = var1.B
+        B_new = np.vstack( (B_old, b1) )
+        var1.B = B_new 
+        comp_st = len(var1.B)-1 # zero-based index
+    
+    return var1, comp_st   
