@@ -718,3 +718,108 @@ def test_get_sys_rules3(main_sys):
     assert rules[1] == {k: 0 for k in varis.keys()}
     assert rules[2] == {'e2': 2, 'e6': 2, 'e4': 2}
     assert rules_st == ['surv', 'fail', 'surv']
+
+
+def test_get_composite_state1(main_sys):
+
+    od_pair, arcs, varis = main_sys
+
+    states = [1, 2]
+    result = gen_bnb.get_composite_state(varis['e1'], states)
+
+    expected = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1], [0, 1, 1]])
+    np.testing.assert_array_equal(result[0].B, expected)
+
+    assert result[1] == 3
+
+
+def test_get_composite_state2(main_sys):
+
+    #od_pair, arcs, varis = main_sys
+    varis = {}
+    varis['e1'] = variable.Variable(name='e1', B=np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1], [0, 1, 1]]), values=[1.5, 0.3, 0.15])
+
+    states = [1, 2]
+    result = gen_bnb.get_composite_state(varis['e1'], states)
+
+    expected = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1], [0, 1, 1]])
+    np.testing.assert_array_equal(result[0].B, expected)
+
+    assert result[1] == 3
+
+
+def test_get_c_from_br1(main_sys):
+
+    od_pair, arcs, varis = main_sys
+
+    st_br_to_cs = {'fail': 0, 'surv': 1, 'unk': 2}
+
+    br = branch.Branch(down=[0, 0, 0, 0, 0, 0], up=[2, 0, 1, 2, 2, 2], is_complete=True, names=['e1', 'e2', 'e3', 'e4', 'e5', 'e6'])
+    br.down_state = 'fail'
+    br.up_state='fail'
+    expected = gen_bnb.get_c_from_br(br, varis, st_br_to_cs)
+
+    np.testing.assert_array_equal(expected[1], [0, 3, 0, 3, 3, 3, 3])
+    np.testing.assert_array_equal(expected[0]['e1'].B, np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1], [1, 1, 1]]))
+    np.testing.assert_array_equal(expected[0]['e2'].B, np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]]))
+    np.testing.assert_array_equal(expected[0]['e3'].B, np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1], [1, 1, 0]]))
+    np.testing.assert_array_equal(expected[0]['e4'].B, np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1], [1, 1, 1]]))
+    np.testing.assert_array_equal(expected[0]['e5'].B, np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1], [1, 1, 1]]))
+    np.testing.assert_array_equal(expected[0]['e6'].B, np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1], [1, 1, 1]]))
+
+    # using the previous output as an input
+    br = branch.Branch(down=[0, 0, 2, 0, 0, 0], up=[2, 0, 2, 2, 1, 2], is_complete=True, names=['e1', 'e2', 'e3', 'e4', 'e5', 'e6'])
+    br.down_state = 'fail'
+    br.up_state='fail'
+    expected = gen_bnb.get_c_from_br(br, expected[0], st_br_to_cs)
+
+    np.testing.assert_array_equal(expected[1], [0, 3, 0, 2, 3, 4, 3])
+    np.testing.assert_array_equal(expected[0]['e1'].B, np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1], [1, 1, 1]]))
+    np.testing.assert_array_equal(expected[0]['e2'].B, np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]]))
+    np.testing.assert_array_equal(expected[0]['e3'].B, np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1], [1, 1, 0]]))
+    np.testing.assert_array_equal(expected[0]['e4'].B, np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1], [1, 1, 1]]))
+    np.testing.assert_array_equal(expected[0]['e5'].B, np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1], [1, 1, 1], [1, 1, 0]]))
+    np.testing.assert_array_equal(expected[0]['e6'].B, np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1], [1, 1, 1]]))
+
+
+def test_get_csys_from_brs(main_sys):
+
+    od_pair, arcs, varis = main_sys
+
+    comps_name = list(arcs.keys())
+
+    # Intact state of component vector: zero-based index 
+    comps_st_itc = {k: v.B.shape[1] - 1 for k, v in varis.items()} # intact state (i.e. the highest state)
+    d_time_itc, path_itc = trans.get_time_and_path_given_comps(comps_st_itc, od_pair, arcs, varis)
+
+    # defines the system failure event
+    thres = 2
+
+    # Given a system function, i.e. sf_min_path, it should be represented by a function that only has "comps_st" as input.
+    sys_fun = trans.sys_fun_wrap(od_pair, arcs, varis, thres * d_time_itc)
+
+    # # Branch and bound
+    _, _, _, brs, _ = gen_bnb.do_gen_bnb(sys_fun, varis, max_br=1000)
+
+    st_br_to_cs = {'fail': 0, 'surv': 1, 'unk': 2}
+
+    result = gen_bnb.get_csys_from_brs(brs, varis, st_br_to_cs)
+
+    expected = np.array([[0, 3, 0, 3, 3, 3, 3],
+                         [0, 3, 0, 2, 3, 4, 3],
+                         [0, 4, 0, 2, 3, 2, 3],
+                         [1, 2, 0, 2, 3, 2, 3],
+                         [0, 3, 3, 4, 4, 0, 3],
+                         [0, 3, 3, 4, 2, 0, 0],
+                         [0, 3, 1, 4, 2, 0, 1],
+                         [1, 3, 2, 4, 2, 0, 1],
+                         [1, 3, 3, 4, 2, 0, 2],
+                         [1, 3, 3, 4, 3, 5, 3]])
+    np.testing.assert_array_equal(result[0], expected)
+
+    np.testing.assert_array_equal(result[1]['e1'].B, np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1], [1, 1, 1], [1, 1, 0]]))
+    np.testing.assert_array_equal(result[1]['e2'].B, np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1], [0, 1, 1]]))
+    np.testing.assert_array_equal(result[1]['e3'].B, np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1], [1, 1, 0], [1, 1, 1]]))
+    np.testing.assert_array_equal(result[1]['e4'].B, np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1], [1, 1, 1], [1, 1, 0]]))
+    np.testing.assert_array_equal(result[1]['e5'].B, np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1], [1, 1, 1], [1, 1, 0], [0, 1, 1]]))
+    np.testing.assert_array_equal(result[1]['e6'].B, np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1], [1, 1, 1]]))
