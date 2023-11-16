@@ -398,7 +398,7 @@ def get_c_from_br(br, varis, st_br_to_cs):
         up = br.up[i]
 
         if up > down:
-            varis[x], st = get_composite_state(varis[x], list(range(down, up + 1)))
+            varis[x], st = variable.get_composite_state(varis[x], list(range(down, up + 1)))
         else:
             st = up
 
@@ -421,21 +421,4 @@ def get_csys_from_brs(brs, varis, st_br_to_cs):
     return c_sys, varis
 
 
-def get_composite_state(vari, states):
-    """
-    # Input: vari-one Variable object, st_list: list of states (starting from zero)
-    # TODO: states start from 0 in Cpm and from 1 in B&B -- will be fixed later so that all start from 0
-    """
 
-    b = [1 if x in states else 0 for x in range(len(vari.B[0]))]
-
-    comp_st = np.where((vari.B == b).all(axis=1))[0]
-
-    if len(comp_st) > 0:
-        cst = comp_st[0]
-
-    else:
-        vari.B = np.vstack((vari.B, b))
-        cst = len(vari.B) - 1 # zero-based index
-
-    return vari, cst
