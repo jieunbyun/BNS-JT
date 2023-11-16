@@ -136,8 +136,9 @@ def get_comp_st_for_next_bnb(up, down, rules, rules_st):
 
             count.append(comps_count[x])
 
-        #c_i_sort_ind = [j[0] for j in sorted(enumerate(comps_i_cnt), key=lambda x:x[1])] # order components by their frequency in rules set
-        idx = sorted(range(len(count)), key=lambda y: count[y])# order components by their frequency in rules set
+        # order components by their frequency in rules set
+        idx = sorted(range(len(count)), key=lambda y: count[y])
+
         for j in idx[::-1]:
             comp = comps[j]
             comp_st = r[comp]
@@ -158,16 +159,13 @@ def get_comp_st_for_next_bnb(up, down, rules, rules_st):
             break
 
     # in case nothing has been selected from above
-    comps_cnt = {}
     if comp_bnb is None: # just randomly select from the components that have higher frequencies
         for r in rules:
             for k in r:
                 if k not in comps_cnt:
-                    # FIXME: x? --> FIXED: to k
-                    comps_cnt[k] = sum([k in r for r in rules])
+                    comps_count[k] = sum([k in r for r in rules])
 
-        cnt_sort_xs = sorted(comps_cnt)
-        for x in cnt_sort_xs[::-1]:
+        for x in sorted(comps_count)[::-1]:
             if down[x] < up[x]:
                 comp_bnb = x
                 st_up = up[x]
