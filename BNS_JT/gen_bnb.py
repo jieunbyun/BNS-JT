@@ -224,7 +224,7 @@ def core(brs, rules, rules_st, cst, stop_br):
     """
     brs: list of Branch instance
     rules_st:
-    cst: changed or passed
+    cst: changed or passed *FIXEME: cst: does not seem to be necessary
     stop_br: changed or passed
 
     """
@@ -303,6 +303,51 @@ def core(brs, rules, rules_st, cst, stop_br):
 
     return brs_new, cst, stop_br
 
+def get_brs_from_rules( rules, rules_st, varis, max_br ):
+
+    brs = init_brs(varis, rules, rules_st)
+    stop_br = False
+    while any([not b.is_complete for b in brs]) and stop_br==False:
+        brs_new = []
+        for i, br in enumerate(brs):
+
+            up = {x: y for x, y in zip(br.names, br.up)}
+            down = {x: y for x, y in zip(br.names, br.down)}
+
+            if br.is_complete == False:
+                comp, st_up = get_comp_st_for_next_bnb(up, down, rules, rules_st)
+                brs2 = decomp_to_two_branches(br, comp, st_up)
+
+                for b in brs2:
+
+                    up = {x: y for x, y in zip(br.names, b.up)}
+                    _, cst_up = get_compat_rules(up, rules, rules_st)
+
+                    down = {x: y for x, y in zip(br.names, b.down)}
+                    _, cst_down = get_compat_rules(down, rules, rules_st)
+
+                    b.up_state = cst_up
+                    b.down_state = cst_down
+
+                    if cst_up == cst_down:
+                        b.is_complete = True
+
+                    brs_new.append(b)
+
+            else:
+                brs_new.append(br)
+
+
+            if len(brs_new) + (len(brs)-(i+1)) >= max_br:
+                brs_rem = copy.deepcopy( brs[(i+1):] )
+                brs_new += brs_rem
+                stop_br = True
+                break
+
+        brs = copy.deepcopy(brs_new)
+
+    return brs_new
+
 
 def init_brs(varis, rules, rules_st):
 
@@ -366,6 +411,9 @@ def do_gen_bnb(sys_fun, varis, max_br):
         sys_res_, rules, rules_st = get_sys_rules(cst, sys_fun, rules, rules_st, varis)
         print(f'go next iteration: {sys_res_["sys_val"].values[0]}')
         sys_res = pd.concat([sys_res, sys_res_], ignore_index=True)
+
+
+    brs = get_brs_from_rules( rules, rules_st, varis, max_br )
 
     ###############
     print('[Algorithm completed.]')
