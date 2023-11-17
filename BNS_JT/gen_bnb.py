@@ -1,9 +1,12 @@
 import pandas as pd
 import copy
-from BNS_JT import variable, branch
+from pathlib import Path
 import warnings
+import sys
+import pickle
 import numpy as np
 
+from BNS_JT import variable, branch
 
 def get_compat_rules(cst, rules, rules_st):
     #cst: component vector state in dictionary
@@ -317,7 +320,7 @@ def init_brs(varis, rules, rules_st):
     return brs
 
 
-def do_gen_bnb(sys_fun, varis, max_br):
+def do_gen_bnb(sys_fun, varis, max_br, output_path=Path(sys.argv[0]).parent, key=None, flag=True):
     ### MAIN FUNCTION ####
     """
     Input:
@@ -334,11 +337,11 @@ def do_gen_bnb(sys_fun, varis, max_br):
     rules = [] # a list of known rules
     rules_st = [] # a list of known rules' states
     no_iter =  0
-    flag = True
+    ok = True
     brs = []
     cst = []
 
-    while flag and len(brs) < max_br:
+    while ok and len(brs) < max_br:
 
         no_iter += 1
         ###############
@@ -353,14 +356,14 @@ def do_gen_bnb(sys_fun, varis, max_br):
         brs = init_brs(varis, rules, rules_st)
         stop_br = False
 
-        while flag:
+        while ok:
 
             brs, cst, stop_br = core(brs, rules, rules_st, cst, stop_br)
 
             if stop_br:
                 break
             else:
-                flag = any([not b.is_complete for b in brs])
+                ok = any([not b.is_complete for b in brs])
 
         # update rules, rules_st
         sys_res_, rules, rules_st = get_sys_rules(cst, sys_fun, rules, rules_st, varis)
@@ -374,6 +377,12 @@ def do_gen_bnb(sys_fun, varis, max_br):
     print('The total # of branches: ', len(brs))
     print('The # of incomplete branches: ', sum([not b.is_complete for b in brs]))
     ###############
+
+    if flag:
+        output_file = output_path.joinpath(f'brs_{key}.pk')
+        with open(output_file, 'wb') as fout:
+            pickle.dump(brs, fout)
+        print(f'{output_file} is saved')
 
     return no_iter, rules, rules_st, brs, sys_res
 

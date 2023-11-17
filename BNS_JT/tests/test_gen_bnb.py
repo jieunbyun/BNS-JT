@@ -3,6 +3,7 @@
 
 import pytest
 import pdb
+import pickle
 import pandas as pd
 import numpy as np
 import networkx as nx
@@ -126,8 +127,10 @@ def setup_brs(main_sys):
     # Given a system function, i.e. sf_min_path, it should be represented by a function that only has "comps_st" as input.
     sys_fun = trans.sys_fun_wrap(od_pair, arcs, varis, thres * d_time_itc)
 
-    # # Branch and bound
-    no_sf, rules, rules_st, brs, sys_res = gen_bnb.do_gen_bnb(sys_fun, varis, max_br=1000)
+    # Branch and bound
+    output_path = Path(__file__).parent
+    no_sf, rules, rules_st, brs, sys_res = gen_bnb.do_gen_bnb(sys_fun, varis, max_br=1000,
+                                                              output_path=output_path, key='bridge')
 
     return no_sf, rules, rules_st, brs, sys_res
 
@@ -354,7 +357,7 @@ def test_do_gen_bnb2(main_sys):
     assert pytest.approx(sys_res_['sys_val'].values[0], 0.001) == 0.41626
 
 
-def test_do_gen_bnb11(main_sys):
+def test_do_gen_bnb1(main_sys):
     # iteration 11
     od_pair, arcs, varis = main_sys
 
@@ -407,7 +410,7 @@ def test_do_gen_bnb3(main_sys):
     assert pytest.approx(sys_res_['sys_val'].values[0], 0.001) == 0.4271
 
 
-def test_do_gen_bnb1(setup_brs):
+def test_do_gen_bnb0(setup_brs):
     # ## System function as an input
     # 
     # A system function needs to return (1) system function value, (2) system state, and (3) minimally required component state to fulfill the obtained system function value. If (3) is unavailable, it can be returned as None. <br>
@@ -634,7 +637,7 @@ def test_get_comp_st_for_next_bnb0():
 
 
 #@pytest.mark.skip('NYI')
-def test_get_comp_st_for_next_bnb1():
+def test_get_comp_st_for_next_bnb2():
     up = {'e1': 2, 'e2': 0, 'e3': 2, 'e4': 2, 'e5': 2, 'e6': 2}
     down = {'e1': 0, 'e2': 0, 'e3': 0, 'e4': 0, 'e5': 0, 'e6': 0}
     rules = [{'e2': 2, 'e6': 2, 'e4': 2}, {'e2': 1, 'e5': 2}, {'e1': 2, 'e3': 2, 'e5': 2}, {'e1': 0, 'e2': 1, 'e3': 0, 'e4': 0, 'e5': 0, 'e6': 0}, {'e2': 0, 'e3': 1}, {'e2': 0, 'e5': 1}]
@@ -860,13 +863,19 @@ def test_get_csys_from_brs(main_sys):
 
 
 @pytest.fixture()
-def setup_inference(main_sys, setup_comp_events, setup_brs):
+def setup_inference(main_sys, setup_comp_events, request):
 
     _, arcs, _ = main_sys
 
     cpms, varis = setup_comp_events
 
-    _, _, _, brs, _ = setup_brs
+    file_brs = Path(__file__).parent.joinpath('brs_bridge.pk')
+    if file_brs.exists():
+        with open(file_brs, 'rb') as fi:
+            brs = pickle.load(fi)
+            print(f'{file_brs} loaded')
+    else:
+        _, _, _, brs, _ = request.getfixturevalue('setup_brs')
 
     st_br_to_cs = {'fail': 0, 'surv': 1, 'unk': 2}
 
