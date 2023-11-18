@@ -1,9 +1,12 @@
 import pandas as pd
 import copy
-from BNS_JT import variable, branch
+from pathlib import Path
 import warnings
+import sys
+import pickle
 import numpy as np
 
+from BNS_JT import variable, branch
 
 def get_compat_rules(cst, rules, rules_st):
     #cst: component vector state in dictionary
@@ -362,7 +365,7 @@ def init_brs(varis, rules, rules_st):
     return brs
 
 
-def do_gen_bnb(sys_fun, varis, max_br):
+def do_gen_bnb(sys_fun, varis, max_br, output_path=Path(sys.argv[0]).parent, key=None, flag=True):
     ### MAIN FUNCTION ####
     """
     Input:
@@ -379,11 +382,11 @@ def do_gen_bnb(sys_fun, varis, max_br):
     rules = [] # a list of known rules
     rules_st = [] # a list of known rules' states
     no_iter =  0
-    flag = True
+    ok = True
     brs = []
     cst = []
 
-    while flag and len(brs) < max_br:
+    while ok and len(brs) < max_br:
 
         no_iter += 1
         ###############
@@ -398,18 +401,18 @@ def do_gen_bnb(sys_fun, varis, max_br):
         brs = init_brs(varis, rules, rules_st)
         stop_br = False
 
-        while flag:
+        while ok:
 
             brs, cst, stop_br = core(brs, rules, rules_st, cst, stop_br)
 
             if stop_br:
                 break
             else:
-                flag = any([not b.is_complete for b in brs])
+                ok = any([not b.is_complete for b in brs])
 
         # update rules, rules_st
         sys_res_, rules, rules_st = get_sys_rules(cst, sys_fun, rules, rules_st, varis)
-        print(f'go next iteration: {sys_res_["sys_val"].values[0]}')
+        #print(f'go next iteration: {sys_res_["sys_val"].values[0]}')
         sys_res = pd.concat([sys_res, sys_res_], ignore_index=True)
 
 
@@ -422,6 +425,12 @@ def do_gen_bnb(sys_fun, varis, max_br):
     print('The total # of branches: ', len(brs))
     print('The # of incomplete branches: ', sum([not b.is_complete for b in brs]))
     ###############
+
+    if flag:
+        output_file = output_path.joinpath(f'brs_{key}.pk')
+        with open(output_file, 'wb') as fout:
+            pickle.dump(brs, fout)
+        print(f'{output_file} is saved')
 
     return no_iter, rules, rules_st, brs, sys_res
 
@@ -446,7 +455,7 @@ def get_c_from_br(br, varis, st_br_to_cs):
         up = br.up[i]
 
         if up > down:
-            varis[x], st = get_composite_state(varis[x], list(range(down, up + 1)))
+            varis[x], st = variable.get_composite_state(varis[x], list(range(down, up + 1)))
         else:
             st = up
 
@@ -469,21 +478,4 @@ def get_csys_from_brs(brs, varis, st_br_to_cs):
     return c_sys, varis
 
 
-def get_composite_state(vari, states):
-    """
-    # Input: vari-one Variable object, st_list: list of states (starting from zero)
-    # TODO: states start from 0 in Cpm and from 1 in B&B -- will be fixed later so that all start from 0
-    """
 
-    b = [1 if x in states else 0 for x in range(len(vari.B[0]))]
-
-    comp_st = np.where((vari.B == b).all(axis=1))[0]
-
-    if len(comp_st) > 0:
-        cst = comp_st[0]
-
-    else:
-        vari.B = np.vstack((vari.B, b))
-        cst = len(vari.B) - 1 # zero-based index
-
-    return vari, cst
