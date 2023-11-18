@@ -438,7 +438,7 @@ def test_run_pipes_fun(main_sys, sub_sys):
     np.testing.assert_array_almost_equal(res.x, np.array([2.,  0.,  2.,  2.,  2.,  0.,  0.,  0.,  2.,  0.,  0.,  0.,  0.,  2.,  0.,  0.,  0.,  2.,  0., ]))
 
 
-def test_sys_fun_pipes(main_sys, sub_sys):
+def test_sys_fun_pipes0(main_sys, sub_sys):
 
     comps_st, edges, node_coords, es_idx, edges2comps, depots, varis = main_sys
     #pdb.set_trace()
@@ -450,6 +450,24 @@ def test_sys_fun_pipes(main_sys, sub_sys):
     assert sys_val == 2.0
     assert sys_st == 'surv'
     assert min_comps_st == {'x1': 2, 'n1': 1, 'n2': 1, 'x3': 2, 'n4': 1, 'x4': 2, 'n5': 1, 'x5': 2, 'n6': 1, 'x9': 2, 'n10': 1}
+
+
+def test_sys_fun_pipes1(main_sys, sub_sys):
+
+    _, edges, node_coords, es_idx, edges2comps, depots, varis = main_sys
+    #pdb.set_trace()
+    sub_bw_nodes, sub_bw_edges = sub_sys
+
+    thres = 2
+
+    comps_st ={'n1': 0, 'n2': 0, 'n3': 0, 'n4': 0, 'n5': 0, 'n6': 0, 'n7': 0, 'n8': 0, 'n9': 0, 'n10': 0, 'n11': 0, 'x1': 0, 'x2': 0, 'x3': 0, 'x4': 0, 'x5': 0, 'x6': 0, 'x7': 0, 'x8': 0, 'x9': 0, 'x10': 0}
+
+    sys_val, sys_st, min_comps_st = pipes_sys.sys_fun_pipes(comps_st, thres, edges, node_coords, es_idx, edges2comps, depots, varis, sub_bw_nodes, sub_bw_edges )
+
+    #FIXME
+    #assert sys_val == -0.1
+    assert sys_st == 'fail'
+    assert min_comps_st == None
 
 
 def sys_fun_wrap(thres, edges, node_coords, es_idx, edges2comps, depots, varis, sub_bw_nodes, sub_bw_edges):

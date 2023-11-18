@@ -367,7 +367,7 @@ def do_gen_bnb(sys_fun, varis, max_br, output_path=Path(sys.argv[0]).parent, key
 
         # update rules, rules_st
         sys_res_, rules, rules_st = get_sys_rules(cst, sys_fun, rules, rules_st, varis)
-        print(f'go next iteration: {sys_res_["sys_val"].values[0]}')
+        #print(f'go next iteration: {sys_res_["sys_val"].values[0]}')
         sys_res = pd.concat([sys_res, sys_res_], ignore_index=True)
 
     ###############
