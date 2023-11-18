@@ -3,15 +3,14 @@
 
 import pytest
 import pdb
+import pickle
 import pandas as pd
 import numpy as np
 import networkx as nx
 import matplotlib.pyplot as plt
 from pathlib import Path
 
-from BNS_JT import trans, branch
-from BNS_JT import variable
-from BNS_JT import gen_bnb
+from BNS_JT import trans, branch, variable, cpm, gen_bnb
 
 
 HOME = Path(__file__).parent
@@ -81,6 +80,59 @@ def main_sys():
     e6: 0.707, 0.141, 0.0707
     """
     return od_pair, arcs, varis
+
+
+@pytest.fixture()
+def setup_comp_events(main_sys):
+
+    _, arcs, varis = main_sys
+
+    no_arc_st = 3
+
+    cpms = {}
+
+    # Component events
+    for k in arcs:
+        cpms[k] = cpm.Cpm(variables=[varis[k]],
+                          no_child = 1,
+                          C = np.array([0, 1, 2]),
+                          p = [0.1, 0.2, 0.7])
+
+    # Damage observation
+    C_o = np.array([[0, 0], [1, 0], [2, 0], [0, 1], [1, 1], [2, 1], [0, 2], [1, 2], [2, 2]])
+    p_o = np.array([0.95, 0.04, 0.01, 0.3, 0.5, 0.2, 0.01, 0.19, 0.8]).T
+    for i, k in enumerate(arcs, 1):
+        name = f'o{i}'
+        varis[name] = variable.Variable(name=name,
+            B=np.eye(no_arc_st), values = [0, 1, 2]) # observation that e_i = 0, 1, or 2 ** TO DISCUSS: probably values in dictionary..?
+        cpms[name] = cpm.Cpm(variables=[varis[name], varis[k]], no_child=1, C=C_o, p=p_o)
+
+    return cpms, varis
+
+
+@pytest.fixture()
+def setup_brs(main_sys):
+
+    od_pair, arcs, varis = main_sys
+
+    comps_name = list(arcs.keys())
+
+    # Intact state of component vector: zero-based index 
+    comps_st_itc = {k: v.B.shape[1] - 1 for k, v in varis.items()} # intact state (i.e. the highest state)
+    d_time_itc, path_itc = trans.get_time_and_path_given_comps(comps_st_itc, od_pair, arcs, varis)
+
+    # defines the system failure event
+    thres = 2
+
+    # Given a system function, i.e. sf_min_path, it should be represented by a function that only has "comps_st" as input.
+    sys_fun = trans.sys_fun_wrap(od_pair, arcs, varis, thres * d_time_itc)
+
+    # Branch and bound
+    output_path = Path(__file__).parent
+    no_sf, rules, rules_st, brs, sys_res = gen_bnb.do_gen_bnb(sys_fun, varis, max_br=1000,
+                                                              output_path=output_path, key='bridge')
+
+    return no_sf, rules, rules_st, brs, sys_res
 
 
 @pytest.fixture()
@@ -305,7 +357,7 @@ def test_do_gen_bnb2(main_sys):
     assert pytest.approx(sys_res_['sys_val'].values[0], 0.001) == 0.41626
 
 
-def test_do_gen_bnb11(main_sys):
+def test_do_gen_bnb1(main_sys):
     # iteration 11
     od_pair, arcs, varis = main_sys
 
@@ -358,7 +410,7 @@ def test_do_gen_bnb3(main_sys):
     assert pytest.approx(sys_res_['sys_val'].values[0], 0.001) == 0.4271
 
 
-def test_do_gen_bnb1(main_sys):
+def test_do_gen_bnb0(setup_brs):
     # ## System function as an input
     # 
     # A system function needs to return (1) system function value, (2) system state, and (3) minimally required component state to fulfill the obtained system function value. If (3) is unavailable, it can be returned as None. <br>
@@ -375,23 +427,8 @@ def test_do_gen_bnb1(main_sys):
     # Here, We define the system failure event as a travel time longer than thres*(normal time). <br>
     # It is noted that for a failure event, it returns 'None' for minimal (failure) rule since there is no efficient way to identify one.
 
-    od_pair, arcs, varis = main_sys
-    comps_name = list(arcs.keys())
-
-    # Intact state of component vector: zero-based index 
-    comps_st_itc = {k: v.B.shape[1] - 1 for k, v in varis.items()} # intact state (i.e. the highest state)
-    d_time_itc, path_itc = trans.get_time_and_path_given_comps(comps_st_itc, od_pair, arcs, varis)
-
-    # defines the system failure event
-    thres = 2
-
-    # Given a system function, i.e. sf_min_path, it should be represented by a function that only has "comps_st" as input.
-    sys_fun = trans.sys_fun_wrap(od_pair, arcs, varis, thres * d_time_itc)
-
     # # Branch and bound
-    #pdb.set_trace()
-    # break until 0.424558
-    no_sf, rules, rules_st, brs, sys_res = gen_bnb.do_gen_bnb(sys_fun, varis, max_br=1000)
+    no_sf, rules, rules_st, brs, sys_res = setup_brs
 
     # Result
     assert no_sf == 23
@@ -600,7 +637,7 @@ def test_get_comp_st_for_next_bnb0():
 
 
 #@pytest.mark.skip('NYI')
-def test_get_comp_st_for_next_bnb1():
+def test_get_comp_st_for_next_bnb2():
     up = {'e1': 2, 'e2': 0, 'e3': 2, 'e4': 2, 'e5': 2, 'e6': 2}
     down = {'e1': 0, 'e2': 0, 'e3': 0, 'e4': 0, 'e5': 0, 'e6': 0}
     rules = [{'e2': 2, 'e6': 2, 'e4': 2}, {'e2': 1, 'e5': 2}, {'e1': 2, 'e3': 2, 'e5': 2}, {'e1': 0, 'e2': 1, 'e3': 0, 'e4': 0, 'e5': 0, 'e6': 0}, {'e2': 0, 'e3': 1}, {'e2': 0, 'e5': 1}]
@@ -725,7 +762,7 @@ def test_get_composite_state1(main_sys):
     od_pair, arcs, varis = main_sys
 
     states = [1, 2]
-    result = gen_bnb.get_composite_state(varis['e1'], states)
+    result = variable.get_composite_state(varis['e1'], states)
 
     expected = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1], [0, 1, 1]])
     np.testing.assert_array_equal(result[0].B, expected)
@@ -740,7 +777,7 @@ def test_get_composite_state2(main_sys):
     varis['e1'] = variable.Variable(name='e1', B=np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1], [0, 1, 1]]), values=[1.5, 0.3, 0.15])
 
     states = [1, 2]
-    result = gen_bnb.get_composite_state(varis['e1'], states)
+    result = variable.get_composite_state(varis['e1'], states)
 
     expected = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1], [0, 1, 1]])
     np.testing.assert_array_equal(result[0].B, expected)
@@ -823,3 +860,64 @@ def test_get_csys_from_brs(main_sys):
     np.testing.assert_array_equal(result[1]['e4'].B, np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1], [1, 1, 1], [1, 1, 0]]))
     np.testing.assert_array_equal(result[1]['e5'].B, np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1], [1, 1, 1], [1, 1, 0], [0, 1, 1]]))
     np.testing.assert_array_equal(result[1]['e6'].B, np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1], [1, 1, 1]]))
+
+
+@pytest.fixture()
+def setup_inference(main_sys, setup_comp_events, request):
+
+    _, arcs, _ = main_sys
+
+    cpms, varis = setup_comp_events
+
+    file_brs = Path(__file__).parent.joinpath('brs_bridge.pk')
+    if file_brs.exists():
+        with open(file_brs, 'rb') as fi:
+            brs = pickle.load(fi)
+            print(f'{file_brs} loaded')
+    else:
+        _, _, _, brs, _ = request.getfixturevalue('setup_brs')
+
+    st_br_to_cs = {'fail': 0, 'surv': 1, 'unk': 2}
+
+    csys, varis = gen_bnb.get_csys_from_brs(brs, varis, st_br_to_cs)
+
+    varis['sys'] = variable.Variable('sys', np.eye(3), ['fail', 'surv', 'unk'])
+    cpm_sys_vname = brs[0].names[:]
+    cpm_sys_vname.insert(0, 'sys')
+
+    cpms['sys'] = cpm.Cpm(
+        variables=[varis[k] for k in cpm_sys_vname],
+        no_child = 1,
+        C = csys,
+        p = np.ones((len(csys), 1), int))
+
+    var_elim_order_name = [f'o{i}' for i in range(1, len(arcs) + 1)] + [f'e{i}' for i in range(1, len(arcs) + 1)] # observations first, components later
+
+    var_elim_order = [varis[k] for k in var_elim_order_name]
+
+    return cpms, varis, var_elim_order, arcs
+
+
+def test_inference_case1(setup_inference):
+
+    cpms, varis, var_elim_order, _ = setup_inference
+
+    Msys = cpm.variable_elim([cpms[v] for v in varis.keys()], var_elim_order )
+    np.testing.assert_array_almost_equal(Msys.C, np.array([[0, 1]]).T)
+    np.testing.assert_array_almost_equal(Msys.p, np.array([[0.1018, 0.8982]]).T)
+
+
+def test_inference_case2(setup_inference):
+
+    cpms, varis, var_elim_order, arcs = setup_inference
+
+    cnd_vars = [f'o{i}' for i in range(1, len(arcs) + 1)]
+    cnd_states = [1, 1, 0, 1, 0, 1]
+
+    Mobs = cpm.condition([cpms[v] for v in varis.keys()], cnd_vars, cnd_states)
+    Msys_obs = cpm.variable_elim(Mobs, var_elim_order)
+
+    np.testing.assert_array_almost_equal(Msys_obs.C, np.array([[0, 1]]).T)
+    np.testing.assert_array_almost_equal(Msys_obs.p, np.array([[2.765e-5, 5.515e-5]]).T)
+
+
