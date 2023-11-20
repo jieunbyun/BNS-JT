@@ -232,12 +232,12 @@ def core(brs, rules, rules_st, cst, stop_br):
 
     """
     brs_new = []
-
+    #print(f'brs entering core: {brs}')
     for i, br in enumerate(brs):
 
         up = {x: y for x, y in zip(br.names, br.up)}
         idx, _ = get_compat_rules(up, rules, rules_st)
-
+        #print(f'up, idx: {up}, {idx}')
         if br.up_state == 'unk' and len(idx) == 0:
             cst = br.up # perform analysis on this state
             stop_br = True
@@ -246,6 +246,7 @@ def core(brs, rules, rules_st, cst, stop_br):
         down = {x: y for x, y in zip(br.names, br.down)}
         idx, _ = get_compat_rules(down, rules, rules_st)
 
+        #print(f'down, idx: {down}, {idx}')
         if br.down_state == 'unk' and len(idx) == 0:
             cst = br.down # perform analysis on this state
             stop_br = True
@@ -279,11 +280,9 @@ def core(brs, rules, rules_st, cst, stop_br):
 
                 else:
                     b.down_state = cst_down
-
+                    brs_new.append(b)
                     if cst_down == cst_up:
                         b.is_complete = True
-
-                    brs_new.append(b)
 
             if stop_br == True:
                 break
@@ -299,12 +298,10 @@ def core(brs, rules, rules_st, cst, stop_br):
             if cst_down == cst_up:
                 b.is_complete = True
 
-        if stop_br == False:
-            brs = copy.deepcopy(brs_new)
-        else:
-            break
+    if stop_br == False:
+        brs = copy.deepcopy(brs_new)
 
-    return brs_new, cst, stop_br
+    return brs, cst, stop_br
 
 def get_brs_from_rules( rules, rules_st, varis, max_br ):
 
@@ -365,7 +362,7 @@ def init_brs(varis, rules, rules_st):
     return brs
 
 
-def do_gen_bnb(sys_fun, varis, max_br, output_path=Path(sys.argv[0]).parent, key=None, flag=True):
+def do_gen_bnb(sys_fun, varis, max_br, output_path=Path(sys.argv[0]).parent, key=None, flag=False):
     ### MAIN FUNCTION ####
     """
     Input:
@@ -399,6 +396,7 @@ def do_gen_bnb(sys_fun, varis, max_br, output_path=Path(sys.argv[0]).parent, key
 
         ## Start from the total event ##
         brs = init_brs(varis, rules, rules_st)
+        #print(f'brat at {no_iter}: {brs}')
         stop_br = False
 
         while ok:
@@ -412,7 +410,10 @@ def do_gen_bnb(sys_fun, varis, max_br, output_path=Path(sys.argv[0]).parent, key
 
         # update rules, rules_st
         sys_res_, rules, rules_st = get_sys_rules(cst, sys_fun, rules, rules_st, varis)
-        #print(f'go next iteration: {sys_res_["sys_val"].values[0]}')
+        #print(f'sys_res_: {sys_res_.values[0]}')
+        #print(f'rules: {rules}')
+        #print(f'rules_st: {rules_st}')
+        #print(f'brs: {brs}')
         sys_res = pd.concat([sys_res, sys_res_], ignore_index=True)
 
 
