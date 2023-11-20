@@ -130,7 +130,7 @@ def setup_brs(main_sys):
     # Branch and bound
     output_path = Path(__file__).parent
     no_sf, rules, rules_st, brs, sys_res = gen_bnb.do_gen_bnb(sys_fun, varis, max_br=1000,
-                                                              output_path=output_path, key='bridge')
+                                                              output_path=output_path, key='bridge', flag=True)
 
     return no_sf, rules, rules_st, brs, sys_res
 
@@ -274,7 +274,9 @@ def test_core1(main_sys):
 
     brs, cst, stop_br = gen_bnb.core(brs, rules, rules_st, cst, stop_br)
 
-    assert brs == []
+    assert len(brs) == 1
+    assert brs[0].up == [2] * 6
+    assert brs[0].down == [0] * 6
     assert cst == [2, 2, 2, 2, 2, 2]
     assert stop_br == True
 
@@ -291,7 +293,9 @@ def test_core2(main_sys):
 
     #pdb.set_trace()
     brs, cst, stop_br = gen_bnb.core(brs, rules, rules_st, cst, stop_br)
-    assert brs == []
+    assert len(brs) == 1
+    assert brs[0].up == [2] * 6
+    assert brs[0].down == [0] * 6
     assert cst == [0, 0, 0, 0, 0, 0]
     assert stop_br == True
 
@@ -308,7 +312,9 @@ def test_core3(main_sys):
 
     #pdb.set_trace()
     brs, cst, stop_br = gen_bnb.core(brs, rules, rules_st, cst, stop_br)
-    assert brs == []
+    assert len(brs) == 1
+    assert brs[0].up == [2] * 6
+    assert brs[0].down == [0] * 6
     assert cst == [2, 2, 2, 2, 1, 2]
     assert stop_br == True
 
@@ -325,7 +331,9 @@ def test_core4(main_sys):
 
     #pdb.set_trace()
     brs, cst, stop_br = gen_bnb.core(brs, rules, rules_st, cst, stop_br)
-    assert brs == []
+    assert len(brs) == 1
+    assert brs[0].up == [2] * 6
+    assert brs[0].down == [0] * 6
     assert cst == [2, 1, 2, 2, 2, 2]
     assert stop_br == True
 
@@ -836,7 +844,13 @@ def test_get_csys_from_brs(main_sys):
     sys_fun = trans.sys_fun_wrap(od_pair, arcs, varis, thres * d_time_itc)
 
     # # Branch and bound
-    _, _, _, brs, _ = gen_bnb.do_gen_bnb(sys_fun, varis, max_br=1000)
+    file_brs = Path(__file__).parent.joinpath('brs_bridge.pk')
+    if file_brs.exists():
+        with open(file_brs, 'rb') as fi:
+            brs = pickle.load(fi)
+            print(f'{file_brs} loaded')
+    else:
+        _, _, _, brs, _ = request.getfixturevalue('setup_brs')
 
     st_br_to_cs = {'fail': 0, 'surv': 1, 'unk': 2}
 

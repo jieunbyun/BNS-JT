@@ -3,6 +3,7 @@
 import pytest
 import pdb
 import time
+import pickle
 
 import networkx as nx
 import numpy as np
@@ -17,7 +18,9 @@ HOME = Path(__file__).parent
 
 @pytest.fixture()
 def main_sys():
-
+    """
+    based on pipe_system_v2.ipynb
+    """
     node_coords = {'n1': (0, 1),
                     'n2': (0, 0),
                     'n3': (0, -1),
@@ -60,7 +63,7 @@ def main_sys():
     edges2comps = {}
     c_idx = 0
     for e, pair in edges.items():
-        c_rev = [x1 for e1, x1 in edges2comps.items() if edges[e1] == pair or edges[e1]==pair[::-1]]
+        c_rev = [x1 for e1, x1 in edges2comps.items() if edges[e1] == pair or edges[e1]==[pair[1], pair[0]]]
 
         if len(c_rev) == 0:
             c_idx += 1
@@ -103,11 +106,11 @@ def main_sys():
 
 
 @pytest.fixture()
-def main_sys1():
+def main_sys2():
     """
-    Not sure but edges2comp is different from the original.
-    """
+    based on gen_bnb_to_rel_deter_ind_pipe.ipynb
 
+    """
     node_coords = {'n1': (0, 1),
                     'n2': (0, 0),
                     'n3': (0, -1),
@@ -147,9 +150,8 @@ def main_sys1():
     for k, v in node_coords.items():
         varis[k] = variable.Variable(name=k, B=np.eye(no_node_st), values=node_st_cp)
 
-    edges2comps = {e: f'x{i}' for i, e in enumerate(edges, 1)}
-
-    no_comp = len(edges2comps)
+    edges2comps = {e: f'x{i}' for i, e in enumerate(edges.keys(), 1)}
+    no_comp = len(edges)
 
     es_idx = {e: idx for idx, e in enumerate(edges)}
 
@@ -157,9 +159,12 @@ def main_sys1():
     comp_st_fval = [0, 1, 2] # state index to actual flow capacity (e.g. state 1 stands for flow capacity 0, etc.)
     for e, x in edges2comps.items():
         if x not in varis:
-            varis[x] = variable.Variable(name=k, B = np.eye(no_comp_st), values = comp_st_fval )
+            varis[x] = variable.Variable(name=k, B = np.eye(no_comp_st), values = comp_st_fval)
 
     #no_sub = len(sub_bw_nodes) + 1
+    #comps_st = {n: len(varis[n].B[0]) - 1 for _, n in edges2comps}
+    comps_st = {n: len(varis[n].B[0]) - 1 for n in node_coords}
+    comps_st.update({v: len(varis[v].B[0]) - 1 for _, v in edges2comps.items()})
 
     # Plot the system
     G = nx.DiGraph()
@@ -172,8 +177,6 @@ def main_sys1():
     pos = nx.get_node_attributes(G, 'pos')
     edge_labels = nx.get_edge_attributes(G, 'label')
 
-    comps_st = {n: len(varis[n].B[0]) - 1 for _, n in edges2comps.items()}
-
     fig = plt.figure()
     ax = fig.add_subplot()
     nx.draw(G, pos, with_labels=True, ax=ax)
@@ -181,6 +184,8 @@ def main_sys1():
     fig.savefig(HOME.joinpath('graph_pipes.png'), dpi=200)
 
     return comps_st, edges, node_coords, es_idx, edges2comps, depots, varis
+
+
 
 
 @pytest.fixture()
@@ -429,7 +434,6 @@ def test_run_pipes_fun(main_sys, sub_sys):
     sub_bw_nodes, sub_bw_edges = sub_sys
 
     ### Example 1: all in the highest state
-    #pdb.set_trace()
     res = pipes_sys.run_pipes_fun(comps_st, edges, node_coords, es_idx, edges2comps, depots, varis, sub_bw_nodes, sub_bw_edges )
 
     assert res.success == True
@@ -460,14 +464,15 @@ def test_sys_fun_pipes1(main_sys, sub_sys):
 
     thres = 2
 
-    comps_st ={'n1': 0, 'n2': 0, 'n3': 0, 'n4': 0, 'n5': 0, 'n6': 0, 'n7': 0, 'n8': 0, 'n9': 0, 'n10': 0, 'n11': 0, 'x1': 0, 'x2': 0, 'x3': 0, 'x4': 0, 'x5': 0, 'x6': 0, 'x7': 0, 'x8': 0, 'x9': 0, 'x10': 0}
+    comps_st ={'n1': 1, 'n2': 1, 'n3': 1, 'n4': 1, 'n5': 1, 'n6': 0, 'n7': 1, 'n8': 1, 'n9': 1, 'n10': 1, 'n11': 1, 'x1': 2, 'x2': 2, 'x3': 2, 'x4': 2, 'x5': 2, 'x6': 2, 'x7': 2, 'x8': 2, 'x9': 2, 'x10': 2}
 
     sys_val, sys_st, min_comps_st = pipes_sys.sys_fun_pipes(comps_st, thres, edges, node_coords, es_idx, edges2comps, depots, varis, sub_bw_nodes, sub_bw_edges )
 
-    #FIXME
-    #assert sys_val == -0.1
-    assert sys_st == 'fail'
-    assert min_comps_st == None
+    expected ={'x1': 2, 'n1': 1, 'n2': 1, 'x3': 2, 'n4': 1, 'x6': 2, 'n7': 1, 'x7': 2, 'n8': 1, 'x9': 2, 'n5': 1, 'n10': 1, 'x4': 2}
+
+    assert sys_val == 2.0
+    assert sys_st == 'surv'
+    assert min_comps_st == expected
 
 
 def sys_fun_wrap(thres, edges, node_coords, es_idx, edges2comps, depots, varis, sub_bw_nodes, sub_bw_edges):
@@ -475,38 +480,61 @@ def sys_fun_wrap(thres, edges, node_coords, es_idx, edges2comps, depots, varis, 
         return pipes_sys.sys_fun_pipes(comps_st, thres, edges, node_coords, es_idx, edges2comps, depots, varis, sub_bw_nodes, sub_bw_edges)
     return sys_fun2
 
-@pytest.mark.skip('FIXME')
-def test_do_gen_bnb_pipe(main_sys, sub_sys):
+
+def test_setup_brs(main_sys, sub_sys):
 
     # Branch and Bound
     comps_st, edges, node_coords, es_idx, edges2comps, depots, varis = main_sys
+
+    #pdb.set_trace()
     sub_bw_nodes, sub_bw_edges = sub_sys
 
     thres = 2
 
     sys_fun = sys_fun_wrap(thres, edges, node_coords, es_idx, edges2comps, depots, varis, sub_bw_nodes, sub_bw_edges)
 
-    # originally max_br = 1000
-    #_list = [k for k in node_coords] + [v for _, v in edges2comps.items()]
-    #varis_comp = {k: varis[k] for k in _list}
+    #pdb.set_trace()
+    file_brs = Path(__file__).parent.joinpath('brs_pipes.pk')
+    if file_brs.exists():
+        with open(file_brs, 'rb') as fi:
+            brs = pickle.load(fi)
+            print(f'{file_brs} loaded')
+    else:
+        output_path = Path(__file__).parent
+        no_sf, rules, _, brs, _ = gen_bnb.do_gen_bnb(sys_fun, varis, max_br=1000, output_path=output_path, key='pipes', flag=True)
+        assert no_sf == 1258
+        assert len(rules) == 129
 
-    output_path = Path(__file__).parent
-    no_sf, rules, rules_st, brs, sys_res = gen_bnb.do_gen_bnb(sys_fun, varis, max_br=1000, output_path=output_path, key='pipe', flag=False)
+    assert len(brs) == 1082
+    assert sum([not b.is_complete for b in brs]) == 144
 
-    assert no_sf == 314
-    assert len(rules) == 100
-    assert len(brs) == 115
+
+def test_core_iter0(main_sys):
+
+    _, _, _, _, _, _, varis = main_sys
+
+    cst =[]
+    rules = []
+    stop_br = True
+    rules_st = []
+
+    brs = gen_bnb.init_brs(varis, rules, rules_st)
+
+    brs, cst, stop_br = gen_bnb.core(brs, rules, rules_st, cst, stop_br)
+    assert len(brs) == 1
+    assert cst ==  [1]*11 + [2]*10
+    assert stop_br == True
 
 
 @pytest.fixture()
-def setup_brs(main_sys1, sub_sys, setup_comp_events):
+def setup_brs(main_sys, sub_sys):
 
     # Branch and Bound
-    comps_st, edges, node_coords, es_idx, edges2comps, depots, _ = main_sys1
+    comps_st, edges, node_coords, es_idx, edges2comps, depots, varis = main_sys
     #pdb.set_trace()
     sub_bw_nodes, sub_bw_edges = sub_sys
 
-    _, varis = setup_comp_events
+    #_, varis = setup_comp_events
 
     thres = 2
 
@@ -515,19 +543,19 @@ def setup_brs(main_sys1, sub_sys, setup_comp_events):
     # comps_name = list(comps_st.keys())
 
     # originally max_br = 1000
-    _list = [k for k in node_coords] + [v for _, v in edges2comps.items()]
-    varis_comp = {k: varis[k] for k in _list}
+    #_list = [k for k in node_coords] + [v for _, v in edges2comps.items()]
+    #varis_comp = {k: varis[k] for k in _list}
 
     output_path = Path(__file__).parent
-    no_sf, rules, rules_st, brs, sys_res = gen_bnb.do_gen_bnb(sys_fun, varis_comp, max_br=1000, output_path=output_path, key='pipe')
+    no_sf, rules, rules_st, brs, sys_res = gen_bnb.do_gen_bnb(sys_fun, varis, max_br=1000, output_path=output_path, key='pipes', flag=True)
 
     return no_sf, rules, rules_st, brs, sys_res
 
 
 @pytest.fixture()
-def setup_comp_events(main_sys1, sub_sys):
+def setup_comp_events(main_sys2, sub_sys):
 
-    comps_st, edges, node_coords, es_idx, edges2comps, depots, varis = main_sys1
+    comps_st, edges, node_coords, es_idx, edges2comps, depots, varis = main_sys2
 
     sub_bw_nodes, sub_bw_edges = sub_sys
 
@@ -556,16 +584,14 @@ def setup_comp_events(main_sys1, sub_sys):
         varis[name] = variable.Variable(name=name, B = np.eye(3), values = [0, 1, 2]) # observation that x_i = 0, 1, or 2 ** TO DISCUSS: probably values in dictionary..?
         cpms[name] = cpm.Cpm(variables=[varis[name], varis[k]], no_child = 1, C = C_o, p = p_o)
 
-    return cpms, varis
+    return cpms, varis, edges
 
 
-@pytest.mark.skip('NYI')
+@pytest.mark.skip('FIXME')
 @pytest.fixture()
-def setup_inference(main_sys1, setup_comp_events, request):
+def setup_inference(setup_comp_events, request):
 
-    _, edges, _, _, _, _, _ = main_sys1
-
-    cpms, varis = setup_comp_events
+    cpms, varis, edges = setup_comp_events
 
     file_brs = Path(__file__).parent.joinpath('brs_pipes.pk')
     if file_brs.exists():
@@ -593,13 +619,13 @@ def setup_inference(main_sys1, setup_comp_events, request):
 
     var_elim_order = [varis[k] for k in var_elim_order_name]
 
-    return cpms, varis, var_elim_order, arcs
+    return cpms, varis, var_elim_order, edges
 
 
-@pytest.mark.skip('NYI')
+#@pytest.mark.skip('FIXME')
 def test_get_cys_from_brs_pipe(setup_comp_events, request):
 
-    _, varis = setup_comp_events
+    _, varis, _ = setup_comp_events
 
     file_brs = Path(__file__).parent.joinpath('brs_pipes.pk')
     if file_brs.exists():
@@ -610,7 +636,7 @@ def test_get_cys_from_brs_pipe(setup_comp_events, request):
         _, _, _, brs, _ = request.getfixturevalue('setup_brs')
 
     st_br_to_cs = {'fail': 0, 'surv': 1, 'unk': 2}
-
+    #pdb.set_trace()
     csys, varis = gen_bnb.get_csys_from_brs(brs, varis, st_br_to_cs)
-
+    # FIXME
     print(csys)
