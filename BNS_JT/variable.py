@@ -118,7 +118,7 @@ def get_composite_state(vari, states):
     # TODO: states start from 0 in Cpm and from 1 in B&B -- will be fixed later so that all start from 0
     """
 
-    b = [1 if x in states else 0 for x in range(len(vari.B[0]))]
+    b = np.array([1 if x in states else 0 for x in range(len(vari.B[0]))])
 
     comp_st = np.where((vari.B == b).all(axis=1))[0]
 
