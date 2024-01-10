@@ -129,7 +129,7 @@ def setup_brs(main_sys):
 
     # Branch and bound
     output_path = Path(__file__).parent
-    pdb.set_trace()
+    #pdb.set_trace()
     no_sf, rules, rules_st, brs, sys_res = gen_bnb.do_gen_bnb(sys_fun, varis, max_br=1000,
                                                               output_path=output_path, key='bridge', flag=True)
 
@@ -454,7 +454,7 @@ def test_proposed_branch_and_bound(main_sys):
     brs, rules, sys_res = gen_bnb.proposed_branch_and_bound(sys_fun, varis, max_br=1000,
                                                               output_path=output_path, key='bridge', flag=True)
 
-    print(brs)
+    #print(brs)
     # Result
     #assert no_sf == 23
     assert len(rules) == 10
