@@ -72,9 +72,9 @@ def sf_min_path(comps_st, od_pair, arcs, vari, thres):
     # fail, surv corresponds to 0 and 1
     min_comps_st = {}
     if d_time > thres:
-        sys_st = 'fail'
+        sys_st = 'f'
     else:
-        sys_st = 'surv'
+        sys_st = 's'
         for n0, n1 in zip(path[:-1], path[1:]):
             arc = next((k for k, v in arcs.items() if v == [n0, n1] or v == [n1, n0]), None)
             min_comps_st[arc] = comps_st[arc]

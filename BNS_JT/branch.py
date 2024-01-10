@@ -14,7 +14,14 @@ from pathlib import Path
 from BNS_JT import cpm, variable, trans
 
 
-class Branch(object):
+from collections import namedtuple
+
+Branch = namedtuple("Branch", ["down", "up", "down_state", "up_state"])
+
+
+
+
+class Branch_old(object):
     """
 
     Parameters
@@ -50,13 +57,13 @@ class Branch(object):
 
         assert isinstance(is_complete, bool), '"is_complete" must be either true (or 1) or false (or 0)'
 
-        assert isinstance(down_state, (int, np.int32, np.int64)), '"down_state" must be a positive integer (if to be input).'
+        #assert isinstance(down_state, (int, np.int32, np.int64)), '"down_state" must be a positive integer (if to be input).'
 
-        assert isinstance(up_state, (int, np.int32, np.int64)), '"down_state" must be a positive integer (if to be input).'
+        #assert isinstance(up_state, (int, np.int32, np.int64)), '"down_state" must be a positive integer (if to be input).'
 
     def __repr__(self):
-        return textwrap.dedent(f'''\
-{self.__class__.__name__}(down={self.down}, up={self.up}, is_complete={self.is_complete}, down_state={self.down_state}, up_state={self.up_state}, down_val={self.down_val}, up_val={self.up_val})''')
+        return textwrap.dedent(f"""\
+{self.__class__.__name__}(down={self.down}, up={self.up}, is_complete={self.is_complete}, down_state={self.down_state}, up_state={self.up_state}, down_val={self.down_val}, up_val={self.up_val}""")
 
     def __eq__(self, other):
         """Overrides the default implementation"""

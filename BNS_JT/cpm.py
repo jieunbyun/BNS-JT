@@ -287,7 +287,7 @@ class Cpm(object):
         first = [x.name for x in self.variables[:self.no_child]]
         second = [x.name for x in M.variables[:M.no_child]]
         check = set(first).intersection(second)
-        assert not bool(check), 'PMFs must not have common child nodes'
+        assert not bool(check), f'PMFs must not have common child nodes: {first}, {second}'
 
         if self.p.size:
             if not M.p.size:
