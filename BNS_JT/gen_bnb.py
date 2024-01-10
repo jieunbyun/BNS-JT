@@ -30,7 +30,7 @@ def proposed_branch_and_bound(sys_fun, varis, max_br, output_path=Path(sys.argv[
     assert isinstance(varis, dict), f'varis must be a dict: {type(varis)}'
 
     # Initialisation
-    #no_sf = 0 # number of system function runs so far
+    no_sf = 0 # number of system function runs so far
     sys_res = pd.DataFrame(data={'sys_val': [], 'comp_st': [], 'comp_st_min': []}) # system function results 
     no_iter =  0
     ok = True
@@ -45,7 +45,7 @@ def proposed_branch_and_bound(sys_fun, varis, max_br, output_path=Path(sys.argv[
         ###############
         print(f'[Iteration {no_iter}]..')
         print(f'The # of found non-dominated rules: {len(rules)}')
-        #print('System function runs: ', no_sf) # Redundant with iteration number
+        print('System function runs: ', no_sf) 
         print(f'The # of branches: {len(brs)}')
         print('---')
         ###############
@@ -68,6 +68,8 @@ def proposed_branch_and_bound(sys_fun, varis, max_br, output_path=Path(sys.argv[
 
                     # run system function
                     sys_res_, rule = run_sys_fn(x_star, sys_fun, rules, varis)
+                    no_sf += 1
+
                     rules = update_rule_set(rules, rule)
                     sys_res = pd.concat([sys_res, sys_res_], ignore_index=True)
                     brs = init_branch(varis, rules)
@@ -224,7 +226,7 @@ def get_decomp_comp(lower, upper, rules):
         values = [x[0] for x in Counter(values).most_common()]
 
         for v in values:
-            if (lower[c] <= v) and (v <= upper[c]) and (lower[c] < upper[c]):
+            if (lower[c] < v) and (v <= upper[c]) and (lower[c] < upper[c]):
                 xd = c, v
                 break
         else:
