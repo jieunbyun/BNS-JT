@@ -172,11 +172,11 @@ def sys_fun_pipes(comps_st, thres, edges, node_coords, es_idx, edges2comps, depo
         sys_val = 0
 
     if sys_val < thres:
-        sys_st = 'fail'
+        sys_st = 'f'
         min_comps_st = None
 
     else:
-        sys_st = 'surv'
+        sys_st = 's'
 
         min_comps_st = {}
         for e, pair in edges.items():
