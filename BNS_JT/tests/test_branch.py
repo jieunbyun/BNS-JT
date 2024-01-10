@@ -145,7 +145,7 @@ def setup_branch():
     names = [1, 2, 3, 4, 5, 6]
 
     branches = {}
-    branches[0] = branch.Branch(down=[1, 1, 1, 1, 1, 1],
+    branches[0] = branch.Branch_old(down=[1, 1, 1, 1, 1, 1],
     up=[1, 1, 2, 2, 2, 2],
     is_complete=True,
     down_state=3-1,
@@ -154,7 +154,7 @@ def setup_branch():
     up_val=np.inf,
     names=names)
 
-    branches[1] = branch.Branch(down=[1, 2, 1, 1, 1, 1],
+    branches[1] = branch.Branch_old(down=[1, 2, 1, 1, 1, 1],
     up=[1, 2, 2, 2, 2, 2],
     is_complete=True,
     down_state=1-1,
@@ -163,7 +163,7 @@ def setup_branch():
     up_val=0.0901,
     names=names)
 
-    branches[2] = branch.Branch(down=[2, 2, 1, 1, 1, 1],
+    branches[2] = branch.Branch_old(down=[2, 2, 1, 1, 1, 1],
     up= [2, 2, 2, 2, 2, 2],
     is_complete=True,
     down_state=1-1,
@@ -172,7 +172,7 @@ def setup_branch():
     up_val=0.0901,
     names=names)
 
-    branches[3] = branch.Branch(down=[2, 1, 1, 1, 1, 1],
+    branches[3] = branch.Branch_old(down=[2, 1, 1, 1, 1, 1],
     up=[2, 1, 1, 2, 2, 2],
     is_complete=True,
     down_state=3-1,
@@ -181,7 +181,7 @@ def setup_branch():
     up_val=np.inf,
     names=names)
 
-    branches[4] = branch.Branch(down=[2, 1, 2, 1, 1, 1],
+    branches[4] = branch.Branch_old(down=[2, 1, 2, 1, 1, 1],
     up=[2, 1, 2, 2, 2, 2],
     is_complete=True,
     down_state=2-1,

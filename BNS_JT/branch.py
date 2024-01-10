@@ -67,7 +67,7 @@ class Branch_old(object):
 
     def __eq__(self, other):
         """Overrides the default implementation"""
-        if isinstance(other, Branch):
+        if isinstance(other, Branch_old):
             return all([self.down == other.down,
                         self.up == other.up,
                         self.names == other.names,
@@ -150,7 +150,7 @@ def get_cmat(branches, comp_var, flag=True):
 def get_idx(x, flag=False):
 
     assert isinstance(x, list), 'should be a list'
-    assert all([isinstance(y, Branch) for y in x]), 'should contain an instance of Branch'
+    assert all([isinstance(y, Branch_old) for y in x]), 'should contain an instance of Branch'
     return [i for i, y in enumerate(x) if y.is_complete is flag]
 
 
@@ -174,7 +174,7 @@ def run_bnb(sys_fn, next_comp_fn, next_state_fn, info, comp_max_states):
     init_up = comp_max_states
     init_down = np.ones_like(comp_max_states).tolist() # Assume that the lowest state is 1
 
-    branches = [Branch(down=init_down,
+    branches = [Branch_old(down=init_down,
                        up=init_up,
                        is_complete=False,
                        names=info['arcs'])]
