@@ -203,12 +203,12 @@ def get_compat_rules2(lower, upper, rules):
     for rule in rules:
         if rule[1] == 's':
             if all([upper[k] >= v for k, v in rule[0].items()]): # the survival rule is satisfied
-                rule = ({k: v for k, v in rule[0].items() if v >= lower[k]}, rule[1])
+                rule = ({k: v for k, v in rule[0].items() if v > lower[k]}, rule[1])
                 compat_rules.append(rule)
 
         elif rule[1] == 'f':
             if all([lower[k] <= v for k, v in rule[0].items()]): # the failure rule is compatible
-                rule = ({k: v for k, v in rule[0].items() if v <= upper[k]}, rule[1])
+                rule = ({k: v for k, v in rule[0].items() if v < upper[k]}, rule[1])
                 compat_rules.append(rule)
 
     return compat_rules
