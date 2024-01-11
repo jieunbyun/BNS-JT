@@ -104,6 +104,21 @@ def proposed_branch_and_bound(sys_fun, varis, max_br, output_path=Path(sys.argv[
     return brs, rules, sys_res
 
 
+def get_csys_from_brs2(brs, varis, st_br_to_cs):
+    """
+
+
+    """
+    c_sys = np.empty(shape=(0, len(brs[0].up.keys()) + 1), dtype=int)
+
+    for br in brs:
+        varis, c = get_cmat_from_br(br, varis, st_br_to_cs)
+        c_sys = np.vstack([c_sys, c])
+
+    return c_sys, varis
+
+
+
 def get_cmat_from_br(br, varis, st_br_to_cs):
     """
     return updated varis and state
@@ -124,7 +139,9 @@ def get_cmat_from_br(br, varis, st_br_to_cs):
         up = br.up[x]
 
         if up > down:
-            varis[x], st = variable.get_composite_state(varis[x], list(range(down, up + 1)))
+            # FIXME:  
+            states = list(range(down, up + 1))
+            varis[x], st = variable.get_composite_state(varis[x], states)
         else:
             st = up
 
