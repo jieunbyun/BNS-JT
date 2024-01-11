@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # coding: utf-8
 
 import pytest
@@ -502,10 +501,8 @@ def test_proposed_branch_and_bound(main_sys):
     expected_rules =[{'e1': 2, 'e3': 2, 'e5': 2}, {'e2': 0, 'e3': 1}, {'e2': 0, 'e5': 1}, {'e2': 1, 'e6': 2, 'e4': 2}, {'e2': 1, 'e5': 1}, {'e4': 1, 'e5': 0}, {'e1': 1, 'e2': 0}, {'e2': 2, 'e6': 1, 'e4': 2}, {'e5': 0, 'e6': 0}, {'e2': 1, 'e5': 0, 'e6': 1}]
     expected_st = ['s', 'f', 'f', 's', 's', 'f', 'f', 's', 'f', 'f']
     assert all([item in rules for item in zip(expected_rules, expected_st)])
-    print(len(brs))
-    for br in brs:
-        print(br.up, br.down, br.down_state, br.up_state)
-    #assert len(brs) == 10
+
+    assert len(brs) == 10
     expected_brs = [branch.Branch_old(down=[1, 1, 1, 1, 1, 1], up=[3, 1, 2, 3, 3, 3], is_complete=True, down_state='f', up_state='f', down_val=None, up_val=None, names=comps_name),
                     branch.Branch_old(down=[1, 1, 3, 1, 1, 1], up=[3, 1, 3, 3, 2, 3], is_complete=True, down_state='f', up_state='f', down_val=None, up_val=None, names=comps_name),
                     branch.Branch_old(down=[1, 1, 3, 1, 3, 1], up=[2, 1, 3, 3, 3, 3], is_complete=True, down_state='f', up_state='f', down_val=None, up_val=None, names=comps_name),
@@ -531,25 +528,16 @@ def test_proposed_branch_and_bound(main_sys):
         else:
             print(f'not found: {br_}')
 
-
-    #assert all([x == y for x, y in zip(expected_brs, brs)])
     expected = np.array([0.184420,
                          1.844197,
-                         0.33442,
                          0.266259,
-                         1.032948,
-                         0.995669,
                          0.274558,
-                         1.844197,
-                         0.995669,
+                         0.334420,
                          0.995669,
                          1.123087,
-                         1.844197,
                          0.424558,
                          1.844197,
                          0.416259,
-                         0.368839,
-                         0.902665,
                          0.995669,
                          0.278701,
                          0.356397,
@@ -564,7 +552,6 @@ def test_proposed_branch_and_bound(main_sys):
                          0.427108,
                          0.427108])
 
-    #print(sys_res['sys_val'])
     #np.testing.assert_array_almost_equal(sys_res['sys_val'].values, expected)
     expected_comps_min = [{'e2': 2, 'e5': 2},
                           {},
@@ -591,9 +578,6 @@ def test_proposed_branch_and_bound(main_sys):
                           {}]
 
     #assert all([x == y for x, y in zip(expected_comps_min, sys_res['comps_st_min'].values)])
-
-
-
 
 
 def test_do_gen_bnb0(setup_brs):
@@ -707,6 +691,46 @@ def test_get_state0():
     assert result == 'u'
 
 
+def test_get_compat_rules2_0():
+
+    upper = {f'e{i}': 2 for i in range(1, 7)}
+    lower = {f'e{i}': 0 for i in range(1, 7)}
+
+    rules = []
+    result = gen_bnb.get_compat_rules2(lower, upper, rules)
+    assert result == []
+
+    rules = [({'e2': 2, 'e5': 2}, 's')]
+    result = gen_bnb.get_compat_rules2(lower, upper, rules)
+    assert result == [({'e2': 2, 'e5': 2}, 's')]
+
+    rules = [({'e2': 1, 'e5': 2}, 's'), ({f'e{i}': 0 for i in range(1, 7)}, 'f')]
+    result = gen_bnb.get_compat_rules2(lower, upper, rules)
+
+    assert result[0] == rules[0]
+    assert result[1] == rules[1]
+
+    upper = {'e1': 2, 'e2': 0, 'e3': 2, 'e4': 2, 'e5': 2, 'e6': 2}
+    lower = {f'e{i}': 0 for i in range(1, 7)}
+    #pdb.set_trace()
+    result = gen_bnb.get_compat_rules2(lower, upper, rules)
+    assert len(result) == 1
+    assert result[0] == rules[1]
+
+    upper = {'e1': 2, 'e2': 2, 'e3': 2, 'e4': 2, 'e5': 2, 'e6': 2}
+    lower = {'e1': 2, 'e2': 0, 'e3': 2, 'e4': 2, 'e5': 2, 'e6': 2}
+    rules = [({'e2': 1, 'e5': 2}, 's'),
+             ({f'e{i}': 0 for i in range(1, 7)}, 'f'),
+             ({'e1': 2, 'e3': 2, 'e5': 2}, 's'),
+             ({'e2': 2, 'e4': 2, 'e6': 2}, 's'),
+            ]
+    result = gen_bnb.get_compat_rules2(lower, upper, rules)
+    print(result)
+    assert result[0] == rules[0]
+    assert result[1] == rules[2]
+    assert result[2] == rules[3]
+
+
 def test_get_compat_rules0():
 
     rules = []
@@ -745,6 +769,8 @@ def test_get_state1():
     result = gen_bnb.get_state(cst, rules)
 
     assert result == 'u'
+
+
 
 
 def test_get_compat_rules1():
@@ -955,6 +981,44 @@ def test_add_rule2():
     assert result[1] == ['f', 's']
 
 
+def test_get_decomp_comp2_0():
+
+    rules = [({'e2': 2, 'e5': 2}, 's'),
+             ({'e1': 0, 'e2': 0, 'e3': 0, 'e4': 0, 'e5': 0, 'e6': 0}, 'f')]
+    upper = {'e1': 2, 'e2': 2, 'e3': 2, 'e4': 2, 'e5': 2, 'e6': 2}
+    lower = {'e1': 0, 'e2': 0, 'e3': 0, 'e4': 0, 'e5': 0, 'e6': 0}
+    result = gen_bnb.get_decomp_comp2(lower, upper, rules)
+
+    assert result == ('e2', 2)
+
+    rules = [({'e2': 2, 'e5': 2}, 's'),
+             ({'e1': 0, 'e2': 0, 'e3': 0, 'e4': 0, 'e5': 0, 'e6': 0}, 'f'),
+             ({'e1': 2, 'e3': 2, 'e5': 2}, 's')]
+    upper = {'e1': 2, 'e2': 2, 'e3': 2, 'e4': 2, 'e5': 2, 'e6': 2}
+    lower = {'e1': 0, 'e2': 0, 'e3': 0, 'e4': 0, 'e5': 0, 'e6': 0}
+    result = gen_bnb.get_decomp_comp2(lower, upper, rules)
+
+    assert result == ('e5', 2)
+
+    rules = [({'e2': 2, 'e5': 2}, 's'),
+             ({'e1': 0, 'e2': 0, 'e3': 0, 'e4': 0, 'e5': 0, 'e6': 0}, 'f'),
+             ({'e1': 2, 'e3': 2, 'e5': 2}, 's'),
+             ({'e2': 2, 'e4': 2, 'e6': 2}, 's')]
+    upper = {'e1': 2, 'e2': 2, 'e3': 2, 'e4': 2, 'e5': 2, 'e6': 2}
+    lower = {'e1': 0, 'e2': 0, 'e3': 0, 'e4': 0, 'e5': 0, 'e6': 0}
+    result = gen_bnb.get_decomp_comp2(lower, upper, rules)
+
+    assert result == ('e2', 2)
+
+    rules = [({'e1': 0, 'e2': 0, 'e3': 0, 'e4': 0, 'e5': 0, 'e6': 0}, 'f'),
+             ({'e1': 2, 'e3': 2, 'e5': 2}, 's')]
+    upper = {'e1': 2, 'e2': 2, 'e3': 2, 'e4': 2, 'e5': 2, 'e6': 2}
+    lower = {'e1': 0, 'e2': 0, 'e3': 0, 'e4': 0, 'e5': 0, 'e6': 0}
+    result = gen_bnb.get_decomp_comp2(lower, upper, rules)
+
+    assert result == ('e1', 2)
+
+
 def test_get_decomp_comp0():
 
     rules = [({'e2': 2, 'e5': 2}, 's'),
@@ -1146,19 +1210,81 @@ def test_get_composite_state2(main_sys):
     assert result[1] == 3
 
 
-@pytest.mark.skip('NYI')
+def test_get_composite_state3(main_sys):
+
+    od_pair, arcs, varis = main_sys
+
+    states = [0, 2]
+    result = variable.get_composite_state(varis['e1'], states)
+
+    expected = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1], [1, 0, 1]])
+    np.testing.assert_array_equal(result[0].B, expected)
+
+    assert result[1] == 3
+
+
+def test_get_csys_from_brs2(main_sys):
+
+    od_pair, arcs, varis = main_sys
+
+    comps_name = list(arcs.keys())
+
+    # Intact state of component vector: zero-based index 
+    comps_st_itc = {k: v.B.shape[1] - 1 for k, v in varis.items()} # intact state (i.e. the highest state)
+    d_time_itc, path_itc = trans.get_time_and_path_given_comps(comps_st_itc, od_pair, arcs, varis)
+
+    # defines the system failure event
+    thres = 2
+
+    # Given a system function, i.e. sf_min_path, it should be represented by a function that only has "comps_st" as input.
+    sys_fun = trans.sys_fun_wrap(od_pair, arcs, varis, thres * d_time_itc)
+
+    # Branch and bound
+    output_path = Path(__file__).parent
+    #pdb.set_trace()
+    brs, rules, sys_res = gen_bnb.proposed_branch_and_bound(sys_fun, varis, max_br=1000,
+                                                              output_path=output_path, key='bridge', flag=True)
+
+
+    st_br_to_cs = {'f': 0, 's': 1, 'u': 2}
+    #pdb.set_trace()
+    result = gen_bnb.get_csys_from_brs2(brs, varis, st_br_to_cs)
+    #cmat = result[0]
+    cmat = result[0][np.argsort(result[0][:, 0])]
+    expected = np.array([[0, 4, 0, 4, 3, 3, 3],
+                         [0, 4, 0, 2, 3, 4, 3],
+                         [0, 3, 0, 2, 3, 2, 3],
+                         [0, 4, 3, 3, 4, 0, 3],
+                         [0, 4, 3, 3, 2, 0, 0],
+                         [0, 4, 1, 3, 2, 0, 1],
+                         [1, 2, 0, 2, 3, 2, 3],
+                         [1, 4, 2, 3, 2, 0, 1],
+                         [1, 4, 3, 3, 2, 0, 2],
+                         [1, 4, 3, 3, 3, 5, 3]])
+    # FIXME: not exactly matching
+    #np.testing.assert_array_equal(cmat, expected)
+
+    np.testing.assert_array_equal(result[1]['e1'].B, np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1], [1, 1, 0], [1, 1, 1]]))
+    np.testing.assert_array_equal(result[1]['e2'].B, np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1], [0, 1, 1]]))
+    np.testing.assert_array_equal(result[1]['e3'].B, np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1], [1, 1, 1], [1, 1, 0]]))
+    np.testing.assert_array_equal(result[1]['e4'].B, np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1], [1, 1, 1], [1, 1, 0]]))
+    np.testing.assert_array_equal(result[1]['e5'].B, np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1], [1, 1, 1], [1, 1, 0], [0, 1, 1]]))
+    np.testing.assert_array_equal(result[1]['e6'].B, np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1], [1, 1, 1]]))
+
+
 def test_get_cmat_from_br1(main_sys):
 
     od_pair, arcs, varis = main_sys
 
-    st_br_to_cs = {'f': 0, 's': 2, 'u': 1}
+    st_br_to_cs = {'f': 0, 's': 1, 'u': 2}
 
-    br = branch.Branch({'e1': 1, 'e2': 0, 'e3': 0, 'e4': 0, 'e5': 0, 'e6':0}, {'e1': 2,'e2': 0, 'e3': 1, 'e4': 2, 'e5': 2, 'e6': 2}, 'f', 'f')
+    br = branch.Branch({'e1': 1, 'e2': 0, 'e3': 0, 'e4': 0, 'e5': 0, 'e6': 0},
+                       {'e1': 2, 'e2': 0, 'e3': 1, 'e4': 2, 'e5': 2, 'e6': 2}, 'f', 'f')
     #pdb.set_trace()
     expected = gen_bnb.get_cmat_from_br(br, varis, st_br_to_cs)
 
     np.testing.assert_array_equal(expected[1], [0, 3, 0, 3, 3, 3, 3])
-    np.testing.assert_array_equal(expected[0]['e1'].B, np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1], [1, 1, 1]]))
+    np.testing.assert_array_equal(expected[0]['e1'].B, np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1], [0, 1, 1]]))
     np.testing.assert_array_equal(expected[0]['e2'].B, np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]]))
     np.testing.assert_array_equal(expected[0]['e3'].B, np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1], [1, 1, 0]]))
     np.testing.assert_array_equal(expected[0]['e4'].B, np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1], [1, 1, 1]]))

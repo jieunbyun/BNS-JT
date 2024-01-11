@@ -57,7 +57,7 @@ def proposed_branch_and_bound(sys_fun, varis, max_br, output_path=Path(sys.argv[
                 brs_new.append(br)
 
             else:
-                c_rules = get_compat_rules(br.down, br.up, rules)
+                c_rules = get_compat_rules2(br.down, br.up, rules)
                 c_states = [x[1] for x in c_rules]
 
                 if ('s' not in c_states) or ('f' not in c_states):
@@ -79,7 +79,7 @@ def proposed_branch_and_bound(sys_fun, varis, max_br, output_path=Path(sys.argv[
                     break
 
                 else:
-                    xd = get_decomp_comp(br.down, br.up, c_rules)
+                    xd = get_decomp_comp2(br.down, br.up, c_rules)
                     # for upper
                     up = br.up.copy()
                     up[xd[0]] = xd[1] - 1
@@ -104,6 +104,21 @@ def proposed_branch_and_bound(sys_fun, varis, max_br, output_path=Path(sys.argv[
     return brs, rules, sys_res
 
 
+def get_csys_from_brs2(brs, varis, st_br_to_cs):
+    """
+
+
+    """
+    c_sys = np.empty(shape=(0, len(brs[0].up.keys()) + 1), dtype=int)
+
+    for br in brs:
+        varis, c = get_cmat_from_br(br, varis, st_br_to_cs)
+        c_sys = np.vstack([c_sys, c])
+
+    return c_sys, varis
+
+
+
 def get_cmat_from_br(br, varis, st_br_to_cs):
     """
     return updated varis and state
@@ -124,7 +139,9 @@ def get_cmat_from_br(br, varis, st_br_to_cs):
         up = br.up[x]
 
         if up > down:
-            varis[x], st = variable.get_composite_state(varis[x], list(range(down, up + 1)))
+            # FIXME:  
+            states = list(range(down, up + 1))
+            varis[x], st = variable.get_composite_state(varis[x], states)
         else:
             st = up
 
@@ -169,6 +186,34 @@ def get_state(comp, rules):
     return state
 
 
+def get_compat_rules2(lower, upper, rules):
+    """
+    lower: lower bound on component vector state in dictionary
+           e.g., {'x1': 0, 'x2': 0 ... }
+    upper: upper bound on component vector state in dictionary
+           e.g., {'x1': 2, 'x2': 2 ... }
+    rules: list of rules
+           e.g., {({'x1': 2, 'x2': 2}, 's')}
+    """
+    assert isinstance(lower, dict), f'lower should be a dict: {type(lower)}'
+    assert isinstance(upper, dict), f'upper should be a dict: {type(upper)}'
+    assert isinstance(rules, list), f'rules should be a list: {type(rules)}'
+
+    compat_rules = []
+    for rule in rules:
+        if rule[1] == 's':
+            if all([upper[k] >= v for k, v in rule[0].items()]): # the survival rule is satisfied
+                rule = ({k: v for k, v in rule[0].items() if v >= lower[k]}, rule[1])
+                compat_rules.append(rule)
+
+        elif rule[1] == 'f':
+            if all([lower[k] <= v for k, v in rule[0].items()]): # the failure rule is compatible
+                rule = ({k: v for k, v in rule[0].items() if v <= upper[k]}, rule[1])
+                compat_rules.append(rule)
+
+    return compat_rules
+
+
 def get_compat_rules(lower, upper, rules):
     """
     lower: lower bound on component vector state in dictionary
@@ -193,6 +238,51 @@ def get_compat_rules(lower, upper, rules):
                 compat_rules.append(rule)
 
     return compat_rules
+
+
+def get_decomp_comp2(lower, upper, rules):
+    """
+    lower: lower bound on component vector state in dictionary
+           e.g., {'x1': 0, 'x2': 0 ... }
+    upper: upper bound on component vector state in dictionary
+           e.g., {'x1': 2, 'x2': 2 ... }
+    rules: list of rules
+           e.g., {({'x1': 2, 'x2': 2}, 's')}
+    """
+    assert isinstance(lower, dict), f'lower should be a dict: {type(lower)}'
+    assert isinstance(upper, dict), f'upper should be a dict: {type(upper)}'
+    assert isinstance(rules, list), f'rules should be a list: {type(rules)}'
+    """
+    #amended rules
+    a_rules = []
+    for rule in rules:
+        if rule[1] == 'f':
+            a_rules.append(({k: v + 1 for k, v in rule[0].items()}, 'f'))
+        else:
+            a_rules.append(rule)
+    """
+    # get an order of x by their frequency in rules
+    comp = Counter(chain.from_iterable([rule[0].keys() for rule in rules]))
+    comp = [x[0] for x in comp.most_common()]
+
+    # get an order R by cardinality
+    a_rules = sorted(rules, key=lambda x: len(x[0]))
+
+    for rule in a_rules:
+        for c in comp:
+            if c in rule[0]:
+                v = rule[0][c]
+                if (rule[1] == 's') and (lower[c] < v) and (v <= upper[c]):
+                    xd = c, v
+                    break
+                elif (rule[1] == 'f') and (lower[c] < v + 1) and (v <= upper[c] - 1):
+                    xd = c, v + 1
+                    break
+        else:
+            continue
+        break
+
+    return xd
 
 
 def get_decomp_comp(lower, upper, rules):
