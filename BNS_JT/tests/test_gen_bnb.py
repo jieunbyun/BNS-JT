@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # coding: utf-8
 
 import pytest
@@ -707,6 +706,46 @@ def test_get_state0():
     assert result == 'u'
 
 
+def test_get_compat_rules2_0():
+
+    upper = {f'e{i}': 2 for i in range(1, 7)}
+    lower = {f'e{i}': 0 for i in range(1, 7)}
+
+    rules = []
+    result = gen_bnb.get_compat_rules2(lower, upper, rules)
+    assert result == []
+
+    rules = [({'e2': 2, 'e5': 2}, 's')]
+    result = gen_bnb.get_compat_rules2(lower, upper, rules)
+    assert result == [({'e2': 2, 'e5': 2}, 's')]
+
+    rules = [({'e2': 1, 'e5': 2}, 's'), ({f'e{i}': 0 for i in range(1, 7)}, 'f')]
+    result = gen_bnb.get_compat_rules2(lower, upper, rules)
+
+    assert result[0] == rules[0]
+    assert result[1] == rules[1]
+
+    upper = {'e1': 2, 'e2': 0, 'e3': 2, 'e4': 2, 'e5': 2, 'e6': 2}
+    lower = {f'e{i}': 0 for i in range(1, 7)}
+    #pdb.set_trace()
+    result = gen_bnb.get_compat_rules2(lower, upper, rules)
+    assert len(result) == 1
+    assert result[0] == rules[1]
+
+    upper = {'e1': 2, 'e2': 2, 'e3': 2, 'e4': 2, 'e5': 2, 'e6': 2}
+    lower = {'e1': 2, 'e2': 0, 'e3': 2, 'e4': 2, 'e5': 2, 'e6': 2}
+    rules = [({'e2': 1, 'e5': 2}, 's'),
+             ({f'e{i}': 0 for i in range(1, 7)}, 'f'),
+             ({'e1': 2, 'e3': 2, 'e5': 2}, 's'),
+             ({'e2': 2, 'e4': 2, 'e6': 2}, 's'),
+            ]
+    result = gen_bnb.get_compat_rules2(lower, upper, rules)
+    print(result)
+    assert result[0] == rules[0]
+    assert result[1] == rules[2]
+    assert result[2] == rules[3]
+
+
 def test_get_compat_rules0():
 
     rules = []
@@ -745,6 +784,8 @@ def test_get_state1():
     result = gen_bnb.get_state(cst, rules)
 
     assert result == 'u'
+
+
 
 
 def test_get_compat_rules1():
@@ -953,6 +994,44 @@ def test_add_rule2():
 
     assert result[0] == [{'e2': 1, 'e5': 1}, {'e2': 1, 'e5': 2}]
     assert result[1] == ['f', 's']
+
+
+def test_get_decomp_comp2_0():
+
+    rules = [({'e2': 2, 'e5': 2}, 's'),
+             ({'e1': 0, 'e2': 0, 'e3': 0, 'e4': 0, 'e5': 0, 'e6': 0}, 'f')]
+    upper = {'e1': 2, 'e2': 2, 'e3': 2, 'e4': 2, 'e5': 2, 'e6': 2}
+    lower = {'e1': 0, 'e2': 0, 'e3': 0, 'e4': 0, 'e5': 0, 'e6': 0}
+    result = gen_bnb.get_decomp_comp2(lower, upper, rules)
+
+    assert result == ('e2', 2)
+
+    rules = [({'e2': 2, 'e5': 2}, 's'),
+             ({'e1': 0, 'e2': 0, 'e3': 0, 'e4': 0, 'e5': 0, 'e6': 0}, 'f'),
+             ({'e1': 2, 'e3': 2, 'e5': 2}, 's')]
+    upper = {'e1': 2, 'e2': 2, 'e3': 2, 'e4': 2, 'e5': 2, 'e6': 2}
+    lower = {'e1': 0, 'e2': 0, 'e3': 0, 'e4': 0, 'e5': 0, 'e6': 0}
+    result = gen_bnb.get_decomp_comp2(lower, upper, rules)
+
+    assert result == ('e5', 2)
+
+    rules = [({'e2': 2, 'e5': 2}, 's'),
+             ({'e1': 0, 'e2': 0, 'e3': 0, 'e4': 0, 'e5': 0, 'e6': 0}, 'f'),
+             ({'e1': 2, 'e3': 2, 'e5': 2}, 's'),
+             ({'e2': 2, 'e4': 2, 'e6': 2}, 's')]
+    upper = {'e1': 2, 'e2': 2, 'e3': 2, 'e4': 2, 'e5': 2, 'e6': 2}
+    lower = {'e1': 0, 'e2': 0, 'e3': 0, 'e4': 0, 'e5': 0, 'e6': 0}
+    result = gen_bnb.get_decomp_comp2(lower, upper, rules)
+
+    assert result == ('e2', 2)
+
+    rules = [({'e1': 0, 'e2': 0, 'e3': 0, 'e4': 0, 'e5': 0, 'e6': 0}, 'f'),
+             ({'e1': 2, 'e3': 2, 'e5': 2}, 's')]
+    upper = {'e1': 2, 'e2': 2, 'e3': 2, 'e4': 2, 'e5': 2, 'e6': 2}
+    lower = {'e1': 0, 'e2': 0, 'e3': 0, 'e4': 0, 'e5': 0, 'e6': 0}
+    result = gen_bnb.get_decomp_comp2(lower, upper, rules)
+
+    assert result == ('e1', 2)
 
 
 def test_get_decomp_comp0():
