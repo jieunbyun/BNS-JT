@@ -48,7 +48,7 @@ def get_branches_by_od(cfg):
 
         # system function
         sys_fun = trans.sys_fun_wrap(od_pair, cfg.infra['edges'], varis, thres * d_time_itc)
-        brs, rules, sys_res = gen_bnb.proposed_branch_and_bound(sys_fun, varis, max_br=100, output_path=cfg.output_path, key=f'road_{k}', flag=True)
+        brs, rules, sys_res = gen_bnb.proposed_branch_and_bound(sys_fun, varis, max_br=cfg.max_branches, output_path=cfg.output_path, key=f'road_{k}', flag=True)
 
         csys_by_od[k], varis_by_od[k] = gen_bnb.get_csys_from_brs2(brs, varis, st_br_to_cs)
 

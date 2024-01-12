@@ -32,7 +32,7 @@ def create_model():
 
     arcs_avg_kmh = {x: 100 for x in df.index}
 
-    ODs = {'od1': ('n1', 'n3')}
+    ODs = {'od1': ('n22', 'n53')}
 
     outfile = HOME.joinpath('./model.json')
     dic_model = trans.create_model_json_for_tranportation_network(arcs, nodes_coords, arcs_avg_kmh, ODs, outfile)
@@ -61,6 +61,6 @@ def main():
 
 if __name__=='__main__':
 
-    #create_model()
+    create_model()
     main()
 
