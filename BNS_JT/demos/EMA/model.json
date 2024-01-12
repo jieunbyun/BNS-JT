@@ -35,8 +35,8 @@
     },
     "sysout_setup": {
         "od1": {
-            "origin": "n1",
-            "destination": "n3",
+            "origin": "n22",
+            "destination": "n53",
             "output_node_capacity": null,
             "capacity_fraction": null,
             "priorty": null

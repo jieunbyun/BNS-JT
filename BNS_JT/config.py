@@ -60,6 +60,8 @@ class Config(object):
 
         self.key = cfg['CONFIGURATION_ID']
 
+        self.max_branches = cfg['MAX_BRANCHES']
+
         self.output_path = HOME.joinpath(cfg['OUTPUT_PATH'])
         if not self.output_path.exists():
             self.output_path.mkdir(parents=True, exist_ok=True)
