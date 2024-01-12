@@ -33,7 +33,7 @@ def proposed_branch_and_bound(sys_fun, varis, max_br, output_path=Path(sys.argv[
     no_sf = 0 # number of system function runs so far
     sys_res = pd.DataFrame(data={'sys_val': [], 'comp_st': [], 'comp_st_min': []}) # system function results 
     no_iter, no_bf, no_bs, no_bu =  0, 0, 0, 0
-    no_rf, no_rs = 0, 0
+    no_rf, no_rs, len_rf, len_rs = 0, 0, 0, 0
     ok = True
 
     rules = [] # a list of known rules
@@ -45,7 +45,7 @@ def proposed_branch_and_bound(sys_fun, varis, max_br, output_path=Path(sys.argv[
         no_iter += 1
         ###############
         print(f'[System function runs {no_sf}]..')
-        print(f'The # of found non-dominated rules (f, s): {len(rules)} ({no_rf}, {no_rs})')
+        print(f'The # of found non-dominated rules (f, s) and (mean len.): {len(rules)} ({no_rf}, {no_rs}) ({len_rf: .1f}, {len_rs: .1f})')
         print('The # of branching: ', no_iter) 
         print(f'The # of branches (f, s, u): {len(brs)} ({no_bf}, {no_bs}, {no_bu})')
         print('---')
@@ -108,6 +108,15 @@ def proposed_branch_and_bound(sys_fun, varis, max_br, output_path=Path(sys.argv[
 
         no_rf = sum([x[1]=='f' for x in rules]) # no. of failure rules
         no_rs = sum([x[1]=='s' for x in rules]) # no. of survival rules
+        if no_rf > 0:
+            len_rf = sum([len(x[0]) for x in rules if x[1] is 'f' ])/no_rf # mean length of failure rules
+        else:
+            len_rf = 0
+
+        if no_rs > 0:
+            len_rs = sum([len(x[0]) for x in rules if x[1] is 's' ])/no_rs # mean length of survival rules
+        else:
+            len_rs = 0
 
     return brs, rules, sys_res
 
