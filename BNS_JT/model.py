@@ -2,7 +2,7 @@ import numpy as np
 import itertools
 from dask.distributed import Variable
 
-from BNS_JT import variable, cpm, branch, trans
+from BNS_JT import variable, cpm, branch, trans, gen_bnb
 
 
 def setup_model(cfg):
@@ -26,6 +26,33 @@ def setup_model(cfg):
         cpms_by_od_scen[(od, scen)], varis_by_od_scen[(od, scen)] = model_given_od_scen(cfg, path_times, od, scen, branches[od])
 
     return cpms_by_od_scen, varis_by_od_scen
+
+
+def get_branches_by_od(cfg):
+
+    # variables
+    varis = {}
+    for k, v in cfg.infra['edges'].items():
+        varis[k] = variable.Variable(name=k, B = np.eye(cfg.no_ds), values = cfg.scenarios['scenarios']['s1'][k])
+
+    # Intact state of component vector: zero-based index
+    comps_st_itc = {k: v.B.shape[1] - 1 for k, v in varis.items()} # intact state (i.e. the highest state)
+
+    thres = 2
+    st_br_to_cs = {'f': 0, 's': 1, 'u': 2}
+
+    csys_by_od, varis_by_od = {}, {}
+    # branches by od_pair
+    for k, od_pair in cfg.infra['ODs'].items():
+        d_time_itc, path_itc = trans.get_time_and_path_given_comps(comps_st_itc, od_pair, cfg.infra['edges'], varis)
+
+        # system function
+        sys_fun = trans.sys_fun_wrap(od_pair, cfg.infra['edges'], varis, thres * d_time_itc)
+        brs, rules, sys_res = gen_bnb.proposed_branch_and_bound(sys_fun, varis, max_br=100, output_path=cfg.output_path, key=f'road_{k}', flag=True)
+
+        csys_by_od[k], varis_by_od[k] = gen_bnb.get_csys_from_brs2(brs, varis, st_br_to_cs)
+
+    return csys_by_od, varis_by_od
 
 
 def get_branches(cfg, path_times):

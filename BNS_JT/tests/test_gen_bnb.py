@@ -695,15 +695,18 @@ def test_get_compat_rules2_0():
 
     upper = {f'e{i}': 2 for i in range(1, 7)}
     lower = {f'e{i}': 0 for i in range(1, 7)}
-
     rules = []
     result = gen_bnb.get_compat_rules2(lower, upper, rules)
     assert result == []
 
+    upper = {f'e{i}': 2 for i in range(1, 7)}
+    lower = {f'e{i}': 0 for i in range(1, 7)}
     rules = [({'e2': 2, 'e5': 2}, 's')]
     result = gen_bnb.get_compat_rules2(lower, upper, rules)
     assert result == [({'e2': 2, 'e5': 2}, 's')]
 
+    upper = {f'e{i}': 2 for i in range(1, 7)}
+    lower = {f'e{i}': 0 for i in range(1, 7)}
     rules = [({'e2': 1, 'e5': 2}, 's'), ({f'e{i}': 0 for i in range(1, 7)}, 'f')]
     result = gen_bnb.get_compat_rules2(lower, upper, rules)
 
@@ -712,6 +715,7 @@ def test_get_compat_rules2_0():
 
     upper = {'e1': 2, 'e2': 0, 'e3': 2, 'e4': 2, 'e5': 2, 'e6': 2}
     lower = {f'e{i}': 0 for i in range(1, 7)}
+    rules = [({'e2': 1, 'e5': 2}, 's'), ({f'e{i}': 0 for i in range(1, 7)}, 'f')]
     #pdb.set_trace()
     result = gen_bnb.get_compat_rules2(lower, upper, rules)
     assert len(result) == 1

@@ -67,20 +67,33 @@ def sf_min_path(comps_st, od_pair, arcs, vari, thres):
     vari:
     thres:
     """
+    first = next(iter(arcs.items()))[1]
+
     d_time, path = get_time_and_path_given_comps(comps_st, od_pair, arcs, vari)
 
-    # fail, surv corresponds to 0 and 1
     min_comps_st = {}
-    if d_time > thres:
-        sys_st = 'f'
-    else:
-        sys_st = 's'
-        for n0, n1 in zip(path[:-1], path[1:]):
-            arc = next((k for k, v in arcs.items() if v == [n0, n1] or v == [n1, n0]), None)
-            min_comps_st[arc] = comps_st[arc]
+    if isinstance(first, list):
+        # fail, surv corresponds to 0 and 1
+        if d_time > thres:
+            sys_st = 'f'
+        else:
+            sys_st = 's'
+            for n0, n1 in zip(path[:-1], path[1:]):
+                arc = next((k for k, v in arcs.items() if set(v) == set([n0, n1])), None)
+                min_comps_st[arc] = comps_st[arc]
+
+    elif isinstance(first, dict):
+        # fail, surv corresponds to 0 and 1
+        if d_time > thres:
+            sys_st = 'f'
+        else:
+            sys_st = 's'
+            for n0, n1 in zip(path[:-1], path[1:]):
+                arc = next((k for k, v in arcs.items() if set([v['origin'], v['destination']]) == set([n0, n1])), None)
+                if arc:
+                    min_comps_st[arc] = comps_st.get(arc)
 
     return d_time, sys_st, min_comps_st
-
 
 
 def get_time_and_path_given_comps(comps_st, od_pair, arcs, vari):
@@ -94,8 +107,15 @@ def get_time_and_path_given_comps(comps_st, od_pair, arcs, vari):
     assert all([comps_st[k] < len(v.values) for k, v in vari.items()])
 
     G = nx.Graph()
-    for k, x in arcs.items():
-        G.add_edge(x[0], x[1], time=vari[k].values[comps_st[k]])
+    first = next(iter(arcs.items()))[1]
+
+    if isinstance(first, (list, tuple)):
+        for k, x in arcs.items():
+            G.add_edge(x[0], x[1], time=vari[k].values[comps_st[k]])
+
+    elif isinstance(first, dict):
+        for k, x in arcs.items():
+            G.add_edge(x['origin'], x['destination'], time=vari[k].values[comps_st[k]])
 
     path = nx.shortest_path(G, source = od_pair[0], target = od_pair[1], weight = 'time')
     d_time = nx.shortest_path_length(G, source = od_pair[0], target = od_pair[1], weight = 'time')
@@ -263,8 +283,6 @@ def eval_sys_state_given_arc(arcs_state, **kwargs):
     return sys_state
 
 
-
-
 def eval_sys_state(path_time_idx, arcs_state, arc_cond):
     """
     path_time_idx: a list of tuple (path, time, idx)
@@ -284,7 +302,7 @@ def eval_sys_state(path_time_idx, arcs_state, arc_cond):
     return sys_state
 
 
-def get_node_conn_df(arcs, node_coords, avg_speed_by_arc, flag=False):
+def get_node_conn_df(arcs, node_coords, avg_speed_by_arc, outfile=None):
 
     distance_by_arc = get_arcs_length(arcs, node_coords)
 
@@ -297,17 +315,15 @@ def get_node_conn_df(arcs, node_coords, avg_speed_by_arc, flag=False):
                    'link_capacity': None,
                    'weight': distance_by_arc[k]/avg_speed_by_arc[k]}
 
-    if flag:
-        wfile = './node_conn_df.json'
-        with open(wfile, 'w') as w:
+    if outfile:
+        with open(outfile, 'w') as w:
             json.dump(_dic, w, indent=4)
-
-        print(f'{wfile} is written')
+        print(f'{outfile} is written')
 
     return _dic
 
 
-def create_model_json_for_tranportation_network(arcs, node_coords, avg_speed_by_arc, ODs, key=None):
+def create_model_json_for_tranportation_network(arcs, node_coords, avg_speed_by_arc, ODs, outfile=None):
 
     _dic = {}
     _dic.update(system_meta)
@@ -321,7 +337,6 @@ def create_model_json_for_tranportation_network(arcs, node_coords, avg_speed_by_
                            'priorty': None
                            }
     _dic.update(sysout_setup)
-
     node_conn_df = get_node_conn_df(arcs, node_coords, avg_speed_by_arc)
     _dic.update(node_conn_df)
 
@@ -339,13 +354,35 @@ def create_model_json_for_tranportation_network(arcs, node_coords, avg_speed_by_
                              'damages_states_constructor': None}
     _dic.update(component_list)
 
-    if key:
-        wfile = f'./model_{key}.json'
-        with open(wfile, 'w') as w:
+    if outfile:
+        with open(outfile, 'w') as w:
             json.dump(_dic, w, indent=4)
-        print(f'{wfile} is written')
+        print(f'{outfile} is written')
 
     return _dic
+
+
+def create_scenario_json_for_trans_network(damage_states, scenarios_dic, outfile=None):
+
+    assert isinstance(damage_states, list), 'damage_states should be a list'
+    assert isinstance(scenarios_dic, dict), 'scenarios_dic should be a dict'
+
+    _dic = {'damage_states': damage_states}
+
+    scenarios = {'scenarios': {}}
+    for k, v in scenarios_dic.items():
+
+        scenarios['scenarios'][k] = v
+
+    _dic.update(scenarios)
+
+    if outfile:
+        with open(outfile, 'w') as w:
+            json.dump(_dic, w, indent=4)
+        print(f'{outfile} is written')
+
+    return _dic
+
 
 def create_scenario_json_for_tranportation_network(damage_states, arcs, type_by_arc, frag_by_type, obs_by_arc, key=None):
     """
