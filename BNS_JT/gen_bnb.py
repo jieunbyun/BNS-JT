@@ -38,8 +38,8 @@ def proposed_branch_and_bound(sys_fun, varis, max_br, output_path=Path(sys.argv[
     # Initialisation
     no_sf = 0 # number of system function runs so far
     #sys_res = pd.DataFrame(data={'sys_val': [], 'comp_st': [], 'comp_st_min': []}) # system function results 
-    no_iter =  0
-    ok = True
+    no_iter, no_bf, no_bs, no_bu =  0, 0, 0, 1
+    no_rf, no_rs, len_rf, len_rs = 0, 0, 0, 0
 
     rules = [] # a list of known rules
     brs_new = []
@@ -48,13 +48,13 @@ def proposed_branch_and_bound(sys_fun, varis, max_br, output_path=Path(sys.argv[
 
     brs = init_branch(worst, best, rules)
 
-    while ok and len(brs) < max_br:
+    while no_bu and len(brs) < max_br:
 
         no_iter += 1
-        print(f'[Iteration {no_iter}]..')
-        print(f'The # of found non-dominated rules: {len(rules)}')
-        print('System function runs: ', no_sf)
-        print(f'The # of branches: {len(brs)}')
+        print(f'[System function runs {no_sf}]..')
+        print(f'The # of found non-dominated rules (f, s) and (mean len.): {len(rules)} ({no_rf}, {no_rs}) ({len_rf: .1f}, {len_rs: .1f})')
+        print('The # of branching: ', no_iter)
+        print(f'The # of branches (f, s, u): {len(brs)} ({no_bf}, {no_bs}, {no_bu})')
         print('---')
         stop_br = False
 
@@ -81,6 +81,7 @@ def proposed_branch_and_bound(sys_fun, varis, max_br, output_path=Path(sys.argv[
                     #sys_res = pd.concat([sys_res, sys_res_], ignore_index=True)
                     brs = init_branch(worst, best, rules)
                     brs_new = []
+                    no_iter = 0
                     # for loop exit
                     stop_br = True
                     break
@@ -105,7 +106,22 @@ def proposed_branch_and_bound(sys_fun, varis, max_br, output_path=Path(sys.argv[
             brs = brs_new
             brs_new = []
 
-        ok = any([(b.up_state == 'u') or (b.down_state == 'u') or (b.down_state != b.up_state) for b in brs])  # exit for loop
+        #ok = any([(b.up_state == 'u') or (b.down_state == 'u') or (b.down_state != b.up_state) for b in brs])  # exit for loop
+        no_bf = sum([(b.up_state == 'f') for b in brs]) # no. of failure branches
+        no_bs = sum([(b.down_state == 's') for b in brs]) # no. of survival branches
+        no_bu = sum([(b.up_state == 'u') or (b.down_state == 'u') or (b.down_state != b.up_state) for b in brs]) # no. of unknown branches
+
+        no_rf = sum([x[1]=='f' for x in rules]) # no. of failure rules
+        no_rs = sum([x[1]=='s' for x in rules]) # no. of survival rules
+        if no_rf > 0:
+            len_rf = sum([len(x[0]) for x in rules if x[1] is 'f' ])/no_rf # mean length of failure rules
+        else:
+            len_rf = 0
+
+        if no_rs > 0:
+            len_rs = sum([len(x[0]) for x in rules if x[1] is 's' ])/no_rs # mean length of survival rules
+        else:
+            len_rs = 0
 
         if len(brs) >= max_br:
             print(f'Stop due to the # of branches: {len(brs)}')
