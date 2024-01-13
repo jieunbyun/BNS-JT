@@ -3,6 +3,7 @@
     "MODEL_NAME": "model_road.json",
     "SCENARIO_NAME": "scenarios_road.json",
     "OUTPUT_PATH": "./",
+    "MAX_BRANCHES": 100,
 
     "HAZARD_INPUT_METHOD": null,
     "HAZARD_TYPE": null,

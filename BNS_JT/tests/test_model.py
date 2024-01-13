@@ -16,7 +16,7 @@ expected_damage = np.array([0.1610,  1,  1,  0.0002,   0,  0.4382])
 @pytest.fixture()
 def setup_road():
 
-    cfg = config.Config(HOME.joinpath('./config_roads.json'))
+    cfg = config.Config(HOME.joinpath('../demos/road/test.json'))
 
     cpms, varis = model.setup_model(cfg)
 
@@ -96,7 +96,7 @@ def test_compute_prob2(setup_road):
 def test_get_branches(cmatrix_road):
 
     expected = cmatrix_road
-    cfg = config.Config(HOME.joinpath('./config_roads.json'))
+    cfg = config.Config(HOME.joinpath('../demos/road/test.json'))
 
     path_times = trans.get_all_paths_and_times(cfg.infra['ODs'].values(), cfg.infra['G'], key='time')
 
@@ -125,7 +125,7 @@ def test_model_given_od_scen(cmatrix_road):
 
     expected = cmatrix_road
 
-    cfg = config.Config(HOME.joinpath('./config_roads.json'))
+    cfg = config.Config(HOME.joinpath('../demos/road/test.json'))
 
     path_times = trans.get_all_paths_and_times(cfg.infra['ODs'].values(), cfg.infra['G'], key='time')
 
