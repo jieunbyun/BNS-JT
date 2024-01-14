@@ -52,7 +52,7 @@ def proposed_branch_and_bound(sys_fun, varis, max_br, output_path=Path(sys.argv[
 
         no_iter += 1
         print(f'[System function runs {no_sf}]..')
-        print(f'The # of found non-dominated rules (f, s) and (mean len.): {len(rules)} ({no_rf}, {no_rs}) ({len_rf: .1f}, {len_rs: .1f})')
+        print(f'The # of found non-dominated rules (f, s) and (mean len.): {no_rf + no_rs} ({no_rf}, {no_rs}) ({len_rf:.1f}, {len_rs:.1f})')
         print('The # of branching: ', no_iter)
         print(f'The # of branches (f, s, u): {len(brs)} ({no_bf}, {no_bs}, {no_bu})')
         print('---')
