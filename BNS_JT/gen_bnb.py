@@ -201,7 +201,7 @@ def get_state(comp, rules):
         state = 'f'
 
     if no_s > 0 and no_f > 0:
-        warnings.warn("[get_state] Conflicting rules found. The given system is not coherent.")
+        print("[get_state] Conflicting rules found. The given system is not coherent.")
 
     return state
 
@@ -283,36 +283,25 @@ def get_decomp_comp2(lower, upper, rules):
             a_rules.append(rule)
     """
     # get an order of x by their frequency in rules
-    comp = Counter(chain.from_iterable([x for rule in rules.values() for x in rule]))
+    _rules = [x for rule in rules.values() for x in rule]
+    comp = Counter(chain.from_iterable(_rules))
     comp = [x[0] for x in comp.most_common()]
 
-    xd = None
+    # get an order R by cardinality
+    a_rules = sorted(_rules, key=len)
 
-    # s 
-    rules_s = sorted(rules['s'], key=len)
-    for rule in rules_s:
+    for rule in a_rules:
         for c in comp:
             if c in rule:
-                if lower[c] < rule[c] and rule[c] <= upper[c]:
+                if (rule in rules['s']) and (lower[c] < rule[c]) and (rule[c] <= upper[c]):
                     xd = c, rule[c]
+                    break
+                if (rule in rules['f']) and (lower[c] <= rule[c]) and (rule[c] < upper[c]):
+                    xd = c, rule[c] + 1
                     break
         else:
             continue
         break
-
-    # f 
-    if xd is None:
-        rules_f = sorted(rules['f'], key=len)
-
-        for rule in rules_f:
-            for c in comp:
-                if c in rule:
-                    if lower[c] <= rule[c] and rule[c] < upper[c]:
-                        xd = c, rule[c] + 1
-                        break
-            else:
-                continue
-            break
 
     return xd
 
