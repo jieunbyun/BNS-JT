@@ -66,8 +66,8 @@ def proposed_branch_and_bound(sys_fun, varis, max_br, output_path=Path(sys.argv[
             else:
                 c_rules = get_compat_rules2(br.down, br.up, rules)
 
-                if any(c_rules['s']) or any(c_rules['f']):
-                    if any(c_rules['s']):
+                if (not c_rules['s']) or (not c_rules['f']):
+                    if not c_rules['s']:
                         x_star = br.up
                     else:
                         x_star = br.down
@@ -118,7 +118,7 @@ def proposed_branch_and_bound(sys_fun, varis, max_br, output_path=Path(sys.argv[
             len_rf = 0
 
         if no_rs > 0:
-            len_rs = sum([len(x[0]) for x in rules['s']])/no_rs # mean length of survival rules
+            len_rs = sum([len(x) for x in rules['s']])/no_rs # mean length of survival rules
         else:
             len_rs = 0
 
