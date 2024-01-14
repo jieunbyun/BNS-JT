@@ -397,7 +397,7 @@ def run_sys_fn(comp, sys_fun, varis):
     """
 
     assert isinstance(comp, dict), f'comp should be a dict: {type(comp)}'
-    sys_val, sys_st, comp_st_min = sys_fun(comp)
+    _, sys_st, comp_st_min = sys_fun(comp)
     #sys_res = pd.DataFrame({'sys_val': [sys_val], 'comp_st': [comp], 'comp_st_min': [comp_st_min]})
 
     if comp_st_min:

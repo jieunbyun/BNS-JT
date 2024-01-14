@@ -70,6 +70,7 @@ def main_sys():
     nx.draw(G, pos, with_labels=True, ax=ax)
     nx.draw_networkx_edge_labels(G, pos, edge_labels=edge_labels, ax=ax)
     fig.savefig(HOME.joinpath('graph_test_gen_bnb.png'), dpi=200)
+    plt.close()
 
     """
     e1: 1.5, 0.3, 0.15
