@@ -41,7 +41,7 @@ def proposed_branch_and_bound(sys_fun, varis, max_br, output_path=Path(sys.argv[
     no_iter, no_bf, no_bs, no_bu =  0, 0, 0, 1
     no_rf, no_rs, len_rf, len_rs = 0, 0, 0, 0
 
-    rules = [] # a list of known rules
+    rules = {'s': [], 'f': [], 'u': []} # a list of known rules
     brs_new = []
     worst = {x: 0 for x in varis.keys()} # all components in the worst state
     best = {k: v.B.shape[1] - 1 for k, v in varis.items()} # all components in the best state
@@ -65,16 +65,15 @@ def proposed_branch_and_bound(sys_fun, varis, max_br, output_path=Path(sys.argv[
 
             else:
                 c_rules = get_compat_rules2(br.down, br.up, rules)
-                c_states = [x[1] for x in c_rules]
 
-                if ('s' not in c_states) or ('f' not in c_states):
-                    if ('s' not in c_states):
+                if any(c_rules['s']) or any(c_rules['f']):
+                    if any(c_rules['s']):
                         x_star = br.up
                     else:
                         x_star = br.down
 
                     # run system function
-                    rule = run_sys_fn(x_star, sys_fun, rules, varis)
+                    rule = run_sys_fn(x_star, sys_fun, varis)
                     no_sf += 1
 
                     rules = update_rule_set(rules, rule)
@@ -111,15 +110,15 @@ def proposed_branch_and_bound(sys_fun, varis, max_br, output_path=Path(sys.argv[
         no_bs = sum([(b.down_state == 's') for b in brs]) # no. of survival branches
         no_bu = sum([(b.up_state == 'u') or (b.down_state == 'u') or (b.down_state != b.up_state) for b in brs]) # no. of unknown branches
 
-        no_rf = sum([x[1]=='f' for x in rules]) # no. of failure rules
-        no_rs = sum([x[1]=='s' for x in rules]) # no. of survival rules
+        no_rf = len(rules['f']) # no. of failure rules
+        no_rs = len(rules['s']) # no. of survival rules
         if no_rf > 0:
-            len_rf = sum([len(x[0]) for x in rules if x[1] is 'f' ])/no_rf # mean length of failure rules
+            len_rf = sum([len(x) for x in rules['f']])/no_rf # mean length of failure rules
         else:
             len_rf = 0
 
         if no_rs > 0:
-            len_rs = sum([len(x[0]) for x in rules if x[1] is 's' ])/no_rs # mean length of survival rules
+            len_rs = sum([len(x[0]) for x in rules['s']])/no_rs # mean length of survival rules
         else:
             len_rs = 0
 
@@ -184,19 +183,14 @@ def get_state(comp, rules):
         str: system state ('s', 'f', or 'u')
     """
     assert isinstance(comp, dict), f'comp should be a dict: {type(comp)}'
-    assert isinstance(rules, list), f'rules should be a list: {type(rules)}'
+    #assert isinstance(rules, list), f'rules should be a list: {type(rules)}'
 
-    no_s = 0
-    no_f = 0
+    # the survival rule is satisfied
+    no_s = sum([all([comp[k] >= v for k, v in rule.items()])
+                for rule in rules['s']])
 
-    for rule in rules:
-        # the survival rule is satisfied
-        if rule[1] == 's' and all([comp[k] >= v for k, v in rule[0].items()]):
-            no_s += 1
-
-        # the failure rule is compatible
-        elif rule[1] == 'f' and all([comp[k] <= v for k, v in rule[0].items()]):
-            no_f += 1
+    no_f = sum([all([comp[k] <= v for k, v in rule.items()])
+                 for rule in rules['f']])
 
     # no compatible rules. the state remains unknown
     if no_s == no_f == 0:
@@ -223,17 +217,20 @@ def get_compat_rules2(lower, upper, rules):
     """
     assert isinstance(lower, dict), f'lower should be a dict: {type(lower)}'
     assert isinstance(upper, dict), f'upper should be a dict: {type(upper)}'
-    assert isinstance(rules, list), f'rules should be a list: {type(rules)}'
+    #assert isinstance(rules, list), f'rules should be a list: {type(rules)}'
 
-    compat_rules = []
-    for rule in rules:
-        if rule[1] == 's' and all([upper[k] >= v for k, v in rule[0].items()]): # the survival rule is satisfied
-            rule = ({k: v for k, v in rule[0].items() if v > lower[k]}, rule[1])
-            compat_rules.append(rule)
+    compat_rules = {'s': [], 'f': [], 'u': []}
+    for rule in rules['s']:
+        if all([upper[k] >= v for k, v in rule.items()]):
+            c_rule = {k: v for k, v in rule.items() if v > lower[k]}
+            if c_rule:
+                compat_rules['s'].append(c_rule)
 
-        elif rule[1] == 'f' and all([lower[k] <= v for k, v in rule[0].items()]): # the failure rule is compatible
-            rule = ({k: v for k, v in rule[0].items() if v < upper[k]}, rule[1])
-            compat_rules.append(rule)
+    for rule in rules['f']:
+        if all([lower[k] <= v for k, v in rule.items()]):
+            c_rule = {k: v for k, v in rule.items() if v < upper[k]}
+            if c_rule:
+                compat_rules['f'].append(c_rule)
 
     return compat_rules
 
@@ -275,7 +272,7 @@ def get_decomp_comp2(lower, upper, rules):
     """
     assert isinstance(lower, dict), f'lower should be a dict: {type(lower)}'
     assert isinstance(upper, dict), f'upper should be a dict: {type(upper)}'
-    assert isinstance(rules, list), f'rules should be a list: {type(rules)}'
+    assert isinstance(rules, dict), f'rules should be a list: {type(rules)}'
     """
     #amended rules
     a_rules = []
@@ -286,25 +283,36 @@ def get_decomp_comp2(lower, upper, rules):
             a_rules.append(rule)
     """
     # get an order of x by their frequency in rules
-    comp = Counter(chain.from_iterable([rule[0].keys() for rule in rules]))
+    comp = Counter(chain.from_iterable([x for rule in rules.values() for x in rule]))
     comp = [x[0] for x in comp.most_common()]
 
-    # get an order R by cardinality
-    a_rules = sorted(rules, key=lambda x: len(x[0]))
+    xd = None
 
-    for rule in a_rules:
+    # s 
+    rules_s = sorted(rules['s'], key=len)
+    for rule in rules_s:
         for c in comp:
-            if c in rule[0]:
-                v = rule[0][c]
-                if (rule[1] == 's') and (lower[c] < v) and (v <= upper[c]):
-                    xd = c, v
-                    break
-                elif (rule[1] == 'f') and (lower[c] <= v) and (v < upper[c]):
-                    xd = c, v + 1
+            if c in rule:
+                if lower[c] < rule[c] and rule[c] <= upper[c]:
+                    xd = c, rule[c]
                     break
         else:
             continue
         break
+
+    # f 
+    if xd is None:
+        rules_f = sorted(rules['f'], key=len)
+
+        for rule in rules_f:
+            for c in comp:
+                if c in rule:
+                    if lower[c] <= rule[c] and rule[c] < upper[c]:
+                        xd = c, rule[c] + 1
+                        break
+            else:
+                continue
+            break
 
     return xd
 
@@ -360,39 +368,37 @@ def update_rule_set(rules, new_rule):
     assert isinstance(new_rule, tuple), f'rule should be a tuple: {type(new_rule)}'
     add_rule = True
 
-    x_new = new_rule[0].keys()
+    n_rule, n_state = new_rule
 
-    if new_rule[1] == 's':
+    if n_state == 's':
 
-        for rule in [rule for rule in rules if rule[1] == 's']:
-            x_rule = rule[0].keys()
+        for rule in rules['s']:
 
-            if set(x_new).issubset(x_rule) and all([rule[0][k] >= v for k, v in new_rule[0].items()]):
-                rules.remove(rule)
+            if set(n_rule).issubset(rule) and all([rule[k] >= v for k, v in n_rule.items()]):
+                rules['s'].remove(rule)
 
-            elif set(x_rule).issubset(x_new) and all([new_rule[0][k] >= v for k, v in rule[0].items()]):
+            elif set(rule).issubset(n_rule) and all([n_rule[k] >= v for k, v in rule.items()]):
                 add_rule = False
                 break
 
-    elif new_rule[1] == 'f':
+    elif n_state == 'f':
 
-        for rule in [rule for rule in rules if rule[1] == 'f']:
-            x_rule = rule[0].keys()
+        for rule in rules['f']:
 
-            if set(x_new).issubset(x_rule) and all([rule[0][k] <= v for k, v in new_rule[0].items()]):
-                rules.remove(rule)
+            if set(n_rule).issubset(rule) and all([rule[k] <= v for k, v in n_rule.items()]):
+                rules['f'].remove(rule)
 
-            elif set(x_rule).issubset(x_new) and all([new_rule[0][k] <= v for k, v in rule[0].items()]):
+            elif set(rule).issubset(n_rule) and all([n_rule[k] <= v for k, v in rule.items()]):
                 add_rule = False
                 break
 
     if add_rule:
-        rules.append(new_rule)
+        rules[n_state].append(n_rule)
 
     return rules
 
 
-def run_sys_fn(comp, sys_fun, rules, varis):
+def run_sys_fn(comp, sys_fun, varis):
     """
     comp: component vector state in dictionary
     e.g., {'x1': 0, 'x2': 0, ... }
