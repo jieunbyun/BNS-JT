@@ -1,6 +1,6 @@
 import numpy as np
 import itertools
-from dask.distributed import Variable
+#from dask.distributed import Variable
 
 from BNS_JT import variable, cpm, branch, trans, gen_bnb
 

@@ -41,7 +41,7 @@ def proposed_branch_and_bound(sys_fun, varis, max_br, output_path=Path(sys.argv[
     no_iter, no_bf, no_bs, no_bu =  0, 0, 0, 1
     no_rf, no_rs, len_rf, len_rs = 0, 0, 0, 0
 
-    rules = {'s': [], 'f': [], 'u': []} # a list of known rules
+    rules = {'s': [], 'f': []} # a list of known rules
     brs_new = []
     worst = {x: 0 for x in varis.keys()} # all components in the worst state
     best = {k: v.B.shape[1] - 1 for k, v in varis.items()} # all components in the best state
@@ -52,10 +52,9 @@ def proposed_branch_and_bound(sys_fun, varis, max_br, output_path=Path(sys.argv[
 
         no_iter += 1
         print(f'[System function runs {no_sf}]..')
-        print(f'The # of found non-dominated rules (f, s) and (mean len.): {no_rf + no_rs} ({no_rf}, {no_rs}) ({len_rf:.1f}, {len_rs:.1f})')
-        print('The # of branching: ', no_iter)
-        print(f'The # of branches (f, s, u): {len(brs)} ({no_bf}, {no_bs}, {no_bu})')
-        print('---')
+        print(f'The # of found non-dominated rules (f, s): {no_rf + no_rs} ({no_rf}, {no_rs})')
+        #print('The # of branching: ', no_iter)
+        #print(f'The # of branches (f, s, u): {len(brs)} ({no_bf}, {no_bs}, {no_bu})')
         stop_br = False
 
         for br in brs:
@@ -112,6 +111,7 @@ def proposed_branch_and_bound(sys_fun, varis, max_br, output_path=Path(sys.argv[
 
         no_rf = len(rules['f']) # no. of failure rules
         no_rs = len(rules['s']) # no. of survival rules
+        """
         if no_rf > 0:
             len_rf = sum([len(x) for x in rules['f']])/no_rf # mean length of failure rules
         else:
@@ -121,9 +121,10 @@ def proposed_branch_and_bound(sys_fun, varis, max_br, output_path=Path(sys.argv[
             len_rs = sum([len(x) for x in rules['s']])/no_rs # mean length of survival rules
         else:
             len_rs = 0
-
+        """
+        print(f'# of unknown branches to go: {no_bu}\n')
         if len(brs) >= max_br:
-            print(f'Stop due to the # of branches: {len(brs)}')
+            print(f'*** Terminated due to the # of branches: {len(brs)} >= {max_br}')
 
     return brs, rules
 
