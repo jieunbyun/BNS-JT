@@ -40,6 +40,7 @@ def proposed_branch_and_bound(sys_fun, varis, max_br, output_path=Path(sys.argv[
     #sys_res = pd.DataFrame(data={'sys_val': [], 'comp_st': [], 'comp_st_min': []}) # system function results 
     no_iter, no_bf, no_bs, no_bu =  0, 0, 0, 1
     no_rf, no_rs, len_rf, len_rs = 0, 0, 0, 0
+    max_bu = 0
 
     rules = {'s': [], 'f': []} # a list of known rules
     brs_new = []
@@ -85,17 +86,17 @@ def proposed_branch_and_bound(sys_fun, varis, max_br, output_path=Path(sys.argv[
                     break
 
                 else:
-                    xd = get_decomp_comp2(br.down, br.up, c_rules)
+                    xd, xd_st = get_decomp_comp2(br.down, br.up, c_rules)
 
                     # for upper
                     up = br.up.copy()
-                    up[xd[0]] = xd[1] - 1
+                    up[xd] = xd_st - 1
                     up_state = get_state(up, rules)
                     brs_new.append(branch.Branch(br.down, up, br.down_state, up_state))
 
                     # for lower
                     down = br.down.copy()
-                    down[xd[0]] = xd[1]
+                    down[xd] = xd_st
                     down_state = get_state(down, rules)
                     brs_new.append(branch.Branch(down, br.up, down_state, br.up_state))
 
@@ -108,6 +109,8 @@ def proposed_branch_and_bound(sys_fun, varis, max_br, output_path=Path(sys.argv[
         no_bf = sum([(b.up_state == 'f') for b in brs]) # no. of failure branches
         no_bs = sum([(b.down_state == 's') for b in brs]) # no. of survival branches
         no_bu = sum([(b.up_state == 'u') or (b.down_state == 'u') or (b.down_state != b.up_state) for b in brs]) # no. of unknown branches
+        if no_bu > max_bu:
+            max_bu = no_bu
 
         no_rf = len(rules['f']) # no. of failure rules
         no_rs = len(rules['s']) # no. of survival rules
@@ -122,7 +125,7 @@ def proposed_branch_and_bound(sys_fun, varis, max_br, output_path=Path(sys.argv[
         else:
             len_rs = 0
         """
-        print(f'# of unknown branches to go: {no_bu}\n')
+        print(f'# of unknown branches to go: {no_bu}, {max_bu}\n')
         if len(brs) >= max_br:
             print(f'*** Terminated due to the # of branches: {len(brs)} >= {max_br}')
 
@@ -184,7 +187,7 @@ def get_state(comp, rules):
         str: system state ('s', 'f', or 'u')
     """
     assert isinstance(comp, dict), f'comp should be a dict: {type(comp)}'
-    #assert isinstance(rules, list), f'rules should be a list: {type(rules)}'
+    assert isinstance(rules, dict), f'rules should be a dict: {type(rules)}'
 
     # the survival rule is satisfied
     no_s = sum([all([comp[k] >= v for k, v in rule.items()])
@@ -218,9 +221,9 @@ def get_compat_rules2(lower, upper, rules):
     """
     assert isinstance(lower, dict), f'lower should be a dict: {type(lower)}'
     assert isinstance(upper, dict), f'upper should be a dict: {type(upper)}'
-    #assert isinstance(rules, list), f'rules should be a list: {type(rules)}'
+    assert isinstance(rules, dict), f'rules should be a dict: {type(rules)}'
 
-    compat_rules = {'s': [], 'f': [], 'u': []}
+    compat_rules = {'s': [], 'f': []}
     for rule in rules['s']:
         if all([upper[k] >= v for k, v in rule.items()]):
             c_rule = {k: v for k, v in rule.items() if v > lower[k]}

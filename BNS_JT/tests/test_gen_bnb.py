@@ -704,19 +704,19 @@ def test_get_compat_rules2_0():
 
     upper = {f'e{i}': 2 for i in range(1, 7)}
     lower = {f'e{i}': 0 for i in range(1, 7)}
-    rules = {'s': [], 'f': [], 'u': []}
+    rules = {'s': [], 'f': []}
     result = gen_bnb.get_compat_rules2(lower, upper, rules)
     assert result == rules
 
     upper = {f'e{i}': 2 for i in range(1, 7)}
     lower = {f'e{i}': 0 for i in range(1, 7)}
-    rules = {'s': [{'e2': 2, 'e5': 2}], 'f': [], 'u': []}
+    rules = {'s': [{'e2': 2, 'e5': 2}], 'f': []}
     result = gen_bnb.get_compat_rules2(lower, upper, rules)
-    assert result == {'s': [{'e2': 2, 'e5': 2}], 'f': [], 'u': []}
+    assert result == {'s': [{'e2': 2, 'e5': 2}], 'f': []}
 
     upper = {f'e{i}': 2 for i in range(1, 7)}
     lower = {f'e{i}': 0 for i in range(1, 7)}
-    rules = {'s': [{'e2': 1, 'e5': 2}], 'f': [{f'e{i}': 0 for i in range(1, 7)}], 'u': []}
+    rules = {'s': [{'e2': 1, 'e5': 2}], 'f': [{f'e{i}': 0 for i in range(1, 7)}]}
     result = gen_bnb.get_compat_rules2(lower, upper, rules)
 
     assert result['s'] == rules['s']
@@ -724,7 +724,7 @@ def test_get_compat_rules2_0():
 
     upper = {'e1': 2, 'e2': 0, 'e3': 2, 'e4': 2, 'e5': 2, 'e6': 2}
     lower = {f'e{i}': 0 for i in range(1, 7)}
-    rules = {'s': [{'e2': 1, 'e5': 2}], 'f': [{f'e{i}': 0 for i in range(1, 7)}], 'u': []}
+    rules = {'s': [{'e2': 1, 'e5': 2}], 'f': [{f'e{i}': 0 for i in range(1, 7)}]}
     #pdb.set_trace()
     result = gen_bnb.get_compat_rules2(lower, upper, rules)
     # FIXME: note that 'e2' was removed from rules
@@ -733,13 +733,11 @@ def test_get_compat_rules2_0():
     upper = {'e1': 2, 'e2': 2, 'e3': 2, 'e4': 2, 'e5': 2, 'e6': 2}
     lower = {'e1': 2, 'e2': 0, 'e3': 2, 'e4': 2, 'e5': 2, 'e6': 2}
     rules = {'s': [{'e2': 1, 'e5': 2}, {'e1': 2, 'e3': 2, 'e5': 2}, {'e2': 2, 'e4': 2, 'e6': 2}],
-             'f': [{f'e{i}': 0 for i in range(1, 7)}],
-             'u': []}
+             'f': [{f'e{i}': 0 for i in range(1, 7)}]}
 
     result = gen_bnb.get_compat_rules2(lower, upper, rules)
     assert result['s'] == [{'e2': 1}, {'e2': 2}]
     assert result['f'] == []
-    assert result['u'] == []
 
 def test_get_compat_rules0():
 
