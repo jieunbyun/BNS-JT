@@ -260,12 +260,13 @@ def test_sf_min_path(main_sys, comps_st_dic):
         assert result[2] == expected[c][2]
 
 
-def test_init_branch1(main_sys):
+def test_init_branch1():
 
-    _, _, varis = main_sys
     rules = []
+    worst = {f'e{i}': 0 for i in range(1, 7)}
+    best = {f'e{i}': 2 for i in range(1, 7)}
 
-    brs = gen_bnb.init_branch(varis, rules)
+    brs = gen_bnb.init_branch(worst, best, rules)
 
     assert len(brs) == 1
     assert brs[0].up_state == 'u'
@@ -274,12 +275,13 @@ def test_init_branch1(main_sys):
     assert brs[0].up == {f'e{i}': 2 for i in range(1, 7)}
 
 
-def test_init_branch2(main_sys):
+def test_init_branch2():
 
-    _, _, varis = main_sys
     rules = [({'e2': 2, 'e5': 2}, 's')]
+    worst = {f'e{i}': 0 for i in range(1, 7)}
+    best = {f'e{i}': 2 for i in range(1, 7)}
 
-    brs = gen_bnb.init_branch(varis, rules)
+    brs = gen_bnb.init_branch(worst, best, rules)
 
     assert len(brs) == 1
     assert brs[0].up_state == 's'
@@ -288,12 +290,13 @@ def test_init_branch2(main_sys):
     assert brs[0].up == {f'e{i}': 2 for i in range(1, 7)}
 
 
-def test_init_branch3(main_sys):
+def test_init_branch3():
 
-    _, _, varis = main_sys
-    rules = [({'e2': 2, 'e5': 2}, 's'), ({x: 0 for x in varis.keys()}, 'f')]
+    rules = [({'e2': 2, 'e5': 2}, 's'), ({f'e{x}': 0 for x in range(1, 7)}, 'f')]
+    worst = {f'e{i}': 0 for i in range(1, 7)}
+    best = {f'e{i}': 2 for i in range(1, 7)}
 
-    brs = gen_bnb.init_branch(varis, rules)
+    brs = gen_bnb.init_branch(worst, best, rules)
 
     assert len(brs) == 1
     assert brs[0].up_state == 's'
@@ -302,12 +305,13 @@ def test_init_branch3(main_sys):
     assert brs[0].up == {f'e{i}': 2 for i in range(1, 7)}
 
 
-def test_init_branch4(main_sys):
+def test_init_branch4():
 
-    _, _, varis = main_sys
-    rules = [({'e2': 2, 'e5': 2}, 's'), ({x: 0 for x in varis.keys()}, 'f'), ({'e2': 2, 'e6': 2, 'e4': 2}, 's')]
+    rules = [({'e2': 2, 'e5': 2}, 's'), ({f'e{x}': 0 for x in range(1, 7)}, 'f'), ({'e2': 2, 'e6': 2, 'e4': 2}, 's')]
+    worst = {f'e{i}': 0 for i in range(1, 7)}
+    best = {f'e{i}': 2 for i in range(1, 7)}
 
-    brs = gen_bnb.init_branch(varis, rules)
+    brs = gen_bnb.init_branch(worst, best, rules)
 
     assert len(brs) == 1
     assert brs[0].up_state == 's'
@@ -491,7 +495,7 @@ def test_proposed_branch_and_bound(main_sys):
     # Branch and bound
     output_path = Path(__file__).parent
     #pdb.set_trace()
-    brs, rules, sys_res = gen_bnb.proposed_branch_and_bound(sys_fun, varis, max_br=1000,
+    brs, rules = gen_bnb.proposed_branch_and_bound(sys_fun, varis, max_br=1000,
                                                               output_path=output_path, key='bridge', flag=True)
 
     #print(brs)
@@ -1142,10 +1146,10 @@ def test_run_sys_fn1(main_sys):
     rules = []
 
     #pdb.set_trace()
-    sys_res, rule = gen_bnb.run_sys_fn(cst, sys_fun, rules, varis)
-    np.testing.assert_almost_equal(sys_res['sys_val'].values, np.array([0.18442]), decimal=5)
-    assert sys_res['comp_st'].values == [{k: 2 for k in varis.keys()}]
-    assert sys_res['comp_st_min'].values == [{'e2': 2, 'e5': 2}]
+    rule = gen_bnb.run_sys_fn(cst, sys_fun, rules, varis)
+    #np.testing.assert_almost_equal(sys_res['sys_val'].values, np.array([0.18442]), decimal=5)
+    #assert sys_res['comp_st'].values == [{k: 2 for k in varis.keys()}]
+    #assert sys_res['comp_st_min'].values == [{'e2': 2, 'e5': 2}]
     assert rule == ({'e2': 2, 'e5': 2}, 's')
 
 
@@ -1160,11 +1164,11 @@ def test_run_sys_fn2(main_sys):
     rules = [({'e2': 2, 'e5': 2}, 's')]
 
     #pdb.set_trace()
-    sys_res, rule = gen_bnb.run_sys_fn(cst, sys_fun, rules, varis)
+    rule = gen_bnb.run_sys_fn(cst, sys_fun, rules, varis)
 
-    np.testing.assert_almost_equal(sys_res['sys_val'].values, np.array([1.8442]), decimal=4)
-    assert sys_res['comp_st'].values[0] == {k: 0 for k in varis.keys()}
-    assert sys_res['comp_st_min'].values == [{}]
+    #np.testing.assert_almost_equal(sys_res['sys_val'].values, np.array([1.8442]), decimal=4)
+    #assert sys_res['comp_st'].values[0] == {k: 0 for k in varis.keys()}
+    #assert sys_res['comp_st_min'].values == [{}]
     assert rule == ({k: 0 for k in varis.keys()}, 'f')
 
 
@@ -1179,11 +1183,11 @@ def test_run_sys_fn3(main_sys):
     rules = [({'e2': 2, 'e5': 2}, 's'), ({k: 0 for k in varis.keys()}, 'f')]
 
     #pdb.set_trace()
-    sys_res, rule = gen_bnb.run_sys_fn(cst, sys_fun, rules, varis)
+    rule = gen_bnb.run_sys_fn(cst, sys_fun, rules, varis)
 
-    np.testing.assert_almost_equal(sys_res['sys_val'].values, np.array([0.266]), decimal=3)
-    assert sys_res['comp_st'].values[0] == {'e1': 2, 'e2': 2, 'e3': 2, 'e4': 2, 'e5': 1, 'e6': 2}
-    assert sys_res['comp_st_min'].values == [{'e2': 2, 'e6': 2, 'e4': 2}]
+    #np.testing.assert_almost_equal(sys_res['sys_val'].values, np.array([0.266]), decimal=3)
+    #assert sys_res['comp_st'].values[0] == {'e1': 2, 'e2': 2, 'e3': 2, 'e4': 2, 'e5': 1, 'e6': 2}
+    #assert sys_res['comp_st_min'].values == [{'e2': 2, 'e6': 2, 'e4': 2}]
     assert rule == ({'e2': 2, 'e6': 2, 'e4': 2}, 's')
 
 
@@ -1247,7 +1251,7 @@ def test_get_csys_from_brs2(main_sys):
     # Branch and bound
     output_path = Path(__file__).parent
     #pdb.set_trace()
-    brs, rules, sys_res = gen_bnb.proposed_branch_and_bound(sys_fun, varis, max_br=1000,
+    brs, rules = gen_bnb.proposed_branch_and_bound(sys_fun, varis, max_br=1000,
                                                               output_path=output_path, key='bridge', flag=True)
 
 

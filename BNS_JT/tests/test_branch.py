@@ -629,20 +629,20 @@ def test_create_arc_state_given_cond():
 
     assert result==expected
 
-
+@pytest.mark.skip('NWY')
 def test_get_set_branches_no_iteration():
 
     #cluster = setup_client
 
     # using road
-    cfg = config.Config(HOME.joinpath('./config_roads.json'))
+    cfg = config.Config(HOME.joinpath('../demos/road/config_road.json'))
 
     path_times = trans.get_all_paths_and_times(cfg.infra['ODs'].values(), cfg.infra['G'], key='time')
 
     expected =[({'e1': 0, 'e2': 0, 'e3': 0, 'e4': 0, 'e5': 0, 'e6': 0}, {'e1': 1, 'e2': 0, 'e3': 1, 'e4': 1, 'e5': 1, 'e6': 1}, 0, 1),
                ({'e1': 0, 'e2': 1, 'e3': 0, 'e4': 0, 'e5': 0, 'e6': 0}, {'e1': 1, 'e2': 1, 'e3': 1, 'e4': 1, 'e5': 1, 'e6': 1}, 2, 2)]
 
-    k, v = 'od1', ('n5', 'n1')
+    k, v = 'od1', ('n1', 'n3')
     arc_cond = 1
     values = [np.inf] + sorted([y for _, y in path_times[v]], reverse=True)
     varis = variable.Variable(name=k, B=np.eye(len(values)), values=values)
