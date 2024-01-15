@@ -6,7 +6,7 @@ import time
 import pytest
 import json
 from pathlib import Path
-from dask.distributed import Client, LocalCluster, Variable, worker_client
+#from dask.distributed import Client, LocalCluster, Variable, worker_client
 
 from BNS_JT import variable, trans, bnb_fns, branch, config
 
@@ -424,6 +424,7 @@ def test_get_cmat_from_branches():
     np.testing.assert_array_equal(result, expected)
 
 
+@pytest.mark.skip('NODASK')
 @pytest.fixture()
 def setup_client():
 
@@ -540,7 +541,7 @@ def setup_rbd():
 
     return path_time_idx, bstars, arc_cond, output_path, key
 
-
+@pytest.mark.skip('NODASK')
 def test_branch_and_bound_using_rbd(setup_client, setup_rbd):
 
     # 0, 1, 2 corresponds to index of Variable.values
@@ -600,6 +601,7 @@ def fib2(n):
         return (a[0]+b[0], a[1] + [a[0]+b[0]])
 
 
+@pytest.mark.skip('NODASK')
 def test_dask_fib(setup_client):
 
     cluster = setup_client

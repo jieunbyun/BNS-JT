@@ -55,12 +55,12 @@ def main():
 
     csys_by_od, varis_by_od = model.get_branches_by_od(cfg)
 
-    print(csys_by_od)
+    #print(csys_by_od)
 
-    print(varis_by_od)
+    #print(varis_by_od)
 
 if __name__=='__main__':
 
-    create_model()
+    #create_model()
     main()
 

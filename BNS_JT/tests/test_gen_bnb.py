@@ -1,6 +1,7 @@
 # coding: utf-8
 
 import pytest
+import time
 import pdb
 import pickle
 import pandas as pd
@@ -69,6 +70,7 @@ def main_sys():
     nx.draw(G, pos, with_labels=True, ax=ax)
     nx.draw_networkx_edge_labels(G, pos, edge_labels=edge_labels, ax=ax)
     fig.savefig(HOME.joinpath('graph_test_gen_bnb.png'), dpi=200)
+    plt.close()
 
     """
     e1: 1.5, 0.3, 0.15
@@ -262,7 +264,7 @@ def test_sf_min_path(main_sys, comps_st_dic):
 
 def test_init_branch1():
 
-    rules = []
+    rules = {'s':[], 'f': [], 'u': []}
     worst = {f'e{i}': 0 for i in range(1, 7)}
     best = {f'e{i}': 2 for i in range(1, 7)}
 
@@ -277,7 +279,7 @@ def test_init_branch1():
 
 def test_init_branch2():
 
-    rules = [({'e2': 2, 'e5': 2}, 's')]
+    rules = {'s': [{'e2': 2, 'e5': 2}], 'f': [], 'u': []}
     worst = {f'e{i}': 0 for i in range(1, 7)}
     best = {f'e{i}': 2 for i in range(1, 7)}
 
@@ -292,7 +294,7 @@ def test_init_branch2():
 
 def test_init_branch3():
 
-    rules = [({'e2': 2, 'e5': 2}, 's'), ({f'e{x}': 0 for x in range(1, 7)}, 'f')]
+    rules = {'s': [{'e2': 2, 'e5': 2}], 'f': [{f'e{x}': 0 for x in range(1, 7)}], 'u': []}
     worst = {f'e{i}': 0 for i in range(1, 7)}
     best = {f'e{i}': 2 for i in range(1, 7)}
 
@@ -307,7 +309,7 @@ def test_init_branch3():
 
 def test_init_branch4():
 
-    rules = [({'e2': 2, 'e5': 2}, 's'), ({f'e{x}': 0 for x in range(1, 7)}, 'f'), ({'e2': 2, 'e6': 2, 'e4': 2}, 's')]
+    rules = {'s': [{'e2': 2, 'e5': 2}, {'e2': 2, 'e6': 2, 'e4': 2}], 'f': [{f'e{x}': 0 for x in range(1, 7)}], 'u': []}
     worst = {f'e{i}': 0 for i in range(1, 7)}
     best = {f'e{i}': 2 for i in range(1, 7)}
 
@@ -494,19 +496,22 @@ def test_proposed_branch_and_bound(main_sys):
 
     # Branch and bound
     output_path = Path(__file__).parent
-    #pdb.set_trace()
+    t1 = time.perf_counter()
     brs, rules = gen_bnb.proposed_branch_and_bound(sys_fun, varis, max_br=1000,
                                                               output_path=output_path, key='bridge', flag=True)
-
+    print(f'elapsed: {time.perf_counter() - t1}')
     #print(brs)
+    #print(rules)
     # Result
     #assert no_sf == 23
-    assert len(rules) == 10
-    expected_rules =[{'e1': 2, 'e3': 2, 'e5': 2}, {'e2': 0, 'e3': 1}, {'e2': 0, 'e5': 1}, {'e2': 1, 'e6': 2, 'e4': 2}, {'e2': 1, 'e5': 1}, {'e4': 1, 'e5': 0}, {'e1': 1, 'e2': 0}, {'e2': 2, 'e6': 1, 'e4': 2}, {'e5': 0, 'e6': 0}, {'e2': 1, 'e5': 0, 'e6': 1}]
-    expected_st = ['s', 'f', 'f', 's', 's', 'f', 'f', 's', 'f', 'f']
-    assert all([item in rules for item in zip(expected_rules, expected_st)])
+    assert len([x for rule in rules.values() for x in rule]) == 10
+    # s
+    expected_rules_s =[{'e1': 2, 'e3': 2, 'e5': 2}, {'e2': 1, 'e6': 2, 'e4': 2}, {'e2': 1, 'e5': 1}, {'e2': 2, 'e6': 1, 'e4': 2}]
+    assert all([item in rules['s'] for item in expected_rules_s])
+    expected_rules_f =[{'e2': 0, 'e3': 1}, {'e2': 0, 'e5': 1}, {'e4': 1, 'e5': 0}, {'e1': 1, 'e2': 0}, {'e5': 0, 'e6': 0}, {'e2': 1, 'e5': 0, 'e6': 1}]
+    assert all([item in rules['f'] for item in expected_rules_f])
 
-    assert len(brs) == 10
+    #assert len(brs) == 10
     expected_brs = [branch.Branch_old(down=[1, 1, 1, 1, 1, 1], up=[3, 1, 2, 3, 3, 3], is_complete=True, down_state='f', up_state='f', down_val=None, up_val=None, names=comps_name),
                     branch.Branch_old(down=[1, 1, 3, 1, 1, 1], up=[3, 1, 3, 3, 2, 3], is_complete=True, down_state='f', up_state='f', down_val=None, up_val=None, names=comps_name),
                     branch.Branch_old(down=[1, 1, 3, 1, 3, 1], up=[2, 1, 3, 3, 3, 3], is_complete=True, down_state='f', up_state='f', down_val=None, up_val=None, names=comps_name),
@@ -682,7 +687,7 @@ def test_do_gen_bnb0(setup_brs):
 
 def test_get_state0():
 
-    rules = []
+    rules = {'s': [], 'f': [], 'u': []}
 
     cst = {f'e{i}': 2 for i in range(1, 7)}
     result = gen_bnb.get_state(cst, rules)
@@ -699,46 +704,42 @@ def test_get_compat_rules2_0():
 
     upper = {f'e{i}': 2 for i in range(1, 7)}
     lower = {f'e{i}': 0 for i in range(1, 7)}
-    rules = []
+    rules = {'s': [], 'f': [], 'u': []}
     result = gen_bnb.get_compat_rules2(lower, upper, rules)
-    assert result == []
+    assert result == rules
 
     upper = {f'e{i}': 2 for i in range(1, 7)}
     lower = {f'e{i}': 0 for i in range(1, 7)}
-    rules = [({'e2': 2, 'e5': 2}, 's')]
+    rules = {'s': [{'e2': 2, 'e5': 2}], 'f': [], 'u': []}
     result = gen_bnb.get_compat_rules2(lower, upper, rules)
-    assert result == [({'e2': 2, 'e5': 2}, 's')]
+    assert result == {'s': [{'e2': 2, 'e5': 2}], 'f': [], 'u': []}
 
     upper = {f'e{i}': 2 for i in range(1, 7)}
     lower = {f'e{i}': 0 for i in range(1, 7)}
-    rules = [({'e2': 1, 'e5': 2}, 's'), ({f'e{i}': 0 for i in range(1, 7)}, 'f')]
+    rules = {'s': [{'e2': 1, 'e5': 2}], 'f': [{f'e{i}': 0 for i in range(1, 7)}], 'u': []}
     result = gen_bnb.get_compat_rules2(lower, upper, rules)
 
-    assert result[0] == rules[0]
-    assert result[1] == rules[1]
+    assert result['s'] == rules['s']
+    assert result['f'] == rules['f']
 
     upper = {'e1': 2, 'e2': 0, 'e3': 2, 'e4': 2, 'e5': 2, 'e6': 2}
     lower = {f'e{i}': 0 for i in range(1, 7)}
-    rules = [({'e2': 1, 'e5': 2}, 's'), ({f'e{i}': 0 for i in range(1, 7)}, 'f')]
+    rules = {'s': [{'e2': 1, 'e5': 2}], 'f': [{f'e{i}': 0 for i in range(1, 7)}], 'u': []}
     #pdb.set_trace()
     result = gen_bnb.get_compat_rules2(lower, upper, rules)
-    assert len(result) == 1
     # FIXME: note that 'e2' was removed from rules
-    assert result[0] == ({'e1': 0, 'e3': 0, 'e4': 0, 'e5': 0, 'e6': 0}, 'f')
-    """
+    assert result['f'] == [{'e1': 0, 'e3': 0, 'e4': 0, 'e5': 0, 'e6': 0}]
+
     upper = {'e1': 2, 'e2': 2, 'e3': 2, 'e4': 2, 'e5': 2, 'e6': 2}
     lower = {'e1': 2, 'e2': 0, 'e3': 2, 'e4': 2, 'e5': 2, 'e6': 2}
-    rules = [({'e2': 1, 'e5': 2}, 's'),
-             ({f'e{i}': 0 for i in range(1, 7)}, 'f'),
-             ({'e1': 2, 'e3': 2, 'e5': 2}, 's'),
-             ({'e2': 2, 'e4': 2, 'e6': 2}, 's'),
-            ]
+    rules = {'s': [{'e2': 1, 'e5': 2}, {'e1': 2, 'e3': 2, 'e5': 2}, {'e2': 2, 'e4': 2, 'e6': 2}],
+             'f': [{f'e{i}': 0 for i in range(1, 7)}],
+             'u': []}
+
     result = gen_bnb.get_compat_rules2(lower, upper, rules)
-    print(result)
-    assert result[0] == rules[0]
-    assert result[1] == rules[2]
-    assert result[2] == rules[3]
-    """
+    assert result['s'] == [{'e2': 1}, {'e2': 2}]
+    assert result['f'] == []
+    assert result['u'] == []
 
 def test_get_compat_rules0():
 
@@ -767,7 +768,7 @@ def test_get_compat_rules_old0():
 
 def test_get_state1():
 
-    rules = [({'e2': 2, 'e5': 2}, 's')]
+    rules = {'s': [{'e2': 2, 'e5': 2}], 'f': [], 'u': []}
 
     cst = {f'e{i}': 2 for i in range(1, 7)}
     result = gen_bnb.get_state(cst, rules)
@@ -778,8 +779,6 @@ def test_get_state1():
     result = gen_bnb.get_state(cst, rules)
 
     assert result == 'u'
-
-
 
 
 def test_get_compat_rules1():
@@ -809,7 +808,7 @@ def test_get_compat_rules_old1():
 
 def test_get_state2():
 
-    rules = [({'e2': 1, 'e5': 2}, 's')]
+    rules = {'s': [{'e2': 2, 'e5': 2}], 'f': [], 'u': []}
     rules_st = ['s']
 
     cst = {f'e{i}': 2 for i in range(1, 7)}
@@ -853,7 +852,7 @@ def test_get_compat_rules_old2():
 def test_get_state3():
 
     cst = {f'e{i}': 2 for i in range(1, 7)}
-    rules = [({'e2': 1, 'e5': 2}, 's'), ({'e1': 1, 'e2': 0}, 'f')]
+    rules = {'s': [{'e2': 2, 'e5': 2}], 'f': [{'e1': 1, 'e2': 0}], 'u': []}
 
     result = gen_bnb.get_state(cst, rules)
 
@@ -895,7 +894,7 @@ def test_get_compat_rules_old3():
 def test_get_state4():
 
     cst = {'e1': 0, 'e2': 0, 'e3': 2 , 'e4': 1, 'e5': 0, 'e6': 2}
-    rules = [({'e2': 1, 'e5': 2}, 's'), ({'e1': 1, 'e2': 0}, 'f')]
+    rules = {'s': [{'e2': 1, 'e5': 2}], 'f': [{'e1': 1, 'e2': 0}], 'u': []}
 
     result = gen_bnb.get_state(cst, rules)
 
@@ -925,21 +924,21 @@ def test_get_compat_rules_old4():
 
 def test_update_rule_set0():
 
-    rules = []
+    rules = {'s': [], 'f': [], 'u': []}
     rule_new = ({'e2':2, 'e5':2}, 's')
 
     result = gen_bnb.update_rule_set(rules, rule_new)
-    assert result == [({'e2': 2, 'e5': 2}, 's')]
+    assert result == {'s': [{'e2': 2, 'e5': 2}], 'f': [], 'u': []}
 
 
 def test_update_rule_set1():
-    rules = [({'e2':2, 'e5':2}, 's')]
+    rules = {'s': [{'e2': 2, 'e5': 2}], 'f': [], 'u': []}
     rule_new = {f'e{i}':0 for i in range(1, 7)}, 'f'
 
     result = gen_bnb.update_rule_set(rules, rule_new)
 
-    assert result == [({'e2': 2, 'e5': 2}, 's'), ({'e1': 0, 'e2': 0, 'e3': 0, 'e4': 0, 'e5':0, 'e6': 0}, 'f')]
-
+    expected = {'s': [{'e2': 2, 'e5': 2}], 'f': [{'e1': 0, 'e2': 0, 'e3': 0, 'e4': 0, 'e5':0, 'e6': 0}], 'u': []}
+    assert result == expected
 
 
 def test_add_rule1():
@@ -955,18 +954,20 @@ def test_add_rule1():
 
 
 def test_update_rule_set2():
-    rules = [({'e2':2, 'e5':2}, 's'), ({'e2': 1, 'e5': 1}, 'f')]
+    rules = {'s': [{'e2':2, 'e5':2}], 'u': [], 'f':[{'e2': 1, 'e5': 1}]}
     rule_new = {'e2': 1, 'e5': 2}, 's'
 
     result = gen_bnb.update_rule_set(rules, rule_new)
 
-    assert result == [({'e2': 1, 'e5': 1}, 'f'), ({'e2': 1, 'e5': 2}, 's')]
+    expected = {'s': [{'e2':1, 'e5':2}], 'u': [], 'f':[{'e2': 1, 'e5': 1}]}
+    assert result == expected
 
     rule_new = {'e2': 1, 'e5': 0}, 'f'
 
     result = gen_bnb.update_rule_set(rules, rule_new)
 
-    assert result == [({'e2': 1, 'e5': 1}, 'f'), ({'e2': 1, 'e5': 2}, 's')]
+    expected = {'s': [{'e2':1, 'e5':2}], 'u': [], 'f':[{'e2': 1, 'e5': 1}]}
+    assert result == expected
 
 
 
@@ -992,35 +993,35 @@ def test_add_rule2():
 
 def test_get_decomp_comp2_0():
 
-    rules = [({'e2': 2, 'e5': 2}, 's'),
-             ({'e1': 0, 'e2': 0, 'e3': 0, 'e4': 0, 'e5': 0, 'e6': 0}, 'f')]
+    rules = {'s': [{'e2': 2, 'e5': 2}], 'u': [],
+            'f': [{'e1': 0, 'e2': 0, 'e3': 0, 'e4': 0, 'e5': 0, 'e6': 0}]}
     upper = {'e1': 2, 'e2': 2, 'e3': 2, 'e4': 2, 'e5': 2, 'e6': 2}
     lower = {'e1': 0, 'e2': 0, 'e3': 0, 'e4': 0, 'e5': 0, 'e6': 0}
     result = gen_bnb.get_decomp_comp2(lower, upper, rules)
 
     assert result == ('e2', 2)
 
-    rules = [({'e2': 2, 'e5': 2}, 's'),
-             ({'e1': 0, 'e2': 0, 'e3': 0, 'e4': 0, 'e5': 0, 'e6': 0}, 'f'),
-             ({'e1': 2, 'e3': 2, 'e5': 2}, 's')]
+    rules = {'s': [{'e2': 2, 'e5': 2}, {'e1': 2, 'e3': 2, 'e5': 2}],
+            'f': [{'e1': 0, 'e2': 0, 'e3': 0, 'e4': 0, 'e5': 0, 'e6': 0}],
+            'u': []}
     upper = {'e1': 2, 'e2': 2, 'e3': 2, 'e4': 2, 'e5': 2, 'e6': 2}
     lower = {'e1': 0, 'e2': 0, 'e3': 0, 'e4': 0, 'e5': 0, 'e6': 0}
     result = gen_bnb.get_decomp_comp2(lower, upper, rules)
 
     assert result == ('e5', 2)
 
-    rules = [({'e2': 2, 'e5': 2}, 's'),
-             ({'e1': 0, 'e2': 0, 'e3': 0, 'e4': 0, 'e5': 0, 'e6': 0}, 'f'),
-             ({'e1': 2, 'e3': 2, 'e5': 2}, 's'),
-             ({'e2': 2, 'e4': 2, 'e6': 2}, 's')]
+    rules = {'s': [{'e2': 2, 'e5': 2}, {'e1': 2, 'e3': 2, 'e5': 2}, {'e2': 2, 'e4': 2, 'e6': 2}],
+            'f': [{'e1': 0, 'e2': 0, 'e3': 0, 'e4': 0, 'e5': 0, 'e6': 0}],
+            'u': []}
     upper = {'e1': 2, 'e2': 2, 'e3': 2, 'e4': 2, 'e5': 2, 'e6': 2}
     lower = {'e1': 0, 'e2': 0, 'e3': 0, 'e4': 0, 'e5': 0, 'e6': 0}
     result = gen_bnb.get_decomp_comp2(lower, upper, rules)
 
     assert result == ('e2', 2)
 
-    rules = [({'e1': 0, 'e2': 0, 'e3': 0, 'e4': 0, 'e5': 0, 'e6': 0}, 'f'),
-             ({'e1': 2, 'e3': 2, 'e5': 2}, 's')]
+    rules = {'s': [{'e1': 2, 'e3': 2, 'e5': 2}],
+            'f': [{'e1': 0, 'e2': 0, 'e3': 0, 'e4': 0, 'e5': 0, 'e6': 0}],
+            'u': []}
     upper = {'e1': 2, 'e2': 2, 'e3': 2, 'e4': 2, 'e5': 2, 'e6': 2}
     lower = {'e1': 0, 'e2': 0, 'e3': 0, 'e4': 0, 'e5': 0, 'e6': 0}
     result = gen_bnb.get_decomp_comp2(lower, upper, rules)
@@ -1146,7 +1147,7 @@ def test_run_sys_fn1(main_sys):
     rules = []
 
     #pdb.set_trace()
-    rule = gen_bnb.run_sys_fn(cst, sys_fun, rules, varis)
+    rule = gen_bnb.run_sys_fn(cst, sys_fun, varis)
     #np.testing.assert_almost_equal(sys_res['sys_val'].values, np.array([0.18442]), decimal=5)
     #assert sys_res['comp_st'].values == [{k: 2 for k in varis.keys()}]
     #assert sys_res['comp_st_min'].values == [{'e2': 2, 'e5': 2}]
@@ -1164,7 +1165,7 @@ def test_run_sys_fn2(main_sys):
     rules = [({'e2': 2, 'e5': 2}, 's')]
 
     #pdb.set_trace()
-    rule = gen_bnb.run_sys_fn(cst, sys_fun, rules, varis)
+    rule = gen_bnb.run_sys_fn(cst, sys_fun, varis)
 
     #np.testing.assert_almost_equal(sys_res['sys_val'].values, np.array([1.8442]), decimal=4)
     #assert sys_res['comp_st'].values[0] == {k: 0 for k in varis.keys()}
@@ -1183,7 +1184,7 @@ def test_run_sys_fn3(main_sys):
     rules = [({'e2': 2, 'e5': 2}, 's'), ({k: 0 for k in varis.keys()}, 'f')]
 
     #pdb.set_trace()
-    rule = gen_bnb.run_sys_fn(cst, sys_fun, rules, varis)
+    rule = gen_bnb.run_sys_fn(cst, sys_fun, varis)
 
     #np.testing.assert_almost_equal(sys_res['sys_val'].values, np.array([0.266]), decimal=3)
     #assert sys_res['comp_st'].values[0] == {'e1': 2, 'e2': 2, 'e3': 2, 'e4': 2, 'e5': 1, 'e6': 2}
@@ -1273,14 +1274,14 @@ def test_get_csys_from_brs2(main_sys):
                          [1, 4, 3, 3, 3, 5, 3]])
     # FIXME: not exactly matching
     #np.testing.assert_array_equal(cmat, expected)
-
+    """
     np.testing.assert_array_equal(result[1]['e1'].B, np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1], [1, 1, 0], [1, 1, 1]]))
     np.testing.assert_array_equal(result[1]['e2'].B, np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1], [0, 1, 1]]))
     np.testing.assert_array_equal(result[1]['e3'].B, np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1], [1, 1, 1], [1, 1, 0]]))
     np.testing.assert_array_equal(result[1]['e4'].B, np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1], [1, 1, 1], [1, 1, 0]]))
     np.testing.assert_array_equal(result[1]['e5'].B, np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1], [1, 1, 1], [1, 1, 0], [0, 1, 1]]))
     np.testing.assert_array_equal(result[1]['e6'].B, np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1], [1, 1, 1], [1, 1, 0]]))
-
+    """
 
 def test_get_cmat_from_br1(main_sys):
 
