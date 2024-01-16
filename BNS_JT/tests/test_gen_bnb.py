@@ -555,7 +555,7 @@ def test_proposed_branch_and_bound2_1(main_sys):
     # Given a system function, i.e. sf_min_path, it should be represented by a function that only has "comps_st" as input.
     sys_fun = trans.sys_fun_wrap(od_pair, arcs, varis, thres * d_time_itc)
 
-    p = {0: 0.05, 1: 0.15, 2: 0.80}
+    p = {0: 1/3, 1: 1/3, 2: 1/3}
     #p2 = {0: 0.01, 1: 0.09, 2: 0.90}
 
     probs = {'e1': p, 'e2': p, 'e3': p,
