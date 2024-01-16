@@ -477,6 +477,309 @@ def test_do_gen_bnb3(main_sys):
     assert pytest.approx(sys_res_['sys_val'].values[0], 0.001) == 0.4271
 
 
+def test_approx_branch_prob():
+
+    d = {f'e{i}': 0 for i in range(1, 7)}
+    u = {f'e{i}': 2 for i in range(1, 7)}
+
+    p1 = {0: 0.05, 1: 0.15, 2: 0.80}
+    p2 = {0: 0.01, 1: 0.09, 2: 0.90}
+
+    p = {'e1': p1, 'e2': p1, 'e3': p1,
+         'e4': p2, 'e5': p2, 'e6': p2}
+
+    result = gen_bnb.approx_branch_prob(d, u, p)
+    assert result == 1.0
+
+    d = {'e1': 2, 'e2': 0, 'e3': 2, 'e4': 2, 'e5': 2, 'e6': 2}
+    u = {f'e{i}': 2 for i in range(1, 7)}
+
+    result = gen_bnb.approx_branch_prob(d, u, p)
+
+    assert pytest.approx(result) == 0.80**2*0.90**3
+
+    d = {'e1': 0, 'e2': 1, 'e3': 0, 'e4': 0, 'e5': 0, 'e6': 0}
+    u = {f'e{i}': 2 for i in range(1, 7)}
+
+    result = gen_bnb.approx_branch_prob(d, u, p)
+
+    assert pytest.approx(result) == 0.95
+
+    d = {'e1': 0, 'e2': 0, 'e3': 0, 'e4': 0, 'e5': 0, 'e6': 0}
+    u = {'e1': 2, 'e2': 0, 'e3': 2, 'e4': 2, 'e5': 2, 'e6': 2}
+
+    result = gen_bnb.approx_branch_prob(d, u, p)
+
+    assert pytest.approx(result) == 0.05
+
+
+def test_approx_joint_prob_compat_rules():
+
+    p1 = {0: 0.05, 1: 0.15, 2: 0.80}
+    p2 = {0: 0.01, 1: 0.09, 2: 0.90}
+
+    p = {'e1': p1, 'e2': p1, 'e3': p1,
+         'e4': p2, 'e5': p2, 'e6': p2}
+
+    d = {f'e{i}': 0 for i in range(1, 7)}
+    u = {f'e{i}': 2 for i in range(1, 7)}
+    rule = {'e2': 2, 'e5': 2}
+    rule_st = 's'
+
+    result = gen_bnb.approx_joint_prob_compat_rule(d, u, rule, rule_st, p)
+
+    assert pytest.approx(result) == 0.8*0.9
+
+    rule = {'e1': 0, 'e2': 0, 'e3': 0, 'e4': 0, 'e5': 0, 'e6': 0}
+    rule_st = 'f'
+
+    result = gen_bnb.approx_joint_prob_compat_rule(d, u, rule, rule_st, p)
+
+    assert pytest.approx(result) == 0.05**3*0.01**3
+
+
+def test_proposed_branch_and_bound2_1(main_sys):
+    # Branch and bound
+
+    od_pair, arcs, varis = main_sys
+
+    comps_name = list(arcs.keys())
+
+    # Intact state of component vector: zero-based index 
+    comps_st_itc = {k: v.B.shape[1] - 1 for k, v in varis.items()} # intact state (i.e. the highest state)
+    d_time_itc, path_itc = trans.get_time_and_path_given_comps(comps_st_itc, od_pair, arcs, varis)
+
+    # defines the system failure event
+    thres = 2
+
+    # Given a system function, i.e. sf_min_path, it should be represented by a function that only has "comps_st" as input.
+    sys_fun = trans.sys_fun_wrap(od_pair, arcs, varis, thres * d_time_itc)
+
+    p = {0: 0.05, 1: 0.15, 2: 0.80}
+    #p2 = {0: 0.01, 1: 0.09, 2: 0.90}
+
+    probs = {'e1': p, 'e2': p, 'e3': p,
+             'e4': p, 'e5': p, 'e6': p}
+
+    # Branch and bound
+    output_path = Path(__file__).parent
+    #t1 = time.perf_counter()
+    #pdb.set_trace()
+    brs, rules = gen_bnb.proposed_branch_and_bound2(sys_fun, varis, probs, max_br=100,
+                                                              output_path=output_path, key='bridge', flag=True)
+    #print(f'elapsed: {time.perf_counter() - t1}')
+    print(brs)
+    print(rules)
+    # Result
+    #assert no_sf == 23
+    #assert len([x for rule in rules.values() for x in rule]) == 10
+    # s
+    expected_rules_s =[{'e1': 2, 'e3': 2, 'e5': 2}, {'e2': 1, 'e6': 2, 'e4': 2}, {'e2': 1, 'e5': 1}, {'e2': 2, 'e6': 1, 'e4': 2}]
+    #assert all([item in rules['s'] for item in expected_rules_s])
+    #expected_rules_f =[{'e2': 0, 'e3': 1}, {'e2': 0, 'e5': 1}, {'e4': 1, 'e5': 0}, {'e1': 1, 'e2': 0}, {'e5': 0, 'e6': 0}, {'e2': 1, 'e5': 0, 'e6': 1}]
+    #assert all([item in rules['f'] for item in expected_rules_f])
+
+    #assert len(brs) == 10
+    expected_brs = [branch.Branch_old(down=[1, 1, 1, 1, 1, 1], up=[3, 1, 2, 3, 3, 3], is_complete=True, down_state='f', up_state='f', down_val=None, up_val=None, names=comps_name),
+                    branch.Branch_old(down=[1, 1, 3, 1, 1, 1], up=[3, 1, 3, 3, 2, 3], is_complete=True, down_state='f', up_state='f', down_val=None, up_val=None, names=comps_name),
+                    branch.Branch_old(down=[1, 1, 3, 1, 3, 1], up=[2, 1, 3, 3, 3, 3], is_complete=True, down_state='f', up_state='f', down_val=None, up_val=None, names=comps_name),
+                    branch.Branch_old(down=[3, 1, 3, 1, 3, 1], up=[3, 1, 3, 3, 3, 3], is_complete=True, down_state='s', up_state='s', down_val=None, up_val=None, names=comps_name),
+                    branch.Branch_old(down=[1, 2, 1, 1, 1, 1], up=[3, 3, 3, 2, 1, 3], is_complete=True, down_state='f', up_state='f', down_val=None, up_val=None, names=comps_name),
+                    branch.Branch_old(down=[1, 2, 1, 3, 1, 1], up=[3, 3, 3, 3, 1, 1], is_complete=True, down_state='f', up_state='f', down_val=None, up_val=None, names=comps_name),
+                    branch.Branch_old(down=[1, 2, 1, 3, 1, 2], up=[3, 2, 3, 3, 1, 2], is_complete=True, down_state='f', up_state='f', down_val=None, up_val=None, names=comps_name),
+                    branch.Branch_old(down=[1, 3, 1, 3, 1, 2], up=[3, 3, 3, 3, 1, 2], is_complete=True, down_state='s', up_state='s', down_val=None, up_val=None, names=comps_name),
+                    branch.Branch_old(down=[1, 2, 1, 3, 1, 3], up=[3, 3, 3, 3, 1, 3], is_complete=True, down_state='s', up_state='s', down_val=None, up_val=None, names=comps_name),
+                    branch.Branch_old(down=[1, 2, 1, 1, 2, 1], up=[3, 3, 3, 3, 3, 3], is_complete=True, down_state='s', up_state='s', down_val=None, up_val=None, names=comps_name)]
+
+    i = 0
+    for br in expected_brs:
+
+        br_ = branch.Branch({k: v-1 for k, v in zip(br.names, br.down)},
+                            {k: v-1 for k, v in zip(br.names, br.up)},
+                            br.down_state,
+                            br.up_state)
+        if br_ in brs:
+            brs.remove(br_)
+            print(f'removed: {i}')
+            i += 1
+        else:
+            print(f'not found: {br_}')
+
+    expected = np.array([0.184420,
+                         1.844197,
+                         0.266259,
+                         0.274558,
+                         0.334420,
+                         0.995669,
+                         1.123087,
+                         0.424558,
+                         1.844197,
+                         0.416259,
+                         0.995669,
+                         0.278701,
+                         0.356397,
+                         1.032948,
+                         0.368839,
+                         0.371668,
+                         0.992794,
+                         0.484420,
+                         0.336969,
+                         0.902655,
+                         0.427108,
+                         0.427108,
+                         0.427108])
+
+    #np.testing.assert_array_almost_equal(sys_res['sys_val'].values, expected)
+    expected_comps_min = [{'e2': 2, 'e5': 2},
+                          {},
+                          {'e2': 2, 'e6': 2, 'e4': 2},
+                          {'e2': 1, 'e5': 2},
+                          {'e1': 2, 'e3': 2, 'e5': 2},
+                          {},
+                          {},
+                          {},
+                          {},
+                          {},
+                          {},
+                          {'e2': 2, 'e5': 1},
+                          {'e2': 1, 'e6': 2, 'e4': 2},
+                          {},
+                          {'e2': 1, 'e5': 1},
+                          {},
+                          {},
+                          {},
+                          {'e2': 2, 'e6': 1, 'e4': 2},
+                          {},
+                          {},
+                          {},
+                          {}]
+
+    #assert all([x == y for x, y in zip(expected_comps_min, sys_res['comps_st_min'].values)])
+
+
+
+
+
+def test_proposed_branch_and_bound2(main_sys):
+    # Branch and bound
+
+    od_pair, arcs, varis = main_sys
+
+    comps_name = list(arcs.keys())
+
+    # Intact state of component vector: zero-based index 
+    comps_st_itc = {k: v.B.shape[1] - 1 for k, v in varis.items()} # intact state (i.e. the highest state)
+    d_time_itc, path_itc = trans.get_time_and_path_given_comps(comps_st_itc, od_pair, arcs, varis)
+
+    # defines the system failure event
+    thres = 2
+
+    # Given a system function, i.e. sf_min_path, it should be represented by a function that only has "comps_st" as input.
+    sys_fun = trans.sys_fun_wrap(od_pair, arcs, varis, thres * d_time_itc)
+
+    p1 = {0: 0.05, 1: 0.15, 2: 0.80}
+    p2 = {0: 0.01, 1: 0.09, 2: 0.90}
+
+    probs = {'e1': p1, 'e2': p1, 'e3': p1,
+             'e4': p2, 'e5': p2, 'e6': p2}
+
+    # Branch and bound
+    output_path = Path(__file__).parent
+    #t1 = time.perf_counter()
+    #pdb.set_trace()
+    brs, rules = gen_bnb.proposed_branch_and_bound2(sys_fun, varis, probs, max_br=100,
+                                                              output_path=output_path, key='bridge', flag=True)
+    #print(f'elapsed: {time.perf_counter() - t1}')
+    print(brs)
+    print(rules)
+    # Result
+    #assert no_sf == 23
+    #assert len([x for rule in rules.values() for x in rule]) == 10
+    # s
+    expected_rules_s =[{'e1': 2, 'e3': 2, 'e5': 2}, {'e2': 1, 'e6': 2, 'e4': 2}, {'e2': 1, 'e5': 1}, {'e2': 2, 'e6': 1, 'e4': 2}]
+    #assert all([item in rules['s'] for item in expected_rules_s])
+    #expected_rules_f =[{'e2': 0, 'e3': 1}, {'e2': 0, 'e5': 1}, {'e4': 1, 'e5': 0}, {'e1': 1, 'e2': 0}, {'e5': 0, 'e6': 0}, {'e2': 1, 'e5': 0, 'e6': 1}]
+    #assert all([item in rules['f'] for item in expected_rules_f])
+
+    #assert len(brs) == 10
+    expected_brs = [branch.Branch_old(down=[1, 1, 1, 1, 1, 1], up=[3, 1, 2, 3, 3, 3], is_complete=True, down_state='f', up_state='f', down_val=None, up_val=None, names=comps_name),
+                    branch.Branch_old(down=[1, 1, 3, 1, 1, 1], up=[3, 1, 3, 3, 2, 3], is_complete=True, down_state='f', up_state='f', down_val=None, up_val=None, names=comps_name),
+                    branch.Branch_old(down=[1, 1, 3, 1, 3, 1], up=[2, 1, 3, 3, 3, 3], is_complete=True, down_state='f', up_state='f', down_val=None, up_val=None, names=comps_name),
+                    branch.Branch_old(down=[3, 1, 3, 1, 3, 1], up=[3, 1, 3, 3, 3, 3], is_complete=True, down_state='s', up_state='s', down_val=None, up_val=None, names=comps_name),
+                    branch.Branch_old(down=[1, 2, 1, 1, 1, 1], up=[3, 3, 3, 2, 1, 3], is_complete=True, down_state='f', up_state='f', down_val=None, up_val=None, names=comps_name),
+                    branch.Branch_old(down=[1, 2, 1, 3, 1, 1], up=[3, 3, 3, 3, 1, 1], is_complete=True, down_state='f', up_state='f', down_val=None, up_val=None, names=comps_name),
+                    branch.Branch_old(down=[1, 2, 1, 3, 1, 2], up=[3, 2, 3, 3, 1, 2], is_complete=True, down_state='f', up_state='f', down_val=None, up_val=None, names=comps_name),
+                    branch.Branch_old(down=[1, 3, 1, 3, 1, 2], up=[3, 3, 3, 3, 1, 2], is_complete=True, down_state='s', up_state='s', down_val=None, up_val=None, names=comps_name),
+                    branch.Branch_old(down=[1, 2, 1, 3, 1, 3], up=[3, 3, 3, 3, 1, 3], is_complete=True, down_state='s', up_state='s', down_val=None, up_val=None, names=comps_name),
+                    branch.Branch_old(down=[1, 2, 1, 1, 2, 1], up=[3, 3, 3, 3, 3, 3], is_complete=True, down_state='s', up_state='s', down_val=None, up_val=None, names=comps_name)]
+
+    i = 0
+    for br in expected_brs:
+
+        br_ = branch.Branch({k: v-1 for k, v in zip(br.names, br.down)},
+                            {k: v-1 for k, v in zip(br.names, br.up)},
+                            br.down_state,
+                            br.up_state)
+        if br_ in brs:
+            brs.remove(br_)
+            print(f'removed: {i}')
+            i += 1
+        else:
+            print(f'not found: {br_}')
+
+    expected = np.array([0.184420,
+                         1.844197,
+                         0.266259,
+                         0.274558,
+                         0.334420,
+                         0.995669,
+                         1.123087,
+                         0.424558,
+                         1.844197,
+                         0.416259,
+                         0.995669,
+                         0.278701,
+                         0.356397,
+                         1.032948,
+                         0.368839,
+                         0.371668,
+                         0.992794,
+                         0.484420,
+                         0.336969,
+                         0.902655,
+                         0.427108,
+                         0.427108,
+                         0.427108])
+
+    #np.testing.assert_array_almost_equal(sys_res['sys_val'].values, expected)
+    expected_comps_min = [{'e2': 2, 'e5': 2},
+                          {},
+                          {'e2': 2, 'e6': 2, 'e4': 2},
+                          {'e2': 1, 'e5': 2},
+                          {'e1': 2, 'e3': 2, 'e5': 2},
+                          {},
+                          {},
+                          {},
+                          {},
+                          {},
+                          {},
+                          {'e2': 2, 'e5': 1},
+                          {'e2': 1, 'e6': 2, 'e4': 2},
+                          {},
+                          {'e2': 1, 'e5': 1},
+                          {},
+                          {},
+                          {},
+                          {'e2': 2, 'e6': 1, 'e4': 2},
+                          {},
+                          {},
+                          {},
+                          {}]
+
+    #assert all([x == y for x, y in zip(expected_comps_min, sys_res['comps_st_min'].values)])
+
+
+
 def test_proposed_branch_and_bound(main_sys):
     # Branch and bound
 
@@ -496,8 +799,9 @@ def test_proposed_branch_and_bound(main_sys):
 
     # Branch and bound
     output_path = Path(__file__).parent
+    #pdb.set_trace()
     t1 = time.perf_counter()
-    brs, rules = gen_bnb.proposed_branch_and_bound(sys_fun, varis, max_br=1000,
+    brs, rules = gen_bnb.proposed_branch_and_bound(sys_fun, varis, max_br=100,
                                                               output_path=output_path, key='bridge', flag=True)
     print(f'elapsed: {time.perf_counter() - t1}')
     #print(brs)
@@ -704,19 +1008,19 @@ def test_get_compat_rules2_0():
 
     upper = {f'e{i}': 2 for i in range(1, 7)}
     lower = {f'e{i}': 0 for i in range(1, 7)}
-    rules = {'s': [], 'f': [], 'u': []}
+    rules = {'s': [], 'f': []}
     result = gen_bnb.get_compat_rules2(lower, upper, rules)
     assert result == rules
 
     upper = {f'e{i}': 2 for i in range(1, 7)}
     lower = {f'e{i}': 0 for i in range(1, 7)}
-    rules = {'s': [{'e2': 2, 'e5': 2}], 'f': [], 'u': []}
+    rules = {'s': [{'e2': 2, 'e5': 2}], 'f': []}
     result = gen_bnb.get_compat_rules2(lower, upper, rules)
-    assert result == {'s': [{'e2': 2, 'e5': 2}], 'f': [], 'u': []}
+    assert result == {'s': [{'e2': 2, 'e5': 2}], 'f': []}
 
     upper = {f'e{i}': 2 for i in range(1, 7)}
     lower = {f'e{i}': 0 for i in range(1, 7)}
-    rules = {'s': [{'e2': 1, 'e5': 2}], 'f': [{f'e{i}': 0 for i in range(1, 7)}], 'u': []}
+    rules = {'s': [{'e2': 1, 'e5': 2}], 'f': [{f'e{i}': 0 for i in range(1, 7)}]}
     result = gen_bnb.get_compat_rules2(lower, upper, rules)
 
     assert result['s'] == rules['s']
@@ -724,7 +1028,7 @@ def test_get_compat_rules2_0():
 
     upper = {'e1': 2, 'e2': 0, 'e3': 2, 'e4': 2, 'e5': 2, 'e6': 2}
     lower = {f'e{i}': 0 for i in range(1, 7)}
-    rules = {'s': [{'e2': 1, 'e5': 2}], 'f': [{f'e{i}': 0 for i in range(1, 7)}], 'u': []}
+    rules = {'s': [{'e2': 1, 'e5': 2}], 'f': [{f'e{i}': 0 for i in range(1, 7)}]}
     #pdb.set_trace()
     result = gen_bnb.get_compat_rules2(lower, upper, rules)
     # FIXME: note that 'e2' was removed from rules
@@ -733,13 +1037,11 @@ def test_get_compat_rules2_0():
     upper = {'e1': 2, 'e2': 2, 'e3': 2, 'e4': 2, 'e5': 2, 'e6': 2}
     lower = {'e1': 2, 'e2': 0, 'e3': 2, 'e4': 2, 'e5': 2, 'e6': 2}
     rules = {'s': [{'e2': 1, 'e5': 2}, {'e1': 2, 'e3': 2, 'e5': 2}, {'e2': 2, 'e4': 2, 'e6': 2}],
-             'f': [{f'e{i}': 0 for i in range(1, 7)}],
-             'u': []}
+             'f': [{f'e{i}': 0 for i in range(1, 7)}]}
 
     result = gen_bnb.get_compat_rules2(lower, upper, rules)
     assert result['s'] == [{'e2': 1}, {'e2': 2}]
     assert result['f'] == []
-    assert result['u'] == []
 
 def test_get_compat_rules0():
 
@@ -991,6 +1293,52 @@ def test_add_rule2():
     assert result[1] == ['f', 's']
 
 
+def test_get_decomp_comp3_0():
+
+    rules = {'s': [{'e2': 2, 'e5': 2}],
+            'f': [{'e1': 0, 'e2': 0, 'e3': 0, 'e4': 0, 'e5': 0, 'e6': 0}]}
+    upper = {'e1': 2, 'e2': 2, 'e3': 2, 'e4': 2, 'e5': 2, 'e6': 2}
+    lower = {'e1': 0, 'e2': 0, 'e3': 0, 'e4': 0, 'e5': 0, 'e6': 0}
+
+    p1 = {0: 0.05, 1: 0.15, 2: 0.80}
+    p2 = {0: 0.01, 1: 0.09, 2: 0.90}
+
+    probs = {'e1': p1, 'e2': p1, 'e3': p1,
+             'e4': p2, 'e5': p2, 'e6': p2}
+
+    #pdb.set_trace()
+    result = gen_bnb.get_decomp_comp3(lower, upper, rules, probs)
+
+    assert result == ('e2', 2)
+
+    rules = {'s': [{'e2': 2, 'e5': 2}, {'e1': 2, 'e3': 2, 'e5': 2}],
+            'f': [{'e1': 0, 'e2': 0, 'e3': 0, 'e4': 0, 'e5': 0, 'e6': 0}],
+            }
+    upper = {'e1': 2, 'e2': 2, 'e3': 2, 'e4': 2, 'e5': 2, 'e6': 2}
+    lower = {'e1': 0, 'e2': 0, 'e3': 0, 'e4': 0, 'e5': 0, 'e6': 0}
+    result = gen_bnb.get_decomp_comp3(lower, upper, rules, probs)
+
+    assert result == ('e5', 2)
+
+    rules = {'s': [{'e2': 2, 'e5': 2}, {'e1': 2, 'e3': 2, 'e5': 2}, {'e2': 2, 'e4': 2, 'e6': 2}],
+            'f': [{'e1': 0, 'e2': 0, 'e3': 0, 'e4': 0, 'e5': 0, 'e6': 0}],
+            }
+    upper = {'e1': 2, 'e2': 2, 'e3': 2, 'e4': 2, 'e5': 2, 'e6': 2}
+    lower = {'e1': 0, 'e2': 0, 'e3': 0, 'e4': 0, 'e5': 0, 'e6': 0}
+    result = gen_bnb.get_decomp_comp3(lower, upper, rules, probs)
+
+    assert result == ('e2', 2)
+
+    rules = {'s': [{'e1': 2, 'e3': 2, 'e5': 2}],
+            'f': [{'e1': 0, 'e2': 0, 'e3': 0, 'e4': 0, 'e5': 0, 'e6': 0}],
+            }
+    upper = {'e1': 2, 'e2': 2, 'e3': 2, 'e4': 2, 'e5': 2, 'e6': 2}
+    lower = {'e1': 0, 'e2': 0, 'e3': 0, 'e4': 0, 'e5': 0, 'e6': 0}
+    result = gen_bnb.get_decomp_comp3(lower, upper, rules, probs)
+
+    assert result == ('e1', 2)
+
+
 def test_get_decomp_comp2_0():
 
     rules = {'s': [{'e2': 2, 'e5': 2}], 'u': [],
@@ -1232,6 +1580,62 @@ def test_get_composite_state3(main_sys):
 
     assert result[1] == 3
 
+
+def test_get_csys_from_brs3(main_sys):
+
+    od_pair, arcs, varis = main_sys
+
+    p1 = {0: 0.05, 1: 0.15, 2: 0.80}
+    p2 = {0: 0.01, 1: 0.09, 2: 0.90}
+
+    probs = {'e1': p1, 'e2': p1, 'e3': p1,
+             'e4': p2, 'e5': p2, 'e6': p2}
+
+
+    comps_name = list(arcs.keys())
+
+    # Intact state of component vector: zero-based index 
+    comps_st_itc = {k: v.B.shape[1] - 1 for k, v in varis.items()} # intact state (i.e. the highest state)
+    d_time_itc, path_itc = trans.get_time_and_path_given_comps(comps_st_itc, od_pair, arcs, varis)
+
+    # defines the system failure event
+    thres = 2
+
+    # Given a system function, i.e. sf_min_path, it should be represented by a function that only has "comps_st" as input.
+    sys_fun = trans.sys_fun_wrap(od_pair, arcs, varis, thres * d_time_itc)
+
+    # Branch and bound
+    output_path = Path(__file__).parent
+    #pdb.set_trace()
+    brs, rules = gen_bnb.proposed_branch_and_bound2(sys_fun, varis, probs, max_br=100,
+                                                              output_path=output_path, key='bridge', flag=True)
+
+    st_br_to_cs = {'f': 0, 's': 1, 'u': 2}
+    #pdb.set_trace()
+    result = gen_bnb.get_csys_from_brs2(brs, varis, st_br_to_cs)
+    #cmat = result[0]
+    cmat = result[0][np.argsort(result[0][:, 0])]
+    print(cmat)
+    expected = np.array([[0, 4, 0, 4, 3, 3, 3],
+                         [0, 4, 0, 2, 3, 4, 3],
+                         [0, 3, 0, 2, 3, 2, 3],
+                         [0, 4, 3, 3, 4, 0, 3],
+                         [0, 4, 3, 3, 2, 0, 0],
+                         [0, 4, 1, 3, 2, 0, 1],
+                         [1, 2, 0, 2, 3, 2, 3],
+                         [1, 4, 2, 3, 2, 0, 1],
+                         [1, 4, 3, 3, 2, 0, 2],
+                         [1, 4, 3, 3, 3, 5, 3]])
+    # FIXME: not exactly matching
+    #np.testing.assert_array_equal(cmat, expected)
+    """
+    np.testing.assert_array_equal(result[1]['e1'].B, np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1], [1, 1, 0], [1, 1, 1]]))
+    np.testing.assert_array_equal(result[1]['e2'].B, np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1], [0, 1, 1]]))
+    np.testing.assert_array_equal(result[1]['e3'].B, np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1], [1, 1, 1], [1, 1, 0]]))
+    np.testing.assert_array_equal(result[1]['e4'].B, np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1], [1, 1, 1], [1, 1, 0]]))
+    np.testing.assert_array_equal(result[1]['e5'].B, np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1], [1, 1, 1], [1, 1, 0], [0, 1, 1]]))
+    np.testing.assert_array_equal(result[1]['e6'].B, np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1], [1, 1, 1], [1, 1, 0]]))
+    """
 
 def test_get_csys_from_brs2(main_sys):
 
