@@ -59,7 +59,7 @@ def proposed_branch_and_bound2(sys_fun, varis, probs, max_br, output_path=Path(s
     # Initialisation
     no_sf = 0 # number of system function runs so far
     #sys_res = pd.DataFrame(data={'sys_val': [], 'comp_st': [], 'comp_st_min': []}) # system function results 
-    no_iter, no_bf, no_bs, no_bu =  0, 0, 0, 1
+    no_iter, pr_bf, pr_bs, pr_bu, no_bu =  0, 0, 0, 1, 1
     no_rf, no_rs, len_rf, len_rs = 0, 0, 0, 0
     max_bu = 0
 
@@ -75,6 +75,7 @@ def proposed_branch_and_bound2(sys_fun, varis, probs, max_br, output_path=Path(s
         no_iter += 1
         print(f'[System function runs {no_sf}]..')
         print(f'The # of found non-dominated rules (f, s): {no_rf + no_rs} ({no_rf}, {no_rs})')
+        print(f'Probability of branchs (f, s, u): ({pr_bf}, {pr_bs}, {pr_bu})')
         #print('The # of branching: ', no_iter)
         #print(f'The # of branches (f, s, u): {len(brs)} ({no_bf}, {no_bs}, {no_bu})')
         stop_br = False
@@ -130,9 +131,10 @@ def proposed_branch_and_bound2(sys_fun, varis, probs, max_br, output_path=Path(s
             brs_new = []
 
         #ok = any([(b.up_state == 'u') or (b.down_state == 'u') or (b.down_state != b.up_state) for b in brs])  # exit for loop
-        no_bf = sum([(b.up_state == 'f') for b in brs]) # no. of failure branches
-        no_bs = sum([(b.down_state == 's') for b in brs]) # no. of survival branches
+        pr_bf = sum([b[4] for b in brs if b.up_state == 'f']) # prob. of failure branches
+        pr_bs = sum([b[4] for b in brs if b.down_state == 's']) # prob. of survival branches
         no_bu = sum([(b.up_state == 'u') or (b.down_state == 'u') or (b.down_state != b.up_state) for b in brs]) # no. of unknown branches
+        pr_bu = sum([b[4] for b in brs if (b.up_state == 'u') or (b.down_state == 'u') or (b.down_state != b.up_state)])
         if no_bu > max_bu:
             max_bu = no_bu
 
@@ -152,6 +154,11 @@ def proposed_branch_and_bound2(sys_fun, varis, probs, max_br, output_path=Path(s
         print(f'# of unknown branches to go: {no_bu}, {max_bu}\n')
         if len(brs) >= max_br:
             print(f'*** Terminated due to the # of branches: {len(brs)} >= {max_br}')
+
+    print(f'**Algorithm Terminated**')
+    print(f'[System function runs {no_sf}]..')
+    print(f'The # of found non-dominated rules (f, s): {no_rf + no_rs} ({no_rf}, {no_rs})')
+    print(f'Probability of branchs (f, s, u): ({pr_bf}, {pr_bs}, {pr_bu})')
 
     return brs, rules
 
