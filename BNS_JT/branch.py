@@ -19,6 +19,7 @@ from collections import namedtuple
 Branch = namedtuple("Branch", ["down", "up", "down_state", "up_state"])
 
 
+Branch_p = namedtuple("Branch", ["down", "up", "down_state", "up_state", "p"])
 
 
 class Branch_old(object):
