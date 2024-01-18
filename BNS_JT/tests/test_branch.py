@@ -668,7 +668,7 @@ def test_get_set_branches_no_iteration():
 
 def test_get_set_branches_no_iteration_sf():
 
-    cfg = config.Config(HOME.joinpath('../demos/SF/config_SF.json'))
+    cfg = config.Config(HOME.joinpath('../demos/SF/config.json'))
 
     with open(HOME.joinpath('../demos/SF/path_time_idx.json'), 'r') as fid:
         _dic = json.load(fid)

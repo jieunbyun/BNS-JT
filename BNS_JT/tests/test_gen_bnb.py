@@ -565,7 +565,7 @@ def test_proposed_branch_and_bound2_1(main_sys):
     output_path = Path(__file__).parent
     #t1 = time.perf_counter()
     #pdb.set_trace()
-    brs, rules = gen_bnb.proposed_branch_and_bound2(sys_fun, varis, probs, max_br=100,
+    brs, rules, _ = gen_bnb.proposed_branch_and_bound2(sys_fun, varis, probs, max_br=100,
                                                               output_path=output_path, key='bridge', flag=True)
     #print(f'elapsed: {time.perf_counter() - t1}')
     print(brs)
@@ -687,7 +687,7 @@ def test_proposed_branch_and_bound2(main_sys):
     output_path = Path(__file__).parent
     #t1 = time.perf_counter()
     #pdb.set_trace()
-    brs, rules = gen_bnb.proposed_branch_and_bound2(sys_fun, varis, probs, max_br=100,
+    brs, rules, _ = gen_bnb.proposed_branch_and_bound2(sys_fun, varis, probs, max_br=100,
                                                               output_path=output_path, key='bridge', flag=True)
     #print(f'elapsed: {time.perf_counter() - t1}')
     print(brs)
@@ -801,7 +801,7 @@ def test_proposed_branch_and_bound(main_sys):
     output_path = Path(__file__).parent
     #pdb.set_trace()
     t1 = time.perf_counter()
-    brs, rules = gen_bnb.proposed_branch_and_bound(sys_fun, varis, max_br=100,
+    brs, rules, _ = gen_bnb.proposed_branch_and_bound(sys_fun, varis, max_br=100,
                                                               output_path=output_path, key='bridge', flag=True)
     print(f'elapsed: {time.perf_counter() - t1}')
     #print(brs)
@@ -1495,10 +1495,10 @@ def test_run_sys_fn1(main_sys):
     rules = []
 
     #pdb.set_trace()
-    rule = gen_bnb.run_sys_fn(cst, sys_fun, varis)
-    #np.testing.assert_almost_equal(sys_res['sys_val'].values, np.array([0.18442]), decimal=5)
-    #assert sys_res['comp_st'].values == [{k: 2 for k in varis.keys()}]
-    #assert sys_res['comp_st_min'].values == [{'e2': 2, 'e5': 2}]
+    rule, sys_res = gen_bnb.run_sys_fn(cst, sys_fun, varis)
+    np.testing.assert_almost_equal(sys_res['sys_val'].values, np.array([0.18442]), decimal=5)
+    assert sys_res['comp_st'].values == [{k: 2 for k in varis.keys()}]
+    assert sys_res['comp_st_min'].values == [{'e2': 2, 'e5': 2}]
     assert rule == ({'e2': 2, 'e5': 2}, 's')
 
 
@@ -1513,11 +1513,11 @@ def test_run_sys_fn2(main_sys):
     rules = [({'e2': 2, 'e5': 2}, 's')]
 
     #pdb.set_trace()
-    rule = gen_bnb.run_sys_fn(cst, sys_fun, varis)
+    rule, sys_res = gen_bnb.run_sys_fn(cst, sys_fun, varis)
 
-    #np.testing.assert_almost_equal(sys_res['sys_val'].values, np.array([1.8442]), decimal=4)
-    #assert sys_res['comp_st'].values[0] == {k: 0 for k in varis.keys()}
-    #assert sys_res['comp_st_min'].values == [{}]
+    np.testing.assert_almost_equal(sys_res['sys_val'].values, np.array([1.8442]), decimal=4)
+    assert sys_res['comp_st'].values[0] == {k: 0 for k in varis.keys()}
+    assert sys_res['comp_st_min'].values == [{}]
     assert rule == ({k: 0 for k in varis.keys()}, 'f')
 
 
@@ -1532,11 +1532,11 @@ def test_run_sys_fn3(main_sys):
     rules = [({'e2': 2, 'e5': 2}, 's'), ({k: 0 for k in varis.keys()}, 'f')]
 
     #pdb.set_trace()
-    rule = gen_bnb.run_sys_fn(cst, sys_fun, varis)
+    rule, sys_res = gen_bnb.run_sys_fn(cst, sys_fun, varis)
 
-    #np.testing.assert_almost_equal(sys_res['sys_val'].values, np.array([0.266]), decimal=3)
-    #assert sys_res['comp_st'].values[0] == {'e1': 2, 'e2': 2, 'e3': 2, 'e4': 2, 'e5': 1, 'e6': 2}
-    #assert sys_res['comp_st_min'].values == [{'e2': 2, 'e6': 2, 'e4': 2}]
+    np.testing.assert_almost_equal(sys_res['sys_val'].values, np.array([0.266]), decimal=3)
+    assert sys_res['comp_st'].values[0] == {'e1': 2, 'e2': 2, 'e3': 2, 'e4': 2, 'e5': 1, 'e6': 2}
+    assert sys_res['comp_st_min'].values == [{'e2': 2, 'e6': 2, 'e4': 2}]
     assert rule == ({'e2': 2, 'e6': 2, 'e4': 2}, 's')
 
 
@@ -1607,7 +1607,7 @@ def test_get_csys_from_brs3(main_sys):
     # Branch and bound
     output_path = Path(__file__).parent
     #pdb.set_trace()
-    brs, rules = gen_bnb.proposed_branch_and_bound2(sys_fun, varis, probs, max_br=100,
+    brs, rules, _ = gen_bnb.proposed_branch_and_bound2(sys_fun, varis, probs, max_br=100,
                                                               output_path=output_path, key='bridge', flag=True)
 
     st_br_to_cs = {'f': 0, 's': 1, 'u': 2}
@@ -1656,7 +1656,7 @@ def test_get_csys_from_brs2(main_sys):
     # Branch and bound
     output_path = Path(__file__).parent
     #pdb.set_trace()
-    brs, rules = gen_bnb.proposed_branch_and_bound(sys_fun, varis, max_br=1000,
+    brs, rules, _ = gen_bnb.proposed_branch_and_bound(sys_fun, varis, max_br=1000,
                                                               output_path=output_path, key='bridge', flag=True)
 
 
