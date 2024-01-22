@@ -50,7 +50,6 @@ def init_branch2(down, up, rules):
     return [branch.Branch_p(down, up, down_state, up_state, 1.0)]
 
 
-
 def proposed_branch_and_bound2(sys_fun, varis, probs, max_br, output_path=Path(sys.argv[0]).parent, key=None, flag=False):
 
     assert isinstance(varis, dict), f'varis must be a dict: {type(varis)}'
@@ -58,7 +57,7 @@ def proposed_branch_and_bound2(sys_fun, varis, probs, max_br, output_path=Path(s
 
     # Initialisation
     no_sf = 0 # number of system function runs so far
-    #sys_res = pd.DataFrame(data={'sys_val': [], 'comp_st': [], 'comp_st_min': []}) # system function results 
+    sys_res = pd.DataFrame(data={'sys_val': [], 'comp_st': [], 'comp_st_min': []}) # system function results 
     no_iter, pr_bf, pr_bs, pr_bu, no_bu =  0, 0, 0, 1, 1
     no_rf, no_rs, len_rf, len_rs = 0, 0, 0, 0
     max_bu = 0
@@ -75,7 +74,7 @@ def proposed_branch_and_bound2(sys_fun, varis, probs, max_br, output_path=Path(s
         no_iter += 1
         print(f'[System function runs {no_sf}]..')
         print(f'The # of found non-dominated rules (f, s): {no_rf + no_rs} ({no_rf}, {no_rs})')
-        print(f'Probability of branchs (f, s, u): ({pr_bf}, {pr_bs}, {pr_bu})')
+        print(f'Probability of branchs (f, s, u): ({pr_bf:.2f}, {pr_bs:.2f}, {pr_bu:.2f})')
         #print('The # of branching: ', no_iter)
         #print(f'The # of branches (f, s, u): {len(brs)} ({no_bf}, {no_bs}, {no_bu})')
         stop_br = False
@@ -96,11 +95,11 @@ def proposed_branch_and_bound2(sys_fun, varis, probs, max_br, output_path=Path(s
                         x_star = br.down
 
                     # run system function
-                    rule = run_sys_fn(x_star, sys_fun, varis)
+                    rule, sys_res_ = run_sys_fn(x_star, sys_fun, varis)
                     no_sf += 1
 
                     rules = update_rule_set(rules, rule)
-                    #sys_res = pd.concat([sys_res, sys_res_], ignore_index=True)
+                    sys_res = pd.concat([sys_res, sys_res_], ignore_index=True)
                     brs = init_branch2(worst, best, rules)
                     brs_new = []
                     no_iter = 0
@@ -156,11 +155,11 @@ def proposed_branch_and_bound2(sys_fun, varis, probs, max_br, output_path=Path(s
             print(f'*** Terminated due to the # of branches: {len(brs)} >= {max_br}')
 
     print(f'**Algorithm Terminated**')
-    print(f'[System function runs {no_sf}]..')
-    print(f'The # of found non-dominated rules (f, s): {no_rf + no_rs} ({no_rf}, {no_rs})')
-    print(f'Probability of branchs (f, s, u): ({pr_bf}, {pr_bs}, {pr_bu})')
+    #print(f'[System function runs {no_sf}]..')
+    #print(f'The # of found non-dominated rules (f, s): {no_rf + no_rs} ({no_rf}, {no_rs})')
+    #print(f'Probability of branchs (f, s, u): ({pr_bf}, {pr_bs}, {pr_bu})')
 
-    return brs, rules
+    return brs, rules, sys_res
 
 
 
@@ -170,7 +169,7 @@ def proposed_branch_and_bound(sys_fun, varis, max_br, output_path=Path(sys.argv[
 
     # Initialisation
     no_sf = 0 # number of system function runs so far
-    #sys_res = pd.DataFrame(data={'sys_val': [], 'comp_st': [], 'comp_st_min': []}) # system function results 
+    sys_res = pd.DataFrame(data={'sys_val': [], 'comp_st': [], 'comp_st_min': []}) # system function results 
     no_iter, no_bf, no_bs, no_bu =  0, 0, 0, 1
     no_rf, no_rs, len_rf, len_rs = 0, 0, 0, 0
     max_bu = 0
@@ -206,11 +205,11 @@ def proposed_branch_and_bound(sys_fun, varis, max_br, output_path=Path(sys.argv[
                         x_star = br.down
 
                     # run system function
-                    rule = run_sys_fn(x_star, sys_fun, varis)
+                    rule, sys_res_ = run_sys_fn(x_star, sys_fun, varis)
                     no_sf += 1
 
                     rules = update_rule_set(rules, rule)
-                    #sys_res = pd.concat([sys_res, sys_res_], ignore_index=True)
+                    sys_res = pd.concat([sys_res, sys_res_], ignore_index=True)
                     brs = init_branch(worst, best, rules)
                     brs_new = []
                     no_iter = 0
@@ -262,7 +261,7 @@ def proposed_branch_and_bound(sys_fun, varis, max_br, output_path=Path(sys.argv[
         if len(brs) >= max_br:
             print(f'*** Terminated due to the # of branches: {len(brs)} >= {max_br}')
 
-    return brs, rules
+    return brs, rules, sys_res
 
 
 def get_csys_from_brs2(brs, varis, st_br_to_cs):
@@ -468,12 +467,12 @@ def get_decomp_comp3(lower, upper, rules, probs):
         for c in comp:
             if c in rule:
                 if rule in rules['s']:
-                    x = rule[c]
+                    st = rule[c]
                 else:
-                    x = rule[c] + 1
+                    st = rule[c] + 1
 
-                if (lower[c] < x) and (x <= upper[c]):
-                    xd = c, x
+                if (lower[c] < st) and (st <= upper[c]):
+                    xd = c, st
                     break
         else:
             continue
@@ -618,8 +617,8 @@ def run_sys_fn(comp, sys_fun, varis):
     """
 
     assert isinstance(comp, dict), f'comp should be a dict: {type(comp)}'
-    _, sys_st, comp_st_min = sys_fun(comp)
-    #sys_res = pd.DataFrame({'sys_val': [sys_val], 'comp_st': [comp], 'comp_st_min': [comp_st_min]})
+    sys_val, sys_st, comp_st_min = sys_fun(comp)
+    sys_res = pd.DataFrame({'sys_val': [sys_val], 'comp_st': [comp], 'comp_st_min': [comp_st_min]})
 
     if comp_st_min:
         rule = comp_st_min, sys_st
@@ -629,7 +628,7 @@ def run_sys_fn(comp, sys_fun, varis):
         else:
             rule = {k: v for k, v in comp.items() if v < len(varis[k].B[0]) - 1}, sys_st # the rule is the same as up_dict_i but includes only components whose state is less than the best one
 
-    return rule
+    return rule, sys_res
 
 
 # FIXME: NOT USED ANYMORE
