@@ -216,51 +216,6 @@ def get_match(a, b, complete, idx_any):
             return res
 
 
-def do_branch(group, complete, id_any):
-    """
-
-    """
-
-    while len(group) > 1:
-
-        copied = group.copy()
-
-        a = group.pop(0)
-        b = group.pop(0)
-
-        res = get_match(a, b, complete, id_any)
-
-        if res:
-            group.append(res)
-
-        else:
-
-            group.append(a)
-            group.append(b)
-
-            if group == copied:
-
-                return group
-
-    return group
-
-
-def eval_sys_route_old(OD, G, arcs_state, arc_cond, key='time'):
-
-    path_time = get_all_paths_and_times([OD], G, key)[OD]
-    path_time = sorted(path_time, key=lambda x: x[1])
-
-    sys_state = 0  # no path available
-    for state, (edges, _time) in enumerate(path_time, 1):
-
-        path_is_surv = [arcs_state[i]==arc_cond for i in edges]
-        if all(path_is_surv):
-            sys_state = len(path_time) - state + 1
-            break
-
-    return sys_state
-
-
 def eval_sys_state_given_arc(arcs_state, **kwargs):
     """
     arcs_state: dict or frozenset
