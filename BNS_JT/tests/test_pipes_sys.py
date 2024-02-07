@@ -89,7 +89,7 @@ def main_sys(nodes_edges):
 
     varis = {}
     for k, v in node_coords.items():
-        varis[k] = variable.Variable(name=k, B=np.eye(no_node_st), values=node_st_cp)
+        varis[k] = variable.Variable(name=k, B=[{i} for i in range(no_node_st)], values=node_st_cp)
 
     edges2comps = {}
     c_idx = 0
@@ -109,12 +109,12 @@ def main_sys(nodes_edges):
     comp_st_fval = [0, 1, 2] # state index to actual flow capacity (e.g. state 1 stands for flow capacity 0, etc.)
     for e, x in edges2comps.items():
         if x not in varis:
-            varis[x] = variable.Variable(name=k, B = np.eye(no_comp_st), values = comp_st_fval)
+            varis[x] = variable.Variable(name=k, B = [{i} for i in range(no_comp_st)], values = comp_st_fval)
 
     #no_sub = len(sub_bw_nodes) + 1
     #comps_st = {n: len(varis[n].B[0]) - 1 for _, n in edges2comps}
-    comps_st = {n: len(varis[n].B[0]) - 1 for n in node_coords}
-    comps_st.update({v: len(varis[v].B[0]) - 1 for _, v in edges2comps.items()})
+    comps_st = {n: len(varis[n].values) - 1 for n in node_coords}
+    comps_st.update({v: len(varis[v].values) - 1 for _, v in edges2comps.items()})
 
     # Plot the system
     #G = nx.DiGraph()
@@ -160,7 +160,7 @@ def main_sys2(nodes_edges):
 
     varis = {}
     for k, v in node_coords.items():
-        varis[k] = variable.Variable(name=k, B=np.eye(no_node_st), values=node_st_cp)
+        varis[k] = variable.Variable(name=k, B=[{i} for i in range(no_node_st)], values=node_st_cp)
 
     # different from the main_sys
     edges2comps = {e: f'x{i}' for i, e in enumerate(edges.keys(), 1)}
@@ -172,7 +172,7 @@ def main_sys2(nodes_edges):
     comp_st_fval = [0, 1, 2] # state index to actual flow capacity (e.g. state 1 stands for flow capacity 0, etc.)
     for e, x in edges2comps.items():
         if x not in varis:
-            varis[x] = variable.Variable(name=x, B = np.eye(no_comp_st), values = comp_st_fval)
+            varis[x] = variable.Variable(name=x, B = [{i} for i in range(no_comp_st)], values = comp_st_fval)
 
     #no_sub = len(sub_bw_nodes) + 1
     #comps_st = {n: len(varis[n].B[0]) - 1 for _, n in edges2comps}
@@ -181,7 +181,6 @@ def main_sys2(nodes_edges):
 
     # Plot the system: same as main_sys
     return comps_st, edges, node_coords, es_idx, edges2comps, depots, varis
-
 
 
 @pytest.fixture()
@@ -380,7 +379,6 @@ def test_do_capacity(main_sys, sub_sys):
 
     prev['b_up'] = np.array([0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.])
     prev['b_down'] = np.array([0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.])
-
     result = pipes_sys.do_capacity(edges, edges2comps, varis, comps_st, es_idx, no_d_vars, prev['A'], prev['b_up'], prev['b_down'])
 
     expected = {}
@@ -505,6 +503,7 @@ def test_setup_brs(main_sys, sub_sys):
     #assert sum([not b.is_complete for b in brs]) == 144
 
 
+@pytest.mark.skip('removed')
 def test_core_iter0(main_sys):
 
     _, _, _, _, _, _, varis = main_sys
@@ -568,14 +567,14 @@ def setup_comp_events(main_sys2, sub_sys):
     for i, k in enumerate(node_coords, 1):
         name = f'on{i}'
 	# observation that n_i = 0 or 1 ** TO DISCUSS: probably values in dictionary..?
-        varis[name] = variable.Variable(name=name, B = np.eye(2), values = [0,1])
+        varis[name] = variable.Variable(name=name, B = [{0}, {1}], values = [0,1])
         cpms[name] = cpm.Cpm(variables=[varis[name], varis[k]], no_child = 1, C = C_o, p = p_o)
 
     C_o = np.array([[0, 0], [1, 0], [2, 0], [0, 1], [1, 1], [2, 1], [0, 2], [1, 2], [2, 2]])
     p_o = np.array([0.95, 0.04, 0.01, 0.3, 0.5, 0.2, 0.01, 0.19, 0.8]).T
     for i, (_, k) in enumerate(edges2comps.items(), 1):
         name = f'ox{i}'
-        varis[name] = variable.Variable(name=name, B = np.eye(3), values = [0, 1, 2]) # observation that x_i = 0, 1, or 2 ** TO DISCUSS: probably values in dictionary..?
+        varis[name] = variable.Variable(name=name, B = [{0}, {1}, {2}], values = [0, 1, 2]) # observation that x_i = 0, 1, or 2 ** TO DISCUSS: probably values in dictionary..?
         cpms[name] = cpm.Cpm(variables=[varis[name], varis[k]], no_child = 1, C = C_o, p = p_o)
 
     return cpms, varis, edges, edges2comps, node_coords
@@ -598,7 +597,7 @@ def setup_inference(setup_comp_events, request):
 
     csys, varis = gen_bnb.get_csys_from_brs(brs, varis, st_br_to_cs)
     #pdb.set_trace()
-    varis['sys'] = variable.Variable('sys', np.eye(3), ['f', 's', 'u'])
+    varis['sys'] = variable.Variable('sys', [{0}, {1}, {2}], ['f', 's', 'u'])
     cpm_sys_vname = brs[0].names[:]
     cpm_sys_vname.insert(0, 'sys')
 

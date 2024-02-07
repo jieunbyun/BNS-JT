@@ -7,6 +7,7 @@ import gc
 import pdb
 import itertools
 from pathlib import Path
+from collections import namedtuple
 #import dask
 #from dask.distributed import Client, worker_client, as_completed, get_client
 
@@ -14,12 +15,10 @@ from pathlib import Path
 from BNS_JT import cpm, variable, trans
 
 
-from collections import namedtuple
+attr = ["down", "up", "down_state", "up_state", "p"]
+Branch = namedtuple("Branch", attr, defaults=(None,)*len(attr))
 
-Branch = namedtuple("Branch", ["down", "up", "down_state", "up_state"])
-
-
-Branch_p = namedtuple("Branch", ["down", "up", "down_state", "up_state", "p"])
+#Branch_p = namedtuple("Branch", ["down", "up", "down_state", "up_state", "p"])
 
 
 class Branch_old(object):
@@ -115,7 +114,7 @@ def get_cmat(branches, comp_var, flag=True):
             up = br.up[j]
 
             b = comp_var[j].B
-            no_state = b.shape[1]
+            no_state = len(comp_var[j].values)
 
             if flag:
                 down_state = down - 1
@@ -125,21 +124,23 @@ def get_cmat(branches, comp_var, flag=True):
                 up_state = no_state - down
 
             if up_state != down_state:
-                b1 = np.zeros((1, b.shape[1]))
-                b1[int(down_state):int(up_state)] = 1
-
+                #b1 = np.zeros((1, b.shape[1]))
+                #b1[int(down_state):int(up_state)] = 1
+                b1 = [{x} for x in range(int(down_state), int(up_state))]
                 _, loc = cpm.ismember(b1, b)
 
                 if any(loc):
                     # conversion to python index
                     c[j + 1] = loc[0]
                 else:
-                    print(f'B of {comp_var[j].name} is updated')
-                    b = np.vstack((b, b1))
+                    #print(f'B of {comp_var[j].name} is updated')
+                    [b.append(x) for x in b1 if x not in b]
                     comp_var[j] = variable.Variable(name= comp_var[j].name,
                                            B=b,
                                            values=comp_var[j].values)
-                    c[j + 1] = b.shape[1]
+                    #c[j + 1] = b.shape[1]
+                    c[j + 1] = len(comp_var[j].values)
+
             else:
                 c[j + 1] = up_state
 
@@ -406,7 +407,6 @@ def get_set_of_branches(bstar, arcs, path_time_idx, arc_cond):
 
     return sb
 
-
 def branch_and_bound_org(bstars, path_time_idx, arc_cond):
     """
     path_time_idx: a list of tuples consisting of path, time, and index (corresponding to row of B matrix)
@@ -500,16 +500,13 @@ def get_cmat_from_branches(branches, variables):
 
         for j, (k, v) in enumerate(variables.items(), 1):
 
-            joined = [x|y for x, y in zip(v.B[lower[k]], v.B[upper[k]])]
+            joined = v.B[lower[k]].union(v.B[upper[k]])
 
-            irow = np.where((v.B==joined).all(axis=1))[0]
+            #irow = v.B.index(joined)
 
-            assert irow.size==1
-
-            C[i, j] = irow
+            C[i, j] = v.B.index(joined)
 
     C = C.astype(int)
 
     return C[C[:, 0].argsort()]
-
 

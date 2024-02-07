@@ -198,7 +198,7 @@ def get_arcs_length(arcs, node_coords):
 
     return arc_len
 
-
+# NOT USED
 def get_match(a, b, complete, idx_any):
 
     mask = np.equal(a, b)

@@ -32,7 +32,7 @@ class Cpm(object):
     Cpm(varibles, no_child, C, p, q, sample_idx)
     """
 
-    def __init__(self, variables, no_child, C, p, q=[], sample_idx=[]):
+    def __init__(self, variables, no_child, C, p=[], q=[], sample_idx=[]):
 
         assert isinstance(variables, list), 'variables must be a list of Variable'
 
@@ -55,7 +55,7 @@ class Cpm(object):
             assert C.shape[1] == len(self.variables), 'C must have the same number of columns with that of variables'
 
         max_C = np.max(C, axis=0, initial=0)
-        max_var = [x.B.shape[0] for x in self.variables]
+        max_var = [len(x.B) for x in self.variables]
         assert all(max_C <= max_var), f'check C matrix: {max_C} vs {max_var}'
 
         self.C = C
@@ -92,13 +92,15 @@ class Cpm(object):
                 self.q.shape = (len(self.q), 1)
 
         else:
-            assert len(self.p) == self.C.shape[0], 'p must have the same length with the number of rows in C'
+            if self.p.size:
+                assert len(self.p) == self.C.shape[0], 'p must have the same length with the number of rows in C'
 
         if self.sample_idx.size:
             assert len(self.sample_idx) == self.C.shape[0], 'sample_idx must have the same length with the number of rows in C'
 
             if self.sample_idx.ndim == 1:
                 self.sample_idx.shape = (len(self.sample_idx), 1)
+
 
     def __repr__(self):
         _variable = [x.name for x in self.variables]
@@ -184,11 +186,11 @@ class Cpm(object):
             if flag:
                 B = variable.B
             else:
-                B = np.eye(np.max(C[:, i]) + 1, dtype=int)
+                B = [{i} for i in range(np.max(C[:, i]) + 1)]
+                #B = variable.B[np.max(C[:, i]) + 1, dtype=int)
 
             x1 = [B[int(k)] for k in C[is_cmp, i]]
-            x2 = B[state,: ]
-            check = (np.sum(x1 * x2, axis=1) >0)
+            check = [bool(B[state].intersection(x)) for x in x1]
 
             is_cmp[np.where(is_cmp > 0)[0][:len(check)]] = check
 
@@ -500,21 +502,20 @@ def iscompatible(C, variables, check_vars, check_states):
     for i, (variable, state) in enumerate(zip(check_vars, check_states)):
 
         if isinstance(state, str):
-            state = variable.B_times_values().index(state)
+            state = variable.values.index(state)
 
         try:
             B = variable.B
         except NameError:
             print(f'{variable} is not defined')
         else:
-            x1 = [B[int(k), :] for k in C[is_cmp, i]]
+            x1 = [B[int(k)] for k in C[is_cmp, i]]
             try:
-                x2 = B[state, :]
+                check = [bool(B[state].intersection(x)) for x in x1]
             except IndexError:
                 print('IndexError: {state}')
-            check = (np.sum(x1 * x2, axis=1) > 0)
-
-            is_cmp[np.where(is_cmp > 0)[0][:len(check)]] = check
+            else:
+                is_cmp[np.where(is_cmp > 0)[0][:len(check)]] = check
 
     return is_cmp
 
@@ -560,7 +561,7 @@ def condition(M, cnd_vars, cnd_states, sample_idx=[]):
         cnd_states = cnd_states.tolist()
 
     if cnd_states and isinstance(cnd_states[0], str):
-        cnd_states = [x.B_times_values().index(y) for x, y in zip(cnd_vars, cnd_states)]
+        cnd_states = [x.values.index(y) for x, y in zip(cnd_vars, cnd_states)]
 
     assert isinstance(sample_idx, list), 'sample_idx should be a list'
 
@@ -591,9 +592,10 @@ def condition(M, cnd_vars, cnd_states, sample_idx=[]):
             except NameError:
                 print(f'{cnd_var} is not defined')
             else:
-                if B.size:
+                if B:
                     C1 = C[:, idx].copy().astype(int)
-                    check = B[C1, :] * B[state, :]
+                    #check = [bool(B[state].intersection(x)) for x in B[C1]]
+                    check = [B[x].intersection(B[state]) for x in C1]
                     #B = add_new_states(check, B)
                     cnd_var = Variable(name=cnd_var.name,
                                        B=add_new_states(check, B),
@@ -620,12 +622,12 @@ def add_new_states(states, B):
     """
     _, check = ismember(states, B)
     check = flip(check)
-    new_state = states[check, :]
+    new_state = [states[i] for i in check if i]
 
     #FIXME 
     #newState = unique(newState,'rows')    
-    if len(new_state):
-        B = np.append(B, new_state, axis=1)
+    if new_state:
+        [B.append(x) for x in new_state]
 
     return B
 

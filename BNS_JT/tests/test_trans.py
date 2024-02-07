@@ -107,8 +107,6 @@ def setup_bridge():
     for k, v in node_coords.items():
         G.add_node(k, pos=v)
 
-    path_time = trans.get_all_paths_and_times(var_ODs.values(), G, key='time')
-
     # plot graph
     pos = nx.get_node_attributes(G, 'pos')
     edge_labels = nx.get_edge_attributes(G, 'label')
@@ -123,10 +121,11 @@ def setup_bridge():
     cpms_arc = {}
     vars_arc = {}
 
-    B = np.array([[1, 0], [0, 1], [1, 1]])
+    #path_time = trans.get_all_paths_and_times(var_ODs.values(), G, key='time')
 
+    # number of component states: 2 ('surv' or 'fail')
     for k in arcs.keys():
-        vars_arc[k] = variable.Variable(name=str(k), B=B, values=['Surv', 'Fail'])
+        vars_arc[k] = variable.Variable(name=str(k), B=[{0}, {1}, {0, 1}], values=['Surv', 'Fail'])
 
         _type = arcs_type[k]
         prob = lognorm.cdf(GM_obs[k], frag[_type]['std'], scale=frag[_type]['med'])
@@ -138,17 +137,17 @@ def setup_bridge():
                               p = p)
 
     # Travel times (systems): P(OD_j | X1, ... Xn) j = 1 ... nOD
-    B_ = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
-    vars_arc['od1'] = variable.Variable(name='od1', B=B_,
+    # e.g., for 'od1': 'e2': 0.0901, 'e3'-'e1': 0.2401
+    vars_arc['od1'] = variable.Variable(name='od1', B=[{0}, {1}, {2}],
             values=[0.0901, 0.2401, np.inf])
 
-    vars_arc['od2'] = variable.Variable(name='od2', B=B_,
+    vars_arc['od2'] = variable.Variable(name='od2', B=[{0}, {1}, {2}],
             values=[0.0901, 0.2401, np.inf])
 
-    vars_arc['od3'] = variable.Variable(name='od3', B=B_,
+    vars_arc['od3'] = variable.Variable(name='od3', B=[{0}, {1}, {2}],
             values=[0.0943, 0.1761, np.inf])
 
-    vars_arc['od4'] = variable.Variable(name='od4', B=B_,
+    vars_arc['od4'] = variable.Variable(name='od4', B=[{0}, {1}, {2}],
             values=[0.0707, 0.1997, np.inf])
 
     _variables = [vars_arc[k] for k in ['od1', 'e1', 'e2', 'e3', 'e4', 'e5', 'e6']]
@@ -223,7 +222,7 @@ def setup_bridge_alt():
     for k, v in node_coords.items():
         G.add_node(k, pos=v)
 
-    path_time = trans.get_all_paths_and_times(var_ODs.values(), G, key='time')
+    #path_time = trans.get_all_paths_and_times(var_ODs.values(), G, key='time')
 
     # plot graph
     pos = nx.get_node_attributes(G, 'pos')
@@ -239,10 +238,8 @@ def setup_bridge_alt():
     cpms_arc = {}
     vars_arc = {}
 
-    B = np.array([[1, 0], [0, 1], [1, 1]])
-
     for k in arcs.keys():
-        vars_arc[k] = variable.Variable(name=str(k), B=B, values=['Fail', 'Surv'])
+        vars_arc[k] = variable.Variable(name=str(k), B=[{0}, {1}, {0, 1}], values=['Fail', 'Surv'])
 
         _type = arcs_type[k]
         prob = lognorm.cdf(GM_obs[k], frag[_type]['std'], scale=frag[_type]['med'])
@@ -254,17 +251,17 @@ def setup_bridge_alt():
                               p = p)
 
     # Travel times (systems): P(OD_j | X1, ... Xn) j = 1 ... nOD
-    B_ = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
-    vars_arc['od1'] = variable.Variable(name='od1', B=B_,
+    # e.g., for 'od1': 'e2': 0.0901, 'e3'-'e1': 0.2401
+    vars_arc['od1'] = variable.Variable(name='od1', B=[{0}, {1}, {2}],
             values=[0.0901, 0.2401, np.inf])
 
-    vars_arc['od2'] = variable.Variable(name='od2', B=B_,
+    vars_arc['od2'] = variable.Variable(name='od2', B=[{0}, {1}, {2}],
             values=[0.0901, 0.2401, np.inf])
 
-    vars_arc['od3'] = variable.Variable(name='od3', B=B_,
+    vars_arc['od3'] = variable.Variable(name='od3', B=[{0}, {1}, {2}],
             values=[0.0943, 0.1761, np.inf])
 
-    vars_arc['od4'] = variable.Variable(name='od4', B=B_,
+    vars_arc['od4'] = variable.Variable(name='od4', B=[{0}, {1}, {2}],
             values=[0.0707, 0.1997, np.inf])
 
     _variables = [vars_arc[k] for k in ['od1', 'e1', 'e2', 'e3', 'e4', 'e5', 'e6']]
@@ -434,8 +431,8 @@ def test_prob_delay3(setup_bridge_alt):
         ODs_prob_delay2[j] = cpm.get_prob(M_VE2, [vars_arc[idx]], [1-1], flag=False) # Any state greater than 1 means delay.
 
     # Check if the results are the same
-    np.testing.assert_array_almost_equal(ODs_prob_disconn2[0], expected_disconn[0], decimal=4)
     np.testing.assert_array_almost_equal(ODs_prob_delay2[0], expected_delay[0], decimal=4)
+    np.testing.assert_array_almost_equal(ODs_prob_disconn2[0], expected_disconn[0], decimal=4)
 
 
 def test_prob_damage(setup_bridge):
@@ -452,11 +449,7 @@ def test_prob_damage(setup_bridge):
     #vars_arc['OD1'] = variable.Variable(name='OD1', B=B_,
     #        values=[0.0901, 0.2401, np.inf])
     for idx in var_ODs.keys():
-        _B = np.vstack([vars_arc[idx].B, [0, 1, 1]])
-        vars_arc[idx] = variable.Variable(
-                name=idx,
-                B=_B,
-                values=vars_arc[idx].values)
+        vars_arc[idx].B.append({1, 2})
 
     # FIXME: sorting of variables in product
     # # Add observation nodes P( O_j | OD_j ), j = 1, ..., M
@@ -467,7 +460,7 @@ def test_prob_damage(setup_bridge):
     for j, idx in zip(var_ODs_obs, var_ODs.keys()):
 
         vars_arc[j] = variable.Variable(name=j,
-            B=np.eye(2, dtype=int),
+            B=[{0}, {1}],
             values=['No disruption', 'Disruption'])
 
         _variables = [vars_arc[k] for k in [j, idx]]
@@ -651,7 +644,7 @@ def test_get_path_time_idx1():
 
     path_time =[(['e2'], 0.0901), (['e3', 'e1'], 0.24009999999999998)]
 
-    vari = variable.Variable(name='od1', B=np.eye(3), values=[np.inf, 0.2401, 0.0901])
+    vari = variable.Variable(name='od1', B=[{0}, {1}, {2}], values=[np.inf, 0.2401, 0.0901])
 
     result = trans.get_path_time_idx(path_time, vari)
 
@@ -670,7 +663,7 @@ def test_get_path_time_idx2():
 
     path_time =[(['e2'], 0.0901), (['e3', 'e1'], 0.24009999999999998)]
 
-    vari = variable.Variable(name='od1', B=np.eye(3), values=[np.inf, 0.2401, 0.0901])
+    vari = variable.Variable(name='od1', B=[{0}, {1}, {2}], values=[np.inf, 0.2401, 0.0901])
 
     result = trans.get_path_time_idx(path_time, vari)
 
@@ -707,8 +700,7 @@ def test_eval_sys_state():
                   'e5': arc_surv,
                   'e6': arc_surv}
 
-    B_ = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
-    vars_od1 = variable.Variable(name='od1', B=B_,
+    vars_od1 = variable.Variable(name='od1', B=[{0}, {1}, {2}],
             values=[np.inf, 0.2401, 0.0901])
 
     path_time = trans.get_all_paths_and_times([ODs[0]], G, 'time')[ODs[0]]

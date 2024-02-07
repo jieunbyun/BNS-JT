@@ -106,14 +106,16 @@ def test_get_branches(cmatrix_road):
 
     # FIXME: only works for binary ATM
     varis = {}
-    B = np.vstack([np.eye(cfg.no_ds), np.ones(cfg.no_ds)])
+    #B = np.vstack([np.eye(cfg.no_ds), np.ones(cfg.no_ds)])
     for k in cfg.infra['edges'].keys():
+        B = [{i} for i in range(cfg.no_ds)]
+        B.append({i for i in range(cfg.no_ds)})
         varis[k] = variable.Variable(name=k, B=B, values=cfg.scenarios['damage_states'])
 
     for od, value in branches.items():
 
         values = [np.inf] + sorted([y for _, y in path_times[cfg.infra['ODs'][od]]], reverse=True)
-        varis[od] = variable.Variable(name=od, B=np.eye(len(values)), values=values)
+        varis[od] = variable.Variable(name=od, B=[{i} for i in range(len(values))], values=values)
 
         variables = {k: varis[k] for k in cfg.infra['edges'].keys()}
         c = branch.get_cmat_from_branches(value, variables)
