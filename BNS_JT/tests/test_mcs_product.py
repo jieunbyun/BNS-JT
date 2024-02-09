@@ -179,7 +179,7 @@ def test_mcs_product(setup_sys):
     #assert cpm_h_mcs.C.sum() == pytest.approx(nsample * cpms['haz'].p[1], abs=3)
 
     cpms_cp = list(cpms.values())
-    pdb.set_trace()
+    #pdb.set_trace()
     elim_order = ['e1', 'e2', 'e3', 'e4', 'e5', 'e6'] # except 'haz' and 'od1'
     for _c, _p in zip(cpm_h_mcs.C, cpm_h_mcs.q):
         cpms_c = cpm.condition(cpms, [varis['haz']], _c.tolist() )
@@ -195,4 +195,10 @@ def test_mcs_product(setup_sys):
                 cpms_cp = [y for x, y in zip(is_inscope, cpms_cp) if not x]
                 cpms_cp.insert(0, cpm_mult)
 
-    print(cpms_cp)
+    cpm_od1 = cpms_cp[0].product(cpms_cp[1])
+    # prob disruption
+    assert cpm_od1.p[(cpm_od1.C[:, 1] == 1) | (cpm_od1.C[:, 1] ==2)].sum() == pytest.approx(0.0634, abs=1.0e-4)
+    # prob disconnection
+    assert cpm_od1.p[cpm_od1.C[:, 1] == 2].sum() == pytest.approx(0.012, abs=1.0e-4)
+
+

@@ -643,15 +643,11 @@ def prod_cpms(cpms):
     if isinstance(cpms, dict):
         cpms = list(cpms.values())
 
-    try:
-        prod = cpms[0]
+    assert cpms, f'{cpms} is empty list'
 
-    except IndexError:
-        prod = []
-
-    else:
-        for c in cpms[1:]:
-            prod = prod.product(c)
+    prod = cpms[0]
+    for c in cpms[1:]:
+        prod = prod.product(c)
 
     return prod
 
