@@ -159,6 +159,12 @@ def proposed_branch_and_bound_using_probs(sys_fun, varis, probs, max_br, output_
     #print(f'The # of found non-dominated rules (f, s): {no_rf + no_rs} ({no_rf}, {no_rs})')
     #print(f'Probability of branchs (f, s, u): ({pr_bf}, {pr_bs}, {pr_bu})')
 
+    if flag:
+        output_file = output_path.joinpath(f'brs_{key}.pk')
+        with open(output_file, 'wb') as fout:
+            pickle.dump(brs, fout)
+        print(f'{output_file} is saved')
+
     return brs, rules, sys_res
 
 
@@ -260,6 +266,14 @@ def proposed_branch_and_bound(sys_fun, varis, max_br, output_path=Path(sys.argv[
         print(f'# of unknown branches to go: {no_bu}, {max_bu}\n')
         if len(brs) >= max_br:
             print(f'*** Terminated due to the # of branches: {len(brs)} >= {max_br}')
+
+    print(f'**Algorithm Terminated**')
+
+    if flag:
+        output_file = output_path.joinpath(f'brs_{key}.pk')
+        with open(output_file, 'wb') as fout:
+            pickle.dump(brs, fout)
+        print(f'{output_file} is saved')
 
     return brs, rules, sys_res
 

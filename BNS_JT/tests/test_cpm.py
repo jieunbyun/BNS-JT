@@ -79,6 +79,7 @@ def test_variables1(dict_cpm):
                    'C': dict_cpm['C'],
                    'p': dict_cpm['p']})
 
+
 def test_variables2(dict_cpm):
 
     f_variables = [1, 2, 3, 4]
@@ -87,6 +88,7 @@ def test_variables2(dict_cpm):
                    'no_child': dict_cpm['no_child'],
                    'C': dict_cpm['C'],
                    'p': dict_cpm['p']})
+
 
 def test_variables3(dict_cpm):
 
@@ -97,6 +99,7 @@ def test_variables3(dict_cpm):
                    'C': dict_cpm['C'],
                    'p': dict_cpm['p']})
 
+
 def test_no_child(dict_cpm):
 
     f_no_child = 4
@@ -105,6 +108,7 @@ def test_no_child(dict_cpm):
                    'no_child': f_no_child,
                    'C': dict_cpm['C'],
                    'p': dict_cpm['p']})
+
 
 def test_sort1(dict_cpm):
 
@@ -215,6 +219,7 @@ def test_ismember2():
     assert result==[3, 2, 2, 2, False, False]
     assert lia==[True, True, True, True, False, False]
 
+
 def test_ismember2s():
 
     A = ['5', '3', '4', '2']
@@ -276,6 +281,7 @@ def test_ismember3():
     assert result==expected
     assert lia==[False, False, True, True]
 
+
 def test_ismember4():
     # row by row checking
     A = np.array([[1, 0],
@@ -289,6 +295,7 @@ def test_ismember4():
     assert result==expected
     assert lia==[True, True, True, True]
 
+
 def test_ismember4s():
     # row by row checking
     A = [{0}, {0}, {0}, {0}]
@@ -298,6 +305,7 @@ def test_ismember4s():
     lia, result = cpm.ismember(A, B)
     assert result==expected
     assert lia==[True, True, True, True]
+
 
 def test_ismember5():
     # row by row checking
@@ -309,6 +317,7 @@ def test_ismember5():
     assert result==expected
     assert lia==[True, False, True, True]
 
+
 def test_ismember6():
     # row by row checking
     A = [1]
@@ -316,6 +325,7 @@ def test_ismember6():
 
     with pytest.raises(AssertionError):
         _ = cpm.ismember(A, B)
+
 
 def test_ismember7():
 
@@ -334,6 +344,7 @@ def test_ismember7():
     assert result==expected
     assert lia==[True]
 
+
 def test_ismember8():
 
     A = [12, 8]
@@ -345,6 +356,7 @@ def test_ismember8():
 
     assert expected==result
     assert lib==[False, 7]
+
 
 def test_argsort():
 
@@ -361,6 +373,7 @@ def test_get_prod():
     result = cpm.get_prod(A, B)
     np.testing.assert_array_equal(result, np.array([[0.9405, 0.0495]]).T)
     np.testing.assert_array_equal(result, A*B)
+
 
 def test_setdiff():
 
@@ -726,7 +739,7 @@ def test_iscompatibleCpm3(setup_iscompatible):
 
 def test_iscompatibleCpm4(setup_bridge):
 
-    _, vars_arc = setup_bridge
+    _, vars_arc, _, _ = setup_bridge
 
     #M.iscompatible should be TFFF not TFFT
     M = cpm.Cpm(variables=[vars_arc[x] for x in ['od1', 'e2', 'e3', 'e4', 'e5', 'e6']],
@@ -1509,7 +1522,7 @@ def test_sum5(setup_sum):
 
 def test_sum6(setup_bridge):
 
-    cpms_arc, vars_arc = setup_bridge
+    cpms_arc, vars_arc, _, _ = setup_bridge
     cpms_arc_cp = [cpms_arc[k] for k in ['e1', 'e2', 'e3', 'e4', 'e5', 'e6', 'od1']]
 
     is_inscope = cpm.isinscope([vars_arc['e1']], cpms_arc_cp)
@@ -1944,3 +1957,7 @@ def test_get_variables_from_cpms2(setup_condition):
     assert [x.name for x in condVars] == ['v2', 'v3']
 
 
+@pytest.mark.skip('FIXME')
+def test_variable_elim():
+
+    pass

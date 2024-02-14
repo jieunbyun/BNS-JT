@@ -23,37 +23,12 @@ def compare_list_of_sets(a, b):
     return set([tuple(x) for x in a]) == set([tuple(x) for x in b])
 
 
-@pytest.fixture(scope='session')
-def setup_edges():
+@pytest.fixture(scope='package')
+def main_sys(data_bridge):
 
-    # Network
-    node_coords = {'n1': (-2, 3),
-                   'n2': (-2, -3),
-                   'n3': (2, -2),
-                   'n4': (1, 1),
-                   'n5': (0, 0)}
-
-    arcs = {'e1': ['n1', 'n2'],
-            'e2': ['n1', 'n5'],
-            'e3': ['n2', 'n5'],
-            'e4': ['n3', 'n4'],
-            'e5': ['n3', 'n5'],
-            'e6': ['n4', 'n5']}
-
-    arcs_avg_kmh = {'e1': 40,
-                    'e2': 40,
-                    'e3': 40,
-                    'e4': 30,
-                    'e5': 30,
-                    'e6': 20}
-
-    return node_coords, arcs, arcs_avg_kmh
-
-
-@pytest.fixture(scope='session')
-def main_sys(setup_edges):
-
-    node_coords, arcs, arcs_avg_kmh = setup_edges
+    node_coords = data_bridge['node_coords']
+    arcs = data_bridge['arcs']
+    arcs_avg_kmh = data_bridge['arcs_avg_kmh']
 
     # od_pair is different from setup_bridge in test_trans.py
     od_pair = ('n1', 'n3')
@@ -71,35 +46,65 @@ def main_sys(setup_edges):
     return od_pair, arcs, varis
 
 
-def plot_setup(setup_edges):
+@pytest.mark.skip('NYI')
+def test_get_csys_from_brs2(main_sys_bridge):
 
-    node_coords, arcs, arc_times_h = setup_edges
+    od_pair, arcs, varis = main_sys_bridge
+    comps_name = list(arcs.keys())
 
-    # plot graph
-    G = nx.Graph()
-    for k, x in arcs.items():
-        G.add_edge(x[0], x[1], label=k)
+    # Intact state of component vector: zero-based index 
+    comps_st_itc = {k: len(v.values) - 1 for k, v in varis.items()} # intact state (i.e. the highest state)
+    d_time_itc, path_itc = trans.get_time_and_path_given_comps(comps_st_itc, od_pair, arcs, varis)
 
-    for k, v in node_coords.items():
-        G.add_node(k, pos=v)
+    # defines the system failure event
+    thres = 2
 
-    pos = nx.get_node_attributes(G, 'pos')
-    edge_labels = nx.get_edge_attributes(G, 'label')
+    # Given a system function, i.e. sf_min_path, it should be represented by a function that only has "comps_st" as input.
+    # can we define multi state for system here??
+    sys_fun = trans.sys_fun_wrap(od_pair, arcs, varis, thres * d_time_itc)
 
-    fig = plt.figure()
-    ax = fig.add_subplot()
-    nx.draw(G, pos, with_labels=True, ax=ax)
-    nx.draw_networkx_edge_labels(G, pos, edge_labels=edge_labels, ax=ax)
-    fig.savefig(HOME.joinpath('graph_test_gen_bnb.png'), dpi=200)
-    plt.close()
+    # Branch and bound
+    output_path = Path(__file__).parent
+    #pdb.set_trace()
+    brs, rules, _ = gen_bnb.proposed_branch_and_bound(sys_fun, varis, max_br=1000,
+                                                              output_path=output_path, key='bridge', flag=True)
+
+
+    st_br_to_cs = {'f': 0, 's': 1, 'u': 2}
+    #pdb.set_trace()
+    result = gen_bnb.get_csys_from_brs(brs, varis, st_br_to_cs)
+    #cmat = result[0]
+    cmat = result[0][np.argsort(result[0][:, 0])]
+    expected = np.array([[0, 4, 0, 4, 3, 3, 3],
+                         [0, 4, 0, 2, 3, 4, 3],
+                         [0, 3, 0, 2, 3, 2, 3],
+                         [0, 4, 3, 3, 4, 0, 3],
+                         [0, 4, 3, 3, 2, 0, 0],
+                         [0, 4, 1, 3, 2, 0, 1],
+                         [1, 2, 0, 2, 3, 2, 3],
+                         [1, 4, 2, 3, 2, 0, 1],
+                         [1, 4, 3, 3, 2, 0, 2],
+                         [1, 4, 3, 3, 3, 5, 3]])
+    #print(varis['e1'])
+    #print(varis['e3'])
+    # FIXME: not exactly matching
+    #np.testing.assert_array_equal(cmat, expected)
+    """
+    np.testing.assert_array_equal(result[1]['e1'].B, np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1], [1, 1, 0], [1, 1, 1]]))
+    np.testing.assert_array_equal(result[1]['e2'].B, np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1], [0, 1, 1]]))
+    np.testing.assert_array_equal(result[1]['e3'].B, np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1], [1, 1, 1], [1, 1, 0]]))
+    np.testing.assert_array_equal(result[1]['e4'].B, np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1], [1, 1, 1], [1, 1, 0]]))
+    np.testing.assert_array_equal(result[1]['e5'].B, np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1], [1, 1, 1], [1, 1, 0], [0, 1, 1]]))
+    np.testing.assert_array_equal(result[1]['e6'].B, np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1], [1, 1, 1], [1, 1, 0]]))
+    """
 
 
 @pytest.mark.skip('NYI')
 @pytest.fixture()
-def main_sys_bridge(setup_edges):
+def main_sys_bridge(data_bridge):
 
     # Network
-    _, arcs, arc_times_h = setup_edges
+    _, arcs, arc_times_h = info_bridge
 
     # od_pair is different from setup_bridge in test_trans.py
     od_pair = ('n5', 'n1')
@@ -120,7 +125,7 @@ def main_sys_bridge(setup_edges):
     return od_pair, arcs, varis
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope='package')
 def setup_brs(main_sys):
 
     od_pair, arcs, d_varis = main_sys
@@ -136,16 +141,78 @@ def setup_brs(main_sys):
     # Given a system function, i.e. sf_min_path, it should be represented by a function that only has "comps_st" as input.
     sys_fun = trans.sys_fun_wrap(od_pair, arcs, varis, thres * d_time_itc)
 
-    # Branch and bound
-    output_path = Path(__file__).parent
-    #pdb.set_trace()
-    brs, rules, sys_res = gen_bnb.proposed_branch_and_bound(sys_fun, varis, max_br=1000,
-                                                            output_path=output_path, key='bridge', flag=True)
-    return varis, brs, rules, sys_res
+    file_brs = Path(__file__).parent.joinpath('brs_bridge.pk')
+    if file_brs.exists():
+        with open(file_brs, 'rb') as fi:
+            brs = pickle.load(fi)
+            print(f'{file_brs} loaded')
+    else:
+        # Branch and bound
+        output_path = Path(__file__).parent
+        #pdb.set_trace()
+        brs, rules, sys_res = gen_bnb.proposed_branch_and_bound(
+            sys_fun, varis, max_br=1000,
+            output_path=output_path, key='bridge', flag=True)
+
+    return varis, brs
 
 
-@pytest.fixture(scope='session')
-def setup_inference(main_sys):
+@pytest.fixture(scope='package')
+def setup_inference(main_sys, setup_brs):
+
+    _, arcs, _ = main_sys
+
+    d_varis, brs = setup_brs
+    varis = copy.deepcopy(d_varis)
+
+    # Component events
+    cpms = {}
+    for k, v in arcs.items():
+        cpms[k] = cpm.Cpm(variables=[varis[k]],
+                          no_child = 1,
+                          C = np.array([0, 1, 2]),
+                          p = [0.1, 0.2, 0.7])
+
+    st_br_to_cs = {'f': 0, 's': 1, 'u': 2}
+    csys, varis = gen_bnb.get_csys_from_brs(brs, varis, st_br_to_cs)
+
+    # Damage observation
+    C_o = np.array([[0, 0], [1, 0], [2, 0],
+                    [0, 1], [1, 1], [2, 1],
+                    [0, 2], [1, 2], [2, 2]])
+
+    p_o = np.array([0.95, 0.04, 0.01,
+                    0.3, 0.5, 0.2,
+                    0.01, 0.19, 0.8]).T
+
+    for i, k in enumerate(arcs, 1):
+        name = f'o{i}'
+        varis[name] = variable.Variable(name=name, B=[{0}, {1}, {2}, {0, 1, 2}], values = [0, 1, 2])
+        cpms[name] = cpm.Cpm(variables=[varis[name], varis[k]], no_child=1, C=C_o, p=p_o)
+
+    # add observations
+    added = np.ones(shape=(csys.shape[0], len(arcs)), dtype=np.int8) * 3
+    csys = np.append(csys, added, axis=1)
+
+    # add sys
+    varis['sys'] = variable.Variable('sys', [{0}, {1}, {2}], ['f', 's', 'u'])
+    cpm_sys_vname = [f'e{i}' for i in range(1, len(arcs) + 1)] + [f'o{i}' for i in range(1, len(arcs) + 1)] # observations first, components later
+    cpm_sys_vname.insert(0, 'sys')
+    cpms['sys'] = cpm.Cpm(
+        variables=[varis[k] for k in cpm_sys_vname],
+        no_child = 1,
+        C = csys,
+        p = np.ones((len(csys), 1), int))
+
+    var_elim_order_name = [f'o{i}' for i in range(1, len(arcs) + 1)] + [f'e{i}' for i in range(1, len(arcs) + 1)] # observations first, components later
+    var_elim_order = [varis[k] for k in var_elim_order_name]
+
+    return cpms, varis, var_elim_order, arcs
+
+
+@pytest.mark.skip('notused')
+#@pytest.fixture(scope='session')
+def setup_inference_not_used(main_sys):
 
     od_pair, arcs, d_varis = main_sys
 
@@ -194,11 +261,10 @@ def setup_inference(main_sys):
     output_path = Path(__file__).parent
     #pdb.set_trace()
     brs, rules, sys_res = gen_bnb.proposed_branch_and_bound(
-            sys_fun, varis, max_br=1000, output_path=output_path, key='bridge', flag=True)
+            sys_fun, varis, max_br=1000, output_path=output_path, key='bridge', flag=False)
 
     st_br_to_cs = {'f': 0, 's': 1, 'u': 2}
     csys, varis = gen_bnb.get_csys_from_brs(brs, varis, st_br_to_cs)
-
     varis['sys'] = variable.Variable('sys', [{0}, {1}, {2}], ['f', 's', 'u'])
     cpm_sys_vname = list(brs[0].up.keys())
     cpm_sys_vname.insert(0, 'sys')
@@ -567,65 +633,9 @@ def test_proposed_branch_and_bound_using_probs(main_sys):
     # Branch and bound
     output_path = Path(__file__).parent
     #t1 = time.perf_counter()
-    brs, rules, _ = gen_bnb.proposed_branch_and_bound_using_probs(sys_fun, varis, probs, max_br=100,
-                                                              output_path=output_path, key='bridge', flag=True)
-
-    st_br_to_cs = {'f': 0, 's': 1, 'u': 2}
-    csys, varis = gen_bnb.get_csys_from_brs(brs, varis, st_br_to_cs)
-
-    varis['sys'] = variable.Variable('sys', [{0}, {1}, {2}], ['f', 's', 'u'])
-    cpm_sys_vname = list(brs[0].up.keys())
-    cpm_sys_vname.insert(0, 'sys')
-
-    # Component events
-    cpms = {}
-    for k, v in arcs.items():
-        cpms[k] = cpm.Cpm(variables=[varis[k]],
-                          no_child = 1,
-                          C = np.array([0, 1, 2]),
-                          p = [0.1, 0.2, 0.7])
-
-    cpms['sys'] = cpm.Cpm(
-        variables=[varis[k] for k in cpm_sys_vname],
-        no_child = 1,
-        C = csys,
-        p = np.ones((len(csys), 1), int))
-
-    var_elim_order = [varis[k] for k in arcs.keys()]
-    Msys = cpm.variable_elim([cpms[v] for v in varis.keys()], var_elim_order )
-    np.testing.assert_array_almost_equal(Msys.C, np.array([[0, 1]]).T)
-    np.testing.assert_array_almost_equal(Msys.p, np.array([[0.1018, 0.8982]]).T)
-
-
-def test_proposed_branch_and_bound_using_probs2(main_sys):
-    # Branch and bound
-
-    od_pair, arcs, d_varis = main_sys
-
-    varis = copy.deepcopy(d_varis)
-
-    # Intact state of component vector: zero-based index 
-    comps_st_itc = {k: len(v.values) - 1 for k, v in varis.items()} # intact state (i.e. the highest state)
-    d_time_itc, path_itc = trans.get_time_and_path_given_comps(comps_st_itc, od_pair, arcs, varis)
-
-    # defines the system failure event
-    thres = 2
-
-    # Given a system function, i.e. sf_min_path, it should be represented by a function that only has "comps_st" as input.
-    sys_fun = trans.sys_fun_wrap(od_pair, arcs, varis, thres * d_time_itc)
-
-    p1 = {0: 0.05, 1: 0.15, 2: 0.80}
-    p2 = {0: 0.01, 1: 0.09, 2: 0.90}
-
-    probs = {'e1': p1, 'e2': p1, 'e3': p1,
-             'e4': p2, 'e5': p2, 'e6': p2}
-
-    # Branch and bound
-    output_path = Path(__file__).parent
-    #t1 = time.perf_counter()
-    #pdb.set_trace()
-    brs, rules, _ = gen_bnb.proposed_branch_and_bound_using_probs(sys_fun, varis, probs, max_br=100,
-                                                              output_path=output_path, key='bridge', flag=True)
+    brs, rules, _ = gen_bnb.proposed_branch_and_bound_using_probs(
+            sys_fun, varis, probs, max_br=100,
+            output_path=output_path, key='bridge', flag=False)
 
     st_br_to_cs = {'f': 0, 's': 1, 'u': 2}
     csys, varis = gen_bnb.get_csys_from_brs(brs, varis, st_br_to_cs)
@@ -689,7 +699,6 @@ def test_get_compat_rules():
     rules = {'s': [{'e2': 1, 'e5': 2}],
              'f': [{f'e{i}': 0 for i in range(1, 7)}]}
     result = gen_bnb.get_compat_rules(lower, upper, rules)
-    # FIXME: note that 'e2' was removed from rules
     assert result['s'] == []
     assert result['f'] == [{'e1': 0, 'e3': 0, 'e4': 0, 'e5': 0, 'e6': 0}]
 
@@ -1111,8 +1120,9 @@ def test_get_csys_from_brs3(main_sys):
     # Branch and bound
     output_path = Path(__file__).parent
     #pdb.set_trace()
-    brs, rules, _ = gen_bnb.proposed_branch_and_bound_using_probs(sys_fun, varis, probs, max_br=100,
-                                                              output_path=output_path, key='bridge', flag=True)
+    brs, rules, _ = gen_bnb.proposed_branch_and_bound_using_probs(
+            sys_fun, varis, probs, max_br=100,
+            output_path=output_path, key='bridge', flag=False)
 
     st_br_to_cs = {'f': 0, 's': 1, 'u': 2}
     #pdb.set_trace()
@@ -1141,58 +1151,6 @@ def test_get_csys_from_brs3(main_sys):
     np.testing.assert_array_almost_equal(Msys.C, np.array([[0, 1]]).T)
     np.testing.assert_array_almost_equal(Msys.p, np.array([[0.1018, 0.8982]]).T)
 
-
-@pytest.mark.skip('NYI')
-def test_get_csys_from_brs2(main_sys_bridge):
-
-    od_pair, arcs, varis = main_sys_bridge
-    comps_name = list(arcs.keys())
-
-    # Intact state of component vector: zero-based index 
-    comps_st_itc = {k: len(v.values) - 1 for k, v in varis.items()} # intact state (i.e. the highest state)
-    d_time_itc, path_itc = trans.get_time_and_path_given_comps(comps_st_itc, od_pair, arcs, varis)
-
-    # defines the system failure event
-    thres = 2
-
-    # Given a system function, i.e. sf_min_path, it should be represented by a function that only has "comps_st" as input.
-    # can we define multi state for system here??
-    sys_fun = trans.sys_fun_wrap(od_pair, arcs, varis, thres * d_time_itc)
-
-    # Branch and bound
-    output_path = Path(__file__).parent
-    #pdb.set_trace()
-    brs, rules, _ = gen_bnb.proposed_branch_and_bound(sys_fun, varis, max_br=1000,
-                                                              output_path=output_path, key='bridge', flag=True)
-
-
-    st_br_to_cs = {'f': 0, 's': 1, 'u': 2}
-    #pdb.set_trace()
-    result = gen_bnb.get_csys_from_brs(brs, varis, st_br_to_cs)
-    #cmat = result[0]
-    cmat = result[0][np.argsort(result[0][:, 0])]
-    expected = np.array([[0, 4, 0, 4, 3, 3, 3],
-                         [0, 4, 0, 2, 3, 4, 3],
-                         [0, 3, 0, 2, 3, 2, 3],
-                         [0, 4, 3, 3, 4, 0, 3],
-                         [0, 4, 3, 3, 2, 0, 0],
-                         [0, 4, 1, 3, 2, 0, 1],
-                         [1, 2, 0, 2, 3, 2, 3],
-                         [1, 4, 2, 3, 2, 0, 1],
-                         [1, 4, 3, 3, 2, 0, 2],
-                         [1, 4, 3, 3, 3, 5, 3]])
-    #print(varis['e1'])
-    #print(varis['e3'])
-    # FIXME: not exactly matching
-    #np.testing.assert_array_equal(cmat, expected)
-    """
-    np.testing.assert_array_equal(result[1]['e1'].B, np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1], [1, 1, 0], [1, 1, 1]]))
-    np.testing.assert_array_equal(result[1]['e2'].B, np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1], [0, 1, 1]]))
-    np.testing.assert_array_equal(result[1]['e3'].B, np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1], [1, 1, 1], [1, 1, 0]]))
-    np.testing.assert_array_equal(result[1]['e4'].B, np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1], [1, 1, 1], [1, 1, 0]]))
-    np.testing.assert_array_equal(result[1]['e5'].B, np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1], [1, 1, 1], [1, 1, 0], [0, 1, 1]]))
-    np.testing.assert_array_equal(result[1]['e6'].B, np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1], [1, 1, 1], [1, 1, 0]]))
-    """
 
 def test_get_c_from_br(main_sys):
 
@@ -1233,7 +1191,7 @@ def test_get_c_from_br(main_sys):
 
 def test_get_csys_from_brs(setup_brs):
 
-    varis, brs, _, _ = setup_brs
+    varis, brs = setup_brs
 
     st_br_to_cs = {'f': 0, 's': 1, 'u': 2}
     csys, varis = gen_bnb.get_csys_from_brs(brs, varis, st_br_to_cs)
@@ -1261,16 +1219,20 @@ def test_get_csys_from_brs(setup_brs):
 
 def test_inference1(setup_inference):
 
+    # case 1: no observation
     cpms, varis, var_elim_order, arcs = setup_inference
 
     Msys = cpm.variable_elim([cpms[v] for v in varis.keys()], var_elim_order )
     np.testing.assert_array_almost_equal(Msys.C, np.array([[0, 1]]).T)
     np.testing.assert_array_almost_equal(Msys.p, np.array([[0.1018, 0.8982]]).T)
 
+    pf_sys = Msys.p[0]
+    assert pf_sys == pytest.approx(0.1018, rel=1.0e-3)
+
 
 def test_inference2(setup_inference):
 
-    # case 2
+    # case 2: observation
     cpms, varis, var_elim_order, arcs = setup_inference
 
     cnd_vars = [f'o{i}' for i in range(1, len(arcs) + 1)]
@@ -1282,4 +1244,6 @@ def test_inference2(setup_inference):
     np.testing.assert_array_almost_equal(Msys_obs.C, np.array([[0, 1]]).T)
     np.testing.assert_array_almost_equal(Msys_obs.p, np.array([[2.765e-5, 5.515e-5]]).T)
 
+    pf_sys = Msys_obs.p[0] / np.sum(Msys_obs.p)
+    assert pf_sys == pytest.approx(0.334, rel=1.0e-3)
 

@@ -10,7 +10,7 @@ np.set_printoptions(precision=3)
 
 
 @pytest.fixture
-def setup_bridge():
+def setup_sys():
     '''
          -x1-
        -      -
@@ -37,9 +37,9 @@ def setup_bridge():
     vars_ = {}
     return cpms, vars_
 
-def test_init(setup_bridge):
+def test_init(setup_sys):
 
-    cpms, vars_ = setup_bridge
+    cpms, vars_ = setup_sys
     assert isinstance(cpms, cpm.Cpm)
     for x in cpms.variables:
         assert isinstance(x, variable.Variable)

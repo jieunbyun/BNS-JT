@@ -844,7 +844,7 @@ def variable_elim(cpms, var_elim_order):
     else:
         cpms = copy.deepcopy(cpms)
 
-    for var_id in var_elim_order:
+    for i, var_id in enumerate(var_elim_order):
 
         isin = isinscope([var_id], cpms)
 
