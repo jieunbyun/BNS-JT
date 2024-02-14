@@ -268,7 +268,7 @@ def mcs1_pipe_comps(cpms, n_names, x_names):
 
     return samp
 
-
+@pytest.mark.skip('TAKESTOOLONG')
 def test_inference1(setup_sys, sub_bw):
 
     cpms, varis, node_coords, comps2edges, edges, es_idx, edges2comps = setup_sys

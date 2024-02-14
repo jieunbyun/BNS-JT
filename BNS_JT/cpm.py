@@ -825,15 +825,16 @@ def isinscope(idx, Ms):
         Ms = Ms.values()
 
     isin = np.zeros((len(Ms), 1), dtype=bool)
-    variables = [M.variables for M in Ms]
+
     for i in idx:
-        flag = [[False] if ismember([i], x)[1][0] is False else [True] for x in variables]
-        isin = isin | np.array(flag)
+
+        flag = np.array([ismember([i], M.variables)[0] for M in Ms])
+        isin = isin | flag
 
     return isin
 
 
-def variable_elim(cpms, var_elim_order):
+def variable_elim(cpms, var_elim):
     """
     cpms: list or dict of cpms
 
@@ -844,13 +845,15 @@ def variable_elim(cpms, var_elim_order):
     else:
         cpms = copy.deepcopy(cpms)
 
-    for i, var_id in enumerate(var_elim_order):
+    assert isinstance(var_elim, list), 'var_elim should be a list of variables'
 
-        isin = isinscope([var_id], cpms)
+    for _var in var_elim:
 
-        sel = [y for x,y in zip(isin, cpms) if x]
+        isin = isinscope([_var], cpms)
+
+        sel = [y for x, y in zip(isin, cpms) if x]
         mult = prod_cpms(sel)
-        mult = mult.sum([var_id])
+        mult = mult.sum([_var])
 
         cpms = [y for x, y in zip(isin, cpms) if x == False]
         cpms.insert(0, mult)

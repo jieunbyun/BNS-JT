@@ -1957,7 +1957,12 @@ def test_get_variables_from_cpms2(setup_condition):
     assert [x.name for x in condVars] == ['v2', 'v3']
 
 
-@pytest.mark.skip('FIXME')
-def test_variable_elim():
+def test_variable_elim(setup_bridge):
 
-    pass
+    cpms_arc, vars_arc, arcs, _ = setup_bridge
+    cpms = [cpms_arc[k] for k in ['od1'] + list(arcs.keys())]
+    var_elim_order = [vars_arc[i] for i in arcs.keys()]
+    result = cpm.variable_elim(cpms, var_elim_order)
+
+    np.testing.assert_array_almost_equal(result.C, np.array([[0, 1, 2]]).T)
+    np.testing.assert_array_almost_equal(result.p, np.array([[0.942, 0.048, 0.009]]).T, decimal=3)
