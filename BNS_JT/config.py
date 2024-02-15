@@ -33,8 +33,6 @@ template_edges = {
     }
 
 
-
-
 class Config(object):
     """
     """

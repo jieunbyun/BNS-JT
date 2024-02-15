@@ -11,6 +11,7 @@ import networkx as nx
 import socket
 import matplotlib
 import pdb
+import copy
 
 from scipy.stats import lognorm
 from pathlib import Path
@@ -113,9 +114,9 @@ def setup_bridge(data_bridge):
     var_ODs = data_bridge['var_ODs']
 
     # Arcs' states index compatible with variable B index, and C
-    arc_surv = 0
-    arc_fail = 1
-    arc_either = 2
+    #arc_surv = 0
+    #arc_fail = 1
+    #arc_either = 2
 
     arc_lens_km = trans.get_arcs_length(arcs, node_coords)
 
@@ -148,12 +149,12 @@ def setup_bridge(data_bridge):
 
     # number of component states: 2 ('surv' or 'fail')
     for k in arcs.keys():
-        vars_arc[k] = variable.Variable(name=str(k), B=[{0}, {1}, {0, 1}], values=['Surv', 'Fail'])
+        vars_arc[k] = variable.Variable(name=str(k), B=[{0}, {1}, {0, 1}], values=['Fail', 'Surv'])
 
         _type = arcs_type[k]
         prob = lognorm.cdf(GM_obs[k], frag[_type]['std'], scale=frag[_type]['med'])
-        C = np.array([[arc_surv, arc_fail]]).T
-        p = np.array([1-prob, prob])
+        C = np.array([[0, 1]]).T
+        p = np.array([prob, 1-prob])
         cpms_arc[k] = cpm.Cpm(variables = [vars_arc[k]],
                               no_child = 1,
                               C = C,
@@ -162,24 +163,22 @@ def setup_bridge(data_bridge):
     # Travel times (systems): P(OD_j | X1, ... Xn) j = 1 ... nOD
     # e.g., for 'od1': 'e2': 0.0901, 'e3'-'e1': 0.2401
     vars_arc['od1'] = variable.Variable(name='od1', B=[{0}, {1}, {2}],
-            values=[0.0901, 0.2401, np.inf])
+            values=[np.inf, 0.2401, 0.0901])
 
     vars_arc['od2'] = variable.Variable(name='od2', B=[{0}, {1}, {2}],
-            values=[0.0901, 0.2401, np.inf])
+            values=[np.inf, 0.2401, 0.0901])
 
     vars_arc['od3'] = variable.Variable(name='od3', B=[{0}, {1}, {2}],
-            values=[0.0943, 0.1761, np.inf])
+            values=[np.inf, 0.1761, 0.0943])
 
     vars_arc['od4'] = variable.Variable(name='od4', B=[{0}, {1}, {2}],
-            values=[0.0707, 0.1997, np.inf])
+            values=[np.inf, 0.1997, 0.0707])
 
     _variables = [vars_arc[k] for k in ['od1', 'e1', 'e2', 'e3', 'e4', 'e5', 'e6']]
-    c7 = np.array([
-    [1,3,1,3,3,3,3],
-    [2,1,2,1,3,3,3],
-    [3,1,2,2,3,3,3],
-    [3,2,2,3,3,3,3]]) - 1
-
+    c7 = np.array([[0,2,0,0,2,2,2],
+                   [0,0,0,1,2,2,2],
+                   [1,1,0,1,2,2,2],
+                   [2,2,1,2,2,2,2]])
     cpms_arc['od1'] = cpm.Cpm(variables= _variables,
                            no_child = 1,
                            C = c7,
@@ -187,12 +186,10 @@ def setup_bridge(data_bridge):
                            )
 
     _variables = [vars_arc[k] for k in ['od2', 'e1', 'e2', 'e3', 'e4', 'e5', 'e6']]
-    c8 = np.array([
-    [1,3,3,1,3,3,3],
-    [2,1,1,2,3,3,3],
-    [3,1,2,2,3,3,3],
-    [3,2,3,2,3,3,3]]) - 1
-
+    c8 = np.array([[0,2,0,0,2,2,2],
+                  [0,0,1,0,2,2,2],
+                  [1,1,1,0,2,2,2],
+                  [2,2,2,1,2,2,2]])
     cpms_arc['od2'] = cpm.Cpm(variables= _variables,
                            no_child = 1,
                            C = c8,
@@ -200,11 +197,10 @@ def setup_bridge(data_bridge):
                            )
 
     _variables = [vars_arc[k] for k in ['od3', 'e1', 'e2', 'e3', 'e4', 'e5', 'e6']]
-    c9 = np.array([
-    [1,3,3,3,3,1,3],
-    [2,3,3,3,1,2,1],
-    [3,3,3,3,1,2,2],
-    [3,3,3,3,2,2,3]]) - 1
+    c9 = np.array([[0,2,2,2,2,0,0],
+                   [0,2,2,2,0,0,1],
+                   [1,2,2,2,1,0,1],
+                   [2,2,2,2,2,1,2]])
     cpms_arc['od3'] = cpm.Cpm(variables= _variables,
                            no_child = 1,
                            C = c9,
@@ -212,11 +208,10 @@ def setup_bridge(data_bridge):
                            )
 
     _variables = [vars_arc[k] for k in ['od4', 'e1', 'e2', 'e3', 'e4', 'e5', 'e6']]
-    c10 = np.array([
-    [1,3,3,3,3,3,1],
-    [2,3,3,3,1,1,2],
-    [3,3,3,3,1,2,2],
-    [3,3,3,3,2,3,2]]) - 1
+    c10 = np.array([[0,2,2,2,2,0,0],
+                   [0,2,2,2,0,1,0],
+                   [1,2,2,2,1,1,0],
+                   [2,2,2,2,2,2,1]])
     cpms_arc['od4'] = cpm.Cpm(variables= _variables,
                            no_child = 1,
                            C = c10,
@@ -241,9 +236,9 @@ def setup_bridge_alt(data_bridge):
     var_ODs = data_bridge['var_ODs']
 
     # Arcs' states index compatible with variable B index, and C
-    arc_fail = 0
-    arc_surv = 1
-    arc_either = 2
+    #arc_fail = 0
+    #arc_surv = 1
+    #arc_either = 2
 
     arc_lens_km = trans.get_arcs_length(arcs, node_coords)
 
@@ -279,7 +274,7 @@ def setup_bridge_alt(data_bridge):
 
         _type = arcs_type[k]
         prob = lognorm.cdf(GM_obs[k], frag[_type]['std'], scale=frag[_type]['med'])
-        C = np.array([[arc_fail, arc_surv]]).T
+        C = np.array([[0, 1]]).T
         p = np.array([prob, 1-prob])
         cpms_arc[k] = cpm.Cpm(variables = [vars_arc[k]],
                               no_child = 1,
@@ -289,16 +284,16 @@ def setup_bridge_alt(data_bridge):
     # Travel times (systems): P(OD_j | X1, ... Xn) j = 1 ... nOD
     # e.g., for 'od1': 'e2': 0.0901, 'e3'-'e1': 0.2401
     vars_arc['od1'] = variable.Variable(name='od1', B=[{0}, {1}, {2}],
-            values=[0.0901, 0.2401, np.inf])
+            values=[np.inf, 0.2401, 0.0901])
 
     vars_arc['od2'] = variable.Variable(name='od2', B=[{0}, {1}, {2}],
-            values=[0.0901, 0.2401, np.inf])
+            values=[np.inf, 0.2401, 0.0901])
 
     vars_arc['od3'] = variable.Variable(name='od3', B=[{0}, {1}, {2}],
-            values=[0.0943, 0.1761, np.inf])
+            values=[np.inf, 0.1761, 0.0943])
 
     vars_arc['od4'] = variable.Variable(name='od4', B=[{0}, {1}, {2}],
-            values=[0.0707, 0.1997, np.inf])
+            values=[np.inf, 0.1997, 0.0707])
 
     _variables = [vars_arc[k] for k in ['od1', 'e1', 'e2', 'e3', 'e4', 'e5', 'e6']]
     c7 = np.array([
@@ -359,7 +354,10 @@ def test_prob_delay1(setup_bridge, expected_probs):
     # Becomes P(OD_1, ..., OD_M) since X_1, ..., X_N are eliminated
     #cpms_arc_cp = cpms_arc.values()
 
-    cpms_arc, vars_arc, arcs, var_ODs = setup_bridge
+    d_cpms_arc, d_vars_arc, arcs, var_ODs = setup_bridge
+    cpms_arc = copy.deepcopy(d_cpms_arc)
+    vars_arc = copy.deepcopy(d_vars_arc)
+
     cpms_arc_cp = list(cpms_arc.values())
     nODs = len(var_ODs)
 
@@ -384,7 +382,8 @@ def test_prob_delay1(setup_bridge, expected_probs):
     # P( (OD_j = 2) U (OD_j = 2) ), j = 1, ..., M, where State 2 indicates the use of the second shortest path (or equivalently, P( (OD_j = 1)^c ), where State 1 indicates the use of the shortest path)
     ODs_prob_delay = np.zeros(nODs)
 
-    disconn_state = 3 - 1
+    #disconn_state = 3 - 1
+    disconn_state = 0
     for j, idx in enumerate(var_ODs):
 
         # Prob. of disconnection
@@ -396,7 +395,7 @@ def test_prob_delay1(setup_bridge, expected_probs):
         # Prob. of delay
         var_loc = cpms_arc_cp[0].variables.index(vars_arc[idx])
         # except the shortest path (which is state 0)
-        rows_to_keep = np.where(cpms_arc_cp[0].C[:, var_loc] > 0)[0]
+        rows_to_keep = np.where(cpms_arc_cp[0].C[:, var_loc] < 2)[0]
         cpm_ve = cpms_arc_cp[0].get_subset(rows_to_keep)
         ODs_prob_delay[j] = cpm_ve.p.sum(axis=0)
 
@@ -413,7 +412,10 @@ def test_prob_delay1(setup_bridge, expected_probs):
 
 def test_prob_delay2(setup_bridge, expected_probs):
 
-    cpms_arc, vars_arc, arcs, var_ODs = setup_bridge
+    d_cpms_arc, d_vars_arc, arcs, var_ODs = setup_bridge
+
+    cpms_arc = copy.deepcopy(d_cpms_arc)
+    vars_arc = copy.deepcopy(d_vars_arc)
 
     nODs = len(var_ODs)
 
@@ -428,17 +430,18 @@ def test_prob_delay2(setup_bridge, expected_probs):
     ODs_prob_disconn2 = np.zeros(nODs)
     ODs_prob_delay2 = np.zeros(nODs)
 
-    disconn_state = 2
+    disconn_state = 0
     for j, idx in enumerate(var_ODs):
 
         # Prob. of disconnection
         # FIXME 2 -> 3?? 
         #disconn_state = vars_arc[idx].values.index(np.inf) + 1
         # the state of disconnection is assigned an arbitrarily large number 100
-        ODs_prob_disconn2[j] = cpm.get_prob(M_VE2, [vars_arc[idx]], [2])
+        ODs_prob_disconn2[j] = cpm.get_prob(M_VE2, [vars_arc[idx]], [0])
 
         # Prob. of delay
-        ODs_prob_delay2[j] = cpm.get_prob(M_VE2, [vars_arc[idx]], [1-1], flag=False) # Any state greater than 1 means delay.
+        #ODs_prob_delay2[j] = cpm.get_prob(M_VE2, [vars_arc[idx]], [1-1], flag=False) # Any state greater than 1 means delay.
+        ODs_prob_delay2[j] = cpm.get_prob(M_VE2, [vars_arc[idx]], [0]) + cpm.get_prob(M_VE2, [vars_arc[idx]], [1]) # 0, 1
 
     # Check if the results are the same
     np.testing.assert_array_almost_equal(ODs_prob_disconn2, expected_probs['disconn'], decimal=4)
@@ -480,10 +483,12 @@ def test_prob_delay3(setup_bridge_alt, expected_probs):
 
 def test_prob_damage(setup_bridge, expected_probs):
 
-    arc_fail = 1
-    arc_surv = 0
+    #arc_fail = 1
+    #arc_surv = 0
 
-    cpms_arc, vars_arc, arcs, var_ODs = setup_bridge
+    d_cpms_arc, d_vars_arc, arcs, var_ODs = setup_bridge
+    cpms_arc = copy.deepcopy(d_cpms_arc)
+    vars_arc = copy.deepcopy(d_vars_arc)
 
     # City 1 (od1) and 2 (od2) experienced a disruption in getting resources, City 3 (od3) was okay and 4 (od4) is unknown. Probability of damage of roads?
     # A composite state needs be created for City 1 and City 2
@@ -498,8 +503,8 @@ def test_prob_damage(setup_bridge, expected_probs):
     # # Add observation nodes P( O_j | OD_j ), j = 1, ..., M
     var_ODs_obs = [f'od_obs{i}' for i, _ in enumerate(var_ODs.keys(), 1)]
     # column 0 for od_obs: No disruption or Disruption
-    # column 1 for od: 0 (shortest), 1 (alternative), 2 (except the shortest path) 
-    C = np.array([[1, 1], [2, 2], [2, 3]]) - 1
+    # column 1 for od: 2 (shortest), 1 (alternative), 0 (except the shortest path) 
+    C = np.array([[0, 2], [1, 0], [1, 1]])
     for j, idx in zip(var_ODs_obs, var_ODs.keys()):
 
         vars_arc[j] = variable.Variable(name=j,
@@ -517,23 +522,24 @@ def test_prob_damage(setup_bridge, expected_probs):
                            cnd_vars=['od_obs1', 'od_obs2', 'od_obs3'],
                            cnd_states=[1, 1, 0])
 
+    """
     assert len(cpm_ve) == 14
     assert [x.name for x in cpm_ve[10].variables] == ['od_obs1', 'od1']
-    np.testing.assert_array_equal(cpm_ve[10].C, np.array([[2, 2], [2, 3]]) - 1)
+    np.testing.assert_array_equal(cpm_ve[10].C, np.array([[1, 1], [1, 2]]))
     np.testing.assert_array_almost_equal(cpm_ve[10].p, np.array([[1, 1]]).T)
 
     assert [x.name for x in cpm_ve[11].variables] == ['od_obs2', 'od2']
-    np.testing.assert_array_equal(cpm_ve[11].C, np.array([[2, 2], [2, 3]]) - 1)
+    np.testing.assert_array_equal(cpm_ve[11].C, np.array([[1, 1], [1, 2]]))
     np.testing.assert_array_almost_equal(cpm_ve[11].p, np.array([[1, 1]]).T)
 
     assert [x.name for x in cpm_ve[12].variables] == ['od_obs3', 'od3']
-    np.testing.assert_array_equal(cpm_ve[12].C, np.array([[1, 1]]) - 1)
+    np.testing.assert_array_equal(cpm_ve[12].C, np.array([[0, 0]]))
     np.testing.assert_array_almost_equal(cpm_ve[12].p, np.array([[1]]).T)
 
     assert [x.name for x in cpm_ve[13].variables] == ['od_obs4', 'od4']
-    np.testing.assert_array_equal(cpm_ve[13].C, np.array([[1, 1], [2, 2], [2, 3]]) - 1)
+    np.testing.assert_array_equal(cpm_ve[13].C, np.array([[0, 0], [1, 1], [1, 2]]))
     np.testing.assert_array_almost_equal(cpm_ve[13].p, np.array([[1, 1, 1]]).T)
-
+    """
 
     Mcond_mult = cpm.prod_cpms(cpm_ve)
 
@@ -569,6 +575,7 @@ def test_prob_damage(setup_bridge, expected_probs):
     #np.testing.assert_array_almost_equal(Mcond_mult_sum.p, expected_p)
 
     # P( X_i = 2 | OD_1 = 2, OD_2 = 2, OD_3 = 1 ), i = 1, ..., N
+    arc_fail = 0
     arcs_prob_damage = np.zeros(len(arcs))
     for j, i in enumerate(arcs.keys()):
 

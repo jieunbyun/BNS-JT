@@ -12,13 +12,12 @@ np.set_printoptions(precision=3)
 from BNS_JT import cpm, variable, trans
 
 
-@pytest.fixture(scope='session')
-def setup_sys():
+@pytest.fixture(scope='package')
+def setup_sys(data_bridge):
 
     cpms = {}
     varis = {}
 
-    var_ODs = {'od1': ('n5', 'n1')}
     low = 0
     high = 1
     #p_low = 0.95
@@ -32,48 +31,20 @@ def setup_sys():
     cpms['haz'] = cpm.Cpm( variables = [varis['haz']], no_child = 1, C = C, p = p )
 
     # 
-    node_coords = {'n1': (-2, 3),
-               'n2': (-2, -3),
-               'n3': (2, -2),
-               'n4': (1, 1),
-               'n5': (0, 0)}
+    node_coords = data_bridge['node_coords']
 
-    arcs = {'e1': ['n1', 'n2'],
-	'e2': ['n1', 'n5'],
-	'e3': ['n2', 'n5'],
-	'e4': ['n3', 'n4'],
-	'e5': ['n3', 'n5'],
-	'e6': ['n4', 'n5']}
+    var_ODs = data_bridge['var_ODs']
 
-    # Fragility curves -- From HAZUS-EQ model (roads are regarded as disconnected when being extensively or completely damaged)
+    arcs = data_bridge['arcs']
 
-    frag = {'major': {'med': 60.0, 'std': 0.7},
-        'urban' : {'med': 24.0, 'std': 0.7},
-        'bridge': {'med': 1.1, 'std': 3.9},
-        }
+    frag = data_bridge['frag']
 
-    arcs_type = {'e1': 'major',
-             'e2': 'major',
-             'e3': 'major',
-             'e4': 'urban',
-             'e5': 'bridge',
-             'e6': 'bridge'}
+    arcs_type = data_bridge['arcs_type']
 
-    arcs_avg_kmh = {'e1': 40,
-                'e2': 40,
-                'e3': 40,
-                'e4': 30,
-                'e5': 30,
-                'e6': 20}
-
+    arcs_avg_kmh = data_bridge['arcs_avg_kmh']
 
     # For the moment, we assume that ground motions are observed. Later, hazard nodes will be added.
-    GM_obs = {'e1': 30.0,
-          'e2': 20.0,
-          'e3': 10.0,
-          'e4': 2.0,
-          'e5': 0.9,
-          'e6': 0.6}
+    GM_obs = data_bridge['GM_obs']
 
     arc_lens_km = trans.get_arcs_length(arcs, node_coords)
 
@@ -92,9 +63,9 @@ def setup_sys():
 
     # Arcs (components): P(X_i | GM = GM_ob ), i = 1 .. N (= nArc)
     # Arcs' states index compatible with variable B index, and C
-    arc_surv = 1 - 1
-    arc_fail = 2 - 1
-    arc_either = 3 - 1
+    arc_surv = 0
+    arc_fail = 1
+    arc_either = 2
 
     C = np.array([[arc_surv, low], [arc_fail, low],
               [arc_surv, high], [arc_fail, high]])
@@ -117,11 +88,13 @@ def setup_sys():
         values=[0.0901, 0.2401, np.inf])
 
     _variables = [varis[k] for k in ['od1', 'e1', 'e2', 'e3', 'e4', 'e5', 'e6']]
+
     c7 = np.array([
         [1,3,1,3,3,3,3],
         [2,1,2,1,3,3,3],
         [3,1,2,2,3,3,3],
         [3,2,2,3,3,3,3]]) - 1
+
     cpms['od1'] = cpm.Cpm(variables= _variables,
                            no_child = 1,
                            C = c7,
