@@ -7,9 +7,9 @@ from BNS_JT import variable
 np.set_printoptions(precision=3)
 #pd.set_option.display_precision = 3
 
-def test_init():
+def test_init1():
     name = 'A'
-    B = np.array([[1, 0], [0, 1], [1, 1]])
+    B = [{0}, {1},  {0, 1}]
     value = ['survival', 'fail']
 
     var = {'name': name, 'B': B, 'values': value}
@@ -20,25 +20,80 @@ def test_init():
     np.testing.assert_array_equal(a.B, var['B'])
     np.testing.assert_array_equal(a.values, var['values'])
 
+
+def test_init2():
+    name = 'A'
+    a = variable.Variable(name)
+    value = ['survival', 'fail']
+    B = [{0}, {1},  {0, 1}]
+    a.values = value
+    a.B = B
+
+    var = {'name': name, 'B': B, 'values': value}
+
+    assert isinstance(a, variable.Variable)
+    np.testing.assert_array_equal(a.name, var['name'])
+    np.testing.assert_array_equal(a.B, var['B'])
+    np.testing.assert_array_equal(a.values, var['values'])
+
+
+def test_init3():
+
+    name = 'A'
+    a = variable.Variable(name)
+    value = ['survival', 'fail']
+    B = [{0}, {1},  {0, 1}]
+
+    # should define value first
+    with pytest.raises(AssertionError):
+        a.B = B
+
+
+def test_init4():
+
+    name = 'A'
+    a = variable.Variable(name)
+    value = ['survival', 'fail']
+    B = [{0}, {1}, {0, 2}] # should be {0, 1}
+    a.values = value
+
+    with pytest.raises(AssertionError):
+        a.B = B
+
+
+def test_init4():
+
+    name = 'A'
+    a = variable.Variable(name)
+    value = ['survival', 'fail']
+    B = [{0}, {1}, {0, 1}, {0, 1}] #  max. len of B == 3
+    a.values = value
+
+    with pytest.raises(AssertionError):
+        a.B = B
+
+
 def test_B1():
 
-    f_B = np.array([[1, 2], [0, 1], [1, 1]])
+    f_B = [{0}, {1},  {2, 1}]
     with pytest.raises(AssertionError):
         _ = variable.Variable(**{'name': 'A',
                         'B': f_B,
                         'values': ['T', 'F']})
 
+
 def test_B2():
 
-    f_B = np.array([[1, 2]])
+    f_B = [{2}]
     with pytest.raises(AssertionError):
         _ = variable.Variable(**{'name': 'x',
                         'B': f_B,
                         'values': ['T', 'F']})
 
+
 def test_eq1():
     name = 'A'
-    B = np.array([[1, 0], [0, 1], [1, 1]])
+    B = [{0}, {1},  {0, 1}]
     value = ['survival', 'fail']
 
     var = {'name': name, 'B': B, 'values': value}
@@ -47,9 +102,10 @@ def test_eq1():
 
     assert a == b
 
+
 def test_eq2():
     name = 'A'
-    B = np.array([[1, 0], [0, 1], [1, 1]])
+    B = [{0}, {1},  {0, 1}]
     value = ['survival', 'fail']
 
     var = {'name': name, 'B': B, 'values': value}
@@ -61,9 +117,10 @@ def test_eq2():
 
     assert a in _list
 
+
 def test_eq3():
     name = 'A'
-    B = np.array([[1, 0], [0, 1], [1, 1]])
+    B = [{0}, {1},  {0, 1}]
     value = ['survival', 'fail']
     var = {'name': name, 'B': B, 'values': value}
     a = variable.Variable(**var)

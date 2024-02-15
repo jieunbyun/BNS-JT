@@ -14,19 +14,31 @@ from BNS_JT import cpm, variable
 def dict_cpm():
     ''' Use instance of Variables in the variables'''
     A1 = variable.Variable(**{'name': 'A1',
-                     'B': np.array([[1,0], [0, 1], [1, 1]]),
-                     'values': ['s', 'f']})
+                              'B': [{0}, {1}, {0, 1}],
+                              'values': ['s', 'f']})
     A2 = variable.Variable(**{'name': 'A2',
-                   'B': np.array([[1,0], [0, 1], [1, 1]]),
-                   'values': ['s', 'f']})
+                              'B': [{0}, {1}, {0, 1}],
+                              'values': ['s', 'f']})
     A3 = variable.Variable(**{'name': 'A3',
-                     'B': np.array([[1,0], [0, 1], [1, 1]]),
-                     'values': ['s', 'f']})
+                              'B': [{0}, {1}, {0, 1}],
+                              'values': ['s', 'f']})
 
     return {'variables': [A3, A2, A1],
             'no_child': 1,
             'C': np.array([[2, 2, 3], [2, 1, 2], [1, 1, 1]]) - 1,
             'p': [1, 1, 1]}
+
+
+@pytest.fixture()
+def var_A1_to_A5():
+
+    A1 = variable.Variable(name='A1', B=[{0},{1}],values=['Mild', 'Severe'])
+    A2 = variable.Variable(name='A2', B=[{0},{1},{0, 1}], values=['Survive', 'Fail'])
+    A3 = variable.Variable(name='A3', B=[{0},{1},{0, 1}], values=['Survive', 'Fail'])
+    A4 = variable.Variable(name='A4', B=[{0},{1},{0, 1}], values=['Survive', 'Fail'])
+    A5 = variable.Variable(name='A5', B=[{0},{1}], values=['Survive', 'Fail'])
+
+    return A1, A2, A3, A4, A5
 
 
 def test_init(dict_cpm):
@@ -51,6 +63,13 @@ def test_init2(dict_cpm):
     assert isinstance(a, cpm.Cpm)
 
 
+def test_init3(dict_cpm):
+    v = dict_cpm
+    # using list for P
+    a = cpm.Cpm(variables=[v['variables'][0]], no_child=1, C=np.array([1, 2]))
+    assert isinstance(a, cpm.Cpm)
+
+
 def test_variables1(dict_cpm):
 
     f_variables = [1, 2]
@@ -59,6 +78,7 @@ def test_variables1(dict_cpm):
                    'no_child': dict_cpm['no_child'],
                    'C': dict_cpm['C'],
                    'p': dict_cpm['p']})
+
 
 def test_variables2(dict_cpm):
 
@@ -69,6 +89,7 @@ def test_variables2(dict_cpm):
                    'C': dict_cpm['C'],
                    'p': dict_cpm['p']})
 
+
 def test_variables3(dict_cpm):
 
     f_variables = ['x', 2, 3]
@@ -78,6 +99,7 @@ def test_variables3(dict_cpm):
                    'C': dict_cpm['C'],
                    'p': dict_cpm['p']})
 
+
 def test_no_child(dict_cpm):
 
     f_no_child = 4
@@ -86,6 +108,7 @@ def test_no_child(dict_cpm):
                    'no_child': f_no_child,
                    'C': dict_cpm['C'],
                    'p': dict_cpm['p']})
+
 
 def test_sort1(dict_cpm):
 
@@ -145,9 +168,9 @@ def test_ismember1s():
 
 def test_ismember1ss():
 
-    A1 = variable.Variable(**{'name':'A1', 'B': np.array([[1,0], [0, 1], [1, 1]]),
+    A1 = variable.Variable(**{'name':'A1', 'B': [{0}, {1}, {0, 1}],
                    'values': ['s', 'f']})
-    A2 = variable.Variable(**{'name': 'A2', 'B': np.array([[1,0], [0, 1], [1, 1]]),
+    A2 = variable.Variable(**{'name': 'A2', 'B': [{0}, {1}, {0, 1}],
                    'values': ['s', 'f']})
     checkVars = [A1]
     variables = [A2, A1]
@@ -157,18 +180,13 @@ def test_ismember1ss():
     assert idxInCheckVars==[1]
     assert lia==[True]
 
-def test_ismember1ss():
 
-    a1 = variable.Variable(name='A5', B=[[1, 0], [0, 1]], values=['Survive', 'Fail'])
-    a2 = variable.Variable(name='A2', B=[[1, 0], [0, 1], [1, 1]], values=['Survive', 'Fail'])
-    a3 = variable.Variable(name='A3', B=[[1, 0], [0, 1], [1, 1]], values=['Survive', 'Fail'])
-    a4 = variable.Variable(name='A4', B=[[1, 0], [0, 1], [1, 1]], values=['Survive', 'Fail'])
+def test_ismember1ss1(var_A1_to_A5):
 
-    b1 = variable.Variable(name='A2', B=[[1, 0], [0, 1], [1, 1]], values=['Survive', 'Fail'])
-    b2 = variable.Variable(name='A3', B=[[1, 0], [0, 1], [1, 1]], values=['Survive', 'Fail'])
+    A1, A2, A3, A4, A5 = var_A1_to_A5
 
-    A = [a1, a2, a3, a4]
-    B = [b1, b2]
+    A = [A5, A2, A3, A4]
+    B = [A2, A3]
 
     lia, res = cpm.ismember(A, B)
 
@@ -201,6 +219,7 @@ def test_ismember2():
     assert result==[3, 2, 2, 2, False, False]
     assert lia==[True, True, True, True, False, False]
 
+
 def test_ismember2s():
 
     A = ['5', '3', '4', '2']
@@ -224,18 +243,12 @@ def test_ismember2s():
 
 def test_ismember2ss():
 
-    A2 = variable.Variable(**{'name': 'A2', 'B': np.array([[1,0], [0, 1], [1, 1]]),
-                   'values': ['s', 'f']})
-    A3 = variable.Variable(**{'name': 'A3', 'B': np.array([[1,0], [0, 1], [1, 1]]),
-                   'values': ['s', 'f']})
-    A4 = variable.Variable(**{'name': 'A4', 'B': np.array([[1,0], [0, 1], [1, 1]]),
-                  'values': ['s', 'f']})
-    A5 = variable.Variable(**{'name': 'A5', 'B': np.array([[1,0], [0, 1], [1, 1]]),
-                  'values': ['s', 'f']})
-    A6 = variable.Variable(**{'name': 'A6', 'B': np.array([[1,0], [0, 1], [1, 1]]),
-                  'values': ['s', 'f']})
-    A8 = variable.Variable(**{'name': 'A8', 'B': np.array([[1,0], [0, 1], [1, 1]]),
-                  'values': ['s', 'f']})
+    A2 = variable.Variable(**{'name': 'A2', 'B': [{0},{1},{0, 1}], 'values': ['s', 'f']})
+    A3 = variable.Variable(**{'name': 'A3', 'B': [{0},{1},{0, 1}], 'values': ['s', 'f']})
+    A4 = variable.Variable(**{'name': 'A4', 'B': [{0},{1},{0, 1}], 'values': ['s', 'f']})
+    A5 = variable.Variable(**{'name': 'A5', 'B': [{0},{1},{0, 1}], 'values': ['s', 'f']})
+    A6 = variable.Variable(**{'name': 'A6', 'B': [{0},{1},{0, 1}], 'values': ['s', 'f']})
+    A8 = variable.Variable(**{'name': 'A8', 'B': [{0},{1},{0, 1}], 'values': ['s', 'f']})
 
     A = [A5, A3, A4, A2]
     B = [A2, A4, A4, A4, A6, A8]
@@ -268,6 +281,7 @@ def test_ismember3():
     assert result==expected
     assert lia==[False, False, True, True]
 
+
 def test_ismember4():
     # row by row checking
     A = np.array([[1, 0],
@@ -281,6 +295,18 @@ def test_ismember4():
     assert result==expected
     assert lia==[True, True, True, True]
 
+
+def test_ismember4s():
+    # row by row checking
+    A = [{0}, {0}, {0}, {0}]
+    B = [{0}, {1}, {0, 1}]
+
+    expected = [0, 0, 0, 0]
+    lia, result = cpm.ismember(A, B)
+    assert result==expected
+    assert lia==[True, True, True, True]
+
+
 def test_ismember5():
     # row by row checking
     A = np.array([[0, 1], [1, 2], [1, 0], [1, 1]])
@@ -291,6 +317,7 @@ def test_ismember5():
     assert result==expected
     assert lia==[True, False, True, True]
 
+
 def test_ismember6():
     # row by row checking
     A = [1]
@@ -298,6 +325,7 @@ def test_ismember6():
 
     with pytest.raises(AssertionError):
         _ = cpm.ismember(A, B)
+
 
 def test_ismember7():
 
@@ -316,6 +344,7 @@ def test_ismember7():
     assert result==expected
     assert lia==[True]
 
+
 def test_ismember8():
 
     A = [12, 8]
@@ -327,6 +356,7 @@ def test_ismember8():
 
     assert expected==result
     assert lib==[False, 7]
+
 
 def test_argsort():
 
@@ -343,6 +373,7 @@ def test_get_prod():
     result = cpm.get_prod(A, B)
     np.testing.assert_array_equal(result, np.array([[0.9405, 0.0495]]).T)
     np.testing.assert_array_equal(result, A*B)
+
 
 def test_setdiff():
 
@@ -385,6 +416,27 @@ def test_add_new_states():
     result = cpm.add_new_states(states, B)
     np.testing.assert_array_equal(result, B)
 
+
+def test_add_new_states1():
+    states = [{0}, {0}, {0}, {0}, {0}, {0}, {0}, {0}]
+    B = [{0}, {1}, {2}]
+
+    _, newStateCheck = cpm.ismember(states, B)
+    expected = [0, 0, 0, 0, 0, 0, 0, 0]
+    assert newStateCheck==expected
+
+    newStateCheck = cpm.flip(newStateCheck)
+    np.testing.assert_array_equal(newStateCheck, np.zeros_like(newStateCheck, dtype=bool))
+    newState = [states[i] for i in newStateCheck if i]
+    #np.testing.assert_array_equal(newState, np.empty(shape=(0, 2)))
+    assert newState == []
+    #B = np.append(B, newState, axis=1)
+
+    result = cpm.add_new_states(states, B)
+    assert result == B
+
+
+
 def test_isinscope1ss():
 
     cpms = []
@@ -395,20 +447,13 @@ def test_isinscope1ss():
     [3,1,2,2,3,3,3],
     [3,2,2,3,3,3,3]]) - 1
 
-    A1 = variable.Variable(**{'name': 'A1', 'B': np.array([[1,0], [0, 1], [1, 1]]),
-                   'values': ['s', 'f']})
-    A2 = variable.Variable(**{'name': 'A2', 'B': np.array([[1,0], [0, 1], [1, 1]]),
-                   'values': ['s', 'f']})
-    A3 = variable.Variable(**{'name': 'A3', 'B': np.array([[1,0], [0, 1], [1, 1]]),
-                   'values': ['s', 'f']})
-    A4 = variable.Variable(**{'name': 'A4', 'B': np.array([[1,0], [0, 1], [1, 1]]),
-                  'values': ['s', 'f']})
-    A5 = variable.Variable(**{'name': 'A5', 'B': np.array([[1,0], [0, 1], [1, 1]]),
-                  'values': ['s', 'f']})
-    A6 = variable.Variable(**{'name': 'A6', 'B': np.array([[1,0], [0, 1], [1, 1]]),
-                  'values': ['s', 'f']})
-    A7 = variable.Variable(**{'name': 'A7', 'B': np.array([[1,0], [0, 1], [1, 1]]),
-                  'values': ['s', 'f']})
+    A1 = variable.Variable(**{'name': 'A1', 'B': [{0},{1},{0, 1}], 'values': ['s', 'f']})
+    A2 = variable.Variable(**{'name': 'A2', 'B': [{0},{1},{0, 1}], 'values': ['s', 'f']})
+    A3 = variable.Variable(**{'name': 'A3', 'B': [{0},{1},{0, 1}], 'values': ['s', 'f']})
+    A4 = variable.Variable(**{'name': 'A4', 'B': [{0},{1},{0, 1}], 'values': ['s', 'f']})
+    A5 = variable.Variable(**{'name': 'A5', 'B': [{0},{1},{0, 1}], 'values': ['s', 'f']})
+    A6 = variable.Variable(**{'name': 'A6', 'B': [{0},{1},{0, 1}], 'values': ['s', 'f']})
+    A7 = variable.Variable(**{'name': 'A7', 'B': [{0},{1},{0, 1}], 'values': ['s', 'f']})
 
     for i in range(1, 7):
         m = cpm.Cpm(variables= [eval(f'A{i}')],
@@ -440,11 +485,11 @@ def setup_iscompatible():
     M = {}
     v = {}
 
-    v[1] = variable.Variable(name='1', B=np.eye(2), values=['Mild', 'Severe'])
-    v[2] = variable.Variable(name='2', B=np.array([[1, 0], [0, 1], [1, 1]]), values=['Survive', 'Fail'])
-    v[3] = variable.Variable(name='3', B=np.array([[1, 0], [0, 1], [1, 1]]), values=['Survive', 'Fail'])
-    v[4] = variable.Variable(name='4', B=np.array([[1, 0], [0, 1], [1, 1]]), values=['Survive', 'Fail'])
-    v[5] = variable.Variable(name='5', B=np.array([[1, 0], [0, 1]]), values=['Survive', 'Fail'])
+    v[1] = variable.Variable(name='1', B=[{0}, {1}],values=['Mild', 'Severe'])
+    v[2] = variable.Variable(name='2', B=[{0}, {1}, {0, 1}], values=['Survive', 'Fail'])
+    v[3] = variable.Variable(name='3', B=[{0}, {1}, {0, 1}], values=['Survive', 'Fail'])
+    v[4] = variable.Variable(name='4', B=[{0}, {1}, {0, 1}], values=['Survive', 'Fail'])
+    v[5] = variable.Variable(name='5', B=[{0}, {1}], values=['Survive', 'Fail'])
 
     M[1] = cpm.Cpm(variables=[v[1]], no_child=1, C = np.array([[1, 2]]).T - 1, p = np.array([0.9, 0.1]).T)
     M[2] = cpm.Cpm(variables=[v[2], v[1]], no_child=1, C = np.array([[1, 1], [2, 1], [1, 2], [2, 2]]) - 1, p = np.array([0.99, 0.01, 0.9, 0.1]).T)
@@ -453,6 +498,7 @@ def setup_iscompatible():
     M[5] = cpm.Cpm(variables=[v[5], v[2], v[3], v[4]], no_child=1, C = np.array([[2, 3, 3, 2], [1, 1, 3, 1], [1, 2, 1, 1], [2, 2, 2, 1]]) - 1, p = np.array([1, 1, 1, 1]).T)
 
     return M, v
+
 
 def test_iscompatible1(setup_iscompatible):
 
@@ -463,7 +509,6 @@ def test_iscompatible1(setup_iscompatible):
     variables = [v[2], v[1]]
     checkVars = [v[1]]
     checkStates = [1-1]
-
     result = cpm.iscompatible(C, variables, checkVars, checkStates)
     expected = np.array([1, 1, 0, 0])
     np.testing.assert_array_equal(expected, result)
@@ -492,7 +537,6 @@ def test_iscompatible2(setup_iscompatible):
     variables = [v[5], v[2], v[3], v[4]]
     checkVars = [v[3], v[4]]
     checkStates = [1-1, 1-1]
-
     result = cpm.iscompatible(C, variables, checkVars, checkStates)
     expected = np.array([0, 1, 1, 0])
     np.testing.assert_array_equal(expected, result)
@@ -515,11 +559,11 @@ def test_iscompatible3(setup_iscompatible):
 
 def test_iscompatible3ss():
 
-    A1 = variable.Variable(name='A1', B=np.eye(2), values=['Mild', 'Severe'])
-    A2 = variable.Variable(name='A2', B=np.array([[1, 0], [0, 1], [1, 1]]), values=['Survive', 'Fail'])
-    A3 = variable.Variable(name='A3', B=np.array([[1, 0], [0, 1], [1, 1]]), values=['Survive', 'Fail'])
-    A4 = variable.Variable(name='A4', B=np.array([[1, 0], [0, 1], [1, 1]]), values=['Survive', 'Fail'])
-    A5 = variable.Variable(name='A5', B=np.array([[1, 0], [0, 1]]), values=['Survive', 'Fail'])
+    A1 = variable.Variable(name='A1', B=[{0},{1}],values=['Mild', 'Severe'])
+    A2 = variable.Variable(name='A2', B=[{0},{1},{0, 1}], values=['Survive', 'Fail'])
+    A3 = variable.Variable(name='A3', B=[{0},{1},{0, 1}], values=['Survive', 'Fail'])
+    A4 = variable.Variable(name='A4', B=[{0},{1},{0, 1}], values=['Survive', 'Fail'])
+    A5 = variable.Variable(name='A5', B=[{0},{1}], values=['Survive', 'Fail'])
 
     #M[1]
     C = np.array([[1, 2]]).T - 1
@@ -572,50 +616,37 @@ def test_iscompatible4(setup_iscompatible):
     assert checkStates==[1-1, 1-1]
 
     C1_common = C1_common = C[:, idx].copy()
-    compatFlag = np.ones(shape=(C.shape[0], 1), dtype=bool)
+    compatFlag = np.ones(shape=C.shape[0], dtype=bool)
     B = checkVars[0].B
     C1 = C1_common[:, 0][np.newaxis, :]
     #x1_old = [B[k-1, :] for k in C1][0]
-    x1 = [B[k, :] for k in C1[:, compatFlag.flatten()]][0]
-    x2 = B[checkStates[0], :]
-    compatCheck = (np.sum(x1 * x2, axis=1) > 0)[:, np.newaxis]
+    x1 = [B[k] for k in C[compatFlag, 0]]
+    x2 = B[checkStates[0]]
+    #compatCheck = (np.sum(x1 * x2, axis=1) > 0)[:, np.newaxis]
+    compatCheck = [bool(B[checkStates[0]].intersection(x)) for x in x1]
 
-    expected = np.array([[1,0],
-                        [0,1],
-                        [1,0],
-                        [0,1],
-                        [1,0],
-                        [0,1],
-                        [1,0],
-                        [0,1],
-                        [1,0],
-                        [0,1],
-                        [1,0],
-                        [0,1],
-                        [1,0],
-                        [0,1],
-                        [1,0],
-                        [0,1]])
+    expected = [{0},
+                {1},
+                {0},
+                {1},
+                {0},
+                {1},
+                {0},
+                {1},
+                {0},
+                {1},
+                {0},
+                {1},
+                {0},
+                {1},
+                {0},
+                {1}]
     np.testing.assert_array_equal(x1, expected)
-    np.testing.assert_array_equal(x2, [1, 0])
+    assert x2 == {0}
 
-    expected = np.array([[1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0]]).T
+    expected = np.array([1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0]).T
     np.testing.assert_array_equal(compatCheck, expected)
 
-    compatFlag[:len(compatCheck)] = np.logical_and(compatFlag[:len(compatCheck)], compatCheck)
-
-    # i = 1
-    B = checkVars[1].B
-    C1 = C1_common[:, 1][np.newaxis, :]
-    #x1_old = [B[k-1, :] for k in C1][0]
-    x1 = [B[k-1, :] for k in C1[:, compatFlag.flatten()]][0]
-    x2 = B[checkStates[1]-1, :]
-    compatCheck = (np.sum(x1 * x2, axis=1) > 0)[:, np.newaxis]
-
-    expected = np.array([[1, 1, 0, 0, 1, 1, 0, 0]]).T
-    np.testing.assert_array_equal(compatCheck, expected)
-    compatFlag[np.where(compatFlag > 0)[0][:len(compatCheck)]] = compatCheck
-    np.testing.assert_array_equal(compatFlag, np.array([[1, 0, 1, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0]]).T)
 
 def test_get_subset1(setup_iscompatible):
 
@@ -664,13 +695,9 @@ def test_iscompatibleCpm1(setup_iscompatible):
     np.testing.assert_array_equal(result, expected)
 
 
-def test_iscompatibleCpm1s():
+def test_iscompatibleCpm1s(var_A1_to_A5):
 
-    A1 = variable.Variable(name='A1', B=np.eye(2), values=['Mild', 'Severe'])
-    A2 = variable.Variable(name='A2', B=np.array([[1, 0], [0, 1], [1, 1]]), values=['Survive', 'Fail'])
-    A3 = variable.Variable(name='A3', B=np.array([[1, 0], [0, 1], [1, 1]]), values=['Survive', 'Fail'])
-    A4 = variable.Variable(name='A4', B=np.array([[1, 0], [0, 1], [1, 1]]), values=['Survive', 'Fail'])
-    A5 = variable.Variable(name='A5', B=np.array([[1, 0], [0, 1]]), values=['Survive', 'Fail'])
+    A1, A2, A3, A4, A5 = var_A1_to_A5
 
     M = {}
     M[1] = cpm.Cpm(variables=[A1], no_child=1, C = np.array([[1, 2]]).T - 1, p = np.array([0.9, 0.1]).T)
@@ -709,14 +736,41 @@ def test_iscompatibleCpm3(setup_iscompatible):
     expected = np.array([1, 1])
     np.testing.assert_array_equal(result, expected)
 
+
+def test_iscompatibleCpm4(setup_bridge):
+
+    _, vars_arc, _, _ = setup_bridge
+
+    #M.iscompatible should be TFFF not TFFT
+    M = cpm.Cpm(variables=[vars_arc[x] for x in ['od1', 'e2', 'e3', 'e4', 'e5', 'e6']],
+            no_child=6,
+            C=np.array([[2, 1, 1, 2, 2, 2],
+               [0, 0, 2, 2, 2, 2],
+               [0, 0, 2, 2, 2, 2],
+               [2, 1, 2, 2, 2, 2]]),
+            p=np.array([[0.839],
+               [0.839],
+               [0.161],
+               [0.161]]))
+
+    Mc = cpm.Cpm(variables=[vars_arc[x] for x in ['od1', 'e2', 'e3', 'e4', 'e5', 'e6']],
+             no_child=6,
+             C=np.array([[2, 1, 1, 2, 2, 2]]),
+             p=np.array([[0.839]]))
+    result = M.iscompatible(Mc, flag=False)
+
+    expected = np.array([True, False, False, False])
+    np.testing.assert_array_equal(result, expected)
+
+
 @pytest.fixture
 def setup_product():
 
-    X1 = variable.Variable(name='X1', B=np.eye(2), values=['Mild', 'Severe'])
-    X2 = variable.Variable(name='X2', B=np.array([[1, 0], [0, 1], [1, 1]]), values=['Survive', 'Fail'])
-    X3 = variable.Variable(name='X3', B=np.array([[1, 0], [0, 1], [1, 1]]), values=['Survive', 'Fail'])
-    X4 = variable.Variable(name='X4', B=np.array([[1, 0], [0, 1], [1, 1]]), values=['Survive', 'Fail'])
-    X5 = variable.Variable(name='X5', B=np.array([[1, 0], [0, 1]]), values=['Survive', 'Fail'])
+    X1 = variable.Variable(name='X1', B=[{0}, {1}],values=['Mild', 'Severe'])
+    X2 = variable.Variable(name='X2', B=[{0}, {1}, {0, 1}], values=['Survive', 'Fail'])
+    X3 = variable.Variable(name='X3', B=[{0}, {1}, {0, 1}], values=['Survive', 'Fail'])
+    X4 = variable.Variable(name='X4', B=[{0}, {1}, {0, 1}], values=['Survive', 'Fail'])
+    X5 = variable.Variable(name='X5', B=[{0}, {1}], values=['Survive', 'Fail'])
 
     M = {}
     M[2] = cpm.Cpm(variables=[X2, X1], no_child=1, C = np.array([[1, 1], [2, 1], [1, 2], [2, 2]]) - 1, p = np.array([0.99, 0.01, 0.9, 0.1]).T)
@@ -930,12 +984,11 @@ def setup_condition():
          [1,2,2,2,2],
          [2,2,2,2,2]]) - 1
     p = np.array([[0.9405, 0.0095, 0.0495, 0.0005, 0.7650, 0.0850, 0.1350, 0.0150, 0.9405, 0.0095, 0.0495, 0.0005, 0.7650, 0.0850, 0.1350, 0.0150]]).T
-
-    v1 = variable.Variable(name='v1', B=np.eye(2), values=['Mild', 'Severe'])
-    v2 = variable.Variable(name='v2', B=np.array([[1, 0], [0, 1], [1, 1]]), values=['Survive', 'Fail'])
-    v3 = variable.Variable(name='v3', B=np.array([[1, 0], [0, 1], [1, 1]]), values=['Survive', 'Fail'])
-    v4 = variable.Variable(name='v4', B=np.array([[1, 0], [0, 1], [1, 1]]), values=['Survive', 'Fail'])
-    v5 = variable.Variable(name='v5', B=np.array([[1, 0], [0, 1]]), values=['Survive', 'Fail'])
+    v1 = variable.Variable(name='v1', B=[{0}, {1}],values=['Mild', 'Severe'])
+    v2 = variable.Variable(name='v2', B=[{0}, {1}, {0, 1}], values=['Survive', 'Fail'])
+    v3 = variable.Variable(name='v3', B=[{0}, {1}, {0, 1}], values=['Survive', 'Fail'])
+    v4 = variable.Variable(name='v4', B=[{0}, {1}, {0, 1}], values=['Survive', 'Fail'])
+    v5 = variable.Variable(name='v5', B=[{0}, {1}], values=['Survive', 'Fail'])
 
     Mx = cpm.Cpm(variables=[v2, v3, v5, v1, v4], no_child=3, C = C, p = p)
 
@@ -996,19 +1049,22 @@ def test_condition0(setup_condition):
     assert _idxInC== np.array([0])
 
     B = _condVars[0].B
-    np.testing.assert_array_equal(B, np.array([[1, 0], [0, 1], [1, 1]]))
+    np.testing.assert_array_equal(B, [{0}, {1}, {0, 1}])
 
     # FIXME: index or not
     _Ccompat = Ccompat[:, _idxInC[0]].copy()
     np.testing.assert_array_equal(_Ccompat, [0, 0])
 
-    expected = np.array([[1, 0], [1, 0]])
-    np.testing.assert_array_equal(B[_Ccompat.flatten(), :], expected)
+    expected = [{0}, {0}]
+    assert [B[x] for x in _Ccompat] == expected
+    #np.testing.assert_array_equal(B[_Ccompat.flatten()], expected)
     # FIXME: index or not
-    np.testing.assert_array_equal(B[_condStates[0], :], [1, 0])
+    assert B[_condStates[0]] == {0}
     #np.testing.assert_array_equal(B[_condStates, :], np.array([1, 0]))
-    compatCheck_mv = B[_Ccompat.flatten(), :] * B[_condStates[0], :]
-    np.testing.assert_array_equal(compatCheck_mv, expected)
+    #compatCheck_mv = B[_Ccompat.flatten(), :] * B[_condStates[0], :]
+    compatCheck_mv = [B[x].intersection(B[_condStates[0]]) for x in _Ccompat]
+    assert compatCheck_mv == expected
+    #np.testing.assert_array_equal(compatCheck_mv, expected)
 
     B = cpm.add_new_states(compatCheck_mv, B)
     _condVars[0] = variable.Variable(name=_condVars[0].name,
@@ -1223,13 +1279,9 @@ def test_condition6(setup_condition):
 
 
 @pytest.fixture
-def setup_sum():
+def setup_sum(var_A1_to_A5):
 
-    A1 = variable.Variable(name='A1', B=np.eye(2), values=['Mild', 'Severe'])
-    A2 = variable.Variable(name='A2', B=np.array([[1, 0], [0, 1], [1, 1]]), values=['Survive', 'Fail'])
-    A3 = variable.Variable(name='A3', B=np.array([[1, 0], [0, 1], [1, 1]]), values=['Survive', 'Fail'])
-    A4 = variable.Variable(name='A4', B=np.array([[1, 0], [0, 1], [1, 1]]), values=['Survive', 'Fail'])
-    A5 = variable.Variable(name='A5', B=np.array([[1, 0], [0, 1]]), values=['Survive', 'Fail'])
+    A1, A2, A3, A4, A5 = var_A1_to_A5
 
     variables = [A2, A3, A5, A1, A4]
     no_child = 3
@@ -1470,7 +1522,7 @@ def test_sum5(setup_sum):
 
 def test_sum6(setup_bridge):
 
-    cpms_arc, vars_arc = setup_bridge
+    cpms_arc, vars_arc, _, _ = setup_bridge
     cpms_arc_cp = [cpms_arc[k] for k in ['e1', 'e2', 'e3', 'e4', 'e5', 'e6', 'od1']]
 
     is_inscope = cpm.isinscope([vars_arc['e1']], cpms_arc_cp)
@@ -1478,8 +1530,10 @@ def test_sum6(setup_bridge):
     cpm_mult = cpm.prod_cpms(cpm_sel)
 
     assert [x.name for x in cpm_mult.variables] == ['e1', 'od1', 'e2', 'e3', 'e4', 'e5', 'e6']
-    expected_C = np.array([[1, 2, 2, 1, 3, 3, 3], [1, 3, 2, 2, 3, 3, 3],
-                           [1, 1, 1, 3, 3, 3, 3], [2, 1, 1, 3, 3, 3, 3],
+    expected_C = np.array([[1, 2, 2, 1, 3, 3, 3],
+                           [1, 3, 2, 2, 3, 3, 3],
+                           [1, 1, 1, 3, 3, 3, 3],
+                           [2, 1, 1, 3, 3, 3, 3],
                            [2, 3, 2, 3, 3, 3, 3]]) - 1
     np.testing.assert_array_equal(cpm_mult.C, expected_C)
     np.testing.assert_array_almost_equal(cpm_mult.p, np.array([[0.8390, 0.8390, 0.8390, 0.1610, 0.1610]]).T, decimal=4)
@@ -1494,15 +1548,14 @@ def test_sum6(setup_bridge):
     np.testing.assert_array_almost_equal(a.p, np.array([[0.8390, 0.8390, 1.0, 0.1610]]).T, decimal=4)
 
 
-
 @pytest.fixture
 def setup_mcs_product():
 
-    v1 = variable.Variable(name='v1', B=np.eye(2), values=['Mild', 'Severe'])
-    v2 = variable.Variable(name='v2', B=np.array([[1, 0], [0, 1], [1, 1]]), values=['Survive', 'Fail'])
-    v3 = variable.Variable(name='v3', B=np.array([[1, 0], [0, 1], [1, 1]]), values=['Survive', 'Fail'])
-    v4 = variable.Variable(name='v4', B=np.array([[1, 0], [0, 1], [1, 1]]), values=['Survive', 'Fail'])
-    v5 = variable.Variable(name='v5', B=np.array([[1, 0], [0, 1]]), values=['Survive', 'Fail'])
+    v1 = variable.Variable(name='v1', B=[{0}, {1}],values=['Mild', 'Severe'])
+    v2 = variable.Variable(name='v2', B=[{0}, {1}, {0, 1}], values=['Survive', 'Fail'])
+    v3 = variable.Variable(name='v3', B=[{0}, {1}, {0, 1}], values=['Survive', 'Fail'])
+    v4 = variable.Variable(name='v4', B=[{0}, {1}, {0, 1}], values=['Survive', 'Fail'])
+    v5 = variable.Variable(name='v5', B=[{0}, {1}], values=['Survive', 'Fail'])
 
     M = {}
     M[1] = cpm.Cpm(variables=[v1],
@@ -1745,9 +1798,9 @@ def test_condition(setup_mcs_product):
 
 @pytest.fixture
 def setup_prod_cms():
-    v1 = variable.Variable(name='v1', B=np.eye(3), values=['Sunny', 'Cloudy', 'Rainy'])
-    v2 = variable.Variable(name='v2', B=np.array([[1, 0], [0, 1]]), values=['Good', 'Bad'])
-    v3 = variable.Variable(name='v3', B=np.array([[1, 0], [0, 1]]), values=['Below 0', 'Above 0'])
+    v1 = variable.Variable(name='v1', B=[{0}, {1}, {2}], values=['Sunny', 'Cloudy', 'Rainy'])
+    v2 = variable.Variable(name='v2', B=[{0}, {1}], values=['Good', 'Bad'])
+    v3 = variable.Variable(name='v3', B=[{0}, {1}], values=['Below 0', 'Above 0'])
 
     M = {}
     M[1] = cpm.Cpm(variables=[v1],
@@ -1783,11 +1836,10 @@ def test_prod_cpms1(setup_prod_cms):
 
 def test_prod_cpms2(setup_prod_cms):
 
-    B = np.array([[1, 0], [0, 1], [1, 1]])
     values = ['S', 'F']
-    v1 = variable.Variable(name='v1', B=B, values=values)
-    v2 = variable.Variable(name='v2', B=B, values=values)
-    v3 = variable.Variable(name='v3', B=B, values=values)
+    v1 = variable.Variable(name='v1', B=[{0}, {1}, {0, 1}], values=values)
+    v2 = variable.Variable(name='v2', B=[{0}, {1}, {0, 1}], values=values)
+    v3 = variable.Variable(name='v3', B=[{0}, {1}, {0, 1}], values=values)
 
     M = {}
     M[1] = cpm.Cpm(variables=[v1],
@@ -1820,11 +1872,10 @@ def test_prod_cpms2(setup_prod_cms):
 
 def test_prod_cpms3(setup_prod_cms):
 
-    B = np.array([[1, 0], [0, 1], [1, 1]])
     values = ['S', 'F']
-    v1 = variable.Variable(name='v1', B=B, values=values)
-    v2 = variable.Variable(name='v2', B=B, values=values)
-    v3 = variable.Variable(name='v3', B=B, values=values)
+    v1 = variable.Variable(name='v1', B=[{0}, {1}, {0, 1}], values=values)
+    v2 = variable.Variable(name='v2', B=[{0}, {1}, {0, 1}], values=values)
+    v3 = variable.Variable(name='v3', B=[{0}, {1}, {0, 1}], values=values)
 
     M = {}
     M['e1'] = cpm.Cpm(variables=[v1],
@@ -1855,12 +1906,10 @@ def test_prod_cpms3(setup_prod_cms):
 
 def test_get_variables_from_cpms():
 
-    B = np.array([[1, 0], [0, 1], [1, 1]])
     values = ['S', 'F']
-    v1 = variable.Variable(name='v1', B=B, values=values)
-    v2 = variable.Variable(name='v2', B=B, values=values)
-    v3 = variable.Variable(name='v3', B=B, values=values)
-
+    v1 = variable.Variable(name='v1', B=[{0}, {1}, {0, 1}], values=values)
+    v2 = variable.Variable(name='v2', B=[{0}, {1}, {0, 1}], values=values)
+    v3 = variable.Variable(name='v3', B=[{0}, {1}, {0, 1}], values=values)
 
     m1 = cpm.Cpm(variables=[v1, v2],
              C = np.array([[1, 1], [2, 2]]) - 1,
@@ -1890,6 +1939,7 @@ def test_get_variables_from_cpms():
     with pytest.raises(AssertionError):
         cpm.get_variables_from_cpms(M, ['v4', 'v1', 'v2'])
 
+
 def test_get_variables_from_cpms2(setup_condition):
     Mx_ = setup_condition
 
@@ -1907,3 +1957,12 @@ def test_get_variables_from_cpms2(setup_condition):
     assert [x.name for x in condVars] == ['v2', 'v3']
 
 
+def test_variable_elim(setup_bridge):
+
+    cpms_arc, vars_arc, arcs, _ = setup_bridge
+    cpms = [cpms_arc[k] for k in ['od1'] + list(arcs.keys())]
+    var_elim_order = [vars_arc[i] for i in arcs.keys()]
+    result = cpm.variable_elim(cpms, var_elim_order)
+
+    np.testing.assert_array_almost_equal(result.C, np.array([[0, 1, 2]]).T)
+    np.testing.assert_array_almost_equal(result.p, np.array([[0.942, 0.048, 0.009]]).T, decimal=3)

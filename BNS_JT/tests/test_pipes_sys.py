@@ -2,6 +2,7 @@
 
 import pytest
 import pdb
+import copy
 import time
 import pickle
 
@@ -11,14 +12,12 @@ import numpy as np
 import matplotlib.pyplot as plt
 from pathlib import Path
 
-from BNS_JT import cpm, variable
-from BNS_JT import pipes_sys
-from BNS_JT import gen_bnb
+from BNS_JT import cpm, variable, branch, pipes_sys, gen_bnb
 
 HOME = Path(__file__).parent
 
 
-@pytest.fixture()
+@pytest.fixture(scope='session')
 def nodes_edges():
 
     node_coords = {'n1': (0, 1),
@@ -73,7 +72,7 @@ def networkx_to_graphviz(g):
     return h
 
 
-@pytest.fixture()
+@pytest.fixture(scope='session')
 def main_sys(nodes_edges):
     """
     based on pipe_system_v2.ipynb
@@ -89,7 +88,7 @@ def main_sys(nodes_edges):
 
     varis = {}
     for k, v in node_coords.items():
-        varis[k] = variable.Variable(name=k, B=np.eye(no_node_st), values=node_st_cp)
+        varis[k] = variable.Variable(name=k, B=[{i} for i in range(no_node_st)], values=node_st_cp)
 
     edges2comps = {}
     c_idx = 0
@@ -109,12 +108,12 @@ def main_sys(nodes_edges):
     comp_st_fval = [0, 1, 2] # state index to actual flow capacity (e.g. state 1 stands for flow capacity 0, etc.)
     for e, x in edges2comps.items():
         if x not in varis:
-            varis[x] = variable.Variable(name=k, B = np.eye(no_comp_st), values = comp_st_fval)
+            varis[x] = variable.Variable(name=k, B = [{i} for i in range(no_comp_st)], values = comp_st_fval)
 
     #no_sub = len(sub_bw_nodes) + 1
     #comps_st = {n: len(varis[n].B[0]) - 1 for _, n in edges2comps}
-    comps_st = {n: len(varis[n].B[0]) - 1 for n in node_coords}
-    comps_st.update({v: len(varis[v].B[0]) - 1 for _, v in edges2comps.items()})
+    comps_st = {n: len(varis[n].values) - 1 for n in node_coords}
+    comps_st.update({v: len(varis[v].values) - 1 for _, v in edges2comps.items()})
 
     # Plot the system
     #G = nx.DiGraph()
@@ -141,7 +140,7 @@ def main_sys(nodes_edges):
     return comps_st, edges, node_coords, es_idx, edges2comps, depots, varis
 
 
-@pytest.fixture()
+@pytest.fixture(scope='session')
 def main_sys2(nodes_edges):
     """
     based on gen_bnb_to_rel_deter_ind_pipe.ipynb
@@ -160,7 +159,7 @@ def main_sys2(nodes_edges):
 
     varis = {}
     for k, v in node_coords.items():
-        varis[k] = variable.Variable(name=k, B=np.eye(no_node_st), values=node_st_cp)
+        varis[k] = variable.Variable(name=k, B=[{i} for i in range(no_node_st)], values=node_st_cp)
 
     # different from the main_sys
     edges2comps = {e: f'x{i}' for i, e in enumerate(edges.keys(), 1)}
@@ -172,19 +171,18 @@ def main_sys2(nodes_edges):
     comp_st_fval = [0, 1, 2] # state index to actual flow capacity (e.g. state 1 stands for flow capacity 0, etc.)
     for e, x in edges2comps.items():
         if x not in varis:
-            varis[x] = variable.Variable(name=x, B = np.eye(no_comp_st), values = comp_st_fval)
+            varis[x] = variable.Variable(name=x, B = [{i} for i in range(no_comp_st)], values = comp_st_fval)
 
     #no_sub = len(sub_bw_nodes) + 1
     #comps_st = {n: len(varis[n].B[0]) - 1 for _, n in edges2comps}
-    comps_st = {n: len(varis[n].B[0]) - 1 for n in node_coords}
-    comps_st.update({v: len(varis[v].B[0]) - 1 for _, v in edges2comps.items()})
+    comps_st = {n: len(varis[n].values) - 1 for n in node_coords}
+    comps_st.update({v: len(varis[v].values) - 1 for _, v in edges2comps.items()})
 
     # Plot the system: same as main_sys
     return comps_st, edges, node_coords, es_idx, edges2comps, depots, varis
 
 
-
-@pytest.fixture()
+@pytest.fixture(scope='session')
 def sub_sys():
 
     # subsystems information
@@ -380,7 +378,6 @@ def test_do_capacity(main_sys, sub_sys):
 
     prev['b_up'] = np.array([0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.])
     prev['b_down'] = np.array([0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.])
-
     result = pipes_sys.do_capacity(edges, edges2comps, varis, comps_st, es_idx, no_d_vars, prev['A'], prev['b_up'], prev['b_down'])
 
     expected = {}
@@ -477,34 +474,97 @@ def sys_fun_wrap(thres, edges, node_coords, es_idx, edges2comps, depots, varis, 
     return sys_fun2
 
 
-def test_setup_brs(main_sys, sub_sys):
+def convert_branch_old(old, names):
 
-    # Branch and Bound
-    comps_st, edges, node_coords, es_idx, edges2comps, depots, varis = main_sys
+    assert isinstance(old, branch.Branch_old), f'{old} should be an instance of branch.Branch_old'
+    down = {k: v for k, v in zip(names, old.down)}
+    up = {k: v for k, v in zip(names, old.up)}
+    down_state = old.down_state
+    up_state = old.up_state
 
-    #pdb.set_trace()
+    return branch.Branch(down, up, down_state, up_state)
+
+
+@pytest.mark.skip('TOOLONG')
+@pytest.fixture(scope='session')
+def setup_inference(main_sys2, sub_sys):
+
+    comps_st, edges, node_coords, es_idx, edges2comps, depots, d_varis = main_sys2
+    varis = copy.deepcopy(d_varis)
+
     sub_bw_nodes, sub_bw_edges = sub_sys
 
+    # Component events
+    cpms = {}
+    for k in node_coords:
+        cpms[k] = cpm.Cpm(variables=[varis[k]], no_child = 1, C = np.array([0, 1]), p = [0.1, 0.9])
+
+    for e, x in edges2comps.items():
+        cpms[x] = cpm.Cpm([varis[x]], no_child = 1, C = np.array([0, 1, 2]), p = [0.1, 0.2, 0.7])
+
+    # intact state
     thres = 2
 
     sys_fun = sys_fun_wrap(thres, edges, node_coords, es_idx, edges2comps, depots, varis, sub_bw_nodes, sub_bw_edges)
 
-    #pdb.set_trace()
-    file_brs = Path(__file__).parent.joinpath('brs_pipes.pk')
+    file_brs = Path(__file__).parent.joinpath('brs_pipes2.pk')
     if file_brs.exists():
         with open(file_brs, 'rb') as fi:
             brs = pickle.load(fi)
             print(f'{file_brs} loaded')
     else:
         output_path = Path(__file__).parent
-        no_sf, rules, _, brs, _ = gen_bnb.do_gen_bnb(sys_fun, varis, max_br=1000, output_path=output_path, key='pipes', flag=True)
-        assert no_sf == 1258
-        assert len(rules) == 129
+        brs, rules, sys_res = gen_bnb.proposed_branch_and_bound(
+            sys_fun, varis, max_br=100_000, output_path=output_path, key='pipes2', flag=True)
 
-    #assert len(brs) == 1082
-    #assert sum([not b.is_complete for b in brs]) == 144
+    #pdb.set_trace()
+    st_br_to_cs = {'f': 0, 's': 1, 'u': 2}
+    csys, varis = gen_bnb.get_csys_from_brs(brs, varis, st_br_to_cs)
+
+    """
+    # Damage observation
+    C_o = np.array([[0, 0], [1, 0], [0, 1], [1, 1]])
+    p_o = np.array([0.95, 0.05, 0.1, 0.9]).T
+    for i, k in enumerate(node_coords, 1):
+        name = f'on{i}'
+	# observation that n_i = 0 or 1 ** TO DISCUSS: probably values in dictionary..?
+        varis[name] = variable.Variable(name=name, B = [{0}, {1}, {0, 1}], values = [0, 1])
+        cpms[name] = cpm.Cpm(variables=[varis[name], varis[k]], no_child = 1, C = C_o, p = p_o)
+
+    C_o = np.array([[0, 0], [1, 0], [2, 0], [0, 1], [1, 1], [2, 1], [0, 2], [1, 2], [2, 2]])
+    p_o = np.array([0.95, 0.04, 0.01, 0.3, 0.5, 0.2, 0.01, 0.19, 0.8]).T
+    for i, (_, k) in enumerate(edges2comps.items(), 1):
+        name = f'ox{i}'
+        varis[name] = variable.Variable(name=name, B = [{0}, {1}, {2}, {0, 1, 2}], values = [0, 1, 2]) # observation that x_i = 0, 1, or 2 ** TO DISCUSS: probably values in dictionary..?
+        cpms[name] = cpm.Cpm(variables=[varis[name], varis[k]], no_child = 1, C = C_o, p = p_o)
+
+    # add observations
+    added_on = np.ones(shape=(csys.shape[0], len(node_coords)), dtype=np.int8) * 2
+    added_ox = np.ones(shape=(csys.shape[0], len(edges2comps)), dtype=np.int8) * 3
+    csys = np.append(csys, added_on, axis=1)
+    csys = np.append(csys, added_ox, axis=1)
+    """
+
+    # add sys
+    varis['sys'] = variable.Variable('sys', [{0}, {1}, {2}], ['f', 's', 'u'])
+    #cpm_sys_vname = [f'n{i}' for i in range(1, len(node_coords) + 1)] + [f'x{i}' for i in range(1, len(edges2comps) + 1)] + [f'on{i}' for i in range(1, len(node_coords) + 1)] + [f'ox{i}' for i in range(1, len(edges2comps) + 1)] #observations first, components later    cpm_sys_vname = list(brs[0].up.keys())
+    cpm_sys_vname = [f'n{i}' for i in range(1, len(node_coords) + 1)] + [f'x{i}' for i in range(1, len(edges2comps) + 1)]
+    cpm_sys_vname.insert(0, 'sys')
+    cpms['sys'] = cpm.Cpm(
+        variables=[varis[k] for k in cpm_sys_vname],
+        no_child = 1,
+        C = csys,
+        p = np.ones((len(csys), 1), int))
+
+    #var_elim_order_name = [f'on{i}' for i in range(1, len(node_coords) + 1)] + [f'ox{i}' for i in range(1, len(edges) + 1)]
+    #var_elim_order_name += list(node_coords.keys()) + list(edges2comps.values())
+    var_elim_order_name = list(node_coords.keys()) + list(edges2comps.values())
+    var_elim_order = [varis[k] for k in var_elim_order_name]
+
+    return cpms, varis, var_elim_order
 
 
+@pytest.mark.skip('removed')
 def test_core_iter0(main_sys):
 
     _, _, _, _, _, _, varis = main_sys
@@ -546,81 +606,16 @@ def setup_brs(main_sys, sub_sys):
     return no_sf, rules, rules_st, brs, sys_res
 
 
-@pytest.fixture()
-def setup_comp_events(main_sys2, sub_sys):
-
-    comps_st, edges, node_coords, es_idx, edges2comps, depots, varis = main_sys2
-
-    sub_bw_nodes, sub_bw_edges = sub_sys
-
-    cpms = {}
-
-    # Component events
-    for k in node_coords:
-        cpms[k] = cpm.Cpm(variables=[varis[k]], no_child = 1, C = np.array([0, 1]), p = [0.1, 0.9])
-
-    for e, x in edges2comps.items():
-        cpms[x] = cpm.Cpm([varis[x]], no_child = 1, C = np.array([0, 1, 2]), p = [0.1, 0.2, 0.7])
-
-    # Damage observation
-    C_o = np.array([[0, 0], [1, 0], [0, 1], [1, 1]])
-    p_o = np.array([0.95, 0.05, 0.1, 0.9]).T
-    for i, k in enumerate(node_coords, 1):
-        name = f'on{i}'
-	# observation that n_i = 0 or 1 ** TO DISCUSS: probably values in dictionary..?
-        varis[name] = variable.Variable(name=name, B = np.eye(2), values = [0,1])
-        cpms[name] = cpm.Cpm(variables=[varis[name], varis[k]], no_child = 1, C = C_o, p = p_o)
-
-    C_o = np.array([[0, 0], [1, 0], [2, 0], [0, 1], [1, 1], [2, 1], [0, 2], [1, 2], [2, 2]])
-    p_o = np.array([0.95, 0.04, 0.01, 0.3, 0.5, 0.2, 0.01, 0.19, 0.8]).T
-    for i, (_, k) in enumerate(edges2comps.items(), 1):
-        name = f'ox{i}'
-        varis[name] = variable.Variable(name=name, B = np.eye(3), values = [0, 1, 2]) # observation that x_i = 0, 1, or 2 ** TO DISCUSS: probably values in dictionary..?
-        cpms[name] = cpm.Cpm(variables=[varis[name], varis[k]], no_child = 1, C = C_o, p = p_o)
-
-    return cpms, varis, edges, edges2comps, node_coords
-
-
-@pytest.fixture()
-def setup_inference(setup_comp_events, request):
-
-    cpms, varis, edges, edges2comps, node_coords = setup_comp_events
-
-    file_brs = Path(__file__).parent.joinpath('brs_pipes2.pk')
-    if file_brs.exists():
-        with open(file_brs, 'rb') as fi:
-            brs = pickle.load(fi)
-            print(f'{file_brs} loaded')
-    else:
-        _, _, _, brs, _ = request.getfixturevalue('setup_brs')
-
-    st_br_to_cs = {'f': 0, 's': 1, 'u': 2}
-
-    csys, varis = gen_bnb.get_csys_from_brs(brs, varis, st_br_to_cs)
-    #pdb.set_trace()
-    varis['sys'] = variable.Variable('sys', np.eye(3), ['f', 's', 'u'])
-    cpm_sys_vname = brs[0].names[:]
-    cpm_sys_vname.insert(0, 'sys')
-
-    cpms['sys'] = cpm.Cpm(
-        variables=[varis[k] for k in cpm_sys_vname],
-        no_child = 1,
-        C = csys,
-        p = np.ones((len(csys), 1), int))
-
-    var_elim_order_name = [f'on{i}' for i in range(1, len(node_coords) + 1)] + [f'ox{i}' for i in range(1, len(edges) + 1)] + list(node_coords.keys()) + list(edges2comps.values()) # observations first, components later
-    var_elim_order = [varis[k] for k in var_elim_order_name]
-
-    return cpms, varis, var_elim_order, edges
-
-
-@pytest.mark.skip('FIXME')
+@pytest.mark.skip('TAKESTOOLONG')
 def test_inference_case1_pipe(setup_inference):
 
-    cpms, varis, var_elim_order, _ = setup_inference
+    cpms, varis, var_elim_order = setup_inference
     #pdb.set_trace()
-    Msys = cpm.variable_elim([cpms[v] for v in varis.keys()], var_elim_order )
+    _cpms = [cpms[v] for v in varis.keys()]
+    Msys = cpm.variable_elim(_cpms, var_elim_order)
+    print(Msys.C)
+    print(Msys.p)
     np.testing.assert_array_almost_equal(Msys.C, np.array([[0, 2]]).T)
-    #np.testing.assert_array_almost_equal(Msys.p, np.array([[0.1018, 0.8982]]).T)
+    np.testing.assert_array_almost_equal(Msys.p, np.array([[0.1018, 0.8982]]).T)
 
 

@@ -10,7 +10,7 @@ np.set_printoptions(precision=3)
 
 
 @pytest.fixture
-def setup_bridge():
+def setup_sys():
     '''
          -x1-
        -      -
@@ -19,12 +19,11 @@ def setup_bridge():
          -x2-
 
     '''
-    B = [[1, 0], [0, 1], [1, 1]]
     values = ['survival', 'fail']
-    x1= variable.Variable(**{'name': 'x1', 'B': B, 'values': values})
-    x2= variable.Variable(**{'name': 'x2', 'B': B, 'values': values})
-    x3= variable.Variable(**{'name': 'x3', 'B': B, 'values': values})
-    x4= variable.Variable(**{'name': 'x4', 'B': B, 'values': values})
+    x1= variable.Variable(**{'name': 'x1', 'B': [{0}, {1}, {0, 1}], 'values': values})
+    x2= variable.Variable(**{'name': 'x2', 'B': [{0}, {1}, {0, 1}], 'values': values})
+    x3= variable.Variable(**{'name': 'x3', 'B': [{0}, {1}, {0, 1}], 'values': values})
+    x4= variable.Variable(**{'name': 'x4', 'B': [{0}, {1}, {0, 1}], 'values': values})
 
     variables = [x4, x1, x2, x3]
     no_child = 1
@@ -38,9 +37,9 @@ def setup_bridge():
     vars_ = {}
     return cpms, vars_
 
-def test_init(setup_bridge):
+def test_init(setup_sys):
 
-    cpms, vars_ = setup_bridge
+    cpms, vars_ = setup_sys
     assert isinstance(cpms, cpm.Cpm)
     for x in cpms.variables:
         assert isinstance(x, variable.Variable)

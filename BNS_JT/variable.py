@@ -70,31 +70,39 @@ class Variable(object):
     (A user does not have to enter composite states for all possible permutations but is enough define those being used).
     '''
 
-    def __init__(self, name, B, values):
+    def __init__(self, name, B=[], values=[]):
 
         assert isinstance(name, str), 'name should be a string'
 
-        assert isinstance(B, (np.ndarray, list)), 'B must be a array'
-
-        if isinstance(B, list):
-            B = np.array(B, dtype=int)
-
-        if B.dtype == np.dtype(np.float64):
-            B = B.astype(int)
-
         assert isinstance(values, list), 'values must be a list'
 
-        num_basicstate = B.shape[1]
-
-        assert (B[:num_basicstate, :] == np.eye(num_basicstate)).all(), 'The upper part corresponding to basic states must form an identity matrix'
-
         self.name = name
-        self.B = B
         self.values = values
+        if B:
+            self.check_B(B)
+        self._B = B
 
+    """
     def B_times_values(self):
 
         return [' '.join(x).strip(' ') for x in np.char.multiply(self.values, self.B.astype(int)).tolist()]
+    """
+    @property
+    def B(self):
+        return self._B
+
+    @B.setter
+    def B(self, value):
+        self.check_B(value)
+        self._B = value
+
+    def check_B(self, value):
+
+        assert isinstance(value, list), 'B must be a list'
+        assert len(value) >= len(self.values), 'B contains index or indices of the value'
+        assert len(value) <= 2**len(self.values) - 1, f'Length of B can not exceed {2**len(self.values)-1}: {value}, {self.values}'
+        assert all([max(v) < len(self.values) for v in value]), 'B contains index or indices of the value'
+        assert all([isinstance(v, set) for v in value]), 'B consists of set'
 
     def __hash__(self):
 
@@ -116,7 +124,6 @@ def get_composite_state(vari, states):
     """
     # Input: vari-one Variable object, st_list: list of states (starting from zero)
     # TODO: states start from 0 in Cpm and from 1 in B&B -- will be fixed later so that all start from 0
-    """
 
     b = [x in states for x in range(len(vari.B[0]))]
 
@@ -128,6 +135,12 @@ def get_composite_state(vari, states):
     else:
         vari.B = np.vstack((vari.B, b))
         cst = len(vari.B) - 1 # zero-based index
+    """
+    added = set(states)
+    if added not in vari.B:
+        vari.B.append(added)
+
+    cst = vari.B.index(added)
 
     return vari, cst
 

@@ -2,6 +2,7 @@ import numpy as np
 
 from BNS_JT import bnb_fns
 
+
 def test_bnb_sys1():
 
     comp_states = [1, 1, 1, 1, 1, 1]
@@ -16,6 +17,7 @@ def test_bnb_sys1():
     assert val== np.inf
     assert result== {'path': []}
 
+
 def test_bnb_sys2():
 
     comp_states = [1, 2, 1, 1, 1, 1]
@@ -28,6 +30,7 @@ def test_bnb_sys2():
     assert state== 1-1
     assert val== 0.0901
     assert result=={'path': [2]}
+
 
 def test_bnb_sys3():
 
@@ -42,6 +45,7 @@ def test_bnb_sys3():
     assert state==1-1
     assert val==0.0901
     assert result=={'path': [2]}
+
 
 def test_bnb_sys4():
 
@@ -58,6 +62,7 @@ def test_bnb_sys4():
     assert val==0.0901
     assert result=={'path': [2]}
 
+
 def test_bnb_sys5():
 
     comp_states = [1, 1, 2, 2, 2, 2]
@@ -71,6 +76,7 @@ def test_bnb_sys5():
     assert state== 3-1
     assert val== np.inf
     assert result== {'path': []}
+
 
 def test_bnb_sys6():
     # 2: survival, 1: failure
@@ -102,6 +108,7 @@ def test_bnb_next_comp1():
 
     assert next_comp== 1
 
+
 def test_bnb_next_comp2():
 
     cand_comps = [2, 3, 4, 5, 6]
@@ -115,6 +122,7 @@ def test_bnb_next_comp2():
     next_comp = bnb_fns.bnb_next_comp(cand_comps, down_res, up_res, info)
 
     assert next_comp== 2
+
 
 def test_bnb_next_comp3():
 

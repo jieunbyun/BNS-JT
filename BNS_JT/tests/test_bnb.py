@@ -12,32 +12,9 @@ import pytest
 from BNS_JT import bnb_fns, branch, cpm
 
 
-expected_disconn = np.array([0.0096, 0.0011, 0.2102, 0.2102])
-expected_delay = np.array([0.0583, 0.0052, 0.4795, 0.4382])
+def test_bnb(setup_bridge, expected_probs):
 
-arcs = {'e1': ['n1', 'n2'],
-	'e2': ['n1', 'n5'],
-	'e3': ['n2', 'n5'],
-	'e4': ['n3', 'n4'],
-	'e5': ['n3', 'n5'],
-	'e6': ['n4', 'n5']}
-
-var_ODs = {'od1': ('n5', 'n1'),
-           'od2': ('n5', 'n2'),
-           'od3': ('n5', 'n3'),
-           'od4': ('n5', 'n4')}
-
-def test_bnb(setup_bridge):
-
-    cpms_arc, vars_arc = setup_bridge
-
-    # cpms_arc
-    #vars_arc = {int(k): v for k, v in vars_arc.items()}
-
-    #cpms_arc = {}
-    #for k, v in cpms_arcs.items():
-    #    cpms_arc[k] = v
-        #cpms_arc[k].variables = [int(i) for i in v.variables]
+    cpms_arc, vars_arc, arcs, var_ODs = setup_bridge
 
     ## Problem
     info = {'path': [['e2'], ['e3', 'e1']],
@@ -77,17 +54,16 @@ def test_bnb(setup_bridge):
 
     # Check if the results are the same
     # FIXME: index issue
-    np.testing.assert_array_almost_equal(expected_disconn[0], disconn_prob, decimal=4)
-    np.testing.assert_array_almost_equal(expected_delay[0], delay_prob, decimal=4)
+    np.testing.assert_array_almost_equal(expected_probs['disconn'][0], disconn_prob, decimal=4)
+    np.testing.assert_array_almost_equal(expected_probs['delay'][0], delay_prob, decimal=4)
 
     # using variable name instead
     disconn_state = 3-1 # max basic state
     disconn_prob = cpm.get_prob(M_bnb_VE, ['od1'], np.array([disconn_state]))
     delay_prob = cpm.get_prob(M_bnb_VE, ['od1'], np.array([1-1]), 0)
 
-    np.testing.assert_array_almost_equal(expected_disconn[0], disconn_prob, decimal=4)
-    np.testing.assert_array_almost_equal(expected_delay[0], delay_prob, decimal=4)
-
+    np.testing.assert_array_almost_equal(expected_probs['disconn'][0], disconn_prob, decimal=4)
+    np.testing.assert_array_almost_equal(expected_probs['delay'][0], delay_prob, decimal=4)
 
 
 

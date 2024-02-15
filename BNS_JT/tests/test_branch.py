@@ -198,11 +198,10 @@ def test_get_cmat1(setup_branch):
     branches = setup_branch
 
     varis = {}
-    B = np.array([[1, 0], [0, 1], [1, 1]])
     for k in range(1, 7):
-        varis[k] = variable.Variable(name=str(k), B=B, values=['Surv', 'Fail'])
+        varis[k] = variable.Variable(name=str(k), B=[{0}, {1}, {0, 1}], values=['Surv', 'Fail'])
 
-    B_ = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
+    B_ = [{0}, {1}, {2}]
     varis[7] = variable.Variable(name='7', B=B_,
             values=[0.0901, 0.2401, np.inf])
 
@@ -215,15 +214,15 @@ def test_get_cmat1(setup_branch):
     varis[10] = variable.Variable(name='10', B=B_,
             values=[0.0707, 0.1997, np.inf])
 
+    B = [{0}, {1}]
     for i in range(11, 15):
-        varis[i] = variable.Variable(name=str(i), B=np.eye(2),
+        varis[i] = variable.Variable(name=str(i), B=B[:],
             values=['No disruption', 'Disruption'])
 
     info = {'path': [[2], [3, 1]],
             'time': np.array([0.0901, 0.2401]),
             'arcs': np.array([1, 2, 3, 4, 5, 6])
             }
-
     C = branch.get_cmat(branches, [varis[i] for i in info['arcs']], False)
 
     expected = np.array([[3,2,2,3,3,3,3],
@@ -248,11 +247,11 @@ def test_get_cmat2(setup_branch):
     branches = setup_branch
 
     varis = {}
-    B = np.array([[1, 0], [0, 1], [1, 1]])
+    B = [{0}, {1}, {0, 1}]
     for k in range(1, 7):
-        varis[k] = variable.Variable(name=str(k), B=B, values=['Surv', 'Fail'])
+        varis[k] = variable.Variable(name=str(k), B=B[:], values=['Surv', 'Fail'])
 
-    B_ = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
+    B_ = [{0}, {1}, {2}]
     varis[7] = variable.Variable(name='7', B=B_,
             values=[0.0901, 0.2401, np.inf])
 
@@ -265,8 +264,9 @@ def test_get_cmat2(setup_branch):
     varis[10] = variable.Variable(name='10', B=B_,
             values=[0.0707, 0.1997, np.inf])
 
+    B = [{0}, {1}]
     for i in range(11, 15):
-        varis[i] = variable.Variable(name=str(i), B=np.eye(2),
+        varis[i] = variable.Variable(name=str(i), B=B[:],
             values=['No disruption', 'Disruption'])
 
     C = branch.get_cmat(branches, [varis[i] for i in info['arcs']], True)
@@ -292,11 +292,11 @@ def test_get_cmat1s(setup_branch):
     branches = setup_branch
 
     varis = {}
-    B = np.array([[1, 0], [0, 1], [1, 1]])
+    B = [{0}, {1}, {0, 1}]
     for k in range(1, 7):
-        varis[str(k)] = variable.Variable(name=str(k), B=B, values=['Surv', 'Fail'])
+        varis[str(k)] = variable.Variable(name=str(k), B=B[:], values=['Surv', 'Fail'])
 
-    B_ = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
+    B_ = [{0}, {1}, {2}]
     varis['7'] = variable.Variable(name='7', B=B_,
             values=[0.0901, 0.2401, np.inf])
 
@@ -309,8 +309,9 @@ def test_get_cmat1s(setup_branch):
     varis['10'] = variable.Variable(name='10', B=B_,
             values=[0.0707, 0.1997, np.inf])
 
+    B = [{0}, {1}]
     for i in range(11, 15):
-        varis[str(i)] = variable.Variable(name=str(i), B=np.eye(2),
+        varis[str(i)] = variable.Variable(name=str(i), B=B[:],
             values=['No disruption', 'Disruption'])
     #pdb.set_trace()
     C = branch.get_cmat(branches, [varis[i] for i in info['arcs']], False)
@@ -382,9 +383,8 @@ def test_get_cmat_from_branches():
 
     # variables
     variables = {}
-    B = np.array([[1, 0], [0, 1], [1, 1]])
     for i in range(1, 7):
-        variables[f'e{i}'] = variable.Variable(name=f'e{i}', B=B, values=['Fail', 'Surv'])
+        variables[f'e{i}'] = variable.Variable(name=f'e{i}', B=[{0}, {1}, {0, 1}], values=['Fail', 'Surv'])
 
     branches =[({'e1': 0, 'e2': 1, 'e3': 0, 'e4': 0, 'e5': 0, 'e6': 0},
                 {'e1': 1, 'e2': 1, 'e3': 1, 'e4': 1, 'e5': 1, 'e6': 1}, 2, 2),
@@ -548,9 +548,8 @@ def test_branch_and_bound_using_rbd(setup_client, setup_rbd):
     path_time_idx, bstars, arc_cond, output_path, key = setup_rbd
 
     varis = {}
-    B = np.array([[1, 0], [0, 1], [1, 1]])
     for k in range(1, 13):
-        varis[f'e{k}'] = variable.Variable(name=f'e{k}', B=B, values=['Surv', 'Fail'])
+        varis[f'e{k}'] = variable.Variable(name=f'e{k}', B=[{0}, {1}, {0, 1}], values=['Surv', 'Fail'])
 
     sb_org = branch.branch_and_bound_org(bstars, path_time_idx, arc_cond)
     C1 = branch.get_cmat_from_branches(sb_org, varis)
@@ -631,9 +630,9 @@ def test_create_arc_state_given_cond():
 
     assert result==expected
 
-@pytest.mark.skip('NWY')
-def test_get_set_branches_no_iteration():
-
+@pytest.mark.skip('removed')
+def test_get_set_branches():
+#
     #cluster = setup_client
 
     # using road
@@ -647,7 +646,7 @@ def test_get_set_branches_no_iteration():
     k, v = 'od1', ('n1', 'n3')
     arc_cond = 1
     values = [np.inf] + sorted([y for _, y in path_times[v]], reverse=True)
-    varis = variable.Variable(name=k, B=np.eye(len(values)), values=values)
+    varis = variable.Variable(name=k, B=[{i} for i in range(len(values))], values=values)
     path_time_idx = trans.get_path_time_idx(path_times[v], varis)
 
     lower = {k: 0 for k, _ in cfg.infra['edges'].items()}
@@ -666,7 +665,8 @@ def test_get_set_branches_no_iteration():
     assert sb == expected
 
 
-def test_get_set_branches_no_iteration_sf():
+@pytest.mark.skip('removed')
+def test_get_set_branches_sf():
 
     cfg = config.Config(HOME.joinpath('../demos/SF/config.json'))
 
