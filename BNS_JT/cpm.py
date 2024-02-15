@@ -7,6 +7,7 @@ import warnings
 from BNS_JT.utils import all_equal
 from BNS_JT.variable import Variable
 
+
 class Cpm(object):
     """
     Defines the conditional probability matrix (cf., CPT)
@@ -36,7 +37,6 @@ class Cpm(object):
 
         assert isinstance(variables, list), 'variables must be a list of Variable'
 
-        # FIXME: needs to be instances of Variables
         assert all([isinstance(x, Variable) for x in variables]), 'variables must be a list of Variable'
 
         self.variables = variables
@@ -187,7 +187,6 @@ class Cpm(object):
                 B = variable.B
             else:
                 B = [{i} for i in range(np.max(C[:, i]) + 1)]
-                #B = variable.B[np.max(C[:, i]) + 1, dtype=int)
 
             x1 = [B[int(k)] for k in C[is_cmp, i]]
             check = [bool(B[state].intersection(x)) for x in x1]
@@ -872,12 +871,21 @@ def get_prob(M, var_inds, var_states, flag=True):
 
     assert isinstance(var_states, (list, np.ndarray)), 'var_states should be an array'
 
-    if isinstance(var_states, list):
-        var_states = np.array(var_states)
-
-    assert len(var_inds) == var_states.shape[0], f'"var_inds" {var_inds} and "var_states" {var_states} must have the same length.'
+    assert len(var_inds) == len(var_states), f'"var_inds" {var_inds} and "var_states" {var_states} must have the same length.'
 
     assert flag in (0, 1), 'Operation flag must be either 1 (keeping given row indices default) or 0 (deleting given indices)'
+
+    _var_states = []
+    for i, x in enumerate(var_states):
+        if isinstance(x, str):
+            assert x in var_inds[i].values, f'{x} not in {var_inds[i].values}'
+            _var_states.append(var_inds[i].values.index(x))
+
+    if _var_states:
+        var_states = _var_states[:]
+
+    if isinstance(var_states, list):
+        var_states = np.array(var_states)
 
     Mcompare = Cpm(variables=var_inds,
                    no_child=len(var_inds),

@@ -198,23 +198,6 @@ def get_arcs_length(arcs, node_coords):
 
     return arc_len
 
-# NOT USED
-def get_match(a, b, complete, idx_any):
-
-    mask = np.equal(a, b)
-
-    if sum(mask):
-
-        res = [x if z else 'x' for x, z in zip(a, mask)]
-
-        idx = res.index('x')
-
-        if (res.count('x') == 1) and (set([a[idx], b[idx]]) == set(complete[idx])):
-
-            res[idx] = idx_any
-
-            return res
-
 
 def eval_sys_state_given_arc(arcs_state, **kwargs):
     """

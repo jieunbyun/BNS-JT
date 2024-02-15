@@ -1,5 +1,7 @@
 import numpy as np
 import pytest
+import copy
+import pdb
 import itertools
 from pathlib import Path
 
@@ -8,62 +10,36 @@ from BNS_JT import config, model, trans, variable, branch
 
 HOME = Path(__file__).absolute().parent
 
-expected_disconn = np.array([0.0096, 0.0011, 0.2102, 0.2102])
-expected_delay = np.array([0.0583, 0.0052, 0.4795, 0.4382])
-expected_damage = np.array([0.1610,  1,  1,  0.0002,   0,  0.4382])
 
-
-@pytest.fixture()
+@pytest.fixture(scope='session')
 def setup_road():
 
     cfg = config.Config(HOME.joinpath('../demos/road/test.json'))
-
     cpms, varis = model.setup_model(cfg)
 
     return cpms, varis, cfg
 
 
-@pytest.fixture()
-def cmatrix_road():
+def test_setup_model(setup_road, setup_bridge):
 
-    expected={}
-    expected['od1'] = np.array([[0,2,0,0,2,2,2],
-                                [0,0,0,1,2,2,2],
-                                [1,1,0,1,2,2,2],
-                                [2,2,1,2,2,2,2]])
+    d_cpms, d_varis, cfg = setup_road
+    cpms = copy.deepcopy(d_cpms)
+    varis = copy.deepcopy(d_varis)
 
-    expected['od2'] = np.array([[0,2,0,0,2,2,2],
-				[0,0,1,0,2,2,2],
-				[1,1,1,0,2,2,2],
-				[2,2,2,1,2,2,2]])
-
-    expected['od3'] = np.array([[0,2,2,2,2,0,0],
-				[0,2,2,2,0,0,1],
-				[1,2,2,2,1,0,1],
-				[2,2,2,2,2,1,2]])
-
-    expected['od4'] = np.array([[0,2,2,2,2,0,0],
-				[0,2,2,2,0,1,0],
-				[1,2,2,2,1,1,0],
-				[2,2,2,2,2,2,1]])
-    return expected
-
-
-def test_setup_model(setup_road, cmatrix_road):
-
-    cpms, varis, cfg = setup_road
-    expected = cmatrix_road
+    expected, _, _, _ = setup_bridge
 
     od_scen_pairs = itertools.product(cfg.infra['ODs'].keys(), cfg.scenarios['scenarios'].keys())
 
     for od, scen in od_scen_pairs:
 
-        np.testing.assert_array_equal(cpms[(od, scen)][od].C, expected[od])
+        np.testing.assert_array_equal(cpms[(od, scen)][od].C, expected[od].C)
 
 
-def test_compute_prob1(setup_road):
+def test_compute_prob1(setup_road, expected_probs):
 
-    cpms, varis, cfg = setup_road
+    d_cpms, d_varis, cfg = setup_road
+    cpms = copy.deepcopy(d_cpms)
+    varis = copy.deepcopy(d_varis)
 
     var_elim = list(cfg.infra['edges'].keys())
 
@@ -73,13 +49,15 @@ def test_compute_prob1(setup_road):
     for od, scen in od_scen_pairs:
 
         prob, _ = model.compute_prob(cfg, cpms[(od, scen)], varis[(od, scen)], var_elim, od, 0, flag=True)
+        print(prob, expected_probs['disconn'][map_dic[od]])
+        assert expected_probs['disconn'][map_dic[od]] == pytest.approx(prob, abs=0.0001)
 
-        assert expected_disconn[map_dic[od]] == pytest.approx(prob, abs=0.0001)
 
+def test_compute_prob2(setup_road, expected_probs):
 
-def test_compute_prob2(setup_road):
-
-    cpms, varis, cfg = setup_road
+    d_cpms, d_varis, cfg = setup_road
+    cpms = copy.deepcopy(d_cpms)
+    varis = copy.deepcopy(d_varis)
 
     var_elim = list(cfg.infra['edges'].keys())
 
@@ -90,12 +68,13 @@ def test_compute_prob2(setup_road):
 
         prob, _ = model.compute_prob(cfg, cpms[(od, scen)], varis[(od, scen)], var_elim, od, 2, flag=False)
 
-        assert expected_delay[map_dic[od]] == pytest.approx(prob, abs=0.0001)
+        assert expected_probs['delay'][map_dic[od]] == pytest.approx(prob, abs=0.0001)
 
 
-def test_get_branches(cmatrix_road):
+def test_get_branches(setup_bridge):
 
-    expected = cmatrix_road
+    expected, _, _, _ = setup_bridge
+
     cfg = config.Config(HOME.joinpath('../demos/road/test.json'))
 
     path_times = trans.get_all_paths_and_times(cfg.infra['ODs'].values(), cfg.infra['G'], key='time')
@@ -110,22 +89,21 @@ def test_get_branches(cmatrix_road):
     for k in cfg.infra['edges'].keys():
         B = [{i} for i in range(cfg.no_ds)]
         B.append({i for i in range(cfg.no_ds)})
-        varis[k] = variable.Variable(name=k, B=B, values=cfg.scenarios['damage_states'])
+        varis[k] = variable.Variable(name=k, B=B.copy(), values=cfg.scenarios['damage_states'])
 
     for od, value in branches.items():
-
-        values = [np.inf] + sorted([y for _, y in path_times[cfg.infra['ODs'][od]]], reverse=True)
+        values = sorted([y for _, y in path_times[cfg.infra['ODs'][od]]]) + [np.inf]
         varis[od] = variable.Variable(name=od, B=[{i} for i in range(len(values))], values=values)
 
         variables = {k: varis[k] for k in cfg.infra['edges'].keys()}
         c = branch.get_cmat_from_branches(value, variables)
 
-        np.testing.assert_array_equal(c, expected[od])
+        np.testing.assert_array_equal(c, expected[od].C)
 
 
-def test_model_given_od_scen(cmatrix_road):
+def test_model_given_od_scen(setup_bridge):
 
-    expected = cmatrix_road
+    expected, _, _, _ = setup_bridge
 
     cfg = config.Config(HOME.joinpath('../demos/road/test.json'))
 
@@ -141,6 +119,6 @@ def test_model_given_od_scen(cmatrix_road):
 
         assert len(cpms) == 7
 
-        np.testing.assert_array_equal(cpms[od].C, expected[od])
+        np.testing.assert_array_equal(cpms[od].C, expected[od].C)
 
 

@@ -95,7 +95,7 @@ def model_given_od_scen(cfg, path_times, od, scen, branches):
     for k, values in cfg.scenarios['scenarios'][scen].items():
         B = [{i} for i in range(cfg.no_ds)]
         B.append({i for i in range(cfg.no_ds)})
-        varis[k] = variable.Variable(name=k, B=B, values=cfg.scenarios['damage_states'])
+        varis[k] = variable.Variable(name=k, B=B.copy(), values=cfg.scenarios['damage_states'])
         cpms[k] = cpm.Cpm(variables = [varis[k]],
                   no_child = 1,
                   C = np.arange(len(values))[:, np.newaxis],
