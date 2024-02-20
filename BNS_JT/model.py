@@ -36,7 +36,7 @@ def get_branches_by_od(cfg):
         varis[k] = variable.Variable(name=k, B = [{i} for i in range(cfg.no_ds)], values = cfg.scenarios['scenarios']['s1'][k])
 
     # Intact state of component vector: zero-based index
-    comps_st_itc = {k: v.B.shape[1] - 1 for k, v in varis.items()} # intact state (i.e. the highest state)
+    comps_st_itc = {k: len(v.values) - 1 for k, v in varis.items()} # intact state (i.e. the highest state)
 
     thres = 2
     st_br_to_cs = {'f': 0, 's': 1, 'u': 2}

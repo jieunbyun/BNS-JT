@@ -1,0 +1,231 @@
+{
+    "system_meta": {
+        "MODEL_NAME": {
+            "value": "Basic Linear Network",
+            "notes": null
+        },
+        "INFRASTRUCTURE_LEVEL": {
+            "value": "network",
+            "notes": null
+        },
+        "SYSTEM_CLASS": {
+            "value": "RailNetwork",
+            "notes": null
+        },
+        "SYSTEM_SUBCLASS": {
+            "value": "Regional Rail Network",
+            "notes": null
+        },
+        "SYSTEM_COMPONENT_LOCATION_CONF": {
+            "value": "defined",
+            "notes": null
+        },
+        "RESTORATION_TIME_UNIT": {
+            "value": "days",
+            "notes": null
+        },
+        "HAZARD_INTENSITY_MEASURE_PARAM": {
+            "value": "PGA",
+            "notes": null
+        },
+        "HAZARD_INTENSITY_MEASURE_UNIT": {
+            "value": "g",
+            "notes": null
+        }
+    },
+    "sysout_setup": {
+        "od1": {
+            "origin": "source",
+            "destination": "sink",
+            "output_node_capacity": null,
+            "capacity_fraction": null,
+            "priorty": null
+        }
+    },
+    "node_conn_df": {
+        "e1": {
+            "origin": "source",
+            "destination": "x1",
+            "link_capacity": null,
+            "weight": 1.0
+        },
+        "e2": {
+            "origin": "source",
+            "destination": "x2",
+            "link_capacity": null,
+            "weight": 1.0
+        },
+        "e3": {
+            "origin": "source",
+            "destination": "x3",
+            "link_capacity": null,
+            "weight": 1.0
+        },
+        "e4": {
+            "origin": "source",
+            "destination": "x4",
+            "link_capacity": null,
+            "weight": 1.0
+        },
+        "e5": {
+            "origin": "x4",
+            "destination": "x5",
+            "link_capacity": null,
+            "weight": 1.0
+        },
+        "e6": {
+            "origin": "x5",
+            "destination": "x6",
+            "link_capacity": null,
+            "weight": 1.0
+        },
+        "e7": {
+            "origin": "x6",
+            "destination": "x7",
+            "link_capacity": null,
+            "weight": 1.0
+        },
+        "e8": {
+            "origin": "x7",
+            "destination": "x8",
+            "link_capacity": null,
+            "weight": 1.0
+        },
+        "e9": {
+            "origin": "x8",
+            "destination": "sink",
+            "link_capacity": null,
+            "weight": 1.0
+        },
+        "e10": {
+            "origin": "x1",
+            "destination": "x7",
+            "link_capacity": null,
+            "weight": 1.0
+        },
+        "e11": {
+            "origin": "x2",
+            "destination": "x7",
+            "link_capacity": null,
+            "weight": 1.0
+        },
+        "e12": {
+            "origin": "x3",
+            "destination": "x7",
+            "link_capacity": null,
+            "weight": 1.0
+        }
+    },
+    "component_list": {
+        "source": {
+            "component_type": null,
+            "component_class": null,
+            "cost_fraction": null,
+            "node_type": null,
+            "node_cluster": null,
+            "operation_capacity": null,
+            "pos_x": -2.0,
+            "pos_y": 0.0,
+            "damages_states_constructor": null
+        },
+        "x1": {
+            "component_type": null,
+            "component_class": null,
+            "cost_fraction": null,
+            "node_type": null,
+            "node_cluster": null,
+            "operation_capacity": null,
+            "pos_x": 0.0,
+            "pos_y": 0.5,
+            "damages_states_constructor": null
+        },
+        "x2": {
+            "component_type": null,
+            "component_class": null,
+            "cost_fraction": null,
+            "node_type": null,
+            "node_cluster": null,
+            "operation_capacity": null,
+            "pos_x": 0.0,
+            "pos_y": 0.25,
+            "damages_states_constructor": null
+        },
+        "x3": {
+            "component_type": null,
+            "component_class": null,
+            "cost_fraction": null,
+            "node_type": null,
+            "node_cluster": null,
+            "operation_capacity": null,
+            "pos_x": 0.0,
+            "pos_y": 0.0,
+            "damages_states_constructor": null
+        },
+        "x4": {
+            "component_type": null,
+            "component_class": null,
+            "cost_fraction": null,
+            "node_type": null,
+            "node_cluster": null,
+            "operation_capacity": null,
+            "pos_x": -1.0,
+            "pos_y": -0.5,
+            "damages_states_constructor": null
+        },
+        "x5": {
+            "component_type": null,
+            "component_class": null,
+            "cost_fraction": null,
+            "node_type": null,
+            "node_cluster": null,
+            "operation_capacity": null,
+            "pos_x": 0.0,
+            "pos_y": -0.5,
+            "damages_states_constructor": null
+        },
+        "x6": {
+            "component_type": null,
+            "component_class": null,
+            "cost_fraction": null,
+            "node_type": null,
+            "node_cluster": null,
+            "operation_capacity": null,
+            "pos_x": 1.0,
+            "pos_y": -0.5,
+            "damages_states_constructor": null
+        },
+        "x7": {
+            "component_type": null,
+            "component_class": null,
+            "cost_fraction": null,
+            "node_type": null,
+            "node_cluster": null,
+            "operation_capacity": null,
+            "pos_x": 2.0,
+            "pos_y": 0.0,
+            "damages_states_constructor": null
+        },
+        "x8": {
+            "component_type": null,
+            "component_class": null,
+            "cost_fraction": null,
+            "node_type": null,
+            "node_cluster": null,
+            "operation_capacity": null,
+            "pos_x": 3.0,
+            "pos_y": 0.0,
+            "damages_states_constructor": null
+        },
+        "sink": {
+            "component_type": null,
+            "component_class": null,
+            "cost_fraction": null,
+            "node_type": null,
+            "node_cluster": null,
+            "operation_capacity": null,
+            "pos_x": 4.0,
+            "pos_y": 0.0,
+            "damages_states_constructor": null
+        }
+    }
+}

@@ -10,7 +10,7 @@ np.set_printoptions(precision=3)
 
 
 @pytest.fixture
-def setup_sys():
+def setup_sys_three_edges():
     '''
          -x1-
        -      -
@@ -19,27 +19,53 @@ def setup_sys():
          -x2-
 
     '''
-    values = ['survival', 'fail']
-    x1= variable.Variable(**{'name': 'x1', 'B': [{0}, {1}, {0, 1}], 'values': values})
-    x2= variable.Variable(**{'name': 'x2', 'B': [{0}, {1}, {0, 1}], 'values': values})
-    x3= variable.Variable(**{'name': 'x3', 'B': [{0}, {1}, {0, 1}], 'values': values})
-    x4= variable.Variable(**{'name': 'x4', 'B': [{0}, {1}, {0, 1}], 'values': values})
+    varis = {}
+    values = ['fail', 'survival']
+    varis['x1']= variable.Variable(**{'name': 'x1', 'B': [{0}, {1}, {0, 1}], 'values': values})
+    varis['x2']= variable.Variable(**{'name': 'x2', 'B': [{0}, {1}, {0, 1}], 'values': values})
+    varis['x3']= variable.Variable(**{'name': 'x3', 'B': [{0}, {1}, {0, 1}], 'values': values})
+    varis['sys']= variable.Variable(**{'name': 'sys', 'B': [{0}, {1}, {0, 1}], 'values': values})
 
-    variables = [x4, x1, x2, x3]
     no_child = 1
-    C = np.array([[2, 3, 3, 2], [1, 1, 3, 1], [1, 2, 1, 1], [2, 2, 2, 1]]) - 1
+    C = np.array([[0, 2, 2, 0],
+                  [1, 1, 2, 1],
+                  [1, 0, 1, 1],
+                  [0, 0, 0, 1]])
     p = [1, 1, 1, 1]
 
-    cpms = cpm.Cpm(**{'variables': variables,
+    cpms = cpm.Cpm(**{'variables': list(varis.values()),
                   'no_child': no_child,
                   'C': C,
                   'p': p})
-    vars_ = {}
-    return cpms, vars_
 
-def test_init(setup_sys):
+    return cpms, varis
 
-    cpms, vars_ = setup_sys
+
+@pytest.fixture
+def setup_sys_rbd():
+    '''
+    see Figure 2 from https://doi.org/10.1016/j.ress.2019.01.007
+    '''
+    varis = {}
+    values = ['fail', 'survival']
+    varis['x1']= variable.Variable(**{'name': 'x1', 'B': [{0}, {1}, {0, 1}], 'values': values})
+    varis['x2']= variable.Variable(**{'name': 'x2', 'B': [{0}, {1}, {0, 1}], 'values': values})
+    varis['x3']= variable.Variable(**{'name': 'x3', 'B': [{0}, {1}, {0, 1}], 'values': values})
+    varis['x4']= variable.Variable(**{'name': 'x4', 'B': [{0}, {1}, {0, 1}], 'values': values})
+    varis['x5']= variable.Variable(**{'name': 'x5', 'B': [{0}, {1}, {0, 1}], 'values': values})
+    varis['x6']= variable.Variable(**{'name': 'x6', 'B': [{0}, {1}, {0, 1}], 'values': values})
+    varis['x7']= variable.Variable(**{'name': 'x7', 'B': [{0}, {1}, {0, 1}], 'values': values})
+    varis['x8']= variable.Variable(**{'name': 'x8', 'B': [{0}, {1}, {0, 1}], 'values': values})
+    varis['source']= variable.Variable(**{'name': 'source', 'B': [{0}, {1}, {0, 1}], 'values': values})
+    varis['sink']= variable.Variable(**{'name': 'sink', 'B': [{0}, {1}, {0, 1}], 'values': values})
+    varis['sys']= variable.Variable(**{'name': 'sys', 'B': [{0}, {1}, {0, 1}], 'values': values})
+
+    return varis
+
+
+def test_init(setup_sys_three_edges):
+
+    cpms, vars_ = setup_sys_three_edges
     assert isinstance(cpms, cpm.Cpm)
     for x in cpms.variables:
         assert isinstance(x, variable.Variable)

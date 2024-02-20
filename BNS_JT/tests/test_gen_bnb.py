@@ -1239,11 +1239,12 @@ def test_inference2(setup_inference):
     cnd_states = [1, 1, 0, 1, 0, 1]  # observing e3, e5 failure
 
     Mobs = cpm.condition([cpms[v] for v in varis.keys()], cnd_vars, cnd_states)
+    # P(sys, obs)
     Msys_obs = cpm.variable_elim(Mobs, var_elim_order)
 
     np.testing.assert_array_almost_equal(Msys_obs.C, np.array([[0, 1]]).T)
     np.testing.assert_array_almost_equal(Msys_obs.p, np.array([[2.765e-5, 5.515e-5]]).T)
-
+    # P(sys=0|obs) = P(sys=0,obs) / P(obs) 
     pf_sys = Msys_obs.p[0] / np.sum(Msys_obs.p)
     assert pf_sys == pytest.approx(0.334, rel=1.0e-3)
 

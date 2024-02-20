@@ -284,16 +284,16 @@ def setup_bridge_alt(data_bridge):
     # Travel times (systems): P(OD_j | X1, ... Xn) j = 1 ... nOD
     # e.g., for 'od1': 'e2': 0.0901, 'e3'-'e1': 0.2401
     vars_arc['od1'] = variable.Variable(name='od1', B=[{0}, {1}, {2}],
-            values=[np.inf, 0.2401, 0.0901])
+            values=[0.0901, 0.2401, np.inf])
 
     vars_arc['od2'] = variable.Variable(name='od2', B=[{0}, {1}, {2}],
-            values=[np.inf, 0.2401, 0.0901])
+            values=[0.0901, 0.2401, np.inf])
 
     vars_arc['od3'] = variable.Variable(name='od3', B=[{0}, {1}, {2}],
-            values=[np.inf, 0.1761, 0.0943])
+            values=[0.0943, 0.1761, np.inf])
 
     vars_arc['od4'] = variable.Variable(name='od4', B=[{0}, {1}, {2}],
-            values=[np.inf, 0.1997, 0.0707])
+            values=[0.0707, 0.1997, np.inf])
 
     _variables = [vars_arc[k] for k in ['od1', 'e1', 'e2', 'e3', 'e4', 'e5', 'e6']]
     c7 = np.array([
@@ -452,6 +452,7 @@ def test_prob_delay3(setup_bridge_alt, expected_probs):
     """ same as delay2 but only using one OD"""
     cpms_arc, vars_arc, arcs, var_ODs = setup_bridge_alt
     nODs = len(var_ODs)
+
     ## Repeat inferences again using new functions -- the results must be the same.
     # Probability of delay and disconnection
     #M = [cpms_arc[k] for k in list(arcs.keys()) + list(var_ODs.keys())]
@@ -477,8 +478,8 @@ def test_prob_delay3(setup_bridge_alt, expected_probs):
         ODs_prob_delay2[j] = cpm.get_prob(M_VE2, [vars_arc[idx]], [1-1], flag=False) # Any state greater than 1 means delay.
 
     # Check if the results are the same
-    np.testing.assert_array_almost_equal(ODs_prob_delay2[0], expected_probs['delay'][0], decimal=4)
     np.testing.assert_array_almost_equal(ODs_prob_disconn2[0], expected_probs['disconn'][0], decimal=4)
+    np.testing.assert_array_almost_equal(ODs_prob_delay2[0], expected_probs['delay'][0], decimal=4)
 
 
 def test_prob_damage(setup_bridge, expected_probs):
@@ -794,4 +795,55 @@ def test_eval_sys_state():
     # No path available
     sys_state = trans.eval_sys_state(path_time_idx, arcs_state, arc_surv)
     assert sys_state == 0
+
+
+def test_get_connectivity_given_comps(setup_sys_rbd):
+
+    varis = setup_sys_rbd
+
+    comps_st = {f'x{i}': 1 for i in range(1, 9)}
+    comps_st.update({'sink': 1, 'source': 1})
+    od_pair = ('source', 'sink')
+    arcs = {'e1': ['source', 'x1'],
+            'e2': ['source', 'x2'],
+            'e3': ['source', 'x3'],
+            'e4': ['source', 'x4'],
+            'e5': ['x1', 'x7'],
+            'e6': ['x2', 'x7'],
+            'e7': ['x3', 'x7'],
+            'e8': ['x7', 'x8'],
+            'e9': ['x8', 'sink'],
+            'e10': ['x4', 'x5'],
+            'e11': ['x5', 'x6'],
+            'e12': ['x6', 'x7'],
+            }
+
+    _varis = {k: varis[k] for k in comps_st.keys()}
+    path = trans.get_connectivity_given_comps(comps_st,  od_pair, arcs, _varis)
+    assert path == ['x1', 'x7', 'x8']
+
+    # failure
+    _comps_st = comps_st.copy()
+    _comps_st['x7'] = 0
+    path = trans.get_connectivity_given_comps(_comps_st,  od_pair, arcs, _varis)
+    assert path == []
+
+    # success
+    _comps_st = comps_st.copy()
+    _comps_st.update({'x2': 0, 'x3': 0, 'x1': 0})
+    path = trans.get_connectivity_given_comps(_comps_st,  od_pair, arcs, _varis)
+    assert path == ['x4', 'x5', 'x6', 'x7', 'x8']
+
+    # failure
+    _comps_st = comps_st.copy()
+    _comps_st.update({'x4': 0, 'x2': 0, 'x1': 0, 'x3': 0})
+    path = trans.get_connectivity_given_comps(_comps_st,  od_pair, arcs, _varis)
+    assert path == []
+
+    # success
+    _comps_st = comps_st.copy()
+    _comps_st.update({'x1': 0, 'x2': 0, 'x3': 0})
+    od_pair = ('x4', 'x6')
+    path = trans.get_connectivity_given_comps(_comps_st,  od_pair, arcs, _varis)
+    assert path == ['x5']
 
