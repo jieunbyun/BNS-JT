@@ -65,7 +65,8 @@ def get_branches(cfg, path_times):
     branches = {}
     for k, v in cfg.infra['ODs'].items():
         values = [np.inf] + sorted([y for _, y in path_times[v]], reverse=True)
-        varis = variable.Variable(name=k, B=[{i} for i in range(len(values))], values=values)
+        #varis = variable.Variable(name=k, B=[{i} for i in range(len(values))], values=values)
+        varis = variable.Variable(name=k, values=values)
 
         path_time_idx = trans.get_path_time_idx(path_times[v], varis)
 
@@ -93,9 +94,9 @@ def model_given_od_scen(cfg, path_times, od, scen, branches):
 
     # scenario dependent
     for k, values in cfg.scenarios['scenarios'][scen].items():
-        B = [{i} for i in range(cfg.no_ds)]
-        B.append({i for i in range(cfg.no_ds)})
-        varis[k] = variable.Variable(name=k, B=B.copy(), values=cfg.scenarios['damage_states'])
+        #B = [{i} for i in range(cfg.no_ds)]
+        #B.append({i for i in range(cfg.no_ds)})
+        varis[k] = variable.Variable(name=k, values=cfg.scenarios['damage_states'])
         cpms[k] = cpm.Cpm(variables = [varis[k]],
                   no_child = 1,
                   C = np.arange(len(values))[:, np.newaxis],
@@ -103,7 +104,8 @@ def model_given_od_scen(cfg, path_times, od, scen, branches):
 
     # Travel times (systems): P(OD_j | X1, ... Xn) j = 1 ... nOD
     values = [np.inf] + sorted([y for _, y in path_times[cfg.infra['ODs'][od]]], reverse=True)
-    varis[od] = variable.Variable(name=od, B=[{i} for i in range(len(values))], values=values)
+    #varis[od] = variable.Variable(name=od, B=[{i} for i in range(len(values))], values=values)
+    varis[od] = variable.Variable(name=od, values=values)
 
     variables = {k: varis[k] for k in cfg.infra['edges'].keys()}
     c = branch.get_cmat_from_branches(branches, variables)

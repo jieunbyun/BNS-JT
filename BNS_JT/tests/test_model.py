@@ -89,11 +89,13 @@ def test_get_branches(setup_bridge):
     for k in cfg.infra['edges'].keys():
         B = [{i} for i in range(cfg.no_ds)]
         B.append({i for i in range(cfg.no_ds)})
-        varis[k] = variable.Variable(name=k, B=B.copy(), values=cfg.scenarios['damage_states'])
+        #varis[k] = variable.Variable(name=k, B=B.copy(), values=cfg.scenarios['damage_states'])
+        varis[k] = variable.Variable(name=k, values=cfg.scenarios['damage_states'])
 
     for od, value in branches.items():
         values = sorted([y for _, y in path_times[cfg.infra['ODs'][od]]]) + [np.inf]
-        varis[od] = variable.Variable(name=od, B=[{i} for i in range(len(values))], values=values)
+        #varis[od] = variable.Variable(name=od, B=[{i} for i in range(len(values))], values=values)
+        varis[od] = variable.Variable(name=od, values=values)
 
         variables = {k: varis[k] for k in cfg.infra['edges'].keys()}
         c = branch.get_cmat_from_branches(value, variables)

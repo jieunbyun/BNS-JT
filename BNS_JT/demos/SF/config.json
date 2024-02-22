@@ -1,6 +1,6 @@
 {
 	"CONFIGURATION_ID": "SF",
-    "MODEL_NAME": "SiouxFalls.json",
+    "MODEL_NAME": "model.json",
     "SCENARIO_NAME": "scenarios.json",
     "OUTPUT_PATH": "./",
     "MAX_BRANCHES": 10000,

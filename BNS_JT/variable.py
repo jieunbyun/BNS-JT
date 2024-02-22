@@ -1,4 +1,6 @@
 import numpy as np
+import itertools
+
 #from collections import namedtuple
 #from typing import NamedTuple
 
@@ -70,32 +72,51 @@ class Variable(object):
     (A user does not have to enter composite states for all possible permutations but is enough define those being used).
     '''
 
-    def __init__(self, name, B=[], values=[]):
+    def __init__(self, name, values=[]):
 
         assert isinstance(name, str), 'name should be a string'
 
         assert isinstance(values, list), 'values must be a list'
 
         self.name = name
-        self.values = values
-        if B:
-            self.check_B(B)
-        self._B = B
+        self._values = values
+
+        if self._values:
+            self._B = self.gen_B()
+
+    @property
+    def B(self):
+        return self._B
+
+    @property
+    def values(self):
+        return self._values
+
+    @values.setter
+    def values(self, values):
+
+        assert isinstance(values, list), 'values must be a list'
+
+        self._values = values
+
+        self._B = self.gen_B()
+
+    def gen_B(self):
+        B = []
+        for n in range(1, len(self._values) + 1):
+            [B.append(set(x)) for x in itertools.combinations(range(len(self._values)), n)]
+        return B
 
     """
     def B_times_values(self):
 
         return [' '.join(x).strip(' ') for x in np.char.multiply(self.values, self.B.astype(int)).tolist()]
     """
-    @property
-    def B(self):
-        return self._B
 
-    @B.setter
-    def B(self, value):
-        self.check_B(value)
-        self._B = value
 
+    #    self.check_B(value)
+    #    self._B = value
+    """
     def check_B(self, value):
 
         assert isinstance(value, list), 'B must be a list'
@@ -103,6 +124,7 @@ class Variable(object):
         assert len(value) <= 2**len(self.values) - 1, f'Length of B can not exceed {2**len(self.values)-1}: {value}, {self.values}'
         assert all([max(v) < len(self.values) for v in value]), 'B contains index or indices of the value'
         assert all([isinstance(v, set) for v in value]), 'B consists of set'
+    """
 
     def __hash__(self):
 

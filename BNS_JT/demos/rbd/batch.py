@@ -70,6 +70,14 @@ def create_model():
     """
 
 @app.command()
+def plot():
+
+    cfg = config.Config(HOME.joinpath('./config.json'))
+
+    trans.plot_graph(cfg.infra['G'], HOME.joinpath('rbd.png'))
+
+
+@app.command()
 def main():
 
     cfg = config.Config(HOME.joinpath('./config.json'))

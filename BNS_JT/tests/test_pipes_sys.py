@@ -88,7 +88,7 @@ def main_sys(nodes_edges):
 
     varis = {}
     for k, v in node_coords.items():
-        varis[k] = variable.Variable(name=k, B=[{i} for i in range(no_node_st)], values=node_st_cp)
+        varis[k] = variable.Variable(name=k, values=node_st_cp)
 
     edges2comps = {}
     c_idx = 0
@@ -108,7 +108,7 @@ def main_sys(nodes_edges):
     comp_st_fval = [0, 1, 2] # state index to actual flow capacity (e.g. state 1 stands for flow capacity 0, etc.)
     for e, x in edges2comps.items():
         if x not in varis:
-            varis[x] = variable.Variable(name=k, B = [{i} for i in range(no_comp_st)], values = comp_st_fval)
+            varis[x] = variable.Variable(name=k, values = comp_st_fval)
 
     #no_sub = len(sub_bw_nodes) + 1
     #comps_st = {n: len(varis[n].B[0]) - 1 for _, n in edges2comps}
@@ -159,7 +159,7 @@ def main_sys2(nodes_edges):
 
     varis = {}
     for k, v in node_coords.items():
-        varis[k] = variable.Variable(name=k, B=[{i} for i in range(no_node_st)], values=node_st_cp)
+        varis[k] = variable.Variable(name=k, values=node_st_cp)
 
     # different from the main_sys
     edges2comps = {e: f'x{i}' for i, e in enumerate(edges.keys(), 1)}
@@ -171,7 +171,7 @@ def main_sys2(nodes_edges):
     comp_st_fval = [0, 1, 2] # state index to actual flow capacity (e.g. state 1 stands for flow capacity 0, etc.)
     for e, x in edges2comps.items():
         if x not in varis:
-            varis[x] = variable.Variable(name=x, B = [{i} for i in range(no_comp_st)], values = comp_st_fval)
+            varis[x] = variable.Variable(name=x, values = comp_st_fval)
 
     #no_sub = len(sub_bw_nodes) + 1
     #comps_st = {n: len(varis[n].B[0]) - 1 for _, n in edges2comps}

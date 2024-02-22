@@ -14,13 +14,10 @@ from BNS_JT import cpm, variable
 def dict_cpm():
     ''' Use instance of Variables in the variables'''
     A1 = variable.Variable(**{'name': 'A1',
-                              'B': [{0}, {1}, {0, 1}],
                               'values': ['s', 'f']})
     A2 = variable.Variable(**{'name': 'A2',
-                              'B': [{0}, {1}, {0, 1}],
                               'values': ['s', 'f']})
     A3 = variable.Variable(**{'name': 'A3',
-                              'B': [{0}, {1}, {0, 1}],
                               'values': ['s', 'f']})
 
     return {'variables': [A3, A2, A1],
@@ -32,11 +29,11 @@ def dict_cpm():
 @pytest.fixture()
 def var_A1_to_A5():
 
-    A1 = variable.Variable(name='A1', B=[{0},{1}],values=['Mild', 'Severe'])
-    A2 = variable.Variable(name='A2', B=[{0},{1},{0, 1}], values=['Survive', 'Fail'])
-    A3 = variable.Variable(name='A3', B=[{0},{1},{0, 1}], values=['Survive', 'Fail'])
-    A4 = variable.Variable(name='A4', B=[{0},{1},{0, 1}], values=['Survive', 'Fail'])
-    A5 = variable.Variable(name='A5', B=[{0},{1}], values=['Survive', 'Fail'])
+    A1 = variable.Variable(name='A1', values=['Mild', 'Severe'])
+    A2 = variable.Variable(name='A2', values=['Survive', 'Fail'])
+    A3 = variable.Variable(name='A3', values=['Survive', 'Fail'])
+    A4 = variable.Variable(name='A4', values=['Survive', 'Fail'])
+    A5 = variable.Variable(name='A5', values=['Survive', 'Fail'])
 
     return A1, A2, A3, A4, A5
 
@@ -168,9 +165,9 @@ def test_ismember1s():
 
 def test_ismember1ss():
 
-    A1 = variable.Variable(**{'name':'A1', 'B': [{0}, {1}, {0, 1}],
+    A1 = variable.Variable(**{'name':'A1',
                    'values': ['s', 'f']})
-    A2 = variable.Variable(**{'name': 'A2', 'B': [{0}, {1}, {0, 1}],
+    A2 = variable.Variable(**{'name': 'A2',
                    'values': ['s', 'f']})
     checkVars = [A1]
     variables = [A2, A1]
@@ -243,12 +240,12 @@ def test_ismember2s():
 
 def test_ismember2ss():
 
-    A2 = variable.Variable(**{'name': 'A2', 'B': [{0},{1},{0, 1}], 'values': ['s', 'f']})
-    A3 = variable.Variable(**{'name': 'A3', 'B': [{0},{1},{0, 1}], 'values': ['s', 'f']})
-    A4 = variable.Variable(**{'name': 'A4', 'B': [{0},{1},{0, 1}], 'values': ['s', 'f']})
-    A5 = variable.Variable(**{'name': 'A5', 'B': [{0},{1},{0, 1}], 'values': ['s', 'f']})
-    A6 = variable.Variable(**{'name': 'A6', 'B': [{0},{1},{0, 1}], 'values': ['s', 'f']})
-    A8 = variable.Variable(**{'name': 'A8', 'B': [{0},{1},{0, 1}], 'values': ['s', 'f']})
+    A2 = variable.Variable(**{'name': 'A2', 'values': ['s', 'f']})
+    A3 = variable.Variable(**{'name': 'A3', 'values': ['s', 'f']})
+    A4 = variable.Variable(**{'name': 'A4', 'values': ['s', 'f']})
+    A5 = variable.Variable(**{'name': 'A5', 'values': ['s', 'f']})
+    A6 = variable.Variable(**{'name': 'A6', 'values': ['s', 'f']})
+    A8 = variable.Variable(**{'name': 'A8', 'values': ['s', 'f']})
 
     A = [A5, A3, A4, A2]
     B = [A2, A4, A4, A4, A6, A8]
@@ -447,13 +444,13 @@ def test_isinscope1ss():
     [3,1,2,2,3,3,3],
     [3,2,2,3,3,3,3]]) - 1
 
-    A1 = variable.Variable(**{'name': 'A1', 'B': [{0},{1},{0, 1}], 'values': ['s', 'f']})
-    A2 = variable.Variable(**{'name': 'A2', 'B': [{0},{1},{0, 1}], 'values': ['s', 'f']})
-    A3 = variable.Variable(**{'name': 'A3', 'B': [{0},{1},{0, 1}], 'values': ['s', 'f']})
-    A4 = variable.Variable(**{'name': 'A4', 'B': [{0},{1},{0, 1}], 'values': ['s', 'f']})
-    A5 = variable.Variable(**{'name': 'A5', 'B': [{0},{1},{0, 1}], 'values': ['s', 'f']})
-    A6 = variable.Variable(**{'name': 'A6', 'B': [{0},{1},{0, 1}], 'values': ['s', 'f']})
-    A7 = variable.Variable(**{'name': 'A7', 'B': [{0},{1},{0, 1}], 'values': ['s', 'f']})
+    A1 = variable.Variable(**{'name': 'A1', 'values': ['s', 'f']})
+    A2 = variable.Variable(**{'name': 'A2', 'values': ['s', 'f']})
+    A3 = variable.Variable(**{'name': 'A3', 'values': ['s', 'f']})
+    A4 = variable.Variable(**{'name': 'A4', 'values': ['s', 'f']})
+    A5 = variable.Variable(**{'name': 'A5', 'values': ['s', 'f']})
+    A6 = variable.Variable(**{'name': 'A6', 'values': ['s', 'f']})
+    A7 = variable.Variable(**{'name': 'A7', 'values': ['s', 'f']})
 
     for i in range(1, 7):
         m = cpm.Cpm(variables= [eval(f'A{i}')],
@@ -485,11 +482,11 @@ def setup_iscompatible():
     M = {}
     v = {}
 
-    v[1] = variable.Variable(name='1', B=[{0}, {1}],values=['Mild', 'Severe'])
-    v[2] = variable.Variable(name='2', B=[{0}, {1}, {0, 1}], values=['Survive', 'Fail'])
-    v[3] = variable.Variable(name='3', B=[{0}, {1}, {0, 1}], values=['Survive', 'Fail'])
-    v[4] = variable.Variable(name='4', B=[{0}, {1}, {0, 1}], values=['Survive', 'Fail'])
-    v[5] = variable.Variable(name='5', B=[{0}, {1}], values=['Survive', 'Fail'])
+    v[1] = variable.Variable(name='1', values=['Mild', 'Severe'])
+    v[2] = variable.Variable(name='2', values=['Survive', 'Fail'])
+    v[3] = variable.Variable(name='3', values=['Survive', 'Fail'])
+    v[4] = variable.Variable(name='4', values=['Survive', 'Fail'])
+    v[5] = variable.Variable(name='5', values=['Survive', 'Fail'])
 
     M[1] = cpm.Cpm(variables=[v[1]], no_child=1, C = np.array([[1, 2]]).T - 1, p = np.array([0.9, 0.1]).T)
     M[2] = cpm.Cpm(variables=[v[2], v[1]], no_child=1, C = np.array([[1, 1], [2, 1], [1, 2], [2, 2]]) - 1, p = np.array([0.99, 0.01, 0.9, 0.1]).T)
@@ -559,11 +556,11 @@ def test_iscompatible3(setup_iscompatible):
 
 def test_iscompatible3ss():
 
-    A1 = variable.Variable(name='A1', B=[{0},{1}],values=['Mild', 'Severe'])
-    A2 = variable.Variable(name='A2', B=[{0},{1},{0, 1}], values=['Survive', 'Fail'])
-    A3 = variable.Variable(name='A3', B=[{0},{1},{0, 1}], values=['Survive', 'Fail'])
-    A4 = variable.Variable(name='A4', B=[{0},{1},{0, 1}], values=['Survive', 'Fail'])
-    A5 = variable.Variable(name='A5', B=[{0},{1}], values=['Survive', 'Fail'])
+    A1 = variable.Variable(name='A1', values=['Mild', 'Severe'])
+    A2 = variable.Variable(name='A2', values=['Survive', 'Fail'])
+    A3 = variable.Variable(name='A3', values=['Survive', 'Fail'])
+    A4 = variable.Variable(name='A4', values=['Survive', 'Fail'])
+    A5 = variable.Variable(name='A5', values=['Survive', 'Fail'])
 
     #M[1]
     C = np.array([[1, 2]]).T - 1
@@ -767,11 +764,11 @@ def test_iscompatibleCpm4(setup_bridge):
 @pytest.fixture
 def setup_product():
 
-    X1 = variable.Variable(name='X1', B=[{0}, {1}],values=['Mild', 'Severe'])
-    X2 = variable.Variable(name='X2', B=[{0}, {1}, {0, 1}], values=['Survive', 'Fail'])
-    X3 = variable.Variable(name='X3', B=[{0}, {1}, {0, 1}], values=['Survive', 'Fail'])
-    X4 = variable.Variable(name='X4', B=[{0}, {1}, {0, 1}], values=['Survive', 'Fail'])
-    X5 = variable.Variable(name='X5', B=[{0}, {1}], values=['Survive', 'Fail'])
+    X1 = variable.Variable(name='X1', values=['Mild', 'Severe'])
+    X2 = variable.Variable(name='X2', values=['Survive', 'Fail'])
+    X3 = variable.Variable(name='X3', values=['Survive', 'Fail'])
+    X4 = variable.Variable(name='X4', values=['Survive', 'Fail'])
+    X5 = variable.Variable(name='X5', values=['Survive', 'Fail'])
 
     M = {}
     M[2] = cpm.Cpm(variables=[X2, X1], no_child=1, C = np.array([[1, 1], [2, 1], [1, 2], [2, 2]]) - 1, p = np.array([0.99, 0.01, 0.9, 0.1]).T)
@@ -985,11 +982,11 @@ def setup_condition():
          [1,2,2,2,2],
          [2,2,2,2,2]]) - 1
     p = np.array([[0.9405, 0.0095, 0.0495, 0.0005, 0.7650, 0.0850, 0.1350, 0.0150, 0.9405, 0.0095, 0.0495, 0.0005, 0.7650, 0.0850, 0.1350, 0.0150]]).T
-    v1 = variable.Variable(name='v1', B=[{0}, {1}],values=['Mild', 'Severe'])
-    v2 = variable.Variable(name='v2', B=[{0}, {1}, {0, 1}], values=['Survive', 'Fail'])
-    v3 = variable.Variable(name='v3', B=[{0}, {1}, {0, 1}], values=['Survive', 'Fail'])
-    v4 = variable.Variable(name='v4', B=[{0}, {1}, {0, 1}], values=['Survive', 'Fail'])
-    v5 = variable.Variable(name='v5', B=[{0}, {1}], values=['Survive', 'Fail'])
+    v1 = variable.Variable(name='v1', values=['Mild', 'Severe'])
+    v2 = variable.Variable(name='v2', values=['Survive', 'Fail'])
+    v3 = variable.Variable(name='v3', values=['Survive', 'Fail'])
+    v4 = variable.Variable(name='v4', values=['Survive', 'Fail'])
+    v5 = variable.Variable(name='v5', values=['Survive', 'Fail'])
 
     Mx = cpm.Cpm(variables=[v2, v3, v5, v1, v4], no_child=3, C = C, p = p)
 
@@ -1069,7 +1066,7 @@ def test_condition0(setup_condition):
 
     B = cpm.add_new_states(compatCheck_mv, B)
     _condVars[0] = variable.Variable(name=_condVars[0].name,
-                            B=B,
+                            #B=B,
                             values=_condVars[0].values)
     #_condVars[0].B = B
 
@@ -1556,11 +1553,11 @@ def test_sum6(setup_bridge):
 @pytest.fixture
 def setup_mcs_product():
 
-    v1 = variable.Variable(name='v1', B=[{0}, {1}],values=['Mild', 'Severe'])
-    v2 = variable.Variable(name='v2', B=[{0}, {1}, {0, 1}], values=['Survive', 'Fail'])
-    v3 = variable.Variable(name='v3', B=[{0}, {1}, {0, 1}], values=['Survive', 'Fail'])
-    v4 = variable.Variable(name='v4', B=[{0}, {1}, {0, 1}], values=['Survive', 'Fail'])
-    v5 = variable.Variable(name='v5', B=[{0}, {1}], values=['Survive', 'Fail'])
+    v1 = variable.Variable(name='v1', values=['Mild', 'Severe'])
+    v2 = variable.Variable(name='v2', values=['Survive', 'Fail'])
+    v3 = variable.Variable(name='v3', values=['Survive', 'Fail'])
+    v4 = variable.Variable(name='v4', values=['Survive', 'Fail'])
+    v5 = variable.Variable(name='v5', values=['Survive', 'Fail'])
 
     M = {}
     M[1] = cpm.Cpm(variables=[v1],
@@ -1803,9 +1800,9 @@ def test_condition(setup_mcs_product):
 
 @pytest.fixture
 def setup_prod_cms():
-    v1 = variable.Variable(name='v1', B=[{0}, {1}, {2}], values=['Sunny', 'Cloudy', 'Rainy'])
-    v2 = variable.Variable(name='v2', B=[{0}, {1}], values=['Good', 'Bad'])
-    v3 = variable.Variable(name='v3', B=[{0}, {1}], values=['Below 0', 'Above 0'])
+    v1 = variable.Variable(name='v1', values=['Sunny', 'Cloudy', 'Rainy'])
+    v2 = variable.Variable(name='v2', values=['Good', 'Bad'])
+    v3 = variable.Variable(name='v3', values=['Below 0', 'Above 0'])
 
     M = {}
     M[1] = cpm.Cpm(variables=[v1],
@@ -1842,9 +1839,9 @@ def test_prod_cpms1(setup_prod_cms):
 def test_prod_cpms2(setup_prod_cms):
 
     values = ['S', 'F']
-    v1 = variable.Variable(name='v1', B=[{0}, {1}, {0, 1}], values=values)
-    v2 = variable.Variable(name='v2', B=[{0}, {1}, {0, 1}], values=values)
-    v3 = variable.Variable(name='v3', B=[{0}, {1}, {0, 1}], values=values)
+    v1 = variable.Variable(name='v1', values=values)
+    v2 = variable.Variable(name='v2', values=values)
+    v3 = variable.Variable(name='v3', values=values)
 
     M = {}
     M[1] = cpm.Cpm(variables=[v1],
@@ -1878,9 +1875,9 @@ def test_prod_cpms2(setup_prod_cms):
 def test_prod_cpms3(setup_prod_cms):
 
     values = ['S', 'F']
-    v1 = variable.Variable(name='v1', B=[{0}, {1}, {0, 1}], values=values)
-    v2 = variable.Variable(name='v2', B=[{0}, {1}, {0, 1}], values=values)
-    v3 = variable.Variable(name='v3', B=[{0}, {1}, {0, 1}], values=values)
+    v1 = variable.Variable(name='v1', values=values)
+    v2 = variable.Variable(name='v2', values=values)
+    v3 = variable.Variable(name='v3', values=values)
 
     M = {}
     M['e1'] = cpm.Cpm(variables=[v1],
@@ -1912,9 +1909,9 @@ def test_prod_cpms3(setup_prod_cms):
 def test_get_variables_from_cpms():
 
     values = ['S', 'F']
-    v1 = variable.Variable(name='v1', B=[{0}, {1}, {0, 1}], values=values)
-    v2 = variable.Variable(name='v2', B=[{0}, {1}, {0, 1}], values=values)
-    v3 = variable.Variable(name='v3', B=[{0}, {1}, {0, 1}], values=values)
+    v1 = variable.Variable(name='v1', values=values)
+    v2 = variable.Variable(name='v2', values=values)
+    v3 = variable.Variable(name='v3', values=values)
 
     m1 = cpm.Cpm(variables=[v1, v2],
              C = np.array([[1, 1], [2, 2]]) - 1,

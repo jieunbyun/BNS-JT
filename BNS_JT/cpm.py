@@ -597,7 +597,7 @@ def condition(M, cnd_vars, cnd_states, sample_idx=[]):
                     check = [B[x].intersection(B[state]) for x in C1]
                     #B = add_new_states(check, B)
                     cnd_var = Variable(name=cnd_var.name,
-                                       B=add_new_states(check, B),
+                                       #B=add_new_states(check, B),
                                        values=cnd_var.values)
                     Ccond[:, idx] = [x for x in ismember(check, B)[1]]
 

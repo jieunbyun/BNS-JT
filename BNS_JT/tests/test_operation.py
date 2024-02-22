@@ -21,10 +21,11 @@ def setup_sys_three_edges():
     '''
     varis = {}
     values = ['fail', 'survival']
-    varis['x1']= variable.Variable(**{'name': 'x1', 'B': [{0}, {1}, {0, 1}], 'values': values})
-    varis['x2']= variable.Variable(**{'name': 'x2', 'B': [{0}, {1}, {0, 1}], 'values': values})
-    varis['x3']= variable.Variable(**{'name': 'x3', 'B': [{0}, {1}, {0, 1}], 'values': values})
-    varis['sys']= variable.Variable(**{'name': 'sys', 'B': [{0}, {1}, {0, 1}], 'values': values})
+
+    varis['x1']= variable.Variable(**{'name': 'x1', 'values': values})
+    varis['x2']= variable.Variable(**{'name': 'x2', 'values': values})
+    varis['x3']= variable.Variable(**{'name': 'x3', 'values': values})
+    varis['sys']= variable.Variable(**{'name': 'sys', 'values': values})
 
     no_child = 1
     C = np.array([[0, 2, 2, 0],
@@ -48,19 +49,34 @@ def setup_sys_rbd():
     '''
     varis = {}
     values = ['fail', 'survival']
-    varis['x1']= variable.Variable(**{'name': 'x1', 'B': [{0}, {1}, {0, 1}], 'values': values})
-    varis['x2']= variable.Variable(**{'name': 'x2', 'B': [{0}, {1}, {0, 1}], 'values': values})
-    varis['x3']= variable.Variable(**{'name': 'x3', 'B': [{0}, {1}, {0, 1}], 'values': values})
-    varis['x4']= variable.Variable(**{'name': 'x4', 'B': [{0}, {1}, {0, 1}], 'values': values})
-    varis['x5']= variable.Variable(**{'name': 'x5', 'B': [{0}, {1}, {0, 1}], 'values': values})
-    varis['x6']= variable.Variable(**{'name': 'x6', 'B': [{0}, {1}, {0, 1}], 'values': values})
-    varis['x7']= variable.Variable(**{'name': 'x7', 'B': [{0}, {1}, {0, 1}], 'values': values})
-    varis['x8']= variable.Variable(**{'name': 'x8', 'B': [{0}, {1}, {0, 1}], 'values': values})
-    varis['source']= variable.Variable(**{'name': 'source', 'B': [{0}, {1}, {0, 1}], 'values': values})
-    varis['sink']= variable.Variable(**{'name': 'sink', 'B': [{0}, {1}, {0, 1}], 'values': values})
-    varis['sys']= variable.Variable(**{'name': 'sys', 'B': [{0}, {1}, {0, 1}], 'values': values})
 
-    return varis
+    arcs = {'e1': ['source', 'x1'],
+            'e2': ['source', 'x2'],
+            'e3': ['source', 'x3'],
+            'e4': ['source', 'x4'],
+            'e5': ['x4', 'x5'],
+            'e6': ['x5', 'x6'],
+            'e7': ['x6', 'x7'],
+            'e8': ['x7', 'x8'],
+            'e9': ['x8', 'sink'],
+            'e10': ['x1', 'x7'],
+            'e11': ['x2', 'x7'],
+            'e12': ['x3', 'x7'],
+            }
+
+    # nodes
+    for k in range(1, 9):
+        varis[f'x{k}'] = variable.Variable(**{'name': f'x{k}', 'values': values})
+
+    # edges
+    for k in range(1, 13):
+        varis[f'e{k}'] = variable.Variable(**{'name': f'e{k}', 'values': values})
+
+    varis['source']= variable.Variable(**{'name': 'source', 'values': values})
+    varis['sink']= variable.Variable(**{'name': 'sink', 'values': values})
+    varis['sys']= variable.Variable(**{'name': 'sys', 'values': values})
+
+    return varis, arcs
 
 
 def test_init(setup_sys_three_edges):

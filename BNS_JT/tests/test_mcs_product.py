@@ -24,7 +24,7 @@ def setup_sys(data_bridge):
     #p_high = 0.05
 
     # hazard
-    varis['haz'] = variable.Variable(name='haz', B = [{0}, {1}], values=['low', 'high'])
+    varis['haz'] = variable.Variable(name='haz', values=['low', 'high'])
 
     C = np.array([[0, 1]]).T
     p = np.array([0.95, 0.05])
@@ -71,7 +71,7 @@ def setup_sys(data_bridge):
               [arc_surv, high], [arc_fail, high]])
 
     for k in arcs.keys():
-        varis[k] = variable.Variable(name=k, B=[{0}, {1}, {0, 1}], values=['Surv', 'Fail'])
+        varis[k] = variable.Variable(name=k, values=['Surv', 'Fail'])
 
         _type = arcs_type[k]
         prob = [lognorm.cdf(GM_obs[k], frag[_type]['std'], scale=frag[_type]['med']),
@@ -84,7 +84,7 @@ def setup_sys(data_bridge):
                               p = p)
 
     # Travel times (systems): P(OD_j | X1, ... Xn) j = 1 ... nOD
-    varis['od1'] = variable.Variable(name='od1', B=[{0}, {1}, {2}],
+    varis['od1'] = variable.Variable(name='od1',
         values=[0.0901, 0.2401, np.inf])
 
     _variables = [varis[k] for k in ['od1', 'e1', 'e2', 'e3', 'e4', 'e5', 'e6']]

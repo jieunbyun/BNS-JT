@@ -59,13 +59,6 @@ def sys_fun_wrap(od_pair, arcs, varis, thres=None):
     return sys_fun2
 
 
-def sys_fun_wrap_conn(od_pair, arcs, varis):
-
-    def sys_fun2(comps_st):
-        return get_connectivity_given_comps(comps_st, od_pair, arcs, varis)
-    return sys_fun2
-
-
 def sf_min_path(comps_st, od_pair, arcs, vari, thres=None):
     """
     comps_st:
@@ -102,16 +95,25 @@ def sf_min_path(comps_st, od_pair, arcs, vari, thres=None):
                         min_comps_st[arc] = comps_st.get(arc)
 
     else:
-
+        # no threshold, only check connectivity
         d_time = None
+        # comps_st can be either node or edge, or combined
         path = get_connectivity_given_comps(comps_st, od_pair, arcs, vari)
+        # path consists of node
 
         min_comps_st = {}
         if isinstance(first, list):
             # fail, surv corresponds to 0 and 1
             if path:
                 sys_st = 's'
-                min_comps_st = {k: comps_st[k] for k in path}
+                # check if there is any comp
+                min_comps_st.update({k: comps_st[k] for k in path if k in comps_st})
+
+                for n0, n1 in zip(path[:-1], path[1:]):
+                    arc = next((k for k, v in arcs.items() if set([v[0], v[1]]) == set([n0, n1])), None)
+                    if arc and (arc in comps_st):
+                            min_comps_st[arc] = comps_st[arc]
+
             else:
                 sys_st= 'f'
 
@@ -119,7 +121,14 @@ def sf_min_path(comps_st, od_pair, arcs, vari, thres=None):
             # fail, surv corresponds to 0 and 1
             if path:
                 sys_st = 's'
-                min_comps_st = {k: comps_st[k] for k in path}
+                # check if there is any comp
+                min_comps_st.update({k: comps_st[k] for k in path if k in comps_st})
+
+                for n0, n1 in zip(path[:-1], path[1:]):
+                    arc = next((k for k, v in arcs.items() if set([v['origin'], v['destination']]) == set([n0, n1])), None)
+                    if arc and (arc in comps_st):
+                            min_comps_st[arc] = comps_st[arc]
+
             else:
                 sys_st = 'f'
 
@@ -128,15 +137,18 @@ def sf_min_path(comps_st, od_pair, arcs, vari, thres=None):
 
 def get_connectivity_given_comps(comps_st, od_pair, arcs, vari):
     """
-    return True or False on connectivity given od
+    return path on connectivity given od_pair including od_pair
+    it works on either node or edge
     comps_st: starting from 0: (0: failure, 1: intact) only binary status
+              comps_st can be for node, edge or combined
     od_pair:
     arcs:
     vari:
     """
     assert isinstance(comps_st, dict)
-    assert all([comps_st[k] < len(v.values) for k, v in vari.items()])
+    assert all([v < len(vari[k].values) for k, v in comps_st.items()])
 
+    # node of od_pair should be intact regardless of comps_st
     _comps_st = comps_st.copy()
     _comps_st.update({k: 1 for k in od_pair})
 
@@ -145,17 +157,38 @@ def get_connectivity_given_comps(comps_st, od_pair, arcs, vari):
 
     if isinstance(first, (list, tuple)):
         for k, x in arcs.items():
-            if _comps_st[x[0]] and _comps_st[x[1]]:
-                G.add_edge(x[0], x[1])
+            check = False
+            try:
+                # node
+                check = _comps_st[x[0]] and _comps_st[x[1]]
+            except KeyError:
+                try:
+                    # edge
+                    check = _comps_st[k]
+                except KeyError:
+                    pass
+            finally:
+                if check:
+                    G.add_edge(x[0], x[1])
 
     elif isinstance(first, dict):
         for k, x in arcs.items():
-            if _comps_st[x['origin']] and _comps_st[x['destination']]:
-                G.add_edge(x['origin'], x['destination'])
+            check = False
+            try:
+                # node
+                check = _comps_st[x['origin']] and _comps_st[x['destination']]
+            except KeyError:
+                try:
+                    # edge
+                    check = _comps_st[k]
+                except KeyError:
+                    pass
+            finally:
+                if check:
+                    G.add_edge(x['origin'], x['destination'])
 
     try:
         path = nx.shortest_path(G, source = od_pair[0], target = od_pair[1])
-        [path.remove(x) for x in od_pair]
     except (nx.NodeNotFound, nx.exception.NetworkXNoPath):
         path = []
 
