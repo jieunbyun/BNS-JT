@@ -199,24 +199,23 @@ def test_get_cmat1(setup_branch):
 
     varis = {}
     for k in range(1, 7):
-        varis[k] = variable.Variable(name=str(k), B=[{0}, {1}, {0, 1}], values=['Surv', 'Fail'])
+        varis[k] = variable.Variable(name=str(k), values=['Surv', 'Fail'])
 
     B_ = [{0}, {1}, {2}]
-    varis[7] = variable.Variable(name='7', B=B_,
+    varis[7] = variable.Variable(name='7',
             values=[0.0901, 0.2401, np.inf])
 
-    varis[8] = variable.Variable(name='8', B=B_,
+    varis[8] = variable.Variable(name='8',
             values=[0.0901, 0.2401, np.inf])
 
-    varis[9] = variable.Variable(name='9', B=B_,
+    varis[9] = variable.Variable(name='9',
             values=[0.0943, 0.1761, np.inf])
 
-    varis[10] = variable.Variable(name='10', B=B_,
+    varis[10] = variable.Variable(name='10',
             values=[0.0707, 0.1997, np.inf])
 
-    B = [{0}, {1}]
     for i in range(11, 15):
-        varis[i] = variable.Variable(name=str(i), B=B[:],
+        varis[i] = variable.Variable(name=str(i),
             values=['No disruption', 'Disruption'])
 
     info = {'path': [[2], [3, 1]],
@@ -249,24 +248,24 @@ def test_get_cmat2(setup_branch):
     varis = {}
     B = [{0}, {1}, {0, 1}]
     for k in range(1, 7):
-        varis[k] = variable.Variable(name=str(k), B=B[:], values=['Surv', 'Fail'])
+        varis[k] = variable.Variable(name=str(k), values=['Surv', 'Fail'])
 
     B_ = [{0}, {1}, {2}]
-    varis[7] = variable.Variable(name='7', B=B_,
+    varis[7] = variable.Variable(name='7',
             values=[0.0901, 0.2401, np.inf])
 
-    varis[8] = variable.Variable(name='8', B=B_,
+    varis[8] = variable.Variable(name='8',
             values=[0.0901, 0.2401, np.inf])
 
-    varis[9] = variable.Variable(name='9', B=B_,
+    varis[9] = variable.Variable(name='9',
             values=[0.0943, 0.1761, np.inf])
 
-    varis[10] = variable.Variable(name='10', B=B_,
+    varis[10] = variable.Variable(name='10',
             values=[0.0707, 0.1997, np.inf])
 
     B = [{0}, {1}]
     for i in range(11, 15):
-        varis[i] = variable.Variable(name=str(i), B=B[:],
+        varis[i] = variable.Variable(name=str(i),
             values=['No disruption', 'Disruption'])
 
     C = branch.get_cmat(branches, [varis[i] for i in info['arcs']], True)
@@ -294,24 +293,24 @@ def test_get_cmat1s(setup_branch):
     varis = {}
     B = [{0}, {1}, {0, 1}]
     for k in range(1, 7):
-        varis[str(k)] = variable.Variable(name=str(k), B=B[:], values=['Surv', 'Fail'])
+        varis[str(k)] = variable.Variable(name=str(k), values=['Surv', 'Fail'])
 
     B_ = [{0}, {1}, {2}]
-    varis['7'] = variable.Variable(name='7', B=B_,
+    varis['7'] = variable.Variable(name='7',
             values=[0.0901, 0.2401, np.inf])
 
-    varis['8'] = variable.Variable(name='8', B=B_,
+    varis['8'] = variable.Variable(name='8',
             values=[0.0901, 0.2401, np.inf])
 
-    varis['9'] = variable.Variable(name='9', B=B_,
+    varis['9'] = variable.Variable(name='9',
             values=[0.0943, 0.1761, np.inf])
 
-    varis['10'] = variable.Variable(name='10', B=B_,
+    varis['10'] = variable.Variable(name='10',
             values=[0.0707, 0.1997, np.inf])
 
     B = [{0}, {1}]
     for i in range(11, 15):
-        varis[str(i)] = variable.Variable(name=str(i), B=B[:],
+        varis[str(i)] = variable.Variable(name=str(i),
             values=['No disruption', 'Disruption'])
     #pdb.set_trace()
     C = branch.get_cmat(branches, [varis[i] for i in info['arcs']], False)
@@ -384,7 +383,7 @@ def test_get_cmat_from_branches():
     # variables
     variables = {}
     for i in range(1, 7):
-        variables[f'e{i}'] = variable.Variable(name=f'e{i}', B=[{0}, {1}, {0, 1}], values=['Fail', 'Surv'])
+        variables[f'e{i}'] = variable.Variable(name=f'e{i}', values=['Fail', 'Surv'])
 
     branches =[({'e1': 0, 'e2': 1, 'e3': 0, 'e4': 0, 'e5': 0, 'e6': 0},
                 {'e1': 1, 'e2': 1, 'e3': 1, 'e4': 1, 'e5': 1, 'e6': 1}, 2, 2),

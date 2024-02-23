@@ -41,7 +41,7 @@ def main_sys(data_bridge):
     varis = {}
     delay_rat = [10, 2, 1] # delay in travel time given each component state (ratio)
     for k, v in arcs.items():
-        varis[k] = variable.Variable(name=k, B=[{0}, {1}, {2}] , values = [arc_times_h[k]*np.float64(x) for x in delay_rat])
+        varis[k] = variable.Variable(name=k, values = [arc_times_h[k]*np.float64(x) for x in delay_rat])
 
     return od_pair, arcs, varis
 
@@ -120,7 +120,7 @@ def main_sys_bridge(data_bridge):
     varis = {}
     for k, v in arcs.items():
         #varis[k] = variable.Variable(name=k, B=[{0}, {1}, {2}] , values = [arc_times_h[k]*np.float64(x) for x in delay_rat])
-        varis[k] = variable.Variable(name=k, B=[{0}, {1}, {0, 1}] , values = [10.0*arc_times_h[k], arc_times_h[k]])
+        varis[k] = variable.Variable(name=k, values = [10.0*arc_times_h[k], arc_times_h[k]])
 
     return od_pair, arcs, varis
 
@@ -187,15 +187,15 @@ def setup_inference(main_sys, setup_brs):
 
     for i, k in enumerate(arcs, 1):
         name = f'o{i}'
-        varis[name] = variable.Variable(name=name, B=[{0}, {1}, {2}, {0, 1, 2}], values = [0, 1, 2])
+        varis[name] = variable.Variable(name=name, values = [0, 1, 2])
         cpms[name] = cpm.Cpm(variables=[varis[name], varis[k]], no_child=1, C=C_o, p=p_o)
 
     # add observations
-    added = np.ones(shape=(csys.shape[0], len(arcs)), dtype=np.int8) * 3
+    added = np.ones(shape=(csys.shape[0], len(arcs)), dtype=np.int8) * 6
     csys = np.append(csys, added, axis=1)
 
     # add sys
-    varis['sys'] = variable.Variable('sys', [{0}, {1}, {2}], ['f', 's', 'u'])
+    varis['sys'] = variable.Variable('sys', ['f', 's', 'u'])
     cpm_sys_vname = [f'e{i}' for i in range(1, len(arcs) + 1)] + [f'o{i}' for i in range(1, len(arcs) + 1)] # observations first, components later
     cpm_sys_vname.insert(0, 'sys')
     cpms['sys'] = cpm.Cpm(
@@ -245,7 +245,7 @@ def setup_inference_not_used(main_sys):
 
     for i, k in enumerate(arcs, 1):
         name = f'o{i}'
-        varis[name] = variable.Variable(name=name, B=[{0}, {1}, {2}], values = [0, 1, 2])
+        varis[name] = variable.Variable(name=name, values = [0, 1, 2])
         cpms[name] = cpm.Cpm(variables=[varis[name], varis[k]], no_child=1, C=C_o, p=p_o)
 
     # Intact state of component vector: zero-based index 
@@ -640,7 +640,7 @@ def test_proposed_branch_and_bound_using_probs(main_sys):
     st_br_to_cs = {'f': 0, 's': 1, 'u': 2}
     csys, varis = gen_bnb.get_csys_from_brs(brs, varis, st_br_to_cs)
 
-    varis['sys'] = variable.Variable('sys', [{0}, {1}, {2}], ['f', 's', 'u'])
+    varis['sys'] = variable.Variable('sys', ['f', 's', 'u'])
     cpm_sys_vname = list(brs[0].up.keys())
     cpm_sys_vname.insert(0, 'sys')
 
@@ -1057,40 +1057,42 @@ def test_run_sys_fn3(main_sys):
 def test_get_composite_state1():
 
     varis = {}
-    varis['e1'] = variable.Variable(name='e1', B=[{0}, {1}, {2}], values=[1.5, 0.3, 0.15])
+    varis['e1'] = variable.Variable(name='e1', values=[1.5, 0.3, 0.15])
 
     states = [1, 2]
     result = variable.get_composite_state(varis['e1'], states)
-    expected = [{0}, {1}, {2}, {1, 2}]
+    expected = [{0}, {1}, {2}, {0, 1}, {0, 2}, {1, 2}, {0, 1, 2}]
     assert compare_list_of_sets(result[0].B, expected)
-    assert result[1] == 3
+    assert result[1] == 5
 
 
 def test_get_composite_state2(main_sys):
 
     #od_pair, arcs, varis = main_sys
     varis = {}
-    varis['e1'] = variable.Variable(name='e1', B=[{0}, {1}, {2}, {1, 2}], values=[1.5, 0.3, 0.15])
+    varis['e1'] = variable.Variable(name='e1', values=[1.5, 0.3, 0.15])
 
     states = [1, 2]
     result = variable.get_composite_state(varis['e1'], states)
 
-    expected = [{0}, {1}, {2}, {1, 2}]
+    expected = [{0}, {1}, {2}, {0, 1}, {0, 2}, {1, 2}, {0, 1, 2}]
+    #expected = [{0}, {1}, {2}, {1, 2}]
     assert compare_list_of_sets(result[0].B, expected)
-    assert result[1] == 3
+    assert result[1] == 5
 
 
 def test_get_composite_state3(main_sys):
 
     #od_pair, arcs, varis = main_sys
     varis = {}
-    varis['e1'] = variable.Variable(name='e1', B=[{0}, {1}, {2}], values=[1.5, 0.3, 0.15])
+    varis['e1'] = variable.Variable(name='e1', values=[1.5, 0.3, 0.15])
     states = [0, 2]
     result = variable.get_composite_state(varis['e1'], states)
 
-    expected = [{0}, {1}, {2}, {0, 2}]
+    expected = [{0}, {1}, {2}, {0, 1}, {0, 2}, {1, 2}, {0, 1, 2}]
+    #expected = [{0}, {1}, {2}, {0, 2}]
     assert compare_list_of_sets(result[0].B, expected)
-    assert result[1] == 3
+    assert result[1] == 4
 
 
 def test_get_csys_from_brs3(main_sys):
@@ -1128,7 +1130,7 @@ def test_get_csys_from_brs3(main_sys):
     #pdb.set_trace()
     csys, varis = gen_bnb.get_csys_from_brs(brs, varis, st_br_to_cs)
 
-    varis['sys'] = variable.Variable('sys', [{0}, {1}, {2}], ['f', 's', 'u'])
+    varis['sys'] = variable.Variable('sys', ['f', 's', 'u'])
     cpm_sys_vname = list(brs[0].up.keys())
     cpm_sys_vname.insert(0, 'sys')
 
@@ -1166,13 +1168,15 @@ def test_get_c_from_br(main_sys):
 
     varis, cst = gen_bnb.get_c_from_br(br, varis, st_br_to_cs)
 
-    assert cst.tolist() == [0, 3, 0, 3, 3, 3, 3]
-    assert compare_list_of_sets(varis['e1'].B, [{0}, {1}, {2}, {1, 2}])
+    assert cst.tolist() == [0, 5, 0, 3, 6, 6, 6]
+    """
+    assert compare_list_of_sets(varis['e1'].B, [{0}, {1}, {2}, {0, 1}, {0, 2}, {1, 2}, {0, 1, 2}])
     assert compare_list_of_sets(varis['e2'].B, [{0}, {1}, {2}])
     assert compare_list_of_sets(varis['e3'].B, [{0}, {1}, {2}, {0, 1}])
     assert compare_list_of_sets(varis['e4'].B, [{0}, {1}, {2}, {0, 1, 2}])
     assert compare_list_of_sets(varis['e5'].B, [{0}, {1}, {2}, {0, 1, 2}])
     assert compare_list_of_sets(varis['e6'].B, [{0}, {1}, {2}, {0, 1, 2}])
+    """
 
     # test2
     # using the previous output as an input
@@ -1180,14 +1184,15 @@ def test_get_c_from_br(main_sys):
                        {'e1': 2, 'e2': 0, 'e3': 2, 'e4': 2, 'e5': 1, 'e6': 2}, 'f', 'f')
 
     varis, cst = gen_bnb.get_c_from_br(br, varis, st_br_to_cs)
-    assert cst.tolist() == [0, 4, 0, 2, 3, 4, 3]
+    assert cst.tolist() == [0, 6, 0, 2, 6, 3, 6]
+    """
     assert compare_list_of_sets(varis['e1'].B, [{0}, {1}, {2}, {1, 2}, {0, 1, 2}])
     assert compare_list_of_sets(varis['e2'].B, [{0}, {1}, {2}])
     assert compare_list_of_sets(varis['e3'].B, [{0}, {1}, {2}, {0, 1}])
     assert compare_list_of_sets(varis['e4'].B, [{0}, {1}, {2}, {0, 1, 2}])
     assert compare_list_of_sets(varis['e5'].B, [{0}, {1}, {2}, {0, 1, 2}, {0, 1}])
     assert compare_list_of_sets(varis['e6'].B, [{0}, {1}, {2}, {0, 1, 2}])
-
+    """
 
 def test_get_csys_from_brs(setup_brs):
 
@@ -1196,30 +1201,32 @@ def test_get_csys_from_brs(setup_brs):
     st_br_to_cs = {'f': 0, 's': 1, 'u': 2}
     csys, varis = gen_bnb.get_csys_from_brs(brs, varis, st_br_to_cs)
 
-    assert compare_list_of_sets(varis['e1'].B, [{0}, {1}, {2}, {0, 1}, {0, 1, 2}])
-    assert compare_list_of_sets(varis['e2'].B, [{0}, {1}, {2}, {1, 2}])
-    assert compare_list_of_sets(varis['e3'].B, [{0}, {1}, {2}, {0, 1}, {0, 1, 2}])
-    assert compare_list_of_sets(varis['e4'].B, [{0}, {1}, {2}, {0, 1, 2}, {0, 1}])
-    assert compare_list_of_sets(varis['e5'].B, [{0}, {1}, {2}, {0, 1, 2}, {0, 1}, {1, 2}])
-    assert compare_list_of_sets(varis['e6'].B, [{0}, {1}, {2}, {0, 1, 2}, {0, 1}])
+    for i in range(1, 7):
+        assert compare_list_of_sets(varis[f'e{i}'].B, [{0}, {1}, {2}, {0, 1}, {0, 2}, {1, 2}, {0, 1, 2}])
+    #assert compare_list_of_sets(varis['e1'].B, [{0}, {1}, {2}, {0, 1}, {0, 1, 2}])
+    #assert compare_list_of_sets(varis['e2'].B, [{0}, {1}, {2}, {1, 2}])
+    #assert compare_list_of_sets(varis['e3'].B, [{0}, {1}, {2}, {0, 1}, {0, 1, 2}])
+    #assert compare_list_of_sets(varis['e4'].B, [{0}, {1}, {2}, {0, 1, 2}, {0, 1}])
+    #assert compare_list_of_sets(varis['e5'].B, [{0}, {1}, {2}, {0, 1, 2}, {0, 1}, {1, 2}])
+    #assert compare_list_of_sets(varis['e6'].B, [{0}, {1}, {2}, {0, 1, 2}, {0, 1}])
 
-    expected = np.array([[0, 3, 0, 3, 3, 3, 3],
-                         [0, 2, 0, 4, 3, 3, 3],
-                         [0, 2, 0, 2, 3, 4, 3],
-                         [0, 4, 3, 3, 4, 0, 3],
-                         [0, 4, 1, 3, 2, 0, 4],
-                         [0, 4, 2, 3, 2, 0, 0],
-                         [1, 2, 0, 2, 3, 2, 3],
-                         [1, 4, 2, 3, 2, 0, 1],
-                         [1, 4, 3, 3, 2, 0, 2],
-                         [1, 4, 3, 3, 3, 5, 3]])
+    expected = np.array([[0, 3, 0, 6, 6, 6, 6],
+                         [0, 2, 0, 3, 6, 6, 6],
+                         [0, 2, 0, 2, 6, 3, 6],
+                         [0, 6, 5, 6, 3, 0, 6],
+                         [0, 6, 1, 6, 2, 0, 3],
+                         [0, 6, 2, 6, 2, 0, 0],
+                         [1, 2, 0, 2, 6, 2, 6],
+                         [1, 6, 2, 6, 2, 0, 1],
+                         [1, 6, 5, 6, 2, 0, 2],
+                         [1, 6, 5, 6, 6, 5, 6]])
 
     assert compare_list_of_sets(csys, expected)
 
 
 def test_inference1(setup_inference):
 
-    # case 1: no observation
+    # case 1: no observatio
     cpms, varis, var_elim_order, arcs = setup_inference
 
     Msys = cpm.variable_elim([cpms[v] for v in varis.keys()], var_elim_order )
@@ -1239,11 +1246,12 @@ def test_inference2(setup_inference):
     cnd_states = [1, 1, 0, 1, 0, 1]  # observing e3, e5 failure
 
     Mobs = cpm.condition([cpms[v] for v in varis.keys()], cnd_vars, cnd_states)
+    # P(sys, obs)
     Msys_obs = cpm.variable_elim(Mobs, var_elim_order)
 
     np.testing.assert_array_almost_equal(Msys_obs.C, np.array([[0, 1]]).T)
     np.testing.assert_array_almost_equal(Msys_obs.p, np.array([[2.765e-5, 5.515e-5]]).T)
-
+    # P(sys=0|obs) = P(sys=0,obs) / P(obs) 
     pf_sys = Msys_obs.p[0] / np.sum(Msys_obs.p)
     assert pf_sys == pytest.approx(0.334, rel=1.0e-3)
 

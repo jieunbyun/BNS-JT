@@ -52,14 +52,14 @@ system_meta = {'system_meta': {
         }
 
 
-def sys_fun_wrap(od_pair, arcs, varis, thres):
+def sys_fun_wrap(od_pair, arcs, varis, thres=None):
 
     def sys_fun2(comps_st):
-        return sf_min_path(comps_st, od_pair, arcs, varis, thres)
+        return sf_min_path(comps_st, od_pair, arcs, varis, thres=thres)
     return sys_fun2
 
 
-def sf_min_path(comps_st, od_pair, arcs, vari, thres):
+def sf_min_path(comps_st, od_pair, arcs, vari, thres=None):
     """
     comps_st:
     od_pair:
@@ -69,31 +69,130 @@ def sf_min_path(comps_st, od_pair, arcs, vari, thres):
     """
     first = next(iter(arcs.items()))[1]
 
-    d_time, path = get_time_and_path_given_comps(comps_st, od_pair, arcs, vari)
+    if thres:
+        d_time, path = get_time_and_path_given_comps(comps_st, od_pair, arcs, vari)
 
-    min_comps_st = {}
-    if isinstance(first, list):
-        # fail, surv corresponds to 0 and 1
-        if d_time > thres:
-            sys_st = 'f'
-        else:
-            sys_st = 's'
-            for n0, n1 in zip(path[:-1], path[1:]):
-                arc = next((k for k, v in arcs.items() if set(v) == set([n0, n1])), None)
-                min_comps_st[arc] = comps_st[arc]
+        min_comps_st = {}
+        if isinstance(first, list):
+            # fail, surv corresponds to 0 and 1
+            if d_time > thres:
+                sys_st = 'f'
+            else:
+                sys_st = 's'
+                for n0, n1 in zip(path[:-1], path[1:]):
+                    arc = next((k for k, v in arcs.items() if set(v) == set([n0, n1])), None)
+                    min_comps_st[arc] = comps_st[arc]
 
-    elif isinstance(first, dict):
-        # fail, surv corresponds to 0 and 1
-        if d_time > thres:
-            sys_st = 'f'
-        else:
-            sys_st = 's'
-            for n0, n1 in zip(path[:-1], path[1:]):
-                arc = next((k for k, v in arcs.items() if set([v['origin'], v['destination']]) == set([n0, n1])), None)
-                if arc:
-                    min_comps_st[arc] = comps_st.get(arc)
+        elif isinstance(first, dict):
+            # fail, surv corresponds to 0 and 1
+            if d_time > thres:
+                sys_st = 'f'
+            else:
+                sys_st = 's'
+                for n0, n1 in zip(path[:-1], path[1:]):
+                    arc = next((k for k, v in arcs.items() if set([v['origin'], v['destination']]) == set([n0, n1])), None)
+                    if arc:
+                        min_comps_st[arc] = comps_st.get(arc)
+
+    else:
+        # no threshold, only check connectivity
+        d_time = None
+        # comps_st can be either node or edge, or combined
+        path = get_connectivity_given_comps(comps_st, od_pair, arcs, vari)
+        # path consists of node
+
+        min_comps_st = {}
+        if isinstance(first, list):
+            # fail, surv corresponds to 0 and 1
+            if path:
+                sys_st = 's'
+                # check if there is any comp
+                min_comps_st.update({k: comps_st[k] for k in path if k in comps_st})
+
+                for n0, n1 in zip(path[:-1], path[1:]):
+                    arc = next((k for k, v in arcs.items() if set([v[0], v[1]]) == set([n0, n1])), None)
+                    if arc and (arc in comps_st):
+                            min_comps_st[arc] = comps_st[arc]
+
+            else:
+                sys_st= 'f'
+
+        elif isinstance(first, dict):
+            # fail, surv corresponds to 0 and 1
+            if path:
+                sys_st = 's'
+                # check if there is any comp
+                min_comps_st.update({k: comps_st[k] for k in path if k in comps_st})
+
+                for n0, n1 in zip(path[:-1], path[1:]):
+                    arc = next((k for k, v in arcs.items() if set([v['origin'], v['destination']]) == set([n0, n1])), None)
+                    if arc and (arc in comps_st):
+                            min_comps_st[arc] = comps_st[arc]
+
+            else:
+                sys_st = 'f'
 
     return d_time, sys_st, min_comps_st
+
+
+def get_connectivity_given_comps(comps_st, od_pair, arcs, vari):
+    """
+    return path on connectivity given od_pair including od_pair
+    it works on either node or edge
+    comps_st: starting from 0: (0: failure, 1: intact) only binary status
+              comps_st can be for node, edge or combined
+    od_pair:
+    arcs:
+    vari:
+    """
+    assert isinstance(comps_st, dict)
+    assert all([v < len(vari[k].values) for k, v in comps_st.items()])
+
+    # node of od_pair should be intact regardless of comps_st
+    _comps_st = comps_st.copy()
+    _comps_st.update({k: 1 for k in od_pair})
+
+    G = nx.Graph()
+    first = next(iter(arcs.items()))[1]
+
+    if isinstance(first, (list, tuple)):
+        for k, x in arcs.items():
+            check = False
+            try:
+                # node
+                check = _comps_st[x[0]] and _comps_st[x[1]]
+            except KeyError:
+                try:
+                    # edge
+                    check = _comps_st[k]
+                except KeyError:
+                    pass
+            finally:
+                if check:
+                    G.add_edge(x[0], x[1])
+
+    elif isinstance(first, dict):
+        for k, x in arcs.items():
+            check = False
+            try:
+                # node
+                check = _comps_st[x['origin']] and _comps_st[x['destination']]
+            except KeyError:
+                try:
+                    # edge
+                    check = _comps_st[k]
+                except KeyError:
+                    pass
+            finally:
+                if check:
+                    G.add_edge(x['origin'], x['destination'])
+
+    try:
+        path = nx.shortest_path(G, source = od_pair[0], target = od_pair[1])
+    except (nx.NodeNotFound, nx.exception.NetworkXNoPath):
+        path = []
+
+    return path
 
 
 def get_time_and_path_given_comps(comps_st, od_pair, arcs, vari):
@@ -252,6 +351,51 @@ def get_node_conn_df(arcs, node_coords, avg_speed_by_arc, outfile=None):
                    'destination': v[1],
                    'link_capacity': None,
                    'weight': distance_by_arc[k]/avg_speed_by_arc[k]}
+
+    if outfile:
+        with open(outfile, 'w') as w:
+            json.dump(_dic, w, indent=4)
+        print(f'{outfile} is written')
+
+    return _dic
+
+
+def create_model_json_for_graph_network(arcs, node_coords, ODs, outfile=None):
+
+    _dic = {}
+    _dic.update(system_meta)
+
+    sysout_setup = {'sysout_setup': {}}
+    for k, v in ODs.items():
+        sysout_setup['sysout_setup'][k] = {'origin': v[0],
+                           'destination': v[1],
+                           'output_node_capacity': None,
+                           'capacity_fraction': None,
+                           'priorty': None
+                           }
+    _dic.update(sysout_setup)
+
+    #arcTimes_h = arcLens_km ./ arcs_Vavg_kmh
+    _dic['node_conn_df'] = {}
+    for k, v in arcs.items():
+        _dic['node_conn_df'][k] = {'origin': v[0],
+                   'destination': v[1],
+                   'link_capacity': None,
+                   'weight': 1.0}
+
+    component_list = {'component_list': {}}
+    for k, v in node_coords.items():
+        component_list['component_list'][k] = {'component_type': None,
+                             'component_class': None,
+                             'cost_fraction': None,
+                             'cost_fraction': None,
+                             'node_type': None,
+                             'node_cluster': None,
+                             'operation_capacity': None,
+                             'pos_x': v[0],
+                             'pos_y': v[1],
+                             'damages_states_constructor': None}
+    _dic.update(component_list)
 
     if outfile:
         with open(outfile, 'w') as w:

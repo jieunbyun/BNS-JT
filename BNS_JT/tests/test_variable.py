@@ -12,29 +12,25 @@ def test_init1():
     B = [{0}, {1},  {0, 1}]
     value = ['survival', 'fail']
 
-    var = {'name': name, 'B': B, 'values': value}
+    var = {'name': name, 'values': value}
     a = variable.Variable(**var)
 
     assert isinstance(a, variable.Variable)
-    np.testing.assert_array_equal(a.name, var['name'])
-    np.testing.assert_array_equal(a.B, var['B'])
-    np.testing.assert_array_equal(a.values, var['values'])
+    np.testing.assert_array_equal(a.name, name)
+    np.testing.assert_array_equal(a.B, B)
+    np.testing.assert_array_equal(a.values, value)
 
 
 def test_init2():
     name = 'A'
     a = variable.Variable(name)
     value = ['survival', 'fail']
-    B = [{0}, {1},  {0, 1}]
     a.values = value
-    a.B = B
-
-    var = {'name': name, 'B': B, 'values': value}
 
     assert isinstance(a, variable.Variable)
-    np.testing.assert_array_equal(a.name, var['name'])
-    np.testing.assert_array_equal(a.B, var['B'])
-    np.testing.assert_array_equal(a.values, var['values'])
+    np.testing.assert_array_equal(a.name, name)
+    np.testing.assert_array_equal(a.B, [{0}, {1}, {0, 1}])
+    np.testing.assert_array_equal(a.values, value)
 
 
 def test_init3():
@@ -45,7 +41,7 @@ def test_init3():
     B = [{0}, {1},  {0, 1}]
 
     # should define value first
-    with pytest.raises(AssertionError):
+    with pytest.raises(AttributeError):
         a.B = B
 
 
@@ -57,7 +53,7 @@ def test_init4():
     B = [{0}, {1}, {0, 2}] # should be {0, 1}
     a.values = value
 
-    with pytest.raises(AssertionError):
+    with pytest.raises(AttributeError):
         a.B = B
 
 
@@ -69,14 +65,14 @@ def test_init4():
     B = [{0}, {1}, {0, 1}, {0, 1}] #  max. len of B == 3
     a.values = value
 
-    with pytest.raises(AssertionError):
+    with pytest.raises(AttributeError):
         a.B = B
 
 
 def test_B1():
 
     f_B = [{0}, {1},  {2, 1}]
-    with pytest.raises(AssertionError):
+    with pytest.raises(TypeError):
         _ = variable.Variable(**{'name': 'A',
                         'B': f_B,
                         'values': ['T', 'F']})
@@ -85,7 +81,7 @@ def test_B1():
 def test_B2():
 
     f_B = [{2}]
-    with pytest.raises(AssertionError):
+    with pytest.raises(TypeError):
         _ = variable.Variable(**{'name': 'x',
                         'B': f_B,
                         'values': ['T', 'F']})
@@ -96,7 +92,7 @@ def test_eq1():
     B = [{0}, {1},  {0, 1}]
     value = ['survival', 'fail']
 
-    var = {'name': name, 'B': B, 'values': value}
+    var = {'name': name, 'values': value}
     a = variable.Variable(**var)
     b = variable.Variable(**var)
 
@@ -108,7 +104,7 @@ def test_eq2():
     B = [{0}, {1},  {0, 1}]
     value = ['survival', 'fail']
 
-    var = {'name': name, 'B': B, 'values': value}
+    var = {'name': name, 'values': value}
     a = variable.Variable(**var)
 
     b = variable.Variable(**var)
@@ -122,15 +118,15 @@ def test_eq3():
     name = 'A'
     B = [{0}, {1},  {0, 1}]
     value = ['survival', 'fail']
-    var = {'name': name, 'B': B, 'values': value}
+    var = {'name': name, 'values': value}
     a = variable.Variable(**var)
 
     A = [a, a, a]
 
-    var = {'name': 'A', 'B': B, 'values': value}
+    var = {'name': 'A', 'values': value}
     b = variable.Variable(**var)
 
-    var = {'name': 'C', 'B': B, 'values': value}
+    var = {'name': 'C', 'values': value}
     c = variable.Variable(**var)
 
     B = [b, c]

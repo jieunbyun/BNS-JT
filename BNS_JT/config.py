@@ -50,11 +50,16 @@ class Config(object):
         assert file_model.exists(), f'{file_model} does not exist'
         self.infra = read_model_from_json(file_model)
 
-        file_scenarios = HOME.joinpath(cfg['SCENARIO_NAME'])
-        assert file_scenarios.exists(), f'{file_scenarios} does not exist'
-        self.scenarios = read_scenarios_from_json(file_scenarios)
+        # scenario can be empty
+        if cfg['SCENARIO_NAME']:
 
-        self.no_ds = len(self.scenarios['damage_states'])
+            file_scenarios = HOME.joinpath(cfg['SCENARIO_NAME'])
+            assert file_scenarios.exists(), f'{file_scenarios} does not exist'
+            self.scenarios = read_scenarios_from_json(file_scenarios)
+            self.no_ds = len(self.scenarios['damage_states'])
+
+        else:
+            print(f'scenario to be added later')
 
         self.key = cfg['CONFIGURATION_ID']
 
