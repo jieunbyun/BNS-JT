@@ -69,9 +69,26 @@ def proposed_branch_and_bound_using_probs(sys_fun, varis, probs, max_br, output_
 
     brs = init_branch(worst, best, rules)
 
+    # For monitoring purpose (store for each iteration)
+    pf_up = [] # upper bound on pf
+    pf_low = [] # lower bound on pf
+    br_ns = [] # number of branches
+    sf_ns = [] # number of system function runs
+    r_ns = [] # number of rules
+
+    stop_br = False
     while no_bu and len(brs) < max_br:
 
+        if stop_br == True:
+            r_ns.append(no_rf + no_rs)
+            pf_up.append(1.0-pr_bs)
+            pf_low.append(pr_bf)
+            br_ns.append(len(brs))
+            sf_ns.append(no_sf)
+
+        
         no_iter += 1
+
         print(f'[System function runs {no_sf}]..')
         print(f'The # of found non-dominated rules (f, s): {no_rf + no_rs} ({no_rf}, {no_rs})')
         print(f'Probability of branchs (f, s, u): ({pr_bf:.2f}, {pr_bs:.2f}, {pr_bu:.2f})')
@@ -139,6 +156,7 @@ def proposed_branch_and_bound_using_probs(sys_fun, varis, probs, max_br, output_
 
         no_rf = len(rules['f']) # no. of failure rules
         no_rs = len(rules['s']) # no. of survival rules
+        
         """
         if no_rf > 0:
             len_rf = sum([len(x) for x in rules['f']])/no_rf # mean length of failure rules
@@ -165,7 +183,7 @@ def proposed_branch_and_bound_using_probs(sys_fun, varis, probs, max_br, output_
             pickle.dump(brs, fout)
         print(f'{output_file} is saved')
 
-    return brs, rules, sys_res
+    return brs, rules, sys_res, r_ns, pf_up, pf_low, br_ns, sf_ns
 
 
 
