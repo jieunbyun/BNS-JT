@@ -79,14 +79,6 @@ def proposed_branch_and_bound_using_probs(sys_fun, varis, probs, max_br, output_
     stop_br = False
     while no_bu and len(brs) < max_br:
 
-        if stop_br == True:
-            r_ns.append(no_rf + no_rs)
-            pf_up.append(1.0-pr_bs)
-            pf_low.append(pr_bf)
-            br_ns.append(len(brs))
-            sf_ns.append(no_sf)
-
-        
         no_iter += 1
 
         print(f'[System function runs {no_sf}]..')
@@ -117,6 +109,20 @@ def proposed_branch_and_bound_using_probs(sys_fun, varis, probs, max_br, output_
 
                     rules = update_rule_set(rules, rule)
                     sys_res = pd.concat([sys_res, sys_res_], ignore_index=True)
+
+                    ########## FOR MONITORING ##################
+                    pr_bf = sum([b[4] for b in brs if b.up_state == 'f']) # prob. of failure branches
+                    pr_bs = sum([b[4] for b in brs if b.down_state == 's']) # prob. of survival branches
+                    no_bu = sum([(b.up_state == 'u') or (b.down_state == 'u') or (b.down_state != b.up_state) for b in brs]) # no. of unknown branches
+                    pr_bu = sum([b[4] for b in brs if (b.up_state == 'u') or (b.down_state == 'u') or (b.down_state != b.up_state)])
+
+                    r_ns.append(len(rules['f']) + len(rules['s']))
+                    pf_up.append(float(1.0-pr_bs))
+                    pf_low.append(float(pr_bf))
+                    br_ns.append(len(brs))
+                    sf_ns.append(no_sf)
+                    #########################################
+
                     brs = init_branch(worst, best, rules)
                     brs_new = []
                     no_iter = 0
@@ -176,6 +182,20 @@ def proposed_branch_and_bound_using_probs(sys_fun, varis, probs, max_br, output_
     #print(f'[System function runs {no_sf}]..')
     #print(f'The # of found non-dominated rules (f, s): {no_rf + no_rs} ({no_rf}, {no_rs})')
     #print(f'Probability of branchs (f, s, u): ({pr_bf}, {pr_bs}, {pr_bu})')
+
+
+    ########## FOR MONITORING ##################
+    pr_bf = sum([b[4] for b in brs if b.up_state == 'f']) # prob. of failure branches
+    pr_bs = sum([b[4] for b in brs if b.down_state == 's']) # prob. of survival branches
+    no_bu = sum([(b.up_state == 'u') or (b.down_state == 'u') or (b.down_state != b.up_state) for b in brs]) # no. of unknown branches
+    pr_bu = sum([b[4] for b in brs if (b.up_state == 'u') or (b.down_state == 'u') or (b.down_state != b.up_state)])
+
+    r_ns.append(len(rules['f']) + len(rules['s']))
+    pf_up.append(float(1.0-pr_bs))
+    pf_low.append(float(pr_bf))
+    br_ns.append(len(brs))
+    sf_ns.append(no_sf)
+    #########################################
 
     if flag:
         output_file = output_path.joinpath(f'brs_{key}.pk')
