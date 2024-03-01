@@ -3,11 +3,14 @@ import sys, os
 import pytest
 import pdb
 import copy
+from pathlib import Path
 
 np.set_printoptions(precision=3)
 #pd.set_option.display_precision = 3
 
-from BNS_JT import cpm, variable
+from BNS_JT import cpm, variable, config, trans, gen_bnb
+
+HOME = Path(__file__).parent
 
 
 @pytest.fixture
@@ -1992,3 +1995,68 @@ def test_variable_elim(setup_bridge):
 
     np.testing.assert_array_almost_equal(result.C, np.array([[0, 1, 2]]).T)
     np.testing.assert_array_almost_equal(result.p, np.array([[0.009, 0.048, 0.942]]).T, decimal=3)
+
+
+def test_prod_cpm_sys_and_comps():
+
+    cfg = config.Config(HOME.joinpath('../demos/routine/config.json'))
+
+    st_br_to_cs = {'f':0, 's':1, 'u': 2}
+
+    od_pair = cfg.infra['ODs']['od1']
+
+    probs = {'e1': {0: 0.01, 1:0.99}, 'e2': {0:0.02, 1:0.98}, 'e3': {0:0.03, 1:0.97}, 'e4': {0:0.04, 1:0.96}, 'e5': {0:0.05, 1:0.95}}
+
+    varis = {}
+    cpms = {}
+    for k in cfg.infra['edges'].keys():
+        varis[k] = variable.Variable(name=k, values=['f', 's'])
+
+        cpms[k] = cpm.Cpm(variables = [varis[k]], no_child=1,
+                          C = np.array([0, 1]).T, p = [probs[k][0], probs[k][1]])
+
+    #sys_fun = lambda comps_st : conn(comps_st, od_pair, arcs)
+    sys_fun = trans.sys_fun_wrap(od_pair, cfg.infra['edges'], varis)
+
+    brs, _, _, _ = gen_bnb.proposed_branch_and_bound_using_probs(
+            sys_fun, varis, probs, max_br=1000, output_path=HOME, key='routine')
+
+    csys_by_od, varis_by_od = gen_bnb.get_csys_from_brs(brs, varis, st_br_to_cs)
+
+    varis['sys'] = variable.Variable(name='sys', values=['f', 's'])
+    cpms['sys'] = cpm.Cpm(variables = [varis[k] for k in ['sys'] + list(cfg.infra['edges'].keys())],
+                          no_child = 1,
+                          C = csys_by_od.copy(),
+                          p = np.ones(csys_by_od.shape[0]))
+    cpms_comps = {k: cpms[k] for k in cfg.infra['edges'].keys()}
+
+    cpms_new = cpm.prod_cpm_sys_and_comps(cpms['sys'], cpms_comps, varis)
+
+    expected_C = np.array([[1, 1, 2, 2, 1, 2],
+                           [1, 1, 1, 2, 0, 1],
+                           [1, 0, 1, 2, 2, 1],
+                           [0, 1, 2, 2, 0, 0],
+                           [0, 1, 0, 0, 0, 1],
+                           [1, 1, 0, 1, 0, 1],
+                           [0, 0, 1, 1, 0, 0],
+                           [1, 0, 1, 1, 1, 0],
+                           [0, 0, 0, 2, 2, 2],
+                           [0, 0, 1, 0, 2, 0]])
+
+    expected_p = np.array([[9.50400e-01], [3.68676e-02], [9.31000e-03],
+                           [1.98000e-03], [2.25720e-05], [7.29828e-04],
+                           [1.90120e-05], [4.56288e-04], [2.00000e-04],
+                           [1.47000e-05]])
+
+    np.testing.assert_array_equal(cpms_new.C, expected_C)
+    np.testing.assert_array_almost_equal(cpms_new.p, expected_p, decimal=5)
+    assert cpms_new.no_child == 6
+    assert len(cpms_new.variables) == 6
+
+    p_f = cpm.get_prob(cpms_new, ['sys'], [0])
+    p_s = cpm.get_prob(cpms_new, ['sys'], [1])
+
+    assert p_f == pytest.approx(0.002236, rel=1.0e-3)
+    assert p_s == pytest.approx(0.997763, rel=1.0e-3)
+
+

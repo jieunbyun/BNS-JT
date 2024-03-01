@@ -3,33 +3,14 @@ import copy
 from pathlib import Path
 from collections import Counter
 from itertools import chain
+import matplotlib.pyplot as plt
 import warnings
 import sys
 import pickle
 import numpy as np
 
-
 from BNS_JT import variable, branch
 
-'''
-def init_branch(down, up, rules):
-    """
-    returns initial branch based on given rules and states
-    Args:
-        down: (dict): all components in the worst state
-        up: (dict): all components in the best state
-        rules (list): rules list
-    Returns:
-        list: initial branch
-    """
-    #down = {x: 0 for x in varis.keys()} # all components in the worst state
-    #up = {k: v.B.shape[1] - 1 for k, v in varis.items()} # all components in the best state
-
-    down_state = get_state(down, rules)
-    up_state = get_state(up, rules)
-
-    return [branch.Branch(down, up, down_state, up_state)]
-'''
 
 def init_branch(down, up, rules):
     """
@@ -41,13 +22,44 @@ def init_branch(down, up, rules):
     Returns:
         list: initial branch
     """
-    #down = {x: 0 for x in varis.keys()} # all components in the worst state
-    #up = {k: v.B.shape[1] - 1 for k, v in varis.items()} # all components in the best state
 
     down_state = get_state(down, rules)
     up_state = get_state(up, rules)
 
     return [branch.Branch(down, up, down_state, up_state, 1.0)]
+
+
+def plot_monitoring(monitor, output_file='monitor.png'):
+    """
+
+    """
+
+    # bounds vs no. of branches
+    fig = plt.figure(figsize=(6, 4*3))
+    ax = fig.add_subplot(311)
+    ax.plot(monitor['br_ns'], monitor['pf_low'], linestyle='--', color='blue')
+    ax.plot(monitor['br_ns'], monitor['pf_up'], linestyle='--', color='blue')
+    ax.set_xlabel('No. of branches')
+    ax.set_ylabel('System failure prob. bounds')
+
+    # bounds vs sys fn runs
+    ax = fig.add_subplot(312)
+    ax.plot(monitor['sf_ns'], monitor['pf_low'], linestyle='--', color='blue')
+    ax.plot(monitor['sf_ns'], monitor['pf_up'], linestyle='--', color='blue')
+    ax.set_xlabel('No. of system function runs')
+    ax.set_ylabel('System failure prob. bounds')
+
+    # no. of rules vs sys fn runs
+    ax = fig.add_subplot(313)
+    ax.plot(monitor['r_ns'], monitor['pf_low'], linestyle='--', color='blue')
+    ax.plot(monitor['r_ns'], monitor['pf_up'], linestyle='--', color='blue')
+    ax.set_xlabel('No. of rules')
+    ax.set_ylabel('System failure prob. bounds')
+
+    #output_file = Path(sys.argv[1]).joinpath(output_file)
+    fig.savefig(output_file, dpi=200)
+    print(f'{output_file} created')
+
 
 
 def proposed_branch_and_bound_using_probs(sys_fun, varis, probs, max_br, output_path=Path(sys.argv[0]).parent, key=None, flag=False):
@@ -70,11 +82,12 @@ def proposed_branch_and_bound_using_probs(sys_fun, varis, probs, max_br, output_
     brs = init_branch(worst, best, rules)
 
     # For monitoring purpose (store for each iteration)
-    pf_up = [] # upper bound on pf
-    pf_low = [] # lower bound on pf
-    br_ns = [] # number of branches
-    sf_ns = [] # number of system function runs
-    r_ns = [] # number of rules
+    monitor = {'pf_up': [], # upper bound on pf
+               'pf_low': [], # lower bound on pf
+               'br_ns': [], # number of branches
+               'sf_ns': [], # number of system function runs
+               'r_ns': [], # number of rules
+              }
 
     stop_br = False
     while no_bu and len(brs) < max_br:
@@ -116,11 +129,11 @@ def proposed_branch_and_bound_using_probs(sys_fun, varis, probs, max_br, output_
                     no_bu = sum([(b.up_state == 'u') or (b.down_state == 'u') or (b.down_state != b.up_state) for b in brs]) # no. of unknown branches
                     pr_bu = sum([b[4] for b in brs if (b.up_state == 'u') or (b.down_state == 'u') or (b.down_state != b.up_state)])
 
-                    r_ns.append(len(rules['f']) + len(rules['s']))
-                    pf_up.append(float(1.0-pr_bs))
-                    pf_low.append(float(pr_bf))
-                    br_ns.append(len(brs))
-                    sf_ns.append(no_sf)
+                    monitor['r_ns'].append(len(rules['f']) + len(rules['s']))
+                    monitor['pf_up'].append(1.0-pr_bs)
+                    monitor['pf_low'].append(pr_bf)
+                    monitor['br_ns'].append(len(brs))
+                    monitor['sf_ns'].append(no_sf)
                     #########################################
 
                     brs = init_branch(worst, best, rules)
@@ -162,7 +175,7 @@ def proposed_branch_and_bound_using_probs(sys_fun, varis, probs, max_br, output_
 
         no_rf = len(rules['f']) # no. of failure rules
         no_rs = len(rules['s']) # no. of survival rules
-        
+
         """
         if no_rf > 0:
             len_rf = sum([len(x) for x in rules['f']])/no_rf # mean length of failure rules
@@ -190,11 +203,11 @@ def proposed_branch_and_bound_using_probs(sys_fun, varis, probs, max_br, output_
     no_bu = sum([(b.up_state == 'u') or (b.down_state == 'u') or (b.down_state != b.up_state) for b in brs]) # no. of unknown branches
     pr_bu = sum([b[4] for b in brs if (b.up_state == 'u') or (b.down_state == 'u') or (b.down_state != b.up_state)])
 
-    r_ns.append(len(rules['f']) + len(rules['s']))
-    pf_up.append(float(1.0-pr_bs))
-    pf_low.append(float(pr_bf))
-    br_ns.append(len(brs))
-    sf_ns.append(no_sf)
+    monitor['r_ns'].append(len(rules['f']) + len(rules['s']))
+    monitor['pf_up'].append(float(1.0-pr_bs))
+    monitor['pf_low'].append(float(pr_bf))
+    monitor['br_ns'].append(len(brs))
+    monitor['sf_ns'].append(no_sf)
     #########################################
 
     if flag:
@@ -203,7 +216,7 @@ def proposed_branch_and_bound_using_probs(sys_fun, varis, probs, max_br, output_
             pickle.dump(brs, fout)
         print(f'{output_file} is saved')
 
-    return brs, rules, sys_res, r_ns, pf_up, pf_low, br_ns, sf_ns
+    return brs, rules, sys_res, monitor
 
 
 

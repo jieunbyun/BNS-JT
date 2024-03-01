@@ -591,15 +591,14 @@ def condition(M, cnd_vars, cnd_states, sample_idx=[]):
             except NameError:
                 print(f'{cnd_var} is not defined')
             else:
-                if B:
-                    C1 = C[:, idx].copy().astype(int)
-                    #check = [bool(B[state].intersection(x)) for x in B[C1]]
-                    check = [B[x].intersection(B[state]) for x in C1]
-                    #B = add_new_states(check, B)
-                    cnd_var = Variable(name=cnd_var.name,
-                                       #B=add_new_states(check, B),
-                                       values=cnd_var.values)
-                    Ccond[:, idx] = [x for x in ismember(check, B)[1]]
+                C1 = C[:, idx].copy().astype(int)
+                #check = [bool(B[state].intersection(x)) for x in B[C1]]
+                check = [B[x].intersection(B[state]) for x in C1]
+                #B = add_new_states(check, B)
+                #cnd_var = Variable(name=cnd_var.name,
+                #                   #B=add_new_states(check, B),
+                #                   values=cnd_var.values)
+                Ccond[:, idx] = [x for x in ismember(check, B)[1]]
 
         Mx.C = Ccond.copy()
 
@@ -935,7 +934,31 @@ def append(cpm1, cpm2):
         cpm2 = list(cpm2.values())
 
     assert len(cpm1) == len(cpm2), 'Given CPMs have different lengths'
-    #FIXME
+
+
+def prod_cpm_sys_and_comps(cpm_sys, cpm_comps, varis):
+    """
+
+
+    """
+    p = cpm_sys.p.copy()
+    for i in range(len(cpm_sys.variables) - cpm_sys.no_child):
+        name = cpm_sys.variables[cpm_sys.no_child + i].name
+        try:
+            M1 = cpm_comps[name]
+        except KeyError:
+            print(f'{name} is not in cpm_comps')
+        else:
+            c1 = [c[0] for c in M1.C] # TODO: For now this only works for marginal distributions of component evets
+            for j in range(len(p)):
+                st = cpm_sys.C[j][cpm_sys.no_child + i]
+                p_st = 0.0
+                for k in varis[name].B[st]:
+                    p_st += M1.p[c1.index(k)][0]
+
+                p[j] *= p_st
+
+    return Cpm(variables=cpm_sys.variables, no_child=len(cpm_sys.variables), C=cpm_sys.C, p=p)
 
 
 

@@ -134,10 +134,10 @@ def get_cmat(branches, comp_var, flag=True):
                     c[j + 1] = loc[0]
                 else:
                     #print(f'B of {comp_var[j].name} is updated')
-                    [b.append(x) for x in b1 if x not in b]
-                    comp_var[j] = variable.Variable(name= comp_var[j].name,
+                    #[b.append(x) for x in b1 if x not in b]
+                    #comp_var[j] = variable.Variable(name= comp_var[j].name,
                                            #B=b,
-                                           values=comp_var[j].values)
+                    #                       values=comp_var[j].values)
                     #c[j + 1] = b.shape[1]
                     c[j + 1] = len(comp_var[j].values)
 
