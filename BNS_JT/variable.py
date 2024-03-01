@@ -1,5 +1,5 @@
 import numpy as np
-import itertools
+from itertools import chain, combinations
 
 #from collections import namedtuple
 #from typing import NamedTuple
@@ -102,9 +102,10 @@ class Variable(object):
         self._B = self.gen_B()
 
     def gen_B(self):
-        B = []
-        for n in range(1, len(self._values) + 1):
-            [B.append(set(x)) for x in itertools.combinations(range(len(self._values)), n)]
+        n = len(self._values)
+        B = [set(x) for x in chain.from_iterable(combinations(range(n), r) for r in range(1, n + 1))]
+        #for n in range(1, len(self._values) + 1):
+        #    [B.append(set(x)) for x in itertools.combinations(range(len(self._values)), n)]
         return B
 
     """

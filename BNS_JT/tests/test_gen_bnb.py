@@ -633,7 +633,7 @@ def test_proposed_branch_and_bound_using_probs(main_sys):
     # Branch and bound
     output_path = Path(__file__).parent
     #t1 = time.perf_counter()
-    brs, rules, _ = gen_bnb.proposed_branch_and_bound_using_probs(
+    brs, rules, _, monitor = gen_bnb.proposed_branch_and_bound_using_probs(
             sys_fun, varis, probs, max_br=100,
             output_path=output_path, key='bridge', flag=False)
 
@@ -1122,9 +1122,10 @@ def test_get_csys_from_brs3(main_sys):
     # Branch and bound
     output_path = Path(__file__).parent
     #pdb.set_trace()
-    brs, rules, _ = gen_bnb.proposed_branch_and_bound_using_probs(
+    brs, rules, _, monitor = gen_bnb.proposed_branch_and_bound_using_probs(
             sys_fun, varis, probs, max_br=100,
             output_path=output_path, key='bridge', flag=False)
+
 
     st_br_to_cs = {'f': 0, 's': 1, 'u': 2}
     #pdb.set_trace()
@@ -1152,6 +1153,8 @@ def test_get_csys_from_brs3(main_sys):
     Msys = cpm.variable_elim([cpms[v] for v in varis.keys()], var_elim_order )
     np.testing.assert_array_almost_equal(Msys.C, np.array([[0, 1]]).T)
     np.testing.assert_array_almost_equal(Msys.p, np.array([[0.1018, 0.8982]]).T)
+
+    gen_bnb.plot_monitoring(monitor, HOME.joinpath('./monitor.png'))
 
 
 def test_get_c_from_br(main_sys):

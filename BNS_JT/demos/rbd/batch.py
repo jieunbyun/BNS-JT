@@ -92,7 +92,7 @@ def main():
     varis = {}
     cpms = {}
     for k in nodes_except_const:
-        varis[k] = variable.Variable(name=k, B= [{0}, {1}, {0, 1}], values=['f', 's'])
+        varis[k] = variable.Variable(name=k, values=['f', 's'])
 
         cpms[k] = cpm.Cpm(variables = [varis[k]], no_child=1,
                           C = np.array([0, 1]).T, p = [0.1, 0.9])
@@ -102,7 +102,7 @@ def main():
 
     csys_by_od, varis_by_od = gen_bnb.get_csys_from_brs(brs, varis, st_br_to_cs)
 
-    varis['sys'] = variable.Variable(name='sys', B=[{0}, {1}], values=['f', 's'])
+    varis['sys'] = variable.Variable(name='sys', values=['f', 's'])
     cpms['sys'] = cpm.Cpm(variables = [varis[k] for k in ['sys'] + nodes_except_const],
                           no_child = 1,
                           C = csys_by_od.copy(),

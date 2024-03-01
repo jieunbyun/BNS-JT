@@ -201,7 +201,7 @@ def test_get_cmat1(setup_branch):
     for k in range(1, 7):
         varis[k] = variable.Variable(name=str(k), values=['Surv', 'Fail'])
 
-    B_ = [{0}, {1}, {2}]
+    #B_ = [{0}, {1}, {2}]
     varis[7] = variable.Variable(name='7',
             values=[0.0901, 0.2401, np.inf])
 
@@ -222,6 +222,7 @@ def test_get_cmat1(setup_branch):
             'time': np.array([0.0901, 0.2401]),
             'arcs': np.array([1, 2, 3, 4, 5, 6])
             }
+
     C = branch.get_cmat(branches, [varis[i] for i in info['arcs']], False)
 
     expected = np.array([[3,2,2,3,3,3,3],

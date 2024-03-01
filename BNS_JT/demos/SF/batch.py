@@ -69,14 +69,14 @@ def main():
     # variables
     varis = {}
     for k, v in cfg.infra['edges'].items():
-        varis[k] = variable.Variable(name=k, B = [{0}, {1}, {0, 1}], values = ['f', 's'])
+        varis[k] = variable.Variable(name=k, values = ['f', 's'])
 
     od_pair = ('13', '2')
     sys_fun = trans.sys_fun_wrap(od_pair, cfg.infra['edges'], varis)
     brs, rules, sys_res = gen_bnb.proposed_branch_and_bound(sys_fun, varis, max_br=cfg.max_branches, output_path=cfg.output_path, key='SF', flag=True)
 
-    st_br_to_cs = {'f': 0, 's': 1, 'u': 2}
-    csys_by_od, varis_by_od = gen_bnb.get_csys_from_brs(brs, varis, st_br_to_cs)
+    #st_br_to_cs = {'f': 0, 's': 1, 'u': 2}
+    #csys_by_od, varis_by_od = gen_bnb.get_csys_from_brs(brs, varis, st_br_to_cs)
 
 
     """
