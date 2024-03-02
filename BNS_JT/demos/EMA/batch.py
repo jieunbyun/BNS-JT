@@ -5,13 +5,16 @@ import networkx as nx
 import matplotlib.pyplot as plt
 import pdb
 import numpy as np
+import typer
 
 from BNS_JT import model, config, trans, variable, gen_bnb
 
 
 HOME = Path(__file__).parent
 
+app = typer.Typer()
 
+@app.command()
 def create_model():
 
     # nodes
@@ -49,11 +52,39 @@ def create_model():
     _dic = trans.create_scenario_json_for_trans_network(damage_states, s1, wfile)
 
 
+@app.command()
 def main():
 
     cfg = config.Config(HOME.joinpath('./config.json'))
 
-    csys_by_od, varis_by_od = model.get_branches_by_od(cfg)
+    # variables
+    varis = {}
+    for k, v in cfg.infra['edges'].items():
+        varis[k] = variable.Variable(name=k, values = cfg.scenarios['scenarios']['s1'][k])
+
+    # Intact state of component vector: zero-based index
+    comps_st_itc = {k: len(v.values) - 1 for k, v in varis.items()} # intact state (i.e. the highest state)
+
+    thres = 2
+    st_br_to_cs = {'f': 0, 's': 1, 'u': 2}
+
+    #csys_by_od, varis_by_od = {}, {}
+    # branches by od_pair
+    #for k, od_pair in cfg.infra['ODs'].items():
+    od_pair = cfg.infra['ODs']['od2']
+    d_time_itc, path_itc = trans.get_time_and_path_given_comps(comps_st_itc, od_pair, cfg.infra['edges'], varis)
+
+    # system function
+    sys_fun = trans.sys_fun_wrap(od_pair, cfg.infra['edges'], varis, thres * d_time_itc)
+    brs, rules, _ = gen_bnb.proposed_branch_and_bound(sys_fun, varis, max_br=cfg.max_branches, output_path=cfg.output_path, key=f'EMA_{od_pair}', flag=True)
+
+    csys_by_od, varis_by_od = gen_bnb.get_csys_from_brs(brs, varis, st_br_to_cs)
+
+    print(csys_by_od.shape)
+
+
+
+    #csys_by_od, varis_by_od = model.get_branches_by_od(cfg)
 
     #print(csys_by_od)
 
@@ -62,5 +93,6 @@ def main():
 if __name__=='__main__':
 
     #create_model()
-    main()
+    #main()
+    app()
 

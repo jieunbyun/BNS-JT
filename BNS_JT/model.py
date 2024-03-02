@@ -33,7 +33,7 @@ def get_branches_by_od(cfg):
     # variables
     varis = {}
     for k, v in cfg.infra['edges'].items():
-        varis[k] = variable.Variable(name=k, B = [{i} for i in range(cfg.no_ds)], values = cfg.scenarios['scenarios']['s1'][k])
+        varis[k] = variable.Variable(name=k, values = cfg.scenarios['scenarios']['s1'][k])
 
     # Intact state of component vector: zero-based index
     comps_st_itc = {k: len(v.values) - 1 for k, v in varis.items()} # intact state (i.e. the highest state)
@@ -48,9 +48,9 @@ def get_branches_by_od(cfg):
 
         # system function
         sys_fun = trans.sys_fun_wrap(od_pair, cfg.infra['edges'], varis, thres * d_time_itc)
-        brs, rules = gen_bnb.proposed_branch_and_bound(sys_fun, varis, max_br=cfg.max_branches, output_path=cfg.output_path, key=f'road_{k}', flag=True)
+        brs, rules, _ = gen_bnb.proposed_branch_and_bound(sys_fun, varis, max_br=cfg.max_branches, output_path=cfg.output_path, key=f'road_{k}', flag=True)
 
-        csys_by_od[k], varis_by_od[k] = gen_bnb.get_csys_from_brs2(brs, varis, st_br_to_cs)
+        csys_by_od[k], varis_by_od[k] = gen_bnb.get_csys_from_brs(brs, varis, st_br_to_cs)
 
     return csys_by_od, varis_by_od
 
