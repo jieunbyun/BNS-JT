@@ -885,6 +885,7 @@ def get_prob(M, var_inds, var_states, flag=True):
 
     if isinstance(var_states, list):
         var_states = np.array(var_states)
+        var_states = np.reshape(var_states, (1, -1))
 
     Mcompare = Cpm(variables=var_inds,
                    no_child=len(var_inds),

@@ -2059,4 +2059,8 @@ def test_prod_cpm_sys_and_comps():
     assert p_f == pytest.approx(0.002236, rel=1.0e-3)
     assert p_s == pytest.approx(0.997763, rel=1.0e-3)
 
+    # FIXME: expected value required
+    p_x = cpm.get_prob(cpms_new, ['sys', 'e1'], [0, 1])
+    assert p_x == pytest.approx(0.002002, rel=1.0e-3)
+
 

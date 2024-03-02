@@ -35,12 +35,19 @@
     },
     "sysout_setup": {
         "od1": {
-            "origin": "n22",
-            "destination": "n53",
+            "origin": "n14",
+            "destination": "n1",
             "output_node_capacity": null,
             "capacity_fraction": null,
             "priorty": null
-        }
+        },
+        "od2": {
+            "origin": "n53",
+            "destination": "n1",
+            "output_node_capacity": null,
+            "capacity_fraction": null,
+            "priorty": null
+        } 
     },
     "node_conn_df": {
         "e1": {

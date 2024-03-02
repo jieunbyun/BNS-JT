@@ -3,7 +3,7 @@
     "MODEL_NAME": "model.json",
     "SCENARIO_NAME": "scenarios.json",
     "OUTPUT_PATH": "./",
-    "MAX_BRANCHES": 10000,
+    "MAX_BRANCHES": 1000000,
 
     "HAZARD_INPUT_METHOD": null,
     "HAZARD_TYPE": null,
