@@ -657,6 +657,8 @@ def get_prod(A, B):
     """
     if len(A.shape) < 2:
         A = np.reshape(A, (A.shape[0], 1))
+    if len(B.shape) < 1:
+        B=np.reshape(B,(1,))
 
     assert A.shape[1] == B.shape[0]
 
