@@ -2063,4 +2063,5 @@ def test_prod_cpm_sys_and_comps():
     p_x = cpm.get_prob(cpms_new, ['sys', 'e1'], [0, 1])
     assert p_x == pytest.approx(0.002002, rel=1.0e-3)
 
-
+    p_f = cpm.get_prob(cpms_new, [varis['sys']], [0])
+    assert p_f == pytest.approx(0.002236, rel=1.0e-3)
