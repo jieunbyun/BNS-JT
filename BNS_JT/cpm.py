@@ -655,6 +655,9 @@ def get_prod(A, B):
     A: matrix
     B: matrix
     """
+    if len(A.shape) < 2:
+        A = np.reshape(A, (A.shape[0], 1))
+
     assert A.shape[1] == B.shape[0]
 
     prod_sign = np.sign(A * B)
