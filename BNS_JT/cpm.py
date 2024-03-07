@@ -966,5 +966,85 @@ def prod_cpm_sys_and_comps(cpm_sys, cpm_comps, varis):
 
     return Cpm(variables=cpm_sys.variables, no_child=len(cpm_sys.variables), C=cpm_sys.C, p=p)
 
+def get_inf_vars( vars_star, cpms, VE_ord = None ):
 
+    """
+    INPUT:
+    - vars_star: a list of variable names, whose marginal distributions are of interest
+    - cpms: a list of CPMs
+    - VE_ord (optional): a list of variable names, representing a VE order. The output list of vars_inf is sorted accordingly.
+    OUPUT:
+    - vars_inf: a list of variable names
+    """
 
+    vars_inf = [] # relevant variables for inference
+    vars_inf_new = vars_star
+    while len(vars_inf_new) > 0:
+        v1 = copy.deepcopy( vars_inf_new[0] )
+        vars_inf_new.remove(v1)
+        vars_inf.append(v1)
+
+        v1_sco = [x.name for x in cpms[v1].variables] # Scope of v1
+        for p in v1_sco:
+            if p not in vars_inf and p not in vars_inf_new:
+                vars_inf_new.append(p)
+
+    if VE_ord is not None:
+        def get_ord_inf( x, VE_ord ):
+            return VE_ord.index(x) 
+        
+        vars_inf.sort( key=(lambda x: get_ord_inf(x, VE_ord)) )
+
+    return vars_inf
+
+def merge_cpms( cpm1, cpm2 ):
+    # cpm1 and cpm2 must have the same scope.
+
+    M_new = copy.deepcopy( cpm1 )
+    C1_list = cpm1.C.tolist()
+    for c1, p1 in zip( cpm2.C, cpm2.p ):
+        if c1 in C1_list:
+            idx = C1_list.index(c1)
+            M_new.p[idx] += p1
+        else:
+            M_new.C = np.vstack( (M_new.C, c1) )
+            M_new.p = np.vstack( (M_new.p, p1) )
+
+    return M_new
+
+def cal_Msys_by_cond_VE( cpms, vars, cond_names, ve_names, sys_name ):
+    """
+    INPUT:
+    - cpms: a dictionary of cpms
+    - vars: a dictionary of variables
+    - cond_names: a list of variables to be conditioned
+    - oth_names: a list of variables to be eliminated by VE
+    - sys_name: a system variable's name (NB not list!) **FUTHER RESEARCH REQUIRED: there is no efficient way yet to compute a joint distribution of more than one system event
+
+    OUTPUT:
+    - Msys: a cpm containing the marginal distribution of variable 'sys_name'
+    """
+
+    ve_vars = [vars[v] for v in ve_names if v != sys_name] # other variables
+
+    cpms_inf = {v: cpms[v] for v in ve_names}
+    cpms_inf[sys_name] = cpms[sys_name]
+    cond_cpms = [cpms[v] for v in cond_names]
+
+    M_cond = prod_cpms( cond_cpms )
+    n_crows = len(M_cond.C)
+
+    for i in range(n_crows):
+        m1 = M_cond.get_subset([i])
+        VE_cpms_m1 = condition( cpms_inf, m1.variables, m1.C[0] )
+
+        m_m1 = variable_elim( VE_cpms_m1, ve_vars )
+        m_m1 = m_m1.product(m1)
+        m_m1 = m_m1.sum(cond_names)
+
+        if i < 1:
+            Msys = copy.deepcopy( m_m1 )
+        else:
+            Msys = merge_cpms( Msys, m_m1 )
+    
+    return Msys
