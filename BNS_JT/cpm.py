@@ -1051,3 +1051,28 @@ def cal_Msys_by_cond_VE( cpms, vars, cond_names, ve_order, sys_name ):
             Msys = merge_cpms( Msys, m_m1 )
     
     return Msys
+
+def get_means( M1, v_names ):
+
+    """
+    Get means of variables in v_names from CPM M1.
+    INPUT: 
+    M1: A CPM
+    v_names: a list of names
+    OUTPUT:
+    means: a list of means (the same order as v_names)
+    """
+    means = []
+    for v in v_names:
+        col_idx = [i for i in range(len(M1.variables)) if M1.variables[i].name == v]
+        if len(col_idx) != 1:
+            raise( v + " appears {:d} times in M1.variables. It must appear exactly ONCE.".format(len(col_idx)) )
+        elif col_idx[0] > M1.no_child-1:
+            raise( v + " must not be a parent node." )
+
+        m = 0
+        for c, p in zip(M1.C, M1.p):
+            m += c[col_idx[0]] * p[0]
+        means.append(m)
+    
+    return means
