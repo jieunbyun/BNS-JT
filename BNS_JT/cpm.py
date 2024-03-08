@@ -1012,18 +1012,21 @@ def merge_cpms( cpm1, cpm2 ):
 
     return M_new
 
-def cal_Msys_by_cond_VE( cpms, vars, cond_names, ve_names, sys_name ):
+def cal_Msys_by_cond_VE( cpms, vars, cond_names, ve_order, sys_name ):
     """
     INPUT:
     - cpms: a dictionary of cpms
     - vars: a dictionary of variables
     - cond_names: a list of variables to be conditioned
-    - oth_names: a list of variables to be eliminated by VE
+    - ve_order: a list of variables representing an order of variable elimination
     - sys_name: a system variable's name (NB not list!) **FUTHER RESEARCH REQUIRED: there is no efficient way yet to compute a joint distribution of more than one system event
 
     OUTPUT:
     - Msys: a cpm containing the marginal distribution of variable 'sys_name'
     """
+
+    vars_inf = get_inf_vars( [sys_name], cpms, ve_order ) # inference only ancestors of sys_name
+    ve_names = [x for x in vars_inf if x not in cond_names]
 
     ve_vars = [vars[v] for v in ve_names if v != sys_name] # other variables
 
