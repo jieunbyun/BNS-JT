@@ -33,7 +33,7 @@ class Cpm(object):
     Cpm(varibles, no_child, C, p, q, sample_idx)
     """
 
-    def __init__(self, variables, no_child, C, p=[], q=[], sample_idx=[]):
+    def __init__(self, variables, no_child, C=[], p=[], q=[], sample_idx=[]):
 
         assert isinstance(variables, list), 'variables must be a list of Variable'
 
@@ -194,6 +194,24 @@ class Cpm(object):
             is_cmp[np.where(is_cmp > 0)[0][:len(check)]] = check
 
         return is_cmp
+    
+    def get_col_ind( self, v_names ):
+        """
+        INPUT:
+        v_names: a list of variable names
+        OUTPUT:
+        v_idxs: a list of column indices of v_names
+        """
+
+        v_idxs = []
+        for v in v_names:
+            idx = [i for (i,k) in enumerate(self.variables) if k.name == v]
+            
+            assert len(idx) == 1, f'Each input variable must appear exactly once in M.variables: {v} appears {len(idx)} times.'
+
+            v_idxs.append(idx[0])
+
+        return v_idxs
 
 
     def sum(self, variables, flag=True):
