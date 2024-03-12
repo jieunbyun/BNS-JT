@@ -93,7 +93,7 @@ def main():
     varis = {}
     cpms = {}
     for k in cfg.infra['edges'].keys():
-        varis[k] = variable.Variable(name=k, values=['f', 's'])
+        varis[k] = variable.Variable(name=k, values=['f', 's', 'u'])
 
         cpms[k] = cpm.Cpm(variables = [varis[k]], no_child=1,
                           C = np.array([0, 1]).T, p = [probs[k][0], probs[k][1]])

@@ -103,7 +103,7 @@ def main(max_br):
 
     csys_by_od, varis_by_od = gen_bnb.get_csys_from_brs(brs, varis, st_br_to_cs)
 
-    varis['sys'] = variable.Variable(name='sys', values=['f', 's'])
+    varis['sys'] = variable.Variable(name='sys', values=['f', 's', 'u'])
     cpms['sys'] = cpm.Cpm(variables = [varis[k] for k in ['sys'] + list(cfg.infra['edges'].keys())],
                           no_child = 1,
                           C = csys_by_od.copy(),
