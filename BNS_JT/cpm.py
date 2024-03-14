@@ -101,12 +101,6 @@ class Cpm(object):
             if self.sample_idx.ndim == 1:
                 self.sample_idx.shape = (len(self.sample_idx), 1)
 
-        if len(self.p) < 1 and len(self.q) > 0:
-            self.p = np.zeros( shape=np.shape(self.q), dtype=np.float64 )
-        elif len(self.q) < 1 and len(self.p) > 0:
-            self.q = np.zeros( shape=np.shape(self.p), dtype=np.float64 )
-            self.sample_idx = -np.ones( shape=np.shape(self.p), dtype=np.int32 )
-
 
     def __repr__(self):
         _variable = [x.name for x in self.variables]
@@ -182,14 +176,10 @@ class Cpm(object):
 
         C = self.C[:, idx].copy()
 
-        #TODO: how to handle sampled instances during inference?
-        """
         if self.sample_idx.size and M.sample_idx.size:
             is_cmp = (self.sample_idx == M.sample_idx)
         else:
             is_cmp = np.ones(shape=C.shape[0], dtype=bool)
-        """
-        is_cmp = np.ones(shape=C.shape[0], dtype=bool)
 
         for i, (variable, state) in enumerate(zip(check_vars, check_states)):
 
@@ -1028,33 +1018,15 @@ def get_inf_vars( vars_star, cpms, VE_ord = None ):
 def merge_cpms( cpm1, cpm2 ):
     # cpm1 and cpm2 must have the same scope.
 
-    if len(cpm1.C) < 1:
-        M_new = copy.deepcopy(cpm2)
-
-    elif len(cpm2.C) < 1:
-        M_new = copy.deepcopy( cpm1 )
-
-    else:
-        M_new = copy.deepcopy( cpm1 )
-        C1_list = cpm1.C.tolist()
-        C2_list = cpm2.C.tolist()
-        for c1, p1, q1, idx1 in zip( C2_list, cpm2.p, cpm2.q, cpm2.sample_idx ):
-
-            if c1 in C1_list:
-                idx = C1_list.index(c1)
-                if p1>0 and M_new.p[idx] > 0: 
-                    M_new.p[idx] += p1
-                else:
-                    M_new.C = np.vstack( (M_new.C, c1) )
-                    M_new.p = np.vstack( (M_new.p, p1) )
-                    M_new.q = np.vstack( (M_new.q, q1) )
-                    M_new.sample_idx = np.vstack( (M_new.sample_idx, idx1) )
-
-            else:
-                M_new.C = np.vstack( (M_new.C, c1) )
-                M_new.p = np.vstack( (M_new.p, p1) )
-                M_new.q = np.vstack( (M_new.q, q1) )
-                M_new.sample_idx = np.vstack( (M_new.sample_idx, idx1) )
+    M_new = copy.deepcopy( cpm1 )
+    C1_list = cpm1.C.tolist()
+    for c1, p1 in zip( cpm2.C, cpm2.p ):
+        if c1 in C1_list:
+            idx = C1_list.index(c1)
+            M_new.p[idx] += p1
+        else:
+            M_new.C = np.vstack( (M_new.C, c1) )
+            M_new.p = np.vstack( (M_new.p, p1) )
 
     return M_new
 
