@@ -6,6 +6,7 @@ import time
 import pandas as pd
 import matplotlib.pyplot as plt
 import typer
+import json
 
 from BNS_JT import cpm, variable, quant
 
@@ -37,12 +38,55 @@ def get_lins( pole1, paths ):
     
     return lins
 
+def read_model_json(model_json):
+
+    with open(model_json, 'r') as f:
+        model = json.load(f)
+
+    haz = {}
+    for k,v in model['hazard'].items():
+        haz[k] = v
+
+    pfs = {}
+    for k,v in model['fail_probs'].items():
+        pfs[k] = v
+
+    rep_pri = model["repair_priority"]
+
+    paths = {}
+    for k,v in model["paths"].items():
+        paths[k] = v
+
+    houses = {}
+    for k,v in model["houses"].items():
+        houses[k] = v
+
+    if "locations" in model:
+        locs = {}
+        for k,v in model["locations"].items():
+            locs[k] = (v["pos_x"], v["pos_y"])
+    else:
+        locs = None
+
+    return haz, pfs, rep_pri, paths, houses, locs
+
+
+#TODO
+def write_output_jason(version):
+    if version is None:
+        filename = "result_" + version +".json"
+    else:
+        filename = "result.json"
+
+    #with open(filename, 'w') as w:
+
+
+
 def quant_cpms( haz, pfs, rep_pri, lins ):
 
     """
     Quantify CPMs from user inputs
     """
-
 
     cpms={}
     vars={}
@@ -58,11 +102,11 @@ def quant_cpms( haz, pfs, rep_pri, lins ):
     ## Structures
     C_x = []
     for hs in range(len(vals_h)):
-        Cs += [[0, hs], [1, hs]]
-    C_x = np.array(Cs)
+        C_x += [[0, hs], [1, hs]]
+    C_x = np.array(C_x)
 
     for s, pf in pfs.items():
-        name = 'xs' + str(i)
+        name = 'x' + s
         vars[name] = variable.Variable( name=name, values=['fail','surv'] ) # values=(failure, survival)
 
         p_x = []
@@ -109,14 +153,14 @@ def quant_cpms( haz, pfs, rep_pri, lins ):
     ## Power-cut days of houses
     for h, sets in lins.items():
         if len(sets) == 1:              
-            vars_h = [vars[x] for x in sets[0]]
+            vars_h = [vars['c' + x] for x in sets[0]]
 
             cpms[h], vars[h] = quant.sys_max_val( h, vars_h )
             
         else:
             names_hs = [h+str(i) for i in range(len(sets))]
             for h_i, s_i in zip(names_hs, sets):
-                vars_h_i = [vars[x] for x in s_i]
+                vars_h_i = [vars['c'+x] for x in s_i]
 
                 cpms[h_i], vars[h_i] = quant.sys_max_val( h_i, vars_h_i )
                 
@@ -125,7 +169,7 @@ def quant_cpms( haz, pfs, rep_pri, lins ):
 
     return cpms, vars
 
-def get_pole_conn(paths):
+def get_pole_conn(paths,houses):
 
     poles = []
     for _, ps in paths.items():
@@ -144,7 +188,7 @@ def get_pole_conn(paths):
                     else:
                         pl_tail_pl = path1[pl_idx-1]
 
-                        for h, pls_h in houses.itmes():
+                        for h, pls_h in houses.items():
                             if pl_tail_pl in pls_h:
                                 pl_tail = h
                                 break # a pole is connected to only one house
@@ -178,18 +222,18 @@ def plot_result(locs, conn, avg_cut_days, pfs_mar):
         plt.plot([loc0[0], loc1[0]], [loc0[1], loc1[1]], color='grey')
 
     # draw houses
-    plt.scatter([locs[h][0] for h in houses.keys()], [locs[h][0] for h in houses.keys()], [avg_cut_days[h] for h in houses.keys()], cmap='Reds', s=200, marker="X")
+    plt.scatter([locs[h][0] for h in avg_cut_days.keys()], [locs[h][0] for h in avg_cut_days.keys()], c = [avg_cut_days[h] for h in avg_cut_days.keys()], cmap='Reds', s=200, marker="X")
     cb1 = plt.colorbar()
     cb1.ax.set_xlabel('Avg. \n cut days', size = 15)
 
     # draw structures    
-    plt.scatter( [locs[s][0] for s in pfs_mar.keys()], [locs[s][1] for s in pfs_mar.keys()], [pfs_mar[s] for s in pfs_mar.keys()], cmap='Reds' )
+    plt.scatter( [locs[s][0] for s in pfs_mar.keys()], [locs[s][1] for s in pfs_mar.keys()], c = [pfs_mar[s] for s in pfs_mar.keys()], cmap='Reds' )
     cb2 = plt.colorbar()
     cb2.ax.set_xlabel('Fail. \n prob.', size = 15)
 
     # texts
     tx, ty = 0.10, 0.01
-    for x in list(houses.keys()) + list(pfs_mar.keys()):
+    for x in list(avg_cut_days.keys()) + list(pfs_mar.keys()):
         ax.text(locs[x][0]+tx, locs[x][1]+ty, x)
 
     ax.set_xticks([])
@@ -199,9 +243,22 @@ def plot_result(locs, conn, avg_cut_days, pfs_mar):
     print('result.png is created.') 
 
 @app.command()
-def main(h_list, plot: bool=False):
+def main(h_list, model_json, plot: bool=False, version=None):
 
-    ######### USER INFORMATION ###################
+    """
+    Compute the marginal distributions of power cut days for the houses in h_list
+
+    INPUT:
+    h_list: a list of strings
+    model_json: a sting as json file name that contains problem information
+
+    OUTPUT:
+    Mhs: a dictionary {house: CPM} (representing marginal distributions)
+    avg_cut_days: a dictionary {house: # of days} 
+    """
+
+    """
+    ######### USER INPUT (in model.json) ###################
     # network topology
     ## Topology is assumed radial--Define each substation and connected paths (in the order of connectivity)
     paths = {'s0': [['p0', 'p1'], ['p2', 'p3', 'p5']], 's1':[['p4','p5'], ['p6', 'p7']]}
@@ -219,6 +276,15 @@ def main(h_list, plot: bool=False):
     # Repair priority
     rep_pri = ['s0', 's1', 'p0', 'p1', 'p2', 'p3', 'p4', 'p5', 'p6', 'p7'] 
     ###############################################
+
+    ############### if plot==True ##############
+    # Locations for mapping
+    locs = {"h0": (-0.8, -1.0), "h1": (-2*0.8, -2*1.0), "h2": (0.8, -1.0), "h3": (2*0.8, -2*1.0), "h4": (0.8, -3*1.0), "h5": (5*0.8,-2*1.0), "h6": (6*0.8, -3*1.0)}
+    locs["s0"], locs["s1"] = (0.0, 0.0), (3.5*0.8, 0.0)
+    #########################################
+    """
+
+    haz, pfs, rep_pri, paths, houses, locs = read_model_json(HOME.joinpath(model_json))
 
     ## Compute link-sets from paths and houses
     lins = {}
@@ -238,11 +304,11 @@ def main(h_list, plot: bool=False):
     VE_ord = ['haz']
     for s in rep_pri:
         VE_ord += ['x'+s, 'n'+s, 'c'+s]
-    for h, paths in lins.items(): # Actually, VE order of houses does not matter as the marginal distribution is computed for "one" house at a time
-        if len(paths) < 2:
+    for h, p in lins.items(): # Actually, VE order of houses does not matter as the marginal distribution is computed for "one" house at a time
+        if len(p) < 2:
             VE_ord += [h]
         else: # there are more than 1 path
-            VE_ord += [h+str(i) for i in range(len(paths))] + [h]
+            VE_ord += [h+str(i) for i in range(len(p))] + [h]
 
     ## Get P(H*) for H* in h_list
     cond_names = ['haz']
@@ -256,20 +322,15 @@ def main(h_list, plot: bool=False):
         print( h + " done. " + "Took {:.2f} sec.".format(en-st) )
 
     avg_cut_days = {}
-    for h in h_list():
+    for h in h_list:
         days = cpm.get_means( Mhs[h], [h] )
         avg_cut_days[h] = days[0]
 
     # Plot
     if plot:
-        ############### USER INPUT ##############
-        # Locations for mapping
-        locs = {"h0": (-0.8, -1.0), "h1": (-2*0.8, -2*1.0), "h2": (0.8, -1.0), "h3": (2*0.8, -2*1.0), "h4": (0.8, -3*1.0), "h5": (5*0.8,-2*1.0), "h6": (6*0.8, -3*1.0)}
-        locs["s0"], locs["s1"] = (0.0, 0.0), (3.5*0.8, 0.0)
-        #########################################
         
         # Get information about paths
-        conn = get_pole_conn( paths )
+        conn = get_pole_conn( paths, houses )
         locs = add_pole_loc( locs, conn )
 
         # failure prob. from marginal distribution
@@ -284,4 +345,7 @@ def main(h_list, plot: bool=False):
     return Mhs, avg_cut_days
 
 
+"""if __name__ == "__main__":
+    app()"""
 
+Mhs, avg_cut_days = main( ['h0'], "model.json", plot=True )
