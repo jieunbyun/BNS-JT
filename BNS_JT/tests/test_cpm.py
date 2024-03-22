@@ -38,10 +38,11 @@ def var_A1_to_A5():
     A4 = variable.Variable(name='A4', values=['Survive', 'Fail'])
     A5 = variable.Variable(name='A5', values=['Survive', 'Fail'])
 
-    return A1, A2, A3, A4, A5
-
-
 def test_init(dict_cpm):
+
+    #return A1, A2, A3, A4, A5
+
+
 
     a = cpm.Cpm(**dict_cpm)
     assert isinstance(a, cpm.Cpm)

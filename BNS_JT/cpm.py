@@ -33,7 +33,7 @@ class Cpm(object):
     Cpm(varibles, no_child, C, p, q, sample_idx)
     """
 
-    def __init__(self, variables, no_child, C=[], p=[], q=[], sample_idx=[]):
+    def __init__(self, variables, no_child, C=[], p=[], Cs=[], q=[], sample_idx=[]):
 
         assert isinstance(variables, list), 'variables must be a list of Variable'
 
@@ -46,7 +46,9 @@ class Cpm(object):
 
         self.no_child = no_child
 
-        assert isinstance(C, np.ndarray), 'Event matrix C must be a numeric matrix'
+        if isinstance(Cs, list):
+            Cs = np.array(Cs, dtype=np.int32)
+        assert isinstance(C, np.ndarray), 'Event matrix C must be a numeric matrix' # FIXME: Is this redundant by the commands right above?
         assert C.dtype in (np.dtype('int64'), np.dtype('int32')), f'Event matrix C must be a numeric matrix: {self.C}'
 
         if C.ndim == 1:
@@ -59,6 +61,20 @@ class Cpm(object):
         assert all(max_C <= max_var), f'check C matrix: {max_C} vs {max_var}'
 
         self.C = C
+
+        if isinstance(Cs, list):
+            Cs = np.array(Cs, dtype=np.int32)
+
+        if Cs.ndim == 1: # event matrix for samples
+            Cs.shape = (len(Cs), 1)
+        else:
+            assert Cs.shape[1] == len(self.variables), 'C must have the same number of columns with that of variables'
+
+        max_Cs = np.max(Cs, axis=0, initial=0)
+        max_var_basic = [len(x.values) for x in self.variables]
+        assert all(max_Cs <= max_var_basic), f'check Cs matrix: {max_Cs} vs {max_var_basic}'
+
+        self.Cs = Cs
 
         if isinstance(p, list):
             self.p = np.array(p)[:, np.newaxis]
@@ -86,7 +102,7 @@ class Cpm(object):
             assert isinstance(self.q, np.ndarray), 'q must be a numeric vector'
             all(isinstance(y, (float, np.float32, np.float64, int, np.int32, np.int64)) for y in self.q), 'p must be a numeric vector'
 
-            assert len(self.q) == self.C.shape[0], 'q must have the same length with the number of rows in C'
+            assert len(self.q) == self.Cs.shape[0], 'q must have the same length with the number of rows in Cs'
 
             if self.q.ndim == 1:
                 self.q.shape = (len(self.q), 1)
@@ -96,7 +112,7 @@ class Cpm(object):
                 assert len(self.p) == self.C.shape[0], 'p must have the same length with the number of rows in C'
 
         if self.sample_idx.size:
-            assert len(self.sample_idx) == self.C.shape[0], 'sample_idx must have the same length with the number of rows in C'
+            assert len(self.sample_idx) == self.Cs.shape[0], 'sample_idx must have the same length with the number of rows in Cs'
 
             if self.sample_idx.ndim == 1:
                 self.sample_idx.shape = (len(self.sample_idx), 1)
