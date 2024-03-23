@@ -33,90 +33,148 @@ class Cpm(object):
     Cpm(varibles, no_child, C, p, q, sample_idx)
     """
 
-    def __init__(self, variables, no_child, C=[], p=[], Cs=[], q=[], sample_idx=[]):
-
-        assert isinstance(variables, list), 'variables must be a list of Variable'
-
-        assert all([isinstance(x, Variable) for x in variables]), 'variables must be a list of Variable'
+    def __init__(self, variables, no_child, C=[], p=[], Cs=[], q=[], ps=[], sample_idx=[]):
 
         self.variables = variables
-
-        assert isinstance(no_child, (int, np.int32, np.int64)), 'no_child must be a numeric scalar'
-        assert no_child <= len(self.variables), 'no_child must be less than or equal to the number of variables'
-
         self.no_child = no_child
-
-        if isinstance(Cs, list):
-            Cs = np.array(Cs, dtype=np.int32)
-        assert isinstance(C, np.ndarray), 'Event matrix C must be a numeric matrix' # FIXME: Is this redundant by the commands right above?
-        assert C.dtype in (np.dtype('int64'), np.dtype('int32')), f'Event matrix C must be a numeric matrix: {self.C}'
-
-        if C.ndim == 1:
-            C.shape = (len(C), 1)
-        else:
-            assert C.shape[1] == len(self.variables), 'C must have the same number of columns with that of variables'
-
-        max_C = np.max(C, axis=0, initial=0)
-        max_var = [len(x.B) for x in self.variables]
-        assert all(max_C <= max_var), f'check C matrix: {max_C} vs {max_var}'
-
         self.C = C
-
-        if isinstance(Cs, list):
-            Cs = np.array(Cs, dtype=np.int32)
-
-        if Cs.ndim == 1: # event matrix for samples
-            Cs.shape = (len(Cs), 1)
-        else:
-            assert Cs.shape[1] == len(self.variables), 'C must have the same number of columns with that of variables'
-
-        max_Cs = np.max(Cs, axis=0, initial=0)
-        max_var_basic = [len(x.values) for x in self.variables]
-        assert all(max_Cs <= max_var_basic), f'check Cs matrix: {max_Cs} vs {max_var_basic}'
-
+        self.p = p
         self.Cs = Cs
+        self.q = q
+        self.ps = ps
+        self.sample_idx = sample_idx
 
-        if isinstance(p, list):
-            self.p = np.array(p)[:, np.newaxis]
-        else:
-            self.p = p
+    @property
+    def variables(self):
+        return self._variables
+    @variables.setter
+    def variables(self, value):
+        assert isinstance(value, list), 'variables must be a list of Variable'
+        assert all([isinstance(x, Variable) for x in value]), 'variables must be a list of Variable'
+        self._variables = value
 
-        assert isinstance(self.p, np.ndarray), 'p must be a numeric vector'
+    @property
+    def no_child(self):
+        return self._no_child
+    @no_child.setter
+    def no_child(self,value):
+        assert isinstance(value, (int, np.int32, np.int64)), 'no_child must be a numeric scalar'
+        assert value <= len(self._variables), 'no_child must be less than or equal to the number of variables'
+        self._no_child = value
 
-        all(isinstance(y, (float, np.float32, np.float64, int, np.int32, np.int64)) for y in self.p), 'p must be a numeric vector'
+    @property
+    def C(self):
+        return self._C
+    @C.setter
+    def C(self, value):
+        if isinstance(value,list):
+            value = np.array(value, dtype=np.int32)
 
-        if isinstance(q, list):
-            self.q = np.array(q)[:, np.newaxis]
-        else:
-            self.q = q
+        if value.size:
+            assert value.dtype in (np.dtype('int64'), np.dtype('int32')), f'Event matrix C must be a numeric matrix: {value}'
 
-        if isinstance(sample_idx, list):
-            self.sample_idx = np.array(sample_idx)[:, np.newaxis]
-        else:
-            self.sample_idx = sample_idx
+            if value.ndim == 1:
+                value.shape = (len(value), 1)
+            else:
+                assert value.shape[1] == len(self._variables), 'C must have the same number of columns as that of variables'
 
-        if self.p.ndim == 1:
-            self.p.shape = (len(self.p), 1)
+            max_C = np.max(value, axis=0, initial=0)
+            max_var = [len(x.B) for x in self._variables]
+            assert all(max_C <= max_var), f'check C matrix: {max_C} vs {max_var}'
 
-        if self.q.size:
-            assert isinstance(self.q, np.ndarray), 'q must be a numeric vector'
-            all(isinstance(y, (float, np.float32, np.float64, int, np.int32, np.int64)) for y in self.q), 'p must be a numeric vector'
+        self._C = value
 
-            assert len(self.q) == self.Cs.shape[0], 'q must have the same length with the number of rows in Cs'
+    @property
+    def p(self):
+        return self._p
+    @p.setter
+    def p(self, value):
+        if isinstance(value, list):
+            value = np.array(value)[:, np.newaxis]
 
-            if self.q.ndim == 1:
-                self.q.shape = (len(self.q), 1)
+        if value.ndim == 1:
+            value.shape = (len(value), 1)
 
-        else:
-            if self.p.size:
-                assert len(self.p) == self.C.shape[0], 'p must have the same length with the number of rows in C'
+        if value.size:
+            assert len(value) == self._C.shape[0], 'p must have the same length as the number of rows in C'
 
-        if self.sample_idx.size:
-            assert len(self.sample_idx) == self.Cs.shape[0], 'sample_idx must have the same length with the number of rows in Cs'
+            all(isinstance(y, (float, np.float32, np.float64, int, np.int32, np.int64)) for y in value), 'p must be a numeric vector'
 
-            if self.sample_idx.ndim == 1:
-                self.sample_idx.shape = (len(self.sample_idx), 1)
+        self._p = value
 
+    @property
+    def Cs(self):
+        return self._Cs
+    @Cs.setter
+    def Cs(self, value):
+        if isinstance(value, list):
+            value = np.array(value, dtype=np.int32)        
+
+        if value.size:
+            if value.ndim == 1: # event matrix for samples
+                value.shape = (len(value), 1)
+            else:
+                assert value.shape[1] == self._no_child, 'Cs must have the same number of columns as the number of child nodes'
+
+            max_Cs = np.max(value, axis=0, initial=0)
+            max_var_basic = [len(x.values) for x in self.variables[:self._no_child]]
+            assert all(max_Cs <= max_var_basic), f'check Cs matrix: {max_Cs} vs {max_var_basic}'
+
+        self._Cs = value
+
+    @property
+    def q(self):
+        return self._q
+    @q.setter
+    def q(self, value):
+        if isinstance(value, list):
+            value = np.array(value)[:, np.newaxis]
+
+        if value.ndim == 1:
+            value.shape = (len(value), 1)
+
+        if value.size and self._Cs.size:
+            assert len(value) == self._Cs.shape[0], 'q must have the same length as the number of rows in Cs'
+
+            all(isinstance(y, (float, np.float32, np.float64, int, np.int32, np.int64)) for y in value), 'p must be a numeric vector'
+
+        self._q = value
+
+    @property
+    def ps(self):
+        return self._p
+    @ps.setter
+    def ps(self, value):
+        if isinstance(value, list):
+            value = np.array(value)[:, np.newaxis]
+
+        if value.ndim == 1:
+            value.shape = (len(value), 1)
+
+        if value.size and self._Cs.size:
+            assert len(value) == self._Cs.shape[0], 'ps must have the same length as the number of rows in Cs'
+
+            all(isinstance(y, (float, np.float32, np.float64, int, np.int32, np.int64)) for y in value), 'p must be a numeric vector'
+
+        self._ps = value
+
+    @property
+    def sample_idx(self):
+        return self._p
+    @sample_idx.setter
+    def sample_idx(self, value):
+        if isinstance(value, list):
+            value = np.array(value)[:, np.newaxis]
+
+        if value.ndim == 1:
+            value.shape = (len(value), 1)
+
+        if value.size and self._Cs.size:
+            assert len(value) == self._Cs.shape[0], 'sample_idx must have the same length as the number of rows in Cs'
+
+            all(isinstance(y, (float, np.float32, np.float64, int, np.int32, np.int64)) for y in value), 'p must be a numeric vector'
+
+        self._sample_idx = value
 
     def __repr__(self):
         _variable = [x.name for x in self.variables]
@@ -131,7 +189,7 @@ class Cpm(object):
         elif isinstance(item, list):
             return [self.get_variables(y) for y in item]
 
-    def get_subset(self, row_idx, flag=True):
+    def get_subset(self, row_idx, flag=True, isC=True):
         """
         Returns the subset of Cpm
 
@@ -140,37 +198,59 @@ class Cpm(object):
         row_idx: array like
         flag: boolean
             default True, 0 if exclude row_idx
+        isCs: boolean
+            if True, C and p are reduced; if False, Cs, q, and ps are.
         """
 
         assert flag in (0, 1)
+        assert isC in (0, 1)
 
-        if flag:
-            assert set(row_idx).issubset(range(self.C.shape[0]))
+        if isC:
+            if flag:
+                assert set(row_idx).issubset(range(self.C.shape[0]))
+            else:
+                # select row excluding the row_index
+                row_idx, _ = setdiff(range(self.C.shape[0]), row_idx)
+
+            if self.p.size:
+                p_sub = self.p[row_idx]
+            else:
+                p_sub = []
+
+            Mnew = Cpm(variables=self.variables,
+                       no_child=self.no_child,
+                       C=self.C[row_idx,:],
+                       p=p_sub,
+                       Cs = self.Cs,
+                       q= self.q,
+                       ps=self.ps)
+            
         else:
-            # select row excluding the row_index
-            row_idx, _ = setdiff(range(self.C.shape[0]), row_idx)
+            if flag:
+                assert set(row_idx).issubset(range(self.Cs.shape[0]))
+            else:
+                # select row excluding the row_index
+                row_idx, _ = setdiff(range(self.Cs.shape[0]), row_idx)
 
-        if self.p.size:
-            p_sub = self.p[row_idx]
-        else:
-            p_sub = []
+            if self.q.size:
+                q_sub = self.q[row_idx]
+            else:
+                q_sub = []
 
-        if self.q.size:
-            q_sub = self.q[row_idx]
-        else:
-            q_sub = []
+            if self.ps.size:
+                ps_sub = self.ps[row_idx]
+            else:
+                ps_sub = []
 
-        if self.sample_idx.size:
-            sample_idx_sub = self.sample_idx[row_idx]
-        else:
-            sample_idx_sub = []
-
-        return Cpm(variables=self.variables,
-                   no_child=self.no_child,
-                   C=self.C[row_idx,:],
-                   p=p_sub,
-                   q=q_sub,
-                   sample_idx=sample_idx_sub)
+            Mnew = Cpm(variables=self.variables,
+                       no_child=self.no_child,
+                       C=self.C,
+                       p=self.p,
+                       Cs=self.Cs[row_idx,:],
+                       q=q_sub,
+                       ps=ps_sub)
+            
+        return Mnew
 
 
     def iscompatible(self, M, flag=True):
@@ -183,31 +263,79 @@ class Cpm(object):
         flag: True if composite state considered
         """
 
-        assert M.C.shape[0] == 1, 'C must be a single row'
+        assert ( (M.C.shape[0] == 1) and (not M.Cs.size) ) or ( (M.Cs.shape[0] == 1) and (not M.C.size) ), 'C/Cs must be a single row'
 
-        _, idx = ismember(M.variables, self.variables)
-        check_vars = get_value_given_condn(M.variables, idx)
-        check_states = get_value_given_condn(M.C[0], idx)
-        idx = get_value_given_condn(idx, idx)
+        if M.C.size:
+            _, idx = ismember(M.variables, self.variables)
+            check_vars = get_value_given_condn(M.variables, idx)
+            check_states = get_value_given_condn(M.C[0], idx)
+            idx = get_value_given_condn(idx, idx)
 
-        C = self.C[:, idx].copy()
+            C = self.C[:, idx].copy()
 
-        if self.sample_idx.size and M.sample_idx.size:
-            is_cmp = (self.sample_idx == M.sample_idx)
-        else:
-            is_cmp = np.ones(shape=C.shape[0], dtype=bool)
+            is_cmp_C = np.ones(shape=C.shape[0], dtype=bool)
 
-        for i, (variable, state) in enumerate(zip(check_vars, check_states)):
+            for i, (variable, state) in enumerate(zip(check_vars, check_states)):
 
-            if flag:
-                B = variable.B
+                if flag:
+                    B = variable.B
+                else:
+                    B = [{i} for i in range(np.max(C[:, i]) + 1)]
+
+                x1 = [B[int(k)] for k in C[is_cmp_C, i]]
+                check = [bool(B[state].intersection(x)) for x in x1]
+
+                is_cmp_C[np.where(is_cmp_C > 0)[0][:len(check)]] = check
+
+            if self.Cs.size:
+                _, idx = ismember(M.variables, self.variables[:self.no_child])
+                check_vars = get_value_given_condn(M.variables, idx)
+                check_states = get_value_given_condn(M.C[0], idx)
+                idx = get_value_given_condn(idx, idx)
+
+                Cs = self.Cs[:, idx].copy()
+
+                is_cmp_Cs = np.ones(shape=C.shape[0], dtype=bool)
+
+                for i, (variable, state) in enumerate(zip(check_vars, check_states)):
+
+                    if flag:
+                        B = variable.B
+                    else:
+                        B = [{i} for i in range(np.max(Cs[:, i]) + 1)]
+
+                    x1 = [B[int(k)] for k in Cs[is_cmp_Cs, i]]
+                    check = [bool(B[state].intersection(x)) for x in x1]
+
+                    is_cmp_Cs[np.where(is_cmp_Cs > 0)[0][:len(check)]] = check
+
+                is_cmp = {'C': is_cmp_C, 'Cs': is_cmp_Cs}
             else:
-                B = [{i} for i in range(np.max(C[:, i]) + 1)]
+                is_cmp = is_cmp_C
+            
+        if M.Cs.size: # Cs is not compared with other Cs but only with C.
+            _, idx = ismember(M.variables, self.variables)
+            check_vars = get_value_given_condn(M.variables, idx)
+            check_states = get_value_given_condn(M.C[0], idx)
+            idx = get_value_given_condn(idx, idx)
 
-            x1 = [B[int(k)] for k in C[is_cmp, i]]
-            check = [bool(B[state].intersection(x)) for x in x1]
+            C = self.C[:, idx].copy()
 
-            is_cmp[np.where(is_cmp > 0)[0][:len(check)]] = check
+            is_cmp_C = np.ones(shape=C.shape[0], dtype=bool)
+
+            for i, (variable, state) in enumerate(zip(check_vars, check_states)):
+
+                if flag:
+                    B = variable.B
+                else:
+                    B = [{i} for i in range(np.max(C[:, i]) + 1)]
+
+                x1 = [B[int(k)] for k in C[is_cmp_C, i]]
+                check = [bool(B[state].intersection(x)) for x in x1]
+
+                is_cmp_C[np.where(is_cmp_C > 0)[0][:len(check)]] = check
+
+            is_cmp = is_cmp_C
 
         return is_cmp
     

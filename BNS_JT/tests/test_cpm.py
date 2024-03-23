@@ -38,11 +38,9 @@ def var_A1_to_A5():
     A4 = variable.Variable(name='A4', values=['Survive', 'Fail'])
     A5 = variable.Variable(name='A5', values=['Survive', 'Fail'])
 
+    return A1, A2, A3, A4, A5
+
 def test_init(dict_cpm):
-
-    #return A1, A2, A3, A4, A5
-
-
 
     a = cpm.Cpm(**dict_cpm)
     assert isinstance(a, cpm.Cpm)
@@ -69,6 +67,9 @@ def test_init3(dict_cpm):
     # using list for P
     a = cpm.Cpm(variables=[v['variables'][0]], no_child=1, C=np.array([1, 2]))
     assert isinstance(a, cpm.Cpm)
+
+def test_init4():
+    a = cpm.Cpm(variables=['1'], no_child=1)
 
 
 def test_variables1(dict_cpm):
@@ -125,10 +126,7 @@ def test_sort1(dict_cpm):
             C = C,
             p = p)
 
-    if any(M.sample_idx):
-        rowIdx = cpm.argsort(M.sample_idx)
-    else:
-        rowIdx = cpm.argsort(list(map(tuple, C[:, ::-1])))
+    rowIdx = cpm.argsort(list(map(tuple, C[:, ::-1])))
 
     try:
         Ms_p = M.p[rowIdx]
@@ -136,19 +134,25 @@ def test_sort1(dict_cpm):
         Ms_p = M.p
 
     try:
+        Ms_Cs = M.Cs[rowIdx,:]
+    except IndexError:
+        Ms_Cs = M.Cs
+
+    try:
         Ms_q = M.q[rowIdx]
     except IndexError:
         Ms_q = M.q
 
     try:
-        Ms_sample_idx = M.sample_idx[rowIdx]
+        Ms_ps = M.ps[rowIdx]
     except IndexError:
-        Ms_sample_idx = M.sample_idx
+        Ms_ps = M.ps
 
     Ms = cpm.Cpm(C=M.C[rowIdx, :],
              p=Ms_p,
+             Cs = Ms_Cs,
              q=Ms_q,
-             sample_idx=Ms_sample_idx,
+             ps=Ms_ps,
              variables=M.variables,
              no_child=M.no_child)
 
@@ -822,10 +826,12 @@ def test_product1(setup_product):
         c1_ = cpm.get_value_given_condn(M1.C[i, :], idxVarsM1)
         c1_notCommon = M1.C[i, cpm.flip(idxVarsM1)]
 
-        if any(M1.sample_idx):
+        #FIXME
+        """if any(M1.sample_idx):
             sampleInd1 = M1.sample_idx[i]
         else:
-            sampleInd1 = []
+            sampleInd1 = []"""
+        sampleInd1 = []
 
         #if isinstance(commonVars, list):
         #    commonVars = np.array(commonVars)
@@ -995,6 +1001,29 @@ def setup_condition():
     Mx = cpm.Cpm(variables=[v2, v3, v5, v1, v4], no_child=3, C = C, p = p)
 
     return Mx
+
+@pytest.fixture()
+def setup_hybrid(): 
+    vars, cpms = {}, {}
+
+    vars['haz'] = variable.Variable(name='haz', values=['mild', 'severe'])
+    cpms['haz'] = cpm.Cpm(variables=[vars['haz']], no_child=1, C=np.array([0,1]), p=[0.7, 0.3])
+
+    vars['x0'] = variable.Variable(name='x0', values=['fail', 'surv'])
+    cpms['x0'] = cpm.Cpm(variables=[vars['x0'], vars['haz']], no_child=1, C=np.array([[0,0],[1,0],[0,1],[1,1]]), p=[0.1,0.9,0.2,0.8])
+    vars['x1'] = variable.Variable(name='x1', values=['fail', 'surv'])
+    cpms['x1'] = cpm.Cpm(variables=[vars['x1'], vars['haz']], no_child=1, C=np.array([[0,0],[1,0],[0,1],[1,1]]), p=[0.3,0.7,0.4,0.6])
+
+    vars['sys'] = variable.Variable(name='sys', values=['fail', 'surv'])
+    cpms['sys'] = cpm.Cpm(variables=[vars['sys'], vars['x0'], vars['x1']], no_child=1, C=np.array([[0,0,0],[1,1,1]]), p=[1,1]) # incomplete C (i.e. C does not include all samples)
+
+    # samples
+    cpms['haz'].Cs, cpms['haz'].q = np.array([0,0,0,1,0]), [0.7,0.7,0.7,0.3,0.7]
+    cpms['x0'].Cs, cpms['x0'].q = np.array([0,1,1,0,1]), [0.1,0.9,0.9,0.2,0.9]
+    cpms['x1'].Cs, cpms['x1'].q = np.array([1,0,0,1,0]), [0.8,0.2,0.2,0.6,0.2]
+    cpms['sys'].Cs, cpms['sys'].Cs = np.array([0,1,1,0,1]), [1,1,1,1,1]
+
+    return vars, cpms
 
 
 def test_condition0(setup_condition):
