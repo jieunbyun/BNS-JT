@@ -2184,10 +2184,23 @@ def test_condition6( setup_hybrid ):
     Mc = cpm.condition(cpms, ['haz'], [0])
 
     np.testing.assert_array_almost_equal(Mc['haz'].C, np.array([[0]]))
-    assert len(Mc['haz'].Cs) < 1
+    np.testing.assert_array_almost_equal(Mc['haz'].ps, cpms['haz'].q * 0.7)
     np.testing.assert_array_almost_equal(Mc['x0'].ps, np.array([[0.1],[0.9],[0.9],[0.1],[0.9]]))
     np.testing.assert_array_almost_equal(Mc['x1'].ps, np.array([[0.7],[0.3],[0.3],[0.7],[0.3]]))
     np.testing.assert_array_almost_equal(Mc['sys'].ps, np.array([[1.0],[1.0],[1.0],[1.0],[1.0]]))
+
+def test_product( setup_hybrid ):
+
+    vars, cpms = setup_hybrid
+    Mp = cpms['haz'].product( cpms['x0'] )
+
+    assert Mp.variables[0].name == 'haz' and Mp.variables[1].name == 'x0'
+    np.testing.assert_array_almost_equal(Mp.C, np.array([[0,0], [1,0], [0,1], [1,1]]))
+    np.testing.assert_array_almost_equal(Mp.p, np.array([[0.07], [0.06], [0.63], [0.24]]))
+    np.testing.assert_array_almost_equal(Mp.Cs, np.array([[0,0],[0,1],[0,1],[1,0],[0,1]]))
+    np.testing.assert_array_almost_equal(Mp.q, np.array([[0.07], [0.63], [0.63], [0.06], [0.63]]))
+    np.testing.assert_array_almost_equal(Mp.q, Mp.ps)
+    np.testing.assert_array_almost_equal(Mp.sample_idx, np.array([[0],[1],[2],[3],[4]]))
 
 @pytest.fixture()
 def setup_hybrid_no_samp(): 
@@ -2205,10 +2218,3 @@ def setup_hybrid_no_samp():
     cpms['sys'] = cpm.Cpm(variables=[vars['sys'], vars['x0'], vars['x1']], no_child=1, C=np.array([[0,0,0],[1,1,1]]), p=[1,1]) # incomplete C (i.e. C does not include all samples)
 
     return vars, cpms
-
-def test_rejection_sampling(setup_hybrid_no_samp):
-
-    vars, cpms = setup_hybrid_no_samp
-    cpms, nsamp_tot = cpm.rejection_sampling(cpms, cpms['sys'].C[1:], cpms['sys'].variables[1:], 5, isRejected=True)
-
-    print(cpms)

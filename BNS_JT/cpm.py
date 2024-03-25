@@ -135,9 +135,7 @@ class Cpm(object):
             value = np.array(value)[:, np.newaxis]
         
         if value.ndim == 1:
-            if self._Cs.size:
-                if self._Cs.size[0]==1:
-                    value.shape = (len(value), 1)
+            value.shape = (len(value), 1)
                 
         if value.size and self._Cs.size:
             assert len(value) == self._Cs.shape[0], 'q must have the same length as the number of rows in Cs'
@@ -471,14 +469,14 @@ class Cpm(object):
             if M.p.size:
                 self.p = np.ones(shape=(self.C.shape[0], 1))
 
-        if self.q.size:
+        """if self.q.size:
             if not M.q.size:
-                M.q = np.ones(shape=(M.C.shape[0], 1))
+                M.q = np.ones(shape=(M.Cs.shape[0], 1))
         else:
             if M.q.size:
-                self.q = np.ones(shape=(self.C.shape[0], 1))
+                self.q = np.ones(shape=(self.Cs.shape[0], 1))"""
 
-        Cprod, pprod, qprod, sample_idx_prod = [], [], [], []
+        Cprod, pprod = [], []
 
         if self.C.size:
             # FIXME: defined but not used
@@ -492,15 +490,9 @@ class Cpm(object):
                 c1 = get_value_given_condn(self.C[i, :], idx_vars)
                 c1_not_com = self.C[i, flip(idx_vars)]
 
-                if self.sample_idx.size:
-                    sample_idx = self.sample_idx[i]
-                else:
-                    sample_idx = []
-
                 [Mc] = condition([M],
                                  cnd_vars=com_vars,
-                                 cnd_states=c1,
-                                 sample_idx=sample_idx)
+                                 cnd_states=c1)
 
                 _cprod = np.append(Mc.C, np.tile(c1_not_com, (Mc.C.shape[0], 1)), axis=1)
 
@@ -508,16 +500,6 @@ class Cpm(object):
 
                 if self.p.size:
                     pprod.append(get_prod(Mc.p, self.p[i]))
-
-                if self.q.size:
-                    qprod.append(get_prod(Mc.q, self.q[i]))
-
-                if sample_idx:
-                    _sprod = np.tile(sample_idx, (Mc.C.shape[0], 1))
-                    sample_idx_prod.append(_sprod)
-
-                elif Mc.sample_idx.size:
-                    sample_idx_prod.append(Mc.sample_idx)
 
             prod_vars = M.variables + get_value_given_condn(self.variables, flip(idx_vars))
 
@@ -533,26 +515,57 @@ class Cpm(object):
             else:
                 new_vars = new_child
 
-            _, idx_vars = ismember(new_vars, prod_vars)
+            _, idx_vars2 = ismember(new_vars, prod_vars)
 
             Cprod = np.concatenate(Cprod, axis=0)
             pprod = np.concatenate(pprod, axis=0)
 
             Mprod = Cpm(variables=new_vars,
                         no_child = len(new_child),
-                        C = Cprod[:, idx_vars].astype(int),
+                        C = Cprod[:, idx_vars2].astype(int),
                         p = pprod)
-
-            if qprod:
-                Mprod.q = np.concatenate(qprod, axis=0)
-
-            if sample_idx_prod:
-                Mprod.sample_idx = np.concatenate(sample_idx_prod, axis=0)
 
             Mprod.sort()
 
         else:
             Mprod = M
+
+        if self.Cs.size and M.Cs.size:
+            Csprod, qprod, psprod, sample_idx_prod = [], [], [], []
+
+            self.q = np.prod(self.q, axis=1)
+            M.q = np.prod(M.q, axis = 1)
+            if self.ps.size:
+                self.ps = np.prod(self.ps, axis=1)
+            else:
+                self.ps = self.q.copy()
+            if M.ps.size:
+                M.ps = np.prod(M.ps, axis=1)
+            else:
+                M.ps = M.q.copy()
+            
+            for i in range(self.Cs.shape[0]):
+
+                #c1 = get_value_given_condn(self.Cs[i, :], idx_vars)
+                c1_not_com = self.Cs[i, flip(idx_vars)]
+
+                M_idx = np.where(M.sample_idx==self.sample_idx[i][0])[0]
+                c2 = M.Cs[M_idx,:][0]
+
+                _csprod = np.concatenate((c2, c1_not_com), axis = 0 )
+                Csprod.append([_csprod])
+
+                qprod.append(get_prod(M.q[M_idx], self.q[i])) 
+                psprod.append(get_prod(M.ps[M_idx], self.ps[i]))
+
+            Csprod = np.concatenate(Csprod, axis=0)
+            psprod = np.concatenate(psprod, axis=0)
+            qprod = np.concatenate(qprod, axis=0)
+
+            Mprod.Cs = Csprod[:, idx_vars2].astype(int)
+            Mprod.q = qprod
+            Mprod.ps = psprod
+            Mprod.sample_idx = self.sample_idx.copy()
 
         return  Mprod
 
@@ -780,7 +793,13 @@ def condition(M, cnd_vars, cnd_states):
         if Mx.Cs.size:
             _, res = ismember(Mx.variables, cnd_vars)
             if any(not isinstance(r,bool) for r in res[:Mx.no_child]):
-                Mx.Cs, Mx.q, Mx.sample_idx, Mx.ps = [], [], [], [] # the conditioned variables' samples are removed.
+                ps = []
+                for c, q in zip(Mx.Cs, Mx.q):
+                    var_states = [cnd_states[r] if not isinstance(r,bool) else c[i] for i,r in enumerate(res)]
+                    pr = get_prob(Mx, Mx.variables, var_states)
+                    ps.append(pr*q[0])
+
+                Mx.ps = ps # the conditioned variables' samples are removed.
 
             elif all(isinstance(r,bool) and r==False for r in res): 
                 Mx.ps = Mx.q.copy()
