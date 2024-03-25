@@ -1011,30 +1011,6 @@ def setup_condition():
 
     return Mx
 
-@pytest.fixture()
-def setup_hybrid(): 
-    vars, cpms = {}, {}
-
-    vars['haz'] = variable.Variable(name='haz', values=['mild', 'severe'])
-    cpms['haz'] = cpm.Cpm(variables=[vars['haz']], no_child=1, C=np.array([0,1]), p=[0.7, 0.3])
-
-    vars['x0'] = variable.Variable(name='x0', values=['fail', 'surv'])
-    cpms['x0'] = cpm.Cpm(variables=[vars['x0'], vars['haz']], no_child=1, C=np.array([[0,0],[1,0],[0,1],[1,1]]), p=[0.1,0.9,0.2,0.8])
-    vars['x1'] = variable.Variable(name='x1', values=['fail', 'surv'])
-    cpms['x1'] = cpm.Cpm(variables=[vars['x1'], vars['haz']], no_child=1, C=np.array([[0,0],[1,0],[0,1],[1,1]]), p=[0.3,0.7,0.4,0.6])
-
-    vars['sys'] = variable.Variable(name='sys', values=['fail', 'surv'])
-    cpms['sys'] = cpm.Cpm(variables=[vars['sys'], vars['x0'], vars['x1']], no_child=1, C=np.array([[0,0,0],[1,1,1]]), p=[1,1]) # incomplete C (i.e. C does not include all samples)
-
-    # samples
-    cpms['haz'].Cs, cpms['haz'].q = np.array([0,0,0,1,0]), [0.7,0.7,0.7,0.3,0.7]
-    cpms['x0'].Cs, cpms['x0'].q = np.array([0,1,1,0,1]), [0.1,0.9,0.9,0.2,0.9]
-    cpms['x1'].Cs, cpms['x1'].q = np.array([1,0,0,1,0]), [0.8,0.2,0.2,0.6,0.2]
-    cpms['sys'].Cs, cpms['sys'].Cs = np.array([0,1,1,0,1]), [1,1,1,1,1]
-
-    return vars, cpms
-
-
 def test_condition0(setup_condition):
 
     Mx = setup_condition
@@ -1669,6 +1645,7 @@ def test_get_prod_idx2(setup_mcs_product):
 
     np.testing.assert_array_equal(result, expected)
 
+
 def test_single_sample1(setup_mcs_product):
 
     cpms = setup_mcs_product
@@ -1707,6 +1684,24 @@ def test_single_sample2(setup_mcs_product):
     elif (sample == [2, 1, 1]).all():
         np.testing.assert_array_almost_equal(sampleProb, [[0.0765]], decimal=3)
 
+def test_single_sample3(setup_mcs_product):
+    cpms = setup_mcs_product
+    cpms = {k:cpms[k] for k in [1, 2, 3]}
+    v2, v1 = cpms[2].get_variables(['v2', 'v1'])
+    v3 = cpms[3].get_variables('v3')
+
+    sampleOrder = [0, 1, 2]
+    sampleVars = [v1, v2, v3]
+    varAdditionOrder = [0, 1, 2]
+    sampleInd = [1]
+
+    sample, sampleProb = cpm.single_sample(cpms, sampleOrder, sampleVars, varAdditionOrder, sampleInd, isProbScaler=False)
+
+    if (sample == [1, 1, 1]).all():
+        np.testing.assert_array_almost_equal(sampleProb, [[0.9],[0.99],[0.95]], decimal=3)
+    elif (sample == [2, 1, 1]).all():
+        np.testing.assert_array_almost_equal(sampleProb, [[0.1],[0.9],[0.85]], decimal=3)
+
 def test_mcs_product1(setup_mcs_product):
 
     cpms = setup_mcs_product
@@ -1717,17 +1712,17 @@ def test_mcs_product1(setup_mcs_product):
 
     assert [x.name for x in Mcs.variables]==['v3', 'v2', 'v1']
 
-    assert Mcs.C.shape== (10, 3)
+    assert Mcs.Cs.shape== (10, 3)
     assert Mcs.q.shape== (10, 1)
     assert Mcs.sample_idx.shape== (10, 1)
 
-    irow = np.where((Mcs.C == (1, 1, 1)).all(axis=1))[0]
+    irow = np.where((Mcs.Cs == (0, 0, 0)).all(axis=1))[0]
     try:
         np.testing.assert_array_almost_equal(Mcs.q[irow], 0.8464*np.ones((len(irow), 1)), decimal=4)
     except AssertionError:
         print(f'{Mcs.q[irow]} vs 0.8464')
 
-    irow = np.where((Mcs.C == (1, 1, 2)).all(axis=1))[0]
+    irow = np.where((Mcs.Cs == (0, 0, 1)).all(axis=1))[0]
     try:
         np.testing.assert_array_almost_equal(Mcs.q[irow], 0.0765*np.ones((len(irow), 1)))
     except AssertionError:
@@ -1741,17 +1736,17 @@ def test_mcs_product2(setup_mcs_product):
     Mcs = cpm.mcs_product(cpms, nSample)
 
     assert [x.name for x in Mcs.variables]==['v5', 'v4', 'v3', 'v2', 'v1']
-    assert Mcs.C.shape== (10, 5)
+    assert Mcs.Cs.shape== (10, 5)
     assert Mcs.q.shape== (10, 1)
     assert Mcs.sample_idx.shape== (10, 1)
 
-    irow = np.where((Mcs.C == (1, 1, 1, 1, 1)).all(axis=1))[0]
+    irow = np.where((Mcs.Cs == (0, 0, 0, 0, 0)).all(axis=1))[0]
     try:
         np.testing.assert_array_almost_equal(Mcs.q[irow], 0.8380*np.ones((len(irow), 1)), decimal=4)
     except AssertionError:
         print(f'{Mcs.q[irow]} vs 0.8380')
 
-    irow = np.where((Mcs.C == (1, 1, 1, 1, 2)).all(axis=1))[0]
+    irow = np.where((Mcs.Cs == (0, 0, 0, 0, 1)).all(axis=1))[0]
     try:
         np.testing.assert_array_almost_equal(Mcs.q[irow], 0.0688*np.ones((len(irow), 1)), decimal=3)
     except AssertionError:
@@ -1766,17 +1761,17 @@ def test_mcs_product2d(setup_mcs_product):
 
     assert [x.name for x in Mcs.variables]==['v5', 'v4', 'v3', 'v2', 'v1']
 
-    assert Mcs.C.shape== (10, 5)
+    assert Mcs.Cs.shape== (10, 5)
     assert Mcs.q.shape== (10, 1)
     assert Mcs.sample_idx.shape== (10, 1)
 
-    irow = np.where((Mcs.C == (1, 1, 1, 1, 1)).all(axis=1))[0]
+    irow = np.where((Mcs.Cs == (0, 0, 0, 0, 0)).all(axis=1))[0]
     try:
         np.testing.assert_array_almost_equal(Mcs.q[irow], 0.8380*np.ones((len(irow), 1)), decimal=4)
     except AssertionError:
         print(f'{Mcs.q[irow]} vs 0.8380')
 
-    irow = np.where((Mcs.C == (1, 1, 1, 1, 2)).all(axis=1))[0]
+    irow = np.where((Mcs.Cs == (0, 0, 0, 0, 1)).all(axis=1))[0]
     try:
         np.testing.assert_array_almost_equal(Mcs.q[irow], 0.0688*np.ones((len(irow), 1)), decimal=3)
     except AssertionError:
@@ -1791,21 +1786,46 @@ def test_mcs_product2ds(setup_mcs_product):
 
     assert [x.name for x in Mcs.variables]==['v5', 'v4', 'v3', 'v2', 'v1']
 
-    assert Mcs.C.shape== (10, 5)
+    assert Mcs.Cs.shape== (10, 5)
     assert Mcs.q.shape== (10, 1)
     assert Mcs.sample_idx.shape== (10, 1)
 
-    irow = np.where((Mcs.C == (1, 1, 1, 1, 1)).all(axis=1))[0]
+    irow = np.where((Mcs.Cs == (0,0,0,0,0)).all(axis=1))[0]
     try:
         np.testing.assert_array_almost_equal(Mcs.q[irow], 0.8380*np.ones((len(irow), 1)), decimal=4)
     except AssertionError:
         print(f'{Mcs.q[irow]} vs 0.8380')
 
-    irow = np.where((Mcs.C == (1, 1, 1, 1, 2)).all(axis=1))[0]
+    irow = np.where((Mcs.Cs == (0, 0, 0, 0, 1)).all(axis=1))[0]
     try:
         np.testing.assert_array_almost_equal(Mcs.q[irow], 0.0688*np.ones((len(irow), 1)), decimal=3)
     except AssertionError:
         print(f'{Mcs.q[irow]} vs 0.0688')
+
+def test_mcs_product2ds2(setup_mcs_product):
+
+    cpms_ = setup_mcs_product
+
+    nSample = 10
+    Mcs = cpm.mcs_product(cpms_, nSample, isProbScaler=False)
+
+    assert [x.name for x in Mcs.variables]==['v5', 'v4', 'v3', 'v2', 'v1']
+
+    assert Mcs.Cs.shape== (10, 5)
+    assert Mcs.q.shape== (10, 5)
+    assert Mcs.sample_idx.shape== (10, 1)
+
+    irow = np.where((Mcs.Cs == (0,0,0,0,0)).all(axis=1))[0]
+    try:
+        np.testing.assert_array_almost_equal(Mcs.q[irow], np.array([[1, 0.99, 0.95, 0.99, 0.9]]), decimal=2)
+    except AssertionError:
+        print(f'{Mcs.q[irow]} vs [1, 0.99, 0.95, 0.99, 0.9]')
+
+    irow = np.where((Mcs.Cs == (0, 0, 0, 0, 1)).all(axis=1))[0]
+    try:
+        np.testing.assert_array_almost_equal(Mcs.q[irow], np.array([[1, 0.9, 0.85, 0.9, 0.1]]), decimal=2)
+    except AssertionError:
+        print(f'{Mcs.q[irow]} vs [1, 0.9, 0.85, 0.9, 0.1]')
 
 
 def test_mcs_product3(setup_mcs_product):
@@ -2104,3 +2124,91 @@ def test_prod_cpm_sys_and_comps():
 
     p_f = cpm.get_prob(cpms_new, [varis['sys']], [0])
     assert p_f == pytest.approx(0.002236, rel=1.0e-3)
+
+
+@pytest.fixture()
+def setup_hybrid(): 
+    vars, cpms = {}, {}
+
+    vars['haz'] = variable.Variable(name='haz', values=['mild', 'severe'])
+    cpms['haz'] = cpm.Cpm(variables=[vars['haz']], no_child=1, C=np.array([0,1]), p=[0.7, 0.3])
+
+    vars['x0'] = variable.Variable(name='x0', values=['fail', 'surv'])
+    cpms['x0'] = cpm.Cpm(variables=[vars['x0'], vars['haz']], no_child=1, C=np.array([[0,0],[1,0],[0,1],[1,1]]), p=[0.1,0.9,0.2,0.8])
+    vars['x1'] = variable.Variable(name='x1', values=['fail', 'surv'])
+    cpms['x1'] = cpm.Cpm(variables=[vars['x1'], vars['haz']], no_child=1, C=np.array([[0,0],[1,0],[0,1],[1,1]]), p=[0.3,0.7,0.4,0.6])
+
+    vars['sys'] = variable.Variable(name='sys', values=['fail', 'surv'])
+    cpms['sys'] = cpm.Cpm(variables=[vars['sys'], vars['x0'], vars['x1']], no_child=1, C=np.array([[0,0,0],[1,1,1]]), p=[1,1]) # incomplete C (i.e. C does not include all samples)
+
+    # samples
+    cpms['haz'].Cs, cpms['haz'].q, cpms['haz'].sample_idx = np.array([0,0,0,1,0]), [0.7,0.7,0.7,0.3,0.7], [0,1,2,3,4]
+    cpms['x0'].Cs, cpms['x0'].q, cpms['x0'].sample_idx = np.array([[0,0],[1,0],[1,0],[0,1],[1,0]]), [0.1,0.9,0.9,0.2,0.9], [0,1,2,3,4]
+    cpms['x1'].Cs, cpms['x1'].q, cpms['x1'].sample_idx = np.array([[1,0],[0,0],[0,0],[1,1],[0,0]]), [0.7,0.3,0.3,0.6,0.3], [0,1,2,3,4]
+    cpms['sys'].Cs, cpms['sys'].q, cpms['sys'].sample_idx = np.array([[0,0,1],[1,1,0],[1,1,0],[0,0,1],[1,1,0]]), [1,1,1,1,1], [0,1,2,3,4]
+
+    return vars, cpms
+
+def test_get_subset4(setup_hybrid):
+
+    _,cpms = setup_hybrid
+
+    rowIndex = [0]  
+    result = cpms['haz'].get_subset(rowIndex, isC=False)
+
+    np.testing.assert_array_equal(result.Cs, np.array([[0]]))
+    np.testing.assert_array_equal(result.q, [[0.7]])
+
+def test_get_subset5(setup_hybrid):
+
+    _,cpms = setup_hybrid
+
+    rowIndex = [0,1,2]  
+    result = cpms['haz'].get_subset(rowIndex, flag=False, isC=False)
+
+    np.testing.assert_array_equal(result.Cs, np.array([[1],[0]]))
+    np.testing.assert_array_equal(result.q, [[0.3],[0.7]])
+
+def test_get_variables_from_cpms(setup_hybrid):
+
+    vars, cpms = setup_hybrid
+    vars_ = cpm.get_variables_from_cpms(cpms,['x0','x1'])
+
+    assert all(isinstance(v, variable.Variable) for v in vars_)
+    assert vars_[0].name == 'x0'
+    assert vars_[1].name == 'x1'
+
+def test_condition6( setup_hybrid ):
+
+    vars, cpms = setup_hybrid
+    Mc = cpm.condition(cpms, ['haz'], [0])
+
+    np.testing.assert_array_almost_equal(Mc['haz'].C, np.array([[0]]))
+    assert len(Mc['haz'].Cs) < 1
+    np.testing.assert_array_almost_equal(Mc['x0'].ps, np.array([[0.1],[0.9],[0.9],[0.1],[0.9]]))
+    np.testing.assert_array_almost_equal(Mc['x1'].ps, np.array([[0.7],[0.3],[0.3],[0.7],[0.3]]))
+    np.testing.assert_array_almost_equal(Mc['sys'].ps, np.array([[1.0],[1.0],[1.0],[1.0],[1.0]]))
+
+@pytest.fixture()
+def setup_hybrid_no_samp(): 
+    vars, cpms = {}, {}
+
+    vars['haz'] = variable.Variable(name='haz', values=['mild', 'severe'])
+    cpms['haz'] = cpm.Cpm(variables=[vars['haz']], no_child=1, C=np.array([0,1]), p=[0.7, 0.3])
+
+    vars['x0'] = variable.Variable(name='x0', values=['fail', 'surv'])
+    cpms['x0'] = cpm.Cpm(variables=[vars['x0'], vars['haz']], no_child=1, C=np.array([[0,0],[1,0],[0,1],[1,1]]), p=[0.1,0.9,0.2,0.8])
+    vars['x1'] = variable.Variable(name='x1', values=['fail', 'surv'])
+    cpms['x1'] = cpm.Cpm(variables=[vars['x1'], vars['haz']], no_child=1, C=np.array([[0,0],[1,0],[0,1],[1,1]]), p=[0.3,0.7,0.4,0.6])
+
+    vars['sys'] = variable.Variable(name='sys', values=['fail', 'surv'])
+    cpms['sys'] = cpm.Cpm(variables=[vars['sys'], vars['x0'], vars['x1']], no_child=1, C=np.array([[0,0,0],[1,1,1]]), p=[1,1]) # incomplete C (i.e. C does not include all samples)
+
+    return vars, cpms
+
+def test_rejection_sampling(setup_hybrid_no_samp):
+
+    vars, cpms = setup_hybrid_no_samp
+    cpms, nsamp_tot = cpm.rejection_sampling(cpms, cpms['sys'].C[1:], cpms['sys'].variables[1:], 5, isRejected=True)
+
+    print(cpms)

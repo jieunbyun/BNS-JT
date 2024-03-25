@@ -117,7 +117,7 @@ class Cpm(object):
             if value.ndim == 1: # event matrix for samples
                 value.shape = (len(value), 1)
             else:
-                assert value.shape[1] == self._no_child, 'Cs must have the same number of columns as the number of child nodes'
+                assert value.shape[1] == len(self._variables), 'Cs must have the same number of columns as the number of variables'
 
             max_Cs = np.max(value, axis=0, initial=0)
             max_var_basic = [len(x.values) for x in self.variables[:self._no_child]]
@@ -133,14 +133,17 @@ class Cpm(object):
     def q(self, value):
         if isinstance(value, list):
             value = np.array(value)[:, np.newaxis]
-
+        
         if value.ndim == 1:
-            value.shape = (len(value), 1)
-
+            if self._Cs.size:
+                if self._Cs.size[0]==1:
+                    value.shape = (len(value), 1)
+                
         if value.size and self._Cs.size:
             assert len(value) == self._Cs.shape[0], 'q must have the same length as the number of rows in Cs'
 
-            all(isinstance(y, (float, np.float32, np.float64, int, np.int32, np.int64)) for y in value), 'p must be a numeric vector'
+        if value.size:
+            all(isinstance(y, (float, np.float32, np.float64, int, np.int32, np.int64)) for y in value), 'q must be a numeric vector'
 
         self._q = value
 
@@ -205,7 +208,7 @@ class Cpm(object):
         flag: boolean
             default True, 0 if exclude row_idx
         isCs: boolean
-            if True, C and p are reduced; if False, Cs, q, and ps are.
+            if True, C and p are reduced; if False, Cs, q, ps, sample_idx are.
         """
 
         assert flag in (0, 1)
@@ -226,10 +229,7 @@ class Cpm(object):
             Mnew = Cpm(variables=self.variables,
                        no_child=self.no_child,
                        C=self.C[row_idx,:],
-                       p=p_sub,
-                       Cs = self.Cs,
-                       q= self.q,
-                       ps=self.ps)
+                       p=p_sub)
 
         else:
             if flag:
@@ -248,13 +248,17 @@ class Cpm(object):
             else:
                 ps_sub = []
 
+            if self.sample_idx.size:
+                si_sub = self.sample_idx[row_idx]
+            else:
+                si_sub = []
+
             Mnew = Cpm(variables=self.variables,
                        no_child=self.no_child,
-                       C=self.C,
-                       p=self.p,
                        Cs=self.Cs[row_idx,:],
                        q=q_sub,
-                       ps=ps_sub)
+                       ps=ps_sub,
+                       sample_idx = si_sub)
 
         return Mnew
 
@@ -279,7 +283,7 @@ class Cpm(object):
 
             C = self.C[:, idx].copy()
 
-            is_cmp_C = np.ones(shape=C.shape[0], dtype=bool)
+            is_cmp = np.ones(shape=C.shape[0], dtype=bool)
 
             for i, (variable, state) in enumerate(zip(check_vars, check_states)):
 
@@ -288,12 +292,13 @@ class Cpm(object):
                 else:
                     B = [{i} for i in range(np.max(C[:, i]) + 1)]
 
-                x1 = [B[int(k)] for k in C[is_cmp_C, i]]
+                x1 = [B[int(k)] for k in C[is_cmp, i]]
                 check = [bool(B[state].intersection(x)) for x in x1]
 
-                is_cmp_C[np.where(is_cmp_C > 0)[0][:len(check)]] = check
+                is_cmp[np.where(is_cmp > 0)[0][:len(check)]] = check
 
-            if self.Cs.size:
+            #FIXME
+            """if self.Cs.size:
                 _, idx = ismember(M.variables, self.variables[:self.no_child])
                 check_vars = get_value_given_condn(M.variables, idx)
                 check_states = get_value_given_condn(M.C[0], idx)
@@ -317,9 +322,9 @@ class Cpm(object):
 
                 is_cmp = {'C': is_cmp_C, 'Cs': is_cmp_Cs}
             else:
-                is_cmp = is_cmp_C
+                is_cmp = is_cmp_C"""
 
-        if M.Cs.size: # Cs is not compared with other Cs but only with C.
+        """if M.Cs.size: # Cs is not compared with other Cs but only with C.
             _, idx = ismember(M.variables, self.variables)
             check_vars = get_value_given_condn(M.variables, idx)
             check_states = get_value_given_condn(M.C[0], idx)
@@ -341,7 +346,7 @@ class Cpm(object):
 
                 is_cmp_C[np.where(is_cmp_C > 0)[0][:len(check)]] = check
 
-            is_cmp = is_cmp_C
+            is_cmp = is_cmp_C"""
 
         return is_cmp
 
@@ -696,7 +701,7 @@ def flip(idx):
     return [True if x is False else False for x in idx]
 
 
-def condition(M, cnd_vars, cnd_states, sample_idx=[]):
+def condition(M, cnd_vars, cnd_states):
     """
     Returns a list of instance of Cpm
 
@@ -705,7 +710,6 @@ def condition(M, cnd_vars, cnd_states, sample_idx=[]):
     M: a dict or list of instances of Cpm
     cnd_vars: a list of variables to be conditioned
     cnd_states: a list of the states to be conditioned
-    sample_idx:
     """
 
     assert isinstance(M, (Cpm, list, dict)), 'invalid M'
@@ -713,6 +717,7 @@ def condition(M, cnd_vars, cnd_states, sample_idx=[]):
     if isinstance(M, Cpm):
         M = [M]
     elif isinstance(M, dict):
+        keys = list(M.keys())
         M = list(M.values())
 
     assert isinstance(cnd_vars, (list, np.ndarray)), 'invalid cnd_vars'
@@ -730,8 +735,6 @@ def condition(M, cnd_vars, cnd_states, sample_idx=[]):
 
     if cnd_states and isinstance(cnd_states[0], str):
         cnd_states = [x.values.index(y) for x, y in zip(cnd_vars, cnd_states)]
-
-    assert isinstance(sample_idx, (list, np.ndarray)), f'sample_idx should be a list: {type(sample_idx)}'
 
     Mc = copy.deepcopy(M)
     for Mx in Mc:
@@ -774,13 +777,28 @@ def condition(M, cnd_vars, cnd_states, sample_idx=[]):
         if Mx.p.size:
             Mx.p = Mx.p[is_cmp]
 
-        if Mx.q.size:
-            Mx.q = Mx.q[is_cmp]
+        if Mx.Cs.size:
+            _, res = ismember(Mx.variables, cnd_vars)
+            if any(not isinstance(r,bool) for r in res[:Mx.no_child]):
+                Mx.Cs, Mx.q, Mx.sample_idx, Mx.ps = [], [], [], [] # the conditioned variables' samples are removed.
 
-        if Mx.sample_idx.size:
-            Mx.sample_idx = Mx.sample_idx[is_cmp]
+            elif all(isinstance(r,bool) and r==False for r in res): 
+                Mx.ps = Mx.q.copy()
 
-    return Mc
+            else:
+                ps = []
+                for c in Mx.Cs:
+                    var_states = [cnd_states[r] if not isinstance(r,bool) else c[i] for i,r in enumerate(res)]
+                    pr = get_prob(Mx, Mx.variables, var_states)
+                    ps.append(pr)
+
+                Mx.ps = ps
+
+    try:
+        return {k: M for k,M in zip(keys,Mc)}
+    except NameError:
+        return Mc
+
 
 
 def add_new_states(states, B):
@@ -905,7 +923,7 @@ def get_sample_order(cpms):
     return sample_order, sample_vars, var_add_order
 
 
-def mcs_product(cpms, nsample):
+def mcs_product(cpms, nsample, isProbScaler=True):
     """
     Returns an instance of Cpm by MC based product operation
 
@@ -913,30 +931,40 @@ def mcs_product(cpms, nsample):
     ----------
     cpms: a list of instances of Cpm
     nsample: number of samples
-    varis: variables
+    isProbScaler: True if a prob is given as a scalar (all multiplied into one number); False if given as a list for each sampled variables
     """
     sample_order, sample_vars, var_add_order = get_sample_order(cpms)
 
     nvars = len(sample_vars)
     C_prod = np.zeros((nsample, nvars), dtype=int)
-    q_prod = np.zeros((nsample, 1))
+    if isProbScaler:
+        q_prod = np.zeros((nsample, 1))
+    else:
+        q_prod = np.zeros((nsample, nvars))
     sample_idx_prod = np.arange(nsample)
 
     for i in sample_idx_prod:
 
-        sample, sample_prob = single_sample(cpms, sample_order, sample_vars, var_add_order, [i])
+        sample, sample_prob = single_sample(cpms, sample_order, sample_vars, var_add_order, [i], isProbScaler)
         C_prod[i,:] = sample
-        q_prod[i] = sample_prob
+        if isProbScaler:
+            q_prod[i] = sample_prob
+        else:
+            q_prod[i,:] = sample_prob
+
+    if isProbScaler:
+        q_prod = q_prod[:,::-1]
 
     return Cpm(variables=sample_vars[::-1],
                no_child=nvars,
-               C=C_prod[:, ::-1],
-               p=[],
+               C = [],
+               p = [],
+               Cs=C_prod[:, ::-1],
                q=q_prod,
                sample_idx=sample_idx_prod)
 
 
-def single_sample(cpms, sample_order, sample_vars, var_add_order, sample_idx):
+def single_sample(cpms, sample_order, sample_vars, var_add_order, sample_idx, isProbScaler=True):
     """
     sample from cpms
 
@@ -946,7 +974,7 @@ def single_sample(cpms, sample_order, sample_vars, var_add_order, sample_idx):
         sample_vars: list-like
         var_add_order: list-like
         sample_idx: list
-
+        isProbScaler: True if a prob is given as a scalar (all multiplied into one number); False if given as a list for each sampled variables
     """
     assert isinstance(sample_vars, list), 'should be a list'
 
@@ -957,7 +985,6 @@ def single_sample(cpms, sample_order, sample_vars, var_add_order, sample_idx):
         cpms = cpms.values()
 
     sample = np.zeros(len(sample_vars), dtype=int)
-    sample_prob = 0.0
 
     for i, (j, M) in enumerate(zip(sample_order, cpms)):
 
@@ -976,13 +1003,76 @@ def single_sample(cpms, sample_order, sample_vars, var_add_order, sample_idx):
 
         weight = M.p.flatten()/M.p.sum(axis=0)
         irow = np.random.choice(range(len(M.p)), size=1, p=weight)[0]
-        sample_prob += np.log(M.p[[irow]])
+
+        if isProbScaler:
+            try:
+                sample_prob += np.log(M.p[[irow]])
+            except NameError:
+                sample_prob=0.0
+        else:
+            try:
+                sample_prob = np.append(
+                    sample_prob,
+                    np.log(M.p[[irow]]))
+            except NameError:
+                sample_prob = np.array(np.log(M.p[[irow]]))
+
         idx = M.C[irow, :M.no_child]
         sample[var_add_order == i] = idx
 
     sample_prob = np.exp(sample_prob)
 
     return sample, sample_prob
+
+
+def rejection_sampling(cpms, C, C_vars, nsamp_cov, isRejected=True):
+    """
+    Perform rejection sampling on cpms w.r.t. given C
+    INPUT:
+    - cpms: a list/dictionary of cpms
+    - C: a C matrix
+    - C_vars: a list of variables represneted by C's columns in order
+    - nsamp_cov: either number of samples (if integer) or target c.o.v. (if float value)
+    - isRejected: True if instances in C be rejected; False if instances not in C be.
+    """
+    assert isinstance(nsamp_cov, (float, int)), 'nsamp_cov must be either an integer (considered number of samples) or a float value (target c.o.v.)'
+    if isinstance(nsamp_cov,int):
+        isNsamp=True
+        stop = 0 # stop criterion: number of samples
+    elif isinstance(nsamp_cov,float):
+        isNsamp=False
+        stop = nsamp_cov+1 # current c.o.v.
+
+    sample_order, sample_vars_str, var_add_order = get_sample_order(cpms)
+    sample_vars = get_variables_from_cpms(cpms, sample_vars_str)
+    cpms_v_idxs = {k: get_var_ind(sample_vars, [y.name for y in x.variables[:x.no_child]]) for k, x in cpms.items()}
+
+    s_idx = max( [np.max(x.sample_idx) for x in cpms] ) # start point of sample index 
+    nsamp_tot = 0 # total number of samples (including rejected ones)
+    nsamp = 0 # accepted samples
+    while (isNsamp and stop < nsamp_cov) or (not isNsamp and stop > nsamp_cov):
+        nsamp_tot += 1
+
+        sample, sample_prob = single_sample(cpms, sample_order, sample_vars_str, var_add_order, [s_idx+1], isProbScaler=False)
+
+        is_cpt = any(iscompatible(C, C_vars, sample, sample_vars))
+        if (isRejected and not is_cpt) or (not isRejected and is_cpt):
+            
+            for k, M in cpms.items():
+                col_loc = cpms_v_idxs[k]
+                M.Cs = np.vstack(M.Cs, sample[col_loc])
+                M.q = np.vstack(M.q, sample[col_loc])
+                M.sample_idx = np.vstack(M.sample_idx, [s_idx+1])
+
+                cpms[k] = M.copy()
+
+            nsamp += 1
+            s_idx += 1
+            if isNsamp: stop += 1
+            else: stop = nsamp_cov+1
+
+    return cpms, nsamp_tot
+
 
 
 def isinscope(idx, Ms):
@@ -1077,6 +1167,9 @@ def get_variables_from_cpms(M, variables):
 
     res = []
     remain = variables[:]
+
+    if isinstance(M, dict):
+        M = M.values()
 
     for Mx in M:
         names = [x.name for x in Mx.variables]
@@ -1211,7 +1304,7 @@ def cal_Msys_by_cond_VE(cpms, varis, cond_names, ve_order, sys_name):
         m1 = M_cond.get_subset([i])
         VE_cpms_m1 = condition( cpms_inf, m1.variables, m1.C[0] )
 
-        m_m1 = variable_elim( VE_cpms_m1, ve_varis )
+        m_m1 = variable_elim( VE_cpms_m1, ve_vars )
         m_m1 = m_m1.product(m1)
         m_m1 = m_m1.sum(cond_names)
 
@@ -1247,3 +1340,22 @@ def get_means(M1, v_names):
         means.append(m)
 
     return means
+
+def get_var_ind(variables, v_names):
+    """
+    INPUT:
+    variables: a list of variables
+    v_names: a list of variable names
+    OUTPUT:
+    v_idxs: a list of column indices of v_names
+    """
+
+    v_idxs = []
+    for v in v_names:
+        idx = [i for (i,k) in enumerate(variables) if k.name == v]
+
+        assert len(idx) == 1, f'Each input variable must appear exactly once in M.variables: {v} appears {len(idx)} times.'
+
+        v_idxs.append(idx[0])
+
+    return v_idxs
