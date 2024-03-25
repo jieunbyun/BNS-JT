@@ -435,12 +435,18 @@ class Cpm(object):
                  no_child=no_child_sum,
                  C=np.reshape(Csum, (-1, M.C.shape[1])),
                  p=np.reshape(psum, (-1, 1)))
+        
+        if self.Cs.size:
+            lia, res = ismember(vars_rem, self.variables)
 
-        if qsum:
-            Ms.q = np.reshape(qsum, (-1, 1))
-
-        if sample_idx_sum:
-            Ms.sample_idx = np.reshape(sample_idx_sum, (-1, 1))
+            Cs = np.empty((len(self.Cs), len(vars_rem)), dtype=np.int32)
+            for i,r in enumerate(res):
+                Cs[:,i] = self.Cs[:,r]
+            
+            Ms.Cs = Cs.copy()
+            Ms.q = self.q.copy()
+            Ms.ps = self.ps.copy()
+            Ms.sample_idx = self.sample_idx.copy()
 
         return Ms
 

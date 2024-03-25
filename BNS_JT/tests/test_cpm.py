@@ -2189,7 +2189,7 @@ def test_condition6( setup_hybrid ):
     np.testing.assert_array_almost_equal(Mc['x1'].ps, np.array([[0.7],[0.3],[0.3],[0.7],[0.3]]))
     np.testing.assert_array_almost_equal(Mc['sys'].ps, np.array([[1.0],[1.0],[1.0],[1.0],[1.0]]))
 
-def test_product( setup_hybrid ):
+def test_product4( setup_hybrid ):
 
     vars, cpms = setup_hybrid
     Mp = cpms['haz'].product( cpms['x0'] )
@@ -2201,6 +2201,52 @@ def test_product( setup_hybrid ):
     np.testing.assert_array_almost_equal(Mp.q, np.array([[0.07], [0.63], [0.63], [0.06], [0.63]]))
     np.testing.assert_array_almost_equal(Mp.q, Mp.ps)
     np.testing.assert_array_almost_equal(Mp.sample_idx, np.array([[0],[1],[2],[3],[4]]))
+
+def test_product5( setup_hybrid ):
+    vars, cpms = setup_hybrid
+    Mc = cpm.condition(cpms, ['haz'], [0])
+    Mp0 = Mc['haz'].product( Mc['x0'] )
+    Mp1 = Mp0.product(Mc['x1'])
+
+    assert Mp0.variables[0].name == 'haz' and Mp0.variables[1].name == 'x0'
+    np.testing.assert_array_almost_equal(Mp0.C, np.array([[0,0], [0,1]]))
+    np.testing.assert_array_almost_equal(Mp0.p, np.array([[0.07], [0.63]]))
+    np.testing.assert_array_almost_equal(Mp0.Cs, np.array([[0,0],[0,1],[0,1],[1,0],[0,1]]))
+    np.testing.assert_array_almost_equal(Mp0.q, np.array([[0.07], [0.63], [0.63], [0.06], [0.63]]))
+    np.testing.assert_array_almost_equal(Mp0.ps, np.array([[0.049], [0.441], [0.441], [0.021], [0.441]]))
+    np.testing.assert_array_almost_equal(Mp0.sample_idx, np.array([[0],[1],[2],[3],[4]]))
+
+    assert Mp1.variables[0].name == 'haz' and Mp1.variables[1].name == 'x0' and Mp1.variables[2].name == 'x1'
+    np.testing.assert_array_almost_equal(Mp1.C, np.array([[0,0,0], [0,1,0], [0,0,1], [0,1,1]]))
+    np.testing.assert_array_almost_equal(Mp1.p, np.array([[0.021], [0.189], [0.049], [0.441]]))
+    np.testing.assert_array_almost_equal(Mp1.Cs, np.array([[0,0,1],[0,1,0],[0,1,0],[1,0,1],[0,1,0]]))
+    np.testing.assert_array_almost_equal(Mp1.q, np.array([[0.049], [0.189], [0.189], [0.036], [0.189]]))
+    np.testing.assert_array_almost_equal(Mp1.ps, np.array([[0.0343], [0.1323], [0.1323], [0.015], [0.132]]), decimal=3)
+
+def test_sum7(setup_hybrid):
+    vars, cpms = setup_hybrid
+    Mc = cpm.condition(cpms, ['haz'], [0])
+    Mp0 = Mc['haz'].product( Mc['x0'] )
+    Mp1 = Mp0.product(Mc['x1'])
+
+    Mp0_s = Mp0.sum([vars['x0']])
+    Mp1_s = Mp1.sum([vars['haz']])
+
+    assert Mp0_s.variables[0].name == 'haz'
+    np.testing.assert_array_almost_equal(Mp0_s.C, np.array([[0]]))
+    np.testing.assert_array_almost_equal(Mp0_s.p, np.array([[0.7]]))
+    np.testing.assert_array_almost_equal(Mp0_s.Cs, np.array([[0],[0],[0],[1],[0]]))
+    np.testing.assert_array_almost_equal(Mp0_s.q, Mp0.q)
+    np.testing.assert_array_almost_equal(Mp0_s.ps, Mp0.ps)
+    np.testing.assert_array_almost_equal(Mp0_s.sample_idx, Mp0.sample_idx)
+
+    assert Mp1_s.variables[0].name == 'x0' and Mp1_s.variables[1].name == 'x1'
+    np.testing.assert_array_almost_equal(Mp1_s.C, np.array([[0,0], [1,0], [0,1], [1,1]]))
+    np.testing.assert_array_almost_equal(Mp1_s.p, np.array([[0.021], [0.189], [0.049], [0.441]]))
+    np.testing.assert_array_almost_equal(Mp1_s.Cs, np.array([[0,1],[1,0],[1,0],[0,1],[1,0]]))
+    np.testing.assert_array_almost_equal(Mp1_s.q, Mp1.q)
+    np.testing.assert_array_almost_equal(Mp1_s.ps, Mp1.ps)
+
 
 @pytest.fixture()
 def setup_hybrid_no_samp(): 
