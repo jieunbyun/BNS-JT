@@ -47,6 +47,7 @@ class Cpm(object):
     @property
     def variables(self):
         return self._variables
+
     @variables.setter
     def variables(self, value):
         assert isinstance(value, list), 'variables must be a list of Variable'
@@ -87,6 +88,7 @@ class Cpm(object):
     @property
     def p(self):
         return self._p
+
     @p.setter
     def p(self, value):
         if isinstance(value, list):
@@ -105,10 +107,11 @@ class Cpm(object):
     @property
     def Cs(self):
         return self._Cs
+
     @Cs.setter
     def Cs(self, value):
         if isinstance(value, list):
-            value = np.array(value, dtype=np.int32)        
+            value = np.array(value, dtype=np.int32)
 
         if value.size:
             if value.ndim == 1: # event matrix for samples
@@ -125,6 +128,7 @@ class Cpm(object):
     @property
     def q(self):
         return self._q
+
     @q.setter
     def q(self, value):
         if isinstance(value, list):
@@ -142,7 +146,8 @@ class Cpm(object):
 
     @property
     def ps(self):
-        return self._p
+        return self._ps
+
     @ps.setter
     def ps(self, value):
         if isinstance(value, list):
@@ -160,7 +165,8 @@ class Cpm(object):
 
     @property
     def sample_idx(self):
-        return self._p
+        return self._sample_idx
+
     @sample_idx.setter
     def sample_idx(self, value):
         if isinstance(value, list):
@@ -224,7 +230,7 @@ class Cpm(object):
                        Cs = self.Cs,
                        q= self.q,
                        ps=self.ps)
-            
+
         else:
             if flag:
                 assert set(row_idx).issubset(range(self.Cs.shape[0]))
@@ -249,7 +255,7 @@ class Cpm(object):
                        Cs=self.Cs[row_idx,:],
                        q=q_sub,
                        ps=ps_sub)
-            
+
         return Mnew
 
 
@@ -312,7 +318,7 @@ class Cpm(object):
                 is_cmp = {'C': is_cmp_C, 'Cs': is_cmp_Cs}
             else:
                 is_cmp = is_cmp_C
-            
+
         if M.Cs.size: # Cs is not compared with other Cs but only with C.
             _, idx = ismember(M.variables, self.variables)
             check_vars = get_value_given_condn(M.variables, idx)
@@ -338,8 +344,9 @@ class Cpm(object):
             is_cmp = is_cmp_C
 
         return is_cmp
-    
-    def get_col_ind( self, v_names ):
+
+
+    def get_col_ind(self, v_names):
         """
         INPUT:
         v_names: a list of variable names
@@ -350,7 +357,7 @@ class Cpm(object):
         v_idxs = []
         for v in v_names:
             idx = [i for (i,k) in enumerate(self.variables) if k.name == v]
-            
+
             assert len(idx) == 1, f'Each input variable must appear exactly once in M.variables: {v} appears {len(idx)} times.'
 
             v_idxs.append(idx[0])
@@ -724,7 +731,7 @@ def condition(M, cnd_vars, cnd_states, sample_idx=[]):
     if cnd_states and isinstance(cnd_states[0], str):
         cnd_states = [x.values.index(y) for x, y in zip(cnd_vars, cnd_states)]
 
-    assert isinstance(sample_idx, list), 'sample_idx should be a list'
+    assert isinstance(sample_idx, (list, np.ndarray)), f'sample_idx should be a list: {type(sample_idx)}'
 
     Mc = copy.deepcopy(M)
     for Mx in Mc:
@@ -1128,7 +1135,8 @@ def prod_cpm_sys_and_comps(cpm_sys, cpm_comps, varis):
 
     return Cpm(variables=cpm_sys.variables, no_child=len(cpm_sys.variables), C=cpm_sys.C, p=p)
 
-def get_inf_vars( vars_star, cpms, VE_ord = None ):
+
+def get_inf_vars(vars_star, cpms, VE_ord=None):
 
     """
     INPUT:
@@ -1154,7 +1162,7 @@ def get_inf_vars( vars_star, cpms, VE_ord = None ):
     if VE_ord is not None:
         def get_ord_inf( x, VE_ord ):
             return VE_ord.index(x) 
-        
+
         vars_inf.sort( key=(lambda x: get_ord_inf(x, VE_ord)) )
 
     return vars_inf
@@ -1174,11 +1182,11 @@ def merge_cpms( cpm1, cpm2 ):
 
     return M_new
 
-def cal_Msys_by_cond_VE( cpms, vars, cond_names, ve_order, sys_name ):
+def cal_Msys_by_cond_VE(cpms, varis, cond_names, ve_order, sys_name):
     """
     INPUT:
     - cpms: a dictionary of cpms
-    - vars: a dictionary of variables
+    - varis: a dictionary of variables
     - cond_names: a list of variables to be conditioned
     - ve_order: a list of variables representing an order of variable elimination
     - sys_name: a system variable's name (NB not list!) **FUTHER RESEARCH REQUIRED: there is no efficient way yet to compute a joint distribution of more than one system event
@@ -1187,10 +1195,10 @@ def cal_Msys_by_cond_VE( cpms, vars, cond_names, ve_order, sys_name ):
     - Msys: a cpm containing the marginal distribution of variable 'sys_name'
     """
 
-    vars_inf = get_inf_vars( [sys_name], cpms, ve_order ) # inference only ancestors of sys_name
+    vars_inf = get_inf_vars([sys_name], cpms, ve_order) # inference only ancestors of sys_name
     ve_names = [x for x in vars_inf if x not in cond_names]
 
-    ve_vars = [vars[v] for v in ve_names if v != sys_name] # other variables
+    ve_vars = [varis[v] for v in ve_names if v != sys_name] # other variables
 
     cpms_inf = {v: cpms[v] for v in ve_names}
     cpms_inf[sys_name] = cpms[sys_name]
@@ -1203,7 +1211,7 @@ def cal_Msys_by_cond_VE( cpms, vars, cond_names, ve_order, sys_name ):
         m1 = M_cond.get_subset([i])
         VE_cpms_m1 = condition( cpms_inf, m1.variables, m1.C[0] )
 
-        m_m1 = variable_elim( VE_cpms_m1, ve_vars )
+        m_m1 = variable_elim( VE_cpms_m1, ve_varis )
         m_m1 = m_m1.product(m1)
         m_m1 = m_m1.sum(cond_names)
 
@@ -1211,14 +1219,15 @@ def cal_Msys_by_cond_VE( cpms, vars, cond_names, ve_order, sys_name ):
             Msys = copy.deepcopy( m_m1 )
         else:
             Msys = merge_cpms( Msys, m_m1 )
-    
+
     return Msys
 
-def get_means( M1, v_names ):
+
+def get_means(M1, v_names):
 
     """
     Get means of variables in v_names from CPM M1.
-    INPUT: 
+    INPUT:
     M1: A CPM
     v_names: a list of names
     OUTPUT:
@@ -1236,5 +1245,5 @@ def get_means( M1, v_names ):
         for c, p in zip(M1.C, M1.p):
             m += c[col_idx[0]] * p[0]
         means.append(m)
-    
+
     return means

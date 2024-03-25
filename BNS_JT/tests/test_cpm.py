@@ -69,7 +69,16 @@ def test_init3(dict_cpm):
     assert isinstance(a, cpm.Cpm)
 
 def test_init4():
-    a = cpm.Cpm(variables=['1'], no_child=1)
+    with pytest.raises(AssertionError):
+        a = cpm.Cpm(variables=['1'], no_child=1)
+
+
+def test_init5():
+
+    a = cpm.Cpm([], 0)
+
+    with pytest.raises(AssertionError):
+        a.variables = ['1']
 
 
 def test_variables1(dict_cpm):
