@@ -3,6 +3,7 @@ import sys, os
 import pytest
 import pdb
 import copy
+import random
 from pathlib import Path
 
 np.set_printoptions(precision=3)
@@ -2283,7 +2284,7 @@ def test_cal_Msys_by_cond_VE1(setup_hybrid):
     prob, cov = cpm.get_prob_and_cov( result, ['sys'], [0], flag = True, nsample_repeat = 5 )
 
     assert prob == pytest.approx(0.1873, rel=1.0e-3)
-    assert cov == pytest.approx(0.3143, rel=1.0e-3)
+    assert cov == pytest.approx(0.3143, rel=1.0e-3) # In this case, applying conditioning to the same samples reduces c.o.v.; not sure if this is universal
 
 
 @pytest.fixture()
@@ -2301,5 +2302,19 @@ def setup_hybrid_no_samp():
     vars['sys'] = variable.Variable(name='sys', values=['fail', 'surv'])
     cpms['sys'] = cpm.Cpm(variables=[vars['sys'], vars['x0'], vars['x1']], no_child=1, C=np.array([[0,0,0],[1,1,1]]), p=[1,1]) # incomplete C (i.e. C does not include all samples)
 
-    return vars, cpms
+    def sys_fun(comp_st): # ground truth (similar format for gen_bnb.py but no "min_comps_st") # TODO: can we put this as a property of a CPM..?
+        if [comp_st['x0'], comp_st['x1']] == [0,1] or [comp_st['x0'], comp_st['x1']] == [0,0]:
+            sys_val, sys_st = 0, 0
+        elif [comp_st['x0'], comp_st['x1']] == [1,0] or [comp_st['x0'], comp_st['x1']] == [1,1]:
+            sys_val, sys_st = 1, 1
+        return sys_val, sys_st
 
+    return vars, cpms, sys_fun
+
+def test_rejection_sampling_sys(setup_hybrid_no_samp):
+
+    random.seed(1)
+    
+    vars, cpms, sys_fun = setup_hybrid_no_samp
+
+    cpms, result = cpm.rejection_sampling_sys(cpms, 'sys', sys_fun, 0.3, sys_st_monitor = None)

@@ -1053,15 +1053,20 @@ def single_sample(cpms, sample_order, sample_vars, var_add_order, sample_idx, is
     return sample, sample_prob
 
 
-def rejection_sampling(cpms, C, C_vars, nsamp_cov, isRejected=True):
+def rejection_sampling_sys(cpms, sys_name, sys_fun, nsamp_cov, sys_st_monitor = None):
     """
     Perform rejection sampling on cpms w.r.t. given C
     INPUT:
     - cpms: a list/dictionary of cpms
-    - C: a C matrix
-    - C_vars: a list of variables represneted by C's columns in order
+    - sys_name: the key in cpms that represents a system event (a rejection sampling is performed to avoid Csys)
     - nsamp_cov: either number of samples (if integer) or target c.o.v. (if float value)
+    - sys_fun: a function (input: comp_st as dictionary and output: sys_val, sys_st)
     - isRejected: True if instances in C be rejected; False if instances not in C be.
+    - sys_st_monitor: a scalar representing system state to be reference to compute c.o.v. (only necessary when nsamp_cov indicates c.o.v.)
+   
+    OUTPUT:
+    - cpms: a list;dictionary of cpms with samples added
+    - result: a dictionary including the summary of sampling result 
     """
     assert isinstance(nsamp_cov, (float, int)), 'nsamp_cov must be either an integer (considered number of samples) or a float value (target c.o.v.)'
     if isinstance(nsamp_cov,int):
@@ -1071,35 +1076,64 @@ def rejection_sampling(cpms, C, C_vars, nsamp_cov, isRejected=True):
         isNsamp=False
         stop = nsamp_cov+1 # current c.o.v.
 
-    sample_order, sample_vars_str, var_add_order = get_sample_order(cpms)
-    sample_vars = get_variables_from_cpms(cpms, sample_vars_str)
-    cpms_v_idxs = {k: get_var_ind(sample_vars, [y.name for y in x.variables[:x.no_child]]) for k, x in cpms.items()}
+    comp_vars = cpms[sys_name].variables[cpms[sys_name].no_child:]
+    comp_names = [x.name for x in comp_vars]
+    C_reject = cpms[sys_name].C[:,cpms[sys_name].no_child:]
 
-    s_idx = max( [np.max(x.sample_idx) for x in cpms] ) # start point of sample index 
+    cpms_no_sys = {k:m for k,m in cpms.items() if not k==sys_name } 
+
+    sample_order, sample_vars, var_add_order = get_sample_order(cpms_no_sys)
+    sample_vars_str = [x.name for x in sample_vars]
+    comp_vars_loc = [sample_vars_str.index(x) for x in comp_names]
+
+    cpms_v_idxs_ = {k: get_var_ind(sample_vars, [y.name for y in x.variables[:x.no_child]]) for k, x in cpms_no_sys.items()}
+    cpms_v_idxs = {k: [cpms_v_idxs_[y.name][0] for y in x.variables] for k, x in cpms_no_sys.items()}
+
     nsamp_tot = 0 # total number of samples (including rejected ones)
     nsamp = 0 # accepted samples
+    nfail = 0 # number of occurrences in system state to be monitored
+    sys_vals = []
     while (isNsamp and stop < nsamp_cov) or (not isNsamp and stop > nsamp_cov):
         nsamp_tot += 1
 
-        sample, sample_prob = single_sample(cpms, sample_order, sample_vars_str, var_add_order, [s_idx+1], isProbScaler=False)
+        sample, sample_prob = single_sample(cpms_no_sys, sample_order, sample_vars, var_add_order, [nsamp], isProbScaler=False)
 
-        is_cpt = any(iscompatible(C, C_vars, sample, sample_vars))
-        if (isRejected and not is_cpt) or (not isRejected and is_cpt):
+        sample_comp = sample[comp_vars_loc]
+        is_cpt = iscompatible(C_reject, comp_vars, comp_names, sample_comp)
+        if (~is_cpt).all():
+
+            comp_st = {x:sample_comp[i] for i,x in enumerate(comp_names)}
+            sys_val, sys_st = sys_fun(comp_st)
             
-            for k, M in cpms.items():
+            for k, M in cpms_no_sys.items():
                 col_loc = cpms_v_idxs[k]
-                M.Cs = np.vstack(M.Cs, sample[col_loc])
-                M.q = np.vstack(M.q, sample[col_loc])
-                M.sample_idx = np.vstack(M.sample_idx, [s_idx+1])
+                col_loc_c = cpms_v_idxs[k][:M.no_child]
+                M.Cs = np.vstack((M.Cs, sample[col_loc]))
+                M.q = np.vstack((M.q, [sample_prob[col_loc_c]])) 
+                M.sample_idx = np.vstack(M.sample_idx, [nsamp])
 
-                cpms[k] = M.copy()
+            csys1 = [sys_st] + sample_comp
+            M = cpms[sys_name]
+            M.Cs = np.vstack((M.Cs, csys1))
+            M.q = np.vstack((M.q, [1])) # assuming a deterministic system function
+            M.sample_idx = np.vstack(M.sample_idx, [nsamp])
 
             nsamp += 1
-            s_idx += 1
             if isNsamp: stop += 1
-            else: stop = nsamp_cov+1
+            else:
+                if sys_val == sys_st_monitor:
+                    nfail +=1
 
-    return cpms, nsamp_tot
+                if nfail > 0:
+                    pf, stop = get_prob_and_cov( cpms[sys_name], ['sys'], [0] )
+                else:
+                    stop = nsamp_cov+1
+
+            sys_vals.append(sys_val)
+    
+    result = {nsamp_tot: nsamp_tot, nsamp: nsamp, sys_vals: sys_val}
+
+    return cpms, result
 
 
 
@@ -1437,3 +1471,4 @@ def get_var_ind(variables, v_names):
         v_idxs.append(idx[0])
 
     return v_idxs
+
