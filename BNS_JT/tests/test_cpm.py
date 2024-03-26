@@ -847,7 +847,7 @@ def test_product1(setup_product):
 
         #if isinstance(c1_, list):
         #    c1_ = np.array(c1_)
-        [M2_] = cpm.condition([M2], commonVars, c1_, sampleInd1)
+        [M2_] = cpm.condition([M2], commonVars, c1_)
 
         #assert M2_.variables, [3, 1])
         #assert M2_.no_child, 1)
@@ -1854,7 +1854,7 @@ def test_condition(setup_mcs_product):
     condVars = [v1, v2]
     condStates = np.array([1-1, 1-1])
 
-    [M]= cpm.condition(cpms[3], condVars, condStates, [0])
+    [M]= cpm.condition(cpms[3], condVars, condStates)
     np.testing.assert_array_equal(M.C, np.array([[1, 1], [2, 1]])-1)
     assert M.q.any() == False
     assert M.sample_idx.any() == False

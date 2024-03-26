@@ -1020,8 +1020,7 @@ def single_sample(cpms, sample_order, sample_vars, var_add_order, sample_idx, is
         [M] = condition(
                     M=M,
                     cnd_vars=cnd_vars,
-                    cnd_states=cnd_states,
-                    sample_idx=sample_idx)
+                    cnd_states=cnd_states)
 
         #if (sample_idx == [1]) and any(M.p.sum(axis=0) != 1):
         #    print('Given probability vector does not sum to 1')
