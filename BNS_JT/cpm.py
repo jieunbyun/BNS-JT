@@ -120,7 +120,7 @@ class Cpm(object):
                 assert value.shape[1] == len(self._variables), 'Cs must have the same number of columns as the number of variables'
 
             max_Cs = np.max(value, axis=0, initial=0)
-            max_var_basic = [len(x.values) for x in self.variables[:self._no_child]]
+            max_var_basic = [len(x.values) for x in self.variables]
             assert all(max_Cs <= max_var_basic), f'check Cs matrix: {max_Cs} vs {max_var_basic}'
 
         self._Cs = value
@@ -227,7 +227,11 @@ class Cpm(object):
             Mnew = Cpm(variables=self.variables,
                        no_child=self.no_child,
                        C=self.C[row_idx,:],
-                       p=p_sub)
+                       p=p_sub,
+                       Cs = self.Cs,
+                       q = self.q,
+                       ps = self.ps,
+                       sample_idx = self.sample_idx)
 
         else:
             if flag:
@@ -1285,7 +1289,8 @@ def get_inf_vars(vars_star, cpms, VE_ord=None):
     return vars_inf
 
 def merge_cpms( cpm1, cpm2 ):
-    # cpm1 and cpm2 must have the same scope.
+
+    assert cpm1.variables == cpm2.variables, 'cpm1 and cpm2 must have the same scope'
 
     M_new = copy.deepcopy( cpm1 )
     C1_list = cpm1.C.tolist()
@@ -1296,6 +1301,11 @@ def merge_cpms( cpm1, cpm2 ):
         else:
             M_new.C = np.vstack( (M_new.C, c1) )
             M_new.p = np.vstack( (M_new.p, p1) )
+
+    M_new.Cs = np.vstack((cpm1.Cs, cpm2.Cs))
+    M_new.q = np.vstack((cpm1.q, cpm2.q))
+    M_new.ps = np.vstack((cpm1.ps, cpm2.ps))
+    M_new.sample_idx = np.vstack((cpm1.sample_idx, cpm2.sample_idx))
 
     return M_new
 
@@ -1325,7 +1335,9 @@ def cal_Msys_by_cond_VE(cpms, varis, cond_names, ve_order, sys_name):
     n_crows = len(M_cond.C)
 
     for i in range(n_crows):
-        m1 = M_cond.get_subset([i])
+        #m1 = M_cond.get_subset([i])
+        m1 = condition(M_cond, M_cond.variables, M_cond.C[i,:])
+        m1 = m1[0]
         VE_cpms_m1 = condition( cpms_inf, m1.variables, m1.C[0] )
 
         m_m1 = variable_elim( VE_cpms_m1, ve_vars )

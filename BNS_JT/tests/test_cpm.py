@@ -2247,6 +2247,34 @@ def test_sum7(setup_hybrid):
     np.testing.assert_array_almost_equal(Mp1_s.q, Mp1.q)
     np.testing.assert_array_almost_equal(Mp1_s.ps, Mp1.ps)
 
+def test_variable_elim1(setup_hybrid):
+
+    vars, cpms = setup_hybrid
+
+    var_elim_order = [vars['haz'], vars['x0'], vars['x1']]
+    result = cpm.variable_elim(cpms, var_elim_order)
+
+    np.testing.assert_array_almost_equal(result.C, np.array([[0], [1]]))
+    np.testing.assert_array_almost_equal(result.p, np.array([[0.045, 0.585]]).T, decimal=3)
+    np.testing.assert_array_almost_equal(result.Cs, np.array([[0,1,1,0,1]]).T, decimal=3)
+    np.testing.assert_array_almost_equal(result.q, np.array([[0.049, 0.189, 0.189, 0.036, 0.189]]).T, decimal=3)
+    np.testing.assert_array_almost_equal(result.ps, result.q)
+    np.testing.assert_array_almost_equal(result.sample_idx, np.array([[0,1,2,3,4]], dtype=np.int).T)
+
+def test_cal_Msys_by_cond_VE1(setup_hybrid):
+
+    vars, cpms = setup_hybrid
+
+    var_elim_order = ['haz', 'x0', 'x1', 'sys']
+    result = cpm.cal_Msys_by_cond_VE(cpms, vars, ['haz'], var_elim_order, 'sys')
+
+    np.testing.assert_array_almost_equal(result.C, np.array([[0], [1]]))
+    np.testing.assert_array_almost_equal(result.p, np.array([[0.045, 0.585]]).T, decimal=3)
+    np.testing.assert_array_almost_equal(result.Cs, np.array([[0,1,1,0,1,0,1,1,0,1]]).T, decimal=3)
+    np.testing.assert_array_almost_equal(result.q, np.array([[0.049, 0.189, 0.189, 0.036, 0.189, 0.049, 0.189, 0.189, 0.036, 0.189]]).T, decimal=3)
+    np.testing.assert_array_almost_equal(result.ps, np.array([[0.0343, 0.1323, 0.1323, 0.0147, 0.1323, 0.0252, 0.0672, 0.0672, 0.0108, 0.0672]]).T, decimal=3)
+    np.testing.assert_array_almost_equal(result.sample_idx, np.array([[0,1,2,3,4,0,1,2,3,4]], dtype=np.int).T)
+
 
 @pytest.fixture()
 def setup_hybrid_no_samp(): 
@@ -2264,3 +2292,4 @@ def setup_hybrid_no_samp():
     cpms['sys'] = cpm.Cpm(variables=[vars['sys'], vars['x0'], vars['x1']], no_child=1, C=np.array([[0,0,0],[1,1,1]]), p=[1,1]) # incomplete C (i.e. C does not include all samples)
 
     return vars, cpms
+
