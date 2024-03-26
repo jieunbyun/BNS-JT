@@ -1190,6 +1190,48 @@ def get_prob(M, var_inds, var_states, flag=True):
 
     return prob
 
+def get_prob_and_cov(M, var_inds, var_states, flag=True, nsample_repeat = 0):
+
+    assert isinstance(nsample_repeat, int), 'nsample_repeat must be a nonnegative integer, representing if samples are repeated (to calculate c.o.v.)'
+
+    prob_C = get_prob(M, var_inds, var_states, flag)
+
+    if not nsample_repeat:
+        n_round = 1
+        nsamp = len(M.Cs)
+    else: 
+        assert len(M.Cs) % nsample_repeat == 0, 'Given number of samples is not divided by given nsample_repeat'
+        n_round = int( len(M.Cs) / nsample_repeat )
+        nsamp = nsample_repeat
+
+    prob_Cs = 0
+    var = 0
+    for i in range(n_round):
+        col_range = range(i*nsamp, (i+1)*nsamp)
+        is_cmp = iscompatible(M.Cs[col_range,:], M.variables, var_inds, var_states)
+
+        w = M.ps[col_range] / M.q[col_range]
+        if flag:
+            w[~is_cmp] = 0
+        else:
+            w[is_cmp] = 0
+        mean = w.sum() / nsamp
+        prob_Cs += mean
+
+        w_ori = M.ps[col_range] / M.q[col_range] # weight before compatibility check
+        if np.allclose(w_ori, w_ori[0], atol=1e-4): # this is MCS then
+            var1 = np.square( w[0] ) * (1-mean) * mean / nsamp
+            var += var1[0]
+        else:
+            var1 = np.square( ( w - mean ) / nsamp )
+            var += var1.sum()
+
+    prob = prob_C + (1-M.p.sum()) * prob_Cs
+    cov = (1-M.p.sum()) * np.sqrt(var) / prob 
+    cov = cov
+
+    return prob, cov       
+
 
 def get_variables_from_cpms(M, variables):
 

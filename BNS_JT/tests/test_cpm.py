@@ -2261,6 +2261,11 @@ def test_variable_elim1(setup_hybrid):
     np.testing.assert_array_almost_equal(result.ps, result.q)
     np.testing.assert_array_almost_equal(result.sample_idx, np.array([[0,1,2,3,4]], dtype=np.int).T)
 
+    prob, cov = cpm.get_prob_and_cov( result, ['sys'], [0] )
+
+    assert prob == pytest.approx(0.193, rel=1.0e-3)
+    assert cov == pytest.approx(0.4200, rel=1.0e-3)
+
 def test_cal_Msys_by_cond_VE1(setup_hybrid):
 
     vars, cpms = setup_hybrid
@@ -2274,6 +2279,11 @@ def test_cal_Msys_by_cond_VE1(setup_hybrid):
     np.testing.assert_array_almost_equal(result.q, np.array([[0.049, 0.189, 0.189, 0.036, 0.189, 0.049, 0.189, 0.189, 0.036, 0.189]]).T, decimal=3)
     np.testing.assert_array_almost_equal(result.ps, np.array([[0.0343, 0.1323, 0.1323, 0.0147, 0.1323, 0.0252, 0.0672, 0.0672, 0.0108, 0.0672]]).T, decimal=3)
     np.testing.assert_array_almost_equal(result.sample_idx, np.array([[0,1,2,3,4,0,1,2,3,4]], dtype=np.int).T)
+
+    prob, cov = cpm.get_prob_and_cov( result, ['sys'], [0], flag = True, nsample_repeat = 5 )
+
+    assert prob == pytest.approx(0.1873, rel=1.0e-3)
+    assert cov == pytest.approx(0.3143, rel=1.0e-3)
 
 
 @pytest.fixture()
