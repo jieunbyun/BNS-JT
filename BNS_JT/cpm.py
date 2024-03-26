@@ -720,7 +720,7 @@ def flip(idx):
     return [True if x is False else False for x in idx]
 
 
-def condition(M, cnd_vars, cnd_states):
+def condition(M, cnd_vars, cnd_states, sample_idx=[]):
     """
     Returns a list of instance of Cpm
 
@@ -807,7 +807,7 @@ def condition(M, cnd_vars, cnd_states):
 
                 Mx.ps = ps # the conditioned variables' samples are removed.
 
-            elif all(isinstance(r,bool) and r==False for r in res): 
+            elif all(isinstance(r,bool) and r==False for r in res):
                 Mx.ps = Mx.q.copy()
 
             else:
@@ -1082,7 +1082,7 @@ def rejection_sampling(cpms, C, C_vars, nsamp_cov, isRejected=True):
 
         is_cpt = any(iscompatible(C, C_vars, sample, sample_vars))
         if (isRejected and not is_cpt) or (not isRejected and is_cpt):
-            
+
             for k, M in cpms.items():
                 col_loc = cpms_v_idxs[k]
                 M.Cs = np.vstack(M.Cs, sample[col_loc])
@@ -1279,7 +1279,7 @@ def get_inf_vars(vars_star, cpms, VE_ord=None):
 
     if VE_ord is not None:
         def get_ord_inf( x, VE_ord ):
-            return VE_ord.index(x) 
+            return VE_ord.index(x)
 
         vars_inf.sort( key=(lambda x: get_ord_inf(x, VE_ord)) )
 
@@ -1384,3 +1384,4 @@ def get_var_ind(variables, v_names):
         v_idxs.append(idx[0])
 
     return v_idxs
+
