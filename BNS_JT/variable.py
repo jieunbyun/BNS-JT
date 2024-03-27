@@ -1,5 +1,6 @@
 import numpy as np
 from itertools import chain, combinations
+import math
 
 #from collections import namedtuple
 #from typing import NamedTuple
@@ -81,8 +82,13 @@ class Variable(object):
         self.name = name
         self._values = values
 
+        ddd = 1
+        
+        #Do not create B explicitly
+        """
         if self._values:
             self._B = self.gen_B()
+        """
 
     @property
     def B(self):
@@ -99,14 +105,54 @@ class Variable(object):
 
         self._values = values
 
-        self._B = self.gen_B()
+        #self._B = self.gen_B()
 
-    def gen_B(self):
+    def B(self, st=None):
+
+        n = len(self._values)
+
+        if st == None:
+            B = [set(x) for x in chain.from_iterable(combinations(range(n), r) for r in range(1, n + 1))]
+            return B
+        
+        else:
+            assert isinstance(st, int) or isinstance(st, set), 'Given state must be an integer or a set'
+
+            nst_len = [math.comb(n,r) for r in range(1,n+1)]  # number of states in each length from 1 to n
+            nst_len_cum = np.cumsum(nst_len)
+
+            #FIXME: still not passing tests
+            if isinstance(st, int):
+                
+                st_len = np.argmax(~(nst_len_cum<st)) + 1 # length of the state
+                
+                st_to_go = st - ( 2**(st_len-1) - 1 )
+                st_idx = 0
+                for x in chain.from_iterable(combinations(range(n), st_len)):
+                    if st_idx==st_to_go:
+                        break
+                    st_idx += 1
+                return {x}
+            
+            else:
+                
+                #FIXME: still not passing tests
+                st_len = len(st)
+                st_idx = nst_len_cum[st_len-1]
+                for x in chain.from_iterable(combinations(range(n), st_len)):
+                    st_idx += 1
+                    if set(x)==st:
+                        break
+                return st_idx
+
+
+
+    """def gen_B(self):
         n = len(self._values)
         B = [set(x) for x in chain.from_iterable(combinations(range(n), r) for r in range(1, n + 1))]
         #for n in range(1, len(self._values) + 1):
         #    [B.append(set(x)) for x in itertools.combinations(range(len(self._values)), n)]
-        return B
+        return B"""
 
     """
     def B_times_values(self):
@@ -142,7 +188,7 @@ class Variable(object):
     def __repr__(self):
         return repr(f'Variable(name={self.name}, B={self.B}, values={self.values})')
 
-
+#FIXME: seems obsolete
 def get_composite_state(vari, states):
     """
     # Input: vari-one Variable object, st_list: list of states (starting from zero)

@@ -81,7 +81,7 @@ class Cpm(object):
                 assert value.shape[1] == len(self._variables), 'C must have the same number of columns as that of variables'
 
             max_C = np.max(value, axis=0, initial=0)
-            max_var = [len(x.B) for x in self._variables]
+            max_var = [2**len(x.values)-1 for x in self._variables]
             assert all(max_C <= max_var), f'check C matrix: {max_C} vs {max_var}'
 
         self._C = value
@@ -701,18 +701,13 @@ def iscompatible(C, variables, check_vars, check_states):
         if isinstance(state, str):
             state = variable.values.index(state)
 
+        x1 = [variable.B(int(k)) for k in C[is_cmp, i]]
         try:
-            B = variable.B
-        except NameError:
-            print(f'{variable} is not defined')
+            check = [bool(variable.B(state).intersection(x)) for x in x1]
+        except IndexError:
+            print('IndexError: {state}')
         else:
-            x1 = [B[int(k)] for k in C[is_cmp, i]]
-            try:
-                check = [bool(B[state].intersection(x)) for x in x1]
-            except IndexError:
-                print('IndexError: {state}')
-            else:
-                is_cmp[np.where(is_cmp > 0)[0][:len(check)]] = check
+            is_cmp[np.where(is_cmp > 0)[0][:len(check)]] = check
 
     return is_cmp
 
