@@ -989,7 +989,7 @@ def mcs_product(cpms, nsample, isProbScaler=True):
                sample_idx=sample_idx_prod)
 
 
-def single_sample(cpms, sample_order, sample_vars, var_add_order, sample_idx, isProbScaler=True):
+def single_sample(cpms, sample_order, sample_vars, var_add_order, sample_idx, is_scalar=True):
     """
     sample from cpms
 
@@ -999,7 +999,7 @@ def single_sample(cpms, sample_order, sample_vars, var_add_order, sample_idx, is
         sample_vars: list-like
         var_add_order: list-like
         sample_idx: list
-        isProbScaler: True if a prob is given as a scalar (all multiplied into one number); False if given as a list for each sampled variables
+        is_scalar: True if a prob is given as a scalar (all multiplied into one number); False if given as a list for each sampled variables
     """
     assert isinstance(sample_vars, list), 'should be a list'
 
@@ -1029,7 +1029,7 @@ def single_sample(cpms, sample_order, sample_vars, var_add_order, sample_idx, is
         weight = M.p.flatten()/M.p.sum(axis=0)
         irow = np.random.choice(range(len(M.p)), size=1, p=weight)[0]
 
-        if isProbScaler:
+        if is_scalar:
             try:
                 sample_prob += np.log(M.p[[irow]])
             except NameError:
