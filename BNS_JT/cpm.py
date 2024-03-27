@@ -120,7 +120,7 @@ class Cpm(object):
                 assert value.shape[1] == len(self._variables), 'Cs must have the same number of columns as the number of variables'
 
             max_Cs = np.max(value, axis=0, initial=0)
-            max_var_basic = [len(x.values) for x in self.variables[:self._no_child]]
+            max_var_basic = [len(x.values) for x in self.variables]
             assert all(max_Cs <= max_var_basic), f'check Cs matrix: {max_Cs} vs {max_var_basic}'
 
         self._Cs = value
@@ -227,7 +227,11 @@ class Cpm(object):
             Mnew = Cpm(variables=self.variables,
                        no_child=self.no_child,
                        C=self.C[row_idx,:],
-                       p=p_sub)
+                       p=p_sub,
+                       Cs = self.Cs,
+                       q = self.q,
+                       ps = self.ps,
+                       sample_idx = self.sample_idx)
 
         else:
             if flag:
@@ -948,7 +952,7 @@ def get_sample_order(cpms):
     return sample_order, sample_vars, var_add_order
 
 
-def mcs_product(cpms, nsample, isProbScaler=True):
+def mcs_product(cpms, nsample, is_scalar=True):
     """
     Returns an instance of Cpm by MC based product operation
 
@@ -956,13 +960,13 @@ def mcs_product(cpms, nsample, isProbScaler=True):
     ----------
     cpms: a list of instances of Cpm
     nsample: number of samples
-    isProbScaler: True if a prob is given as a scalar (all multiplied into one number); False if given as a list for each sampled variables
+    is_scalar: True if a prob is given as a scalar (all multiplied into one number); False if given as a list for each sampled variables
     """
     sample_order, sample_vars, var_add_order = get_sample_order(cpms)
 
     nvars = len(sample_vars)
     C_prod = np.zeros((nsample, nvars), dtype=int)
-    if isProbScaler:
+    if is_scalar:
         q_prod = np.zeros((nsample, 1))
     else:
         q_prod = np.zeros((nsample, nvars))
@@ -970,14 +974,14 @@ def mcs_product(cpms, nsample, isProbScaler=True):
 
     for i in sample_idx_prod:
 
-        sample, sample_prob = single_sample(cpms, sample_order, sample_vars, var_add_order, [i], isProbScaler)
+        sample, sample_prob = single_sample(cpms, sample_order, sample_vars, var_add_order, [i], is_scalar)
         C_prod[i,:] = sample
-        if isProbScaler:
+        if is_scalar:
             q_prod[i] = sample_prob
         else:
             q_prod[i,:] = sample_prob
 
-    if isProbScaler:
+    if is_scalar:
         q_prod = q_prod[:,::-1]
 
     return Cpm(variables=sample_vars[::-1],
@@ -1020,8 +1024,7 @@ def single_sample(cpms, sample_order, sample_vars, var_add_order, sample_idx, is
         [M] = condition(
                     M=M,
                     cnd_vars=cnd_vars,
-                    cnd_states=cnd_states,
-                    sample_idx=sample_idx)
+                    cnd_states=cnd_states)
 
         #if (sample_idx == [1]) and any(M.p.sum(axis=0) != 1):
         #    print('Given probability vector does not sum to 1')
@@ -1050,15 +1053,20 @@ def single_sample(cpms, sample_order, sample_vars, var_add_order, sample_idx, is
     return sample, sample_prob
 
 
-def rejection_sampling(cpms, C, C_vars, nsamp_cov, isRejected=True):
+def rejection_sampling_sys(cpms, sys_name, sys_fun, nsamp_cov, sys_st_monitor = None):
     """
     Perform rejection sampling on cpms w.r.t. given C
     INPUT:
     - cpms: a list/dictionary of cpms
-    - C: a C matrix
-    - C_vars: a list of variables represneted by C's columns in order
+    - sys_name: the key in cpms that represents a system event (a rejection sampling is performed to avoid Csys)
     - nsamp_cov: either number of samples (if integer) or target c.o.v. (if float value)
+    - sys_fun: a function (input: comp_st as dictionary and output: sys_val, sys_st)
     - isRejected: True if instances in C be rejected; False if instances not in C be.
+    - sys_st_monitor: a scalar representing system state to be reference to compute c.o.v. (only necessary when nsamp_cov indicates c.o.v.)
+   
+    OUTPUT:
+    - cpms: a list;dictionary of cpms with samples added
+    - result: a dictionary including the summary of sampling result 
     """
     assert isinstance(nsamp_cov, (float, int)), 'nsamp_cov must be either an integer (considered number of samples) or a float value (target c.o.v.)'
     if isinstance(nsamp_cov,int):
@@ -1068,35 +1076,65 @@ def rejection_sampling(cpms, C, C_vars, nsamp_cov, isRejected=True):
         isNsamp=False
         stop = nsamp_cov+1 # current c.o.v.
 
-    sample_order, sample_vars_str, var_add_order = get_sample_order(cpms)
-    sample_vars = get_variables_from_cpms(cpms, sample_vars_str)
-    cpms_v_idxs = {k: get_var_ind(sample_vars, [y.name for y in x.variables[:x.no_child]]) for k, x in cpms.items()}
+    comp_vars = cpms[sys_name].variables[cpms[sys_name].no_child:]
+    comp_names = [x.name for x in comp_vars]
+    C_reject = cpms[sys_name].C[:,cpms[sys_name].no_child:]
 
-    s_idx = max( [np.max(x.sample_idx) for x in cpms] ) # start point of sample index 
+    cpms_no_sys = {k:m for k,m in cpms.items() if not k==sys_name } 
+
+    sample_order, sample_vars, var_add_order = get_sample_order(cpms_no_sys)
+    sample_vars_str = [x.name for x in sample_vars]
+    comp_vars_loc = [sample_vars_str.index(x) for x in comp_names]
+
+    cpms_v_idxs_ = {k: get_var_ind(sample_vars, [y.name for y in x.variables[:x.no_child]]) for k, x in cpms_no_sys.items()}
+    cpms_v_idxs = {k: [cpms_v_idxs_[y.name][0] for y in x.variables] for k, x in cpms_no_sys.items()}
+
     nsamp_tot = 0 # total number of samples (including rejected ones)
     nsamp = 0 # accepted samples
+    nfail = 0 # number of occurrences in system state to be monitored
+    sys_vals = []
     while (isNsamp and stop < nsamp_cov) or (not isNsamp and stop > nsamp_cov):
         nsamp_tot += 1
 
-        sample, sample_prob = single_sample(cpms, sample_order, sample_vars_str, var_add_order, [s_idx+1], isProbScaler=False)
+        sample, sample_prob = single_sample(cpms_no_sys, sample_order, sample_vars, var_add_order, [nsamp], is_scalar=False)
 
-        is_cpt = any(iscompatible(C, C_vars, sample, sample_vars))
-        if (isRejected and not is_cpt) or (not isRejected and is_cpt):
+        sample_comp = sample[comp_vars_loc]
+        is_cpt = iscompatible(C_reject, comp_vars, comp_names, sample_comp)
+        if (~is_cpt).all():
 
-            for k, M in cpms.items():
+            comp_st = {x:sample_comp[i] for i,x in enumerate(comp_names)}
+            sys_val, sys_st = sys_fun(comp_st)
+
+            for k, M in cpms_no_sys.items():
+
                 col_loc = cpms_v_idxs[k]
-                M.Cs = np.vstack(M.Cs, sample[col_loc])
-                M.q = np.vstack(M.q, sample[col_loc])
-                M.sample_idx = np.vstack(M.sample_idx, [s_idx+1])
+                col_loc_c = cpms_v_idxs[k][:M.no_child]
+                M.Cs = np.vstack((M.Cs, sample[col_loc]))
+                M.q = np.vstack((M.q, [sample_prob[col_loc_c]])) 
+                M.sample_idx = np.vstack(M.sample_idx, [nsamp])
 
-                cpms[k] = M.copy()
+            csys1 = [sys_st] + sample_comp
+            M = cpms[sys_name]
+            M.Cs = np.vstack((M.Cs, csys1))
+            M.q = np.vstack((M.q, [1])) # assuming a deterministic system function
+            M.sample_idx = np.vstack(M.sample_idx, [nsamp])
 
             nsamp += 1
-            s_idx += 1
             if isNsamp: stop += 1
-            else: stop = nsamp_cov+1
+            else:
+                if sys_val == sys_st_monitor:
+                    nfail +=1
 
-    return cpms, nsamp_tot
+                if nfail > 0:
+                    pf, stop = get_prob_and_cov( cpms[sys_name], ['sys'], [0] )
+                else:
+                    stop = nsamp_cov+1
+
+            sys_vals.append(sys_val)
+    
+    result = {nsamp_tot: nsamp_tot, nsamp: nsamp, sys_vals: sys_val}
+
+    return cpms, result
 
 
 
@@ -1186,6 +1224,48 @@ def get_prob(M, var_inds, var_states, flag=True):
     prob = Msubset.p.sum()
 
     return prob
+
+def get_prob_and_cov(M, var_inds, var_states, flag=True, nsample_repeat = 0):
+
+    assert isinstance(nsample_repeat, int), 'nsample_repeat must be a nonnegative integer, representing if samples are repeated (to calculate c.o.v.)'
+
+    prob_C = get_prob(M, var_inds, var_states, flag)
+
+    if not nsample_repeat:
+        n_round = 1
+        nsamp = len(M.Cs)
+    else: 
+        assert len(M.Cs) % nsample_repeat == 0, 'Given number of samples is not divided by given nsample_repeat'
+        n_round = int( len(M.Cs) / nsample_repeat )
+        nsamp = nsample_repeat
+
+    prob_Cs = 0
+    var = 0
+    for i in range(n_round):
+        col_range = range(i*nsamp, (i+1)*nsamp)
+        is_cmp = iscompatible(M.Cs[col_range,:], M.variables, var_inds, var_states)
+
+        w = M.ps[col_range] / M.q[col_range]
+        if flag:
+            w[~is_cmp] = 0
+        else:
+            w[is_cmp] = 0
+        mean = w.sum() / nsamp
+        prob_Cs += mean
+
+        w_ori = M.ps[col_range] / M.q[col_range] # weight before compatibility check
+        if np.allclose(w_ori, w_ori[0], atol=1e-4): # this is MCS then
+            var1 = np.square( w[0] ) * (1-mean) * mean / nsamp
+            var += var1[0]
+        else:
+            var1 = np.square( ( w - mean ) / nsamp )
+            var += var1.sum()
+
+    prob = prob_C + (1-M.p.sum()) * prob_Cs
+    cov = (1-M.p.sum()) * np.sqrt(var) / prob 
+    cov = cov
+
+    return prob, cov       
 
 
 def get_variables_from_cpms(M, variables):
@@ -1286,7 +1366,8 @@ def get_inf_vars(vars_star, cpms, VE_ord=None):
     return vars_inf
 
 def merge_cpms( cpm1, cpm2 ):
-    # cpm1 and cpm2 must have the same scope.
+
+    assert cpm1.variables == cpm2.variables, 'cpm1 and cpm2 must have the same scope'
 
     M_new = copy.deepcopy( cpm1 )
     C1_list = cpm1.C.tolist()
@@ -1297,6 +1378,11 @@ def merge_cpms( cpm1, cpm2 ):
         else:
             M_new.C = np.vstack( (M_new.C, c1) )
             M_new.p = np.vstack( (M_new.p, p1) )
+
+    M_new.Cs = np.vstack((cpm1.Cs, cpm2.Cs))
+    M_new.q = np.vstack((cpm1.q, cpm2.q))
+    M_new.ps = np.vstack((cpm1.ps, cpm2.ps))
+    M_new.sample_idx = np.vstack((cpm1.sample_idx, cpm2.sample_idx))
 
     return M_new
 
@@ -1326,7 +1412,9 @@ def cal_Msys_by_cond_VE(cpms, varis, cond_names, ve_order, sys_name):
     n_crows = len(M_cond.C)
 
     for i in range(n_crows):
-        m1 = M_cond.get_subset([i])
+        #m1 = M_cond.get_subset([i])
+        m1 = condition(M_cond, M_cond.variables, M_cond.C[i,:])
+        m1 = m1[0]
         VE_cpms_m1 = condition( cpms_inf, m1.variables, m1.C[0] )
 
         m_m1 = variable_elim( VE_cpms_m1, ve_vars )

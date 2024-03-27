@@ -3,6 +3,7 @@ import sys, os
 import pytest
 import pdb
 import copy
+import random
 from pathlib import Path
 
 np.set_printoptions(precision=3)
@@ -847,7 +848,7 @@ def test_product1(setup_product):
 
         #if isinstance(c1_, list):
         #    c1_ = np.array(c1_)
-        [M2_] = cpm.condition([M2], commonVars, c1_, sampleInd1)
+        [M2_] = cpm.condition([M2], commonVars, c1_)
 
         #assert M2_.variables, [3, 1])
         #assert M2_.no_child, 1)
@@ -1695,7 +1696,7 @@ def test_single_sample3(setup_mcs_product):
     varAdditionOrder = [0, 1, 2]
     sampleInd = [1]
 
-    sample, sampleProb = cpm.single_sample(cpms, sampleOrder, sampleVars, varAdditionOrder, sampleInd, isProbScaler=False)
+    sample, sampleProb = cpm.single_sample(cpms, sampleOrder, sampleVars, varAdditionOrder, sampleInd, is_scalar=False)
 
     if (sample == [1, 1, 1]).all():
         np.testing.assert_array_almost_equal(sampleProb, [[0.9],[0.99],[0.95]], decimal=3)
@@ -1807,7 +1808,7 @@ def test_mcs_product2ds2(setup_mcs_product):
     cpms_ = setup_mcs_product
 
     nSample = 10
-    Mcs = cpm.mcs_product(cpms_, nSample, isProbScaler=False)
+    Mcs = cpm.mcs_product(cpms_, nSample, is_scalar=False)
 
     assert [x.name for x in Mcs.variables]==['v5', 'v4', 'v3', 'v2', 'v1']
 
@@ -1854,7 +1855,7 @@ def test_condition(setup_mcs_product):
     condVars = [v1, v2]
     condStates = np.array([1-1, 1-1])
 
-    [M]= cpm.condition(cpms[3], condVars, condStates, [0])
+    [M]= cpm.condition(cpms[3], condVars, condStates)
     np.testing.assert_array_equal(M.C, np.array([[1, 1], [2, 1]])-1)
     assert M.q.any() == False
     assert M.sample_idx.any() == False
@@ -2128,18 +2129,18 @@ def test_prod_cpm_sys_and_comps():
 
 @pytest.fixture()
 def setup_hybrid(): 
-    vars, cpms = {}, {}
+    varis, cpms = {}, {}
 
-    vars['haz'] = variable.Variable(name='haz', values=['mild', 'severe'])
-    cpms['haz'] = cpm.Cpm(variables=[vars['haz']], no_child=1, C=np.array([0,1]), p=[0.7, 0.3])
+    varis['haz'] = variable.Variable(name='haz', values=['mild', 'severe'])
+    cpms['haz'] = cpm.Cpm(variables=[varis['haz']], no_child=1, C=np.array([0,1]), p=[0.7, 0.3])
 
-    vars['x0'] = variable.Variable(name='x0', values=['fail', 'surv'])
-    cpms['x0'] = cpm.Cpm(variables=[vars['x0'], vars['haz']], no_child=1, C=np.array([[0,0],[1,0],[0,1],[1,1]]), p=[0.1,0.9,0.2,0.8])
-    vars['x1'] = variable.Variable(name='x1', values=['fail', 'surv'])
-    cpms['x1'] = cpm.Cpm(variables=[vars['x1'], vars['haz']], no_child=1, C=np.array([[0,0],[1,0],[0,1],[1,1]]), p=[0.3,0.7,0.4,0.6])
+    varis['x0'] = variable.Variable(name='x0', values=['fail', 'surv'])
+    cpms['x0'] = cpm.Cpm(variables=[varis['x0'], varis['haz']], no_child=1, C=np.array([[0,0],[1,0],[0,1],[1,1]]), p=[0.1,0.9,0.2,0.8])
+    varis['x1'] = variable.Variable(name='x1', values=['fail', 'surv'])
+    cpms['x1'] = cpm.Cpm(variables=[varis['x1'], varis['haz']], no_child=1, C=np.array([[0,0],[1,0],[0,1],[1,1]]), p=[0.3,0.7,0.4,0.6])
 
-    vars['sys'] = variable.Variable(name='sys', values=['fail', 'surv'])
-    cpms['sys'] = cpm.Cpm(variables=[vars['sys'], vars['x0'], vars['x1']], no_child=1, C=np.array([[0,0,0],[1,1,1]]), p=[1,1]) # incomplete C (i.e. C does not include all samples)
+    varis['sys'] = variable.Variable(name='sys', values=['fail', 'surv'])
+    cpms['sys'] = cpm.Cpm(variables=[varis['sys'], varis['x0'], varis['x1']], no_child=1, C=np.array([[0,0,0],[1,1,1]]), p=[1,1]) # incomplete C (i.e. C does not include all samples)
 
     # samples
     cpms['haz'].Cs, cpms['haz'].q, cpms['haz'].sample_idx = np.array([0,0,0,1,0]), [0.7,0.7,0.7,0.3,0.7], [0,1,2,3,4]
@@ -2147,7 +2148,7 @@ def setup_hybrid():
     cpms['x1'].Cs, cpms['x1'].q, cpms['x1'].sample_idx = np.array([[1,0],[0,0],[0,0],[1,1],[0,0]]), [0.7,0.3,0.3,0.6,0.3], [0,1,2,3,4]
     cpms['sys'].Cs, cpms['sys'].q, cpms['sys'].sample_idx = np.array([[0,0,1],[1,1,0],[1,1,0],[0,0,1],[1,1,0]]), [1,1,1,1,1], [0,1,2,3,4]
 
-    return vars, cpms
+    return varis, cpms
 
 def test_get_subset4(setup_hybrid):
 
@@ -2171,7 +2172,7 @@ def test_get_subset5(setup_hybrid):
 
 def test_get_variables_from_cpms(setup_hybrid):
 
-    vars, cpms = setup_hybrid
+    varis, cpms = setup_hybrid
     vars_ = cpm.get_variables_from_cpms(cpms,['x0','x1'])
 
     assert all(isinstance(v, variable.Variable) for v in vars_)
@@ -2180,7 +2181,7 @@ def test_get_variables_from_cpms(setup_hybrid):
 
 def test_condition6( setup_hybrid ):
 
-    vars, cpms = setup_hybrid
+    varis, cpms = setup_hybrid
     Mc = cpm.condition(cpms, ['haz'], [0])
 
     np.testing.assert_array_almost_equal(Mc['haz'].C, np.array([[0]]))
@@ -2191,7 +2192,7 @@ def test_condition6( setup_hybrid ):
 
 def test_product4( setup_hybrid ):
 
-    vars, cpms = setup_hybrid
+    varis, cpms = setup_hybrid
     Mp = cpms['haz'].product( cpms['x0'] )
 
     assert Mp.variables[0].name == 'haz' and Mp.variables[1].name == 'x0'
@@ -2203,7 +2204,7 @@ def test_product4( setup_hybrid ):
     np.testing.assert_array_almost_equal(Mp.sample_idx, np.array([[0],[1],[2],[3],[4]]))
 
 def test_product5( setup_hybrid ):
-    vars, cpms = setup_hybrid
+    varis, cpms = setup_hybrid
     Mc = cpm.condition(cpms, ['haz'], [0])
     Mp0 = Mc['haz'].product( Mc['x0'] )
     Mp1 = Mp0.product(Mc['x1'])
@@ -2224,13 +2225,13 @@ def test_product5( setup_hybrid ):
     np.testing.assert_array_almost_equal(Mp1.ps, np.array([[0.0343], [0.1323], [0.1323], [0.015], [0.132]]), decimal=3)
 
 def test_sum7(setup_hybrid):
-    vars, cpms = setup_hybrid
+    varis, cpms = setup_hybrid
     Mc = cpm.condition(cpms, ['haz'], [0])
     Mp0 = Mc['haz'].product( Mc['x0'] )
     Mp1 = Mp0.product(Mc['x1'])
 
-    Mp0_s = Mp0.sum([vars['x0']])
-    Mp1_s = Mp1.sum([vars['haz']])
+    Mp0_s = Mp0.sum([varis['x0']])
+    Mp1_s = Mp1.sum([varis['haz']])
 
     assert Mp0_s.variables[0].name == 'haz'
     np.testing.assert_array_almost_equal(Mp0_s.C, np.array([[0]]))
@@ -2247,20 +2248,74 @@ def test_sum7(setup_hybrid):
     np.testing.assert_array_almost_equal(Mp1_s.q, Mp1.q)
     np.testing.assert_array_almost_equal(Mp1_s.ps, Mp1.ps)
 
+def test_variable_elim1(setup_hybrid):
+
+    varis, cpms = setup_hybrid
+
+    var_elim_order = [varis['haz'], varis['x0'], varis['x1']]
+    result = cpm.variable_elim(cpms, var_elim_order)
+
+    np.testing.assert_array_almost_equal(result.C, np.array([[0], [1]]))
+    np.testing.assert_array_almost_equal(result.p, np.array([[0.045, 0.585]]).T, decimal=3)
+    np.testing.assert_array_almost_equal(result.Cs, np.array([[0,1,1,0,1]]).T, decimal=3)
+    np.testing.assert_array_almost_equal(result.q, np.array([[0.049, 0.189, 0.189, 0.036, 0.189]]).T, decimal=3)
+    np.testing.assert_array_almost_equal(result.ps, result.q)
+    np.testing.assert_array_almost_equal(result.sample_idx, np.array([[0,1,2,3,4]]).T)
+
+    prob, cov = cpm.get_prob_and_cov( result, ['sys'], [0] )
+
+    assert prob == pytest.approx(0.193, rel=1.0e-3)
+    assert cov == pytest.approx(0.4200, rel=1.0e-3)
+
+def test_cal_Msys_by_cond_VE1(setup_hybrid):
+
+    varis, cpms = setup_hybrid
+
+    var_elim_order = ['haz', 'x0', 'x1', 'sys']
+    result = cpm.cal_Msys_by_cond_VE(cpms, varis, ['haz'], var_elim_order, 'sys')
+
+    np.testing.assert_array_almost_equal(result.C, np.array([[0], [1]]))
+    np.testing.assert_array_almost_equal(result.p, np.array([[0.045, 0.585]]).T, decimal=3)
+    np.testing.assert_array_almost_equal(result.Cs, np.array([[0,1,1,0,1,0,1,1,0,1]]).T, decimal=3)
+    np.testing.assert_array_almost_equal(result.q, np.array([[0.049, 0.189, 0.189, 0.036, 0.189, 0.049, 0.189, 0.189, 0.036, 0.189]]).T, decimal=3)
+    np.testing.assert_array_almost_equal(result.ps, np.array([[0.0343, 0.1323, 0.1323, 0.0147, 0.1323, 0.0252, 0.0672, 0.0672, 0.0108, 0.0672]]).T, decimal=3)
+    np.testing.assert_array_almost_equal(result.sample_idx, np.array([[0,1,2,3,4,0,1,2,3,4]]).T)
+
+    prob, cov = cpm.get_prob_and_cov( result, ['sys'], [0], flag = True, nsample_repeat = 5 )
+
+    assert prob == pytest.approx(0.1873, rel=1.0e-3)
+    assert cov == pytest.approx(0.3143, rel=1.0e-3) # In this case, applying conditioning to the same samples reduces c.o.v.; not sure if this is universal
+
 
 @pytest.fixture()
 def setup_hybrid_no_samp(): 
-    vars, cpms = {}, {}
+    varis, cpms = {}, {}
 
-    vars['haz'] = variable.Variable(name='haz', values=['mild', 'severe'])
-    cpms['haz'] = cpm.Cpm(variables=[vars['haz']], no_child=1, C=np.array([0,1]), p=[0.7, 0.3])
+    varis['haz'] = variable.Variable(name='haz', values=['mild', 'severe'])
+    cpms['haz'] = cpm.Cpm(variables=[varis['haz']], no_child=1, C=np.array([0,1]), p=[0.7, 0.3])
 
-    vars['x0'] = variable.Variable(name='x0', values=['fail', 'surv'])
-    cpms['x0'] = cpm.Cpm(variables=[vars['x0'], vars['haz']], no_child=1, C=np.array([[0,0],[1,0],[0,1],[1,1]]), p=[0.1,0.9,0.2,0.8])
-    vars['x1'] = variable.Variable(name='x1', values=['fail', 'surv'])
-    cpms['x1'] = cpm.Cpm(variables=[vars['x1'], vars['haz']], no_child=1, C=np.array([[0,0],[1,0],[0,1],[1,1]]), p=[0.3,0.7,0.4,0.6])
+    varis['x0'] = variable.Variable(name='x0', values=['fail', 'surv'])
+    cpms['x0'] = cpm.Cpm(variables=[varis['x0'], varis['haz']], no_child=1, C=np.array([[0,0],[1,0],[0,1],[1,1]]), p=[0.1,0.9,0.2,0.8])
+    varis['x1'] = variable.Variable(name='x1', values=['fail', 'surv'])
+    cpms['x1'] = cpm.Cpm(variables=[varis['x1'], varis['haz']], no_child=1, C=np.array([[0,0],[1,0],[0,1],[1,1]]), p=[0.3,0.7,0.4,0.6])
 
-    vars['sys'] = variable.Variable(name='sys', values=['fail', 'surv'])
-    cpms['sys'] = cpm.Cpm(variables=[vars['sys'], vars['x0'], vars['x1']], no_child=1, C=np.array([[0,0,0],[1,1,1]]), p=[1,1]) # incomplete C (i.e. C does not include all samples)
+    varis['sys'] = variable.Variable(name='sys', values=['fail', 'surv'])
+    cpms['sys'] = cpm.Cpm(variables=[varis['sys'], varis['x0'], varis['x1']], no_child=1, C=np.array([[0,0,0],[1,1,1]]), p=[1,1]) # incomplete C (i.e. C does not include all samples)
 
-    return vars, cpms
+    def sys_fun(comp_st): # ground truth (similar format for gen_bnb.py but no "min_comps_st") # TODO: can we put this as a property of a CPM..?
+        if [comp_st['x0'], comp_st['x1']] == [0,1] or [comp_st['x0'], comp_st['x1']] == [0,0]:
+            sys_val, sys_st = 0, 0
+        elif [comp_st['x0'], comp_st['x1']] == [1,0] or [comp_st['x0'], comp_st['x1']] == [1,1]:
+            sys_val, sys_st = 1, 1
+        return sys_val, sys_st
+
+    return varis, cpms, sys_fun
+
+@pytest.mark.skip('FIXME')
+def test_rejection_sampling_sys(setup_hybrid_no_samp):
+
+    random.seed(1)
+
+    varis, cpms, sys_fun = setup_hybrid_no_samp
+
+    cpms, result = cpm.rejection_sampling_sys(cpms, 'sys', sys_fun, 0.3, sys_st_monitor = None)
