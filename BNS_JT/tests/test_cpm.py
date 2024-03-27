@@ -2311,11 +2311,19 @@ def setup_hybrid_no_samp():
 
     return varis, cpms, sys_fun
 
-@pytest.mark.skip('FIXME')
 def test_rejection_sampling_sys(setup_hybrid_no_samp):
 
-    random.seed(1)
 
+    var_elim_order = ['haz', 'x0', 'x1', 'sys']
     varis, cpms, sys_fun = setup_hybrid_no_samp
+    Msys = cpm.cal_Msys_by_cond_VE(cpms, varis, ['haz'], var_elim_order, 'sys')
 
-    cpms, result = cpm.rejection_sampling_sys(cpms, 'sys', sys_fun, 0.3, sys_st_monitor = None)
+    cpms2, result = cpm.rejection_sampling_sys(cpms, 'sys', sys_fun, 0.3, sys_st_monitor = 0, known_prob = Msys.p.sum(), sys_st_prob = Msys.p[0], rand_seed = 1)
+
+    var_elim_order = [varis['haz'], varis['x0'], varis['x1']]
+    cpm_sys = cpm.variable_elim(cpms2, var_elim_order)
+
+    prob, cov = cpm.get_prob_and_cov( cpm_sys, ['sys'], [0] )
+
+    assert prob == pytest.approx(result['pf'], rel=1.0e-3)
+    assert cov == pytest.approx(result['cov'], rel=1.0e-3)

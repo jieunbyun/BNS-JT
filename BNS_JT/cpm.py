@@ -3,6 +3,7 @@ import textwrap
 import copy
 import collections
 import warnings
+import random
 
 from BNS_JT.utils import all_equal
 from BNS_JT.variable import Variable
@@ -1053,21 +1054,27 @@ def single_sample(cpms, sample_order, sample_vars, var_add_order, sample_idx, is
     return sample, sample_prob
 
 
-def rejection_sampling_sys(cpms, sys_name, sys_fun, nsamp_cov, sys_st_monitor = None):
+def rejection_sampling_sys(cpms, sys_name, sys_fun, nsamp_cov, sys_st_monitor = None, known_prob=0.0, sys_st_prob = 0.0, rand_seed = None):
     """
     Perform rejection sampling on cpms w.r.t. given C
     INPUT:
-    - cpms: a list/dictionary of cpms
+    - cpms: a list/dictionary of cpms (including system event)
     - sys_name: the key in cpms that represents a system event (a rejection sampling is performed to avoid Csys)
     - nsamp_cov: either number of samples (if integer) or target c.o.v. (if float value)
     - sys_fun: a function (input: comp_st as dictionary and output: sys_val, sys_st)
     - isRejected: True if instances in C be rejected; False if instances not in C be.
-    - sys_st_monitor: a scalar representing system state to be reference to compute c.o.v. (only necessary when nsamp_cov indicates c.o.v.)
-   
+    - sys_st_monitor: an integer representing system state to be reference to compute c.o.v. (only necessary when nsamp_cov indicates c.o.v.)
+    - known_prob: a float representing already known probability (i.e. those represented by cpms[sys_name].C)
+    - sys_st_prob: a float representing already known probility of sys_st
+    - rand_seed: a scalar representing random ssed
+    
     OUTPUT:
     - cpms: a list;dictionary of cpms with samples added
     - result: a dictionary including the summary of sampling result 
     """
+    if rand_seed:
+        random.seed(rand_seed)
+
     assert isinstance(nsamp_cov, (float, int)), 'nsamp_cov must be either an integer (considered number of samples) or a float value (target c.o.v.)'
     if isinstance(nsamp_cov,int):
         isNsamp=True
@@ -1093,6 +1100,9 @@ def rejection_sampling_sys(cpms, sys_name, sys_fun, nsamp_cov, sys_st_monitor = 
     nsamp = 0 # accepted samples
     nfail = 0 # number of occurrences in system state to be monitored
     sys_vals = []
+    samples = np.empty((0,len(sample_vars)), dtype=int)
+    samples_sys = np.empty((0,1), dtype=int)
+    sample_probs = np.empty((0,len(sample_vars)), dtype=float)
     while (isNsamp and stop < nsamp_cov) or (not isNsamp and stop > nsamp_cov):
         nsamp_tot += 1
 
@@ -1105,19 +1115,9 @@ def rejection_sampling_sys(cpms, sys_name, sys_fun, nsamp_cov, sys_st_monitor = 
             comp_st = {x:sample_comp[i] for i,x in enumerate(comp_names)}
             sys_val, sys_st = sys_fun(comp_st)
 
-            for k, M in cpms_no_sys.items():
-
-                col_loc = cpms_v_idxs[k]
-                col_loc_c = cpms_v_idxs[k][:M.no_child]
-                M.Cs = np.vstack((M.Cs, sample[col_loc]))
-                M.q = np.vstack((M.q, [sample_prob[col_loc_c]])) 
-                M.sample_idx = np.vstack(M.sample_idx, [nsamp])
-
-            csys1 = [sys_st] + sample_comp
-            M = cpms[sys_name]
-            M.Cs = np.vstack((M.Cs, csys1))
-            M.q = np.vstack((M.q, [1])) # assuming a deterministic system function
-            M.sample_idx = np.vstack(M.sample_idx, [nsamp])
+            samples = np.vstack((samples, sample))
+            samples_sys = np.vstack((samples_sys, [sys_st]))
+            sample_probs = np.vstack((sample_probs, sample_prob))
 
             nsamp += 1
             if isNsamp: stop += 1
@@ -1125,14 +1125,54 @@ def rejection_sampling_sys(cpms, sys_name, sys_fun, nsamp_cov, sys_st_monitor = 
                 if sys_val == sys_st_monitor:
                     nfail +=1
 
-                if nfail > 0:
-                    pf, stop = get_prob_and_cov( cpms[sys_name], ['sys'], [0] )
+                if nfail > 0 and nsamp > 9:
+                    pf_s = nfail/nsamp
+                    std_s = np.sqrt(pf_s*(1-pf_s)/nsamp)
+
+                    pf = sys_st_prob + (1-known_prob) *pf_s
+                    std = (1-known_prob) *std_s
+
+                    cov = std/pf
+                    stop = cov
                 else:
                     stop = nsamp_cov+1
 
             sys_vals.append(sys_val)
+
+
+    #Result
+    ## Allocate samples to CPMs
+    for k, M in cpms_no_sys.items():
+
+        col_loc = cpms_v_idxs[k]
+        col_loc_c = cpms_v_idxs[k][:M.no_child]
+
+        Cs = samples[:,col_loc]
+        q = sample_probs[:,col_loc_c]
+        
+        M2 = Cpm(variables=M.variables,
+                 no_child = M.no_child,
+                 C = M.C,
+                 p = M.p,
+                 Cs = Cs,
+                 q = q,
+                 sample_idx = np.arange(nsamp))
+
+        cpms[k] = M2
+
+    Cs_sys = np.hstack((samples_sys,samples[:,comp_vars_loc])) 
+    M = cpms[sys_name]
+    M2 = Cpm(variables=M.variables,
+             no_child = M.no_child,
+             C = M.C,
+             p = M.p,
+             Cs = Cs_sys,
+             q = np.ones((nsamp,1)), # assuming a deterministic system function
+             sample_idx = np.arange(nsamp))
+
+    cpms[sys_name] = M2
     
-    result = {nsamp_tot: nsamp_tot, nsamp: nsamp, sys_vals: sys_val}
+    result = {'pf': pf, 'cov': cov, 'nsamp_tot': nsamp_tot, 'nsamp': nsamp, 'sys_vals': sys_vals}
 
     return cpms, result
 
@@ -1245,7 +1285,12 @@ def get_prob_and_cov(M, var_inds, var_states, flag=True, nsample_repeat = 0):
         col_range = range(i*nsamp, (i+1)*nsamp)
         is_cmp = iscompatible(M.Cs[col_range,:], M.variables, var_inds, var_states)
 
-        w = M.ps[col_range] / M.q[col_range]
+        try:
+            w = M.ps[col_range] / M.q[col_range]
+        except IndexError:
+            w = np.ones_like(M.q) # if ps is empty, assume ps is the same as q
+
+        w_ori = w.copy() # weight before compatibility check
         if flag:
             w[~is_cmp] = 0
         else:
@@ -1253,9 +1298,8 @@ def get_prob_and_cov(M, var_inds, var_states, flag=True, nsample_repeat = 0):
         mean = w.sum() / nsamp
         prob_Cs += mean
 
-        w_ori = M.ps[col_range] / M.q[col_range] # weight before compatibility check
         if np.allclose(w_ori, w_ori[0], atol=1e-4): # this is MCS then
-            var1 = np.square( w[0] ) * (1-mean) * mean / nsamp
+            var1 = np.square( w_ori[0] ) * (1-mean) * mean / nsamp
             var += var1[0]
         else:
             var1 = np.square( ( w - mean ) / nsamp )
