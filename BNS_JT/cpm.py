@@ -724,7 +724,7 @@ def flip(idx):
     return [True if x is False else False for x in idx]
 
 
-def condition(M, cnd_vars, cnd_states):
+def condition(M, cnd_vars, cnd_states, sample_idx=[]):
     """
     Returns a list of instance of Cpm
 
@@ -811,7 +811,7 @@ def condition(M, cnd_vars, cnd_states):
 
                 Mx.ps = ps # the conditioned variables' samples are removed.
 
-            elif all(isinstance(r,bool) and r==False for r in res): 
+            elif all(isinstance(r,bool) and r==False for r in res):
                 Mx.ps = Mx.q.copy()
 
             else:
@@ -952,7 +952,7 @@ def get_sample_order(cpms):
     return sample_order, sample_vars, var_add_order
 
 
-def mcs_product(cpms, nsample, isProbScaler=True):
+def mcs_product(cpms, nsample, is_scalar=True):
     """
     Returns an instance of Cpm by MC based product operation
 
@@ -960,13 +960,13 @@ def mcs_product(cpms, nsample, isProbScaler=True):
     ----------
     cpms: a list of instances of Cpm
     nsample: number of samples
-    isProbScaler: True if a prob is given as a scalar (all multiplied into one number); False if given as a list for each sampled variables
+    is_scalar: True if a prob is given as a scalar (all multiplied into one number); False if given as a list for each sampled variables
     """
     sample_order, sample_vars, var_add_order = get_sample_order(cpms)
 
     nvars = len(sample_vars)
     C_prod = np.zeros((nsample, nvars), dtype=int)
-    if isProbScaler:
+    if is_scalar:
         q_prod = np.zeros((nsample, 1))
     else:
         q_prod = np.zeros((nsample, nvars))
@@ -974,14 +974,14 @@ def mcs_product(cpms, nsample, isProbScaler=True):
 
     for i in sample_idx_prod:
 
-        sample, sample_prob = single_sample(cpms, sample_order, sample_vars, var_add_order, [i], isProbScaler)
+        sample, sample_prob = single_sample(cpms, sample_order, sample_vars, var_add_order, [i], is_scalar)
         C_prod[i,:] = sample
-        if isProbScaler:
+        if is_scalar:
             q_prod[i] = sample_prob
         else:
             q_prod[i,:] = sample_prob
 
-    if isProbScaler:
+    if is_scalar:
         q_prod = q_prod[:,::-1]
 
     return Cpm(variables=sample_vars[::-1],
@@ -993,7 +993,7 @@ def mcs_product(cpms, nsample, isProbScaler=True):
                sample_idx=sample_idx_prod)
 
 
-def single_sample(cpms, sample_order, sample_vars, var_add_order, sample_idx, isProbScaler=True):
+def single_sample(cpms, sample_order, sample_vars, var_add_order, sample_idx, is_scalar=True):
     """
     sample from cpms
 
@@ -1003,7 +1003,7 @@ def single_sample(cpms, sample_order, sample_vars, var_add_order, sample_idx, is
         sample_vars: list-like
         var_add_order: list-like
         sample_idx: list
-        isProbScaler: True if a prob is given as a scalar (all multiplied into one number); False if given as a list for each sampled variables
+        is_scalar: True if a prob is given as a scalar (all multiplied into one number); False if given as a list for each sampled variables
     """
     assert isinstance(sample_vars, list), 'should be a list'
 
@@ -1032,7 +1032,7 @@ def single_sample(cpms, sample_order, sample_vars, var_add_order, sample_idx, is
         weight = M.p.flatten()/M.p.sum(axis=0)
         irow = np.random.choice(range(len(M.p)), size=1, p=weight)[0]
 
-        if isProbScaler:
+        if is_scalar:
             try:
                 sample_prob += np.log(M.p[[irow]])
             except NameError:
@@ -1096,7 +1096,7 @@ def rejection_sampling_sys(cpms, sys_name, sys_fun, nsamp_cov, sys_st_monitor = 
     while (isNsamp and stop < nsamp_cov) or (not isNsamp and stop > nsamp_cov):
         nsamp_tot += 1
 
-        sample, sample_prob = single_sample(cpms_no_sys, sample_order, sample_vars, var_add_order, [nsamp], isProbScaler=False)
+        sample, sample_prob = single_sample(cpms_no_sys, sample_order, sample_vars, var_add_order, [nsamp], is_scalar=False)
 
         sample_comp = sample[comp_vars_loc]
         is_cpt = iscompatible(C_reject, comp_vars, comp_names, sample_comp)
@@ -1104,8 +1104,9 @@ def rejection_sampling_sys(cpms, sys_name, sys_fun, nsamp_cov, sys_st_monitor = 
 
             comp_st = {x:sample_comp[i] for i,x in enumerate(comp_names)}
             sys_val, sys_st = sys_fun(comp_st)
-            
+
             for k, M in cpms_no_sys.items():
+
                 col_loc = cpms_v_idxs[k]
                 col_loc_c = cpms_v_idxs[k][:M.no_child]
                 M.Cs = np.vstack((M.Cs, sample[col_loc]))
@@ -1358,7 +1359,7 @@ def get_inf_vars(vars_star, cpms, VE_ord=None):
 
     if VE_ord is not None:
         def get_ord_inf( x, VE_ord ):
-            return VE_ord.index(x) 
+            return VE_ord.index(x)
 
         vars_inf.sort( key=(lambda x: get_ord_inf(x, VE_ord)) )
 
