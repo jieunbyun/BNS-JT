@@ -514,10 +514,62 @@ def setup_iscompatible():
 
     return M, v
 
+@pytest.fixture
+def setup_iscompatible_Bfly():
+
+    M = {}
+    v = {}
+
+    v[1] = variable.Variable(name='1', values=['Mild', 'Severe'], B_flag = 'fly')
+    v[2] = variable.Variable(name='2', values=['Survive', 'Fail'], B_flag = 'fly')
+    v[3] = variable.Variable(name='3', values=['Survive', 'Fail'], B_flag = 'fly')
+    v[4] = variable.Variable(name='4', values=['Survive', 'Fail'], B_flag = 'fly')
+    v[5] = variable.Variable(name='5', values=['Survive', 'Fail'], B_flag = 'fly')
+
+    M[1] = cpm.Cpm(variables=[v[1]], no_child=1, C = np.array([[1, 2]]).T - 1, p = np.array([0.9, 0.1]).T)
+    M[2] = cpm.Cpm(variables=[v[2], v[1]], no_child=1, C = np.array([[1, 1], [2, 1], [1, 2], [2, 2]]) - 1, p = np.array([0.99, 0.01, 0.9, 0.1]).T)
+    M[3] = cpm.Cpm(variables=[v[3], v[1]], no_child=1, C = np.array([[1, 1], [2, 1], [1, 2], [2, 2]]) - 1, p = np.array([0.95, 0.05, 0.85, 0.15]).T)
+    M[4] = cpm.Cpm(variables=[v[4], v[1]], no_child=1, C = np.array([[1, 1], [2, 1], [1, 2], [2, 2]]) - 1, p = np.array([0.99, 0.01, 0.9, 0.1]).T)
+    M[5] = cpm.Cpm(variables=[v[5], v[2], v[3], v[4]], no_child=1, C = np.array([[2, 3, 3, 2], [1, 1, 3, 1], [1, 2, 1, 1], [2, 2, 2, 1]]) - 1, p = np.array([1, 1, 1, 1]).T)
+
+    return M, v
+
+@pytest.fixture
+def setup_iscompatible_Bfly2():
+
+    M = {}
+    v = {}
+
+    v[1] = variable.Variable(name='1', values=['Mild', 'mid', 'Severe'], B_flag = 'fly')
+    v[2] = variable.Variable(name='2', values=['Survive', 'Fail'], B_flag = 'fly')
+    v[3] = variable.Variable(name='3', values=['Survive', 'Fail'], B_flag = 'fly')
+    v[4] = variable.Variable(name='4', values=['Survive', 'Fail'], B_flag = 'fly')
+    v[5] = variable.Variable(name='5', values=['Survive', 'Fail'], B_flag = 'fly')
+
+    M[1] = cpm.Cpm(variables=[v[1]], no_child=1, C = np.array([[1, 2, 3]]).T - 1, p = np.array([0.7, 0.2, 0.1]).T)
+    M[2] = cpm.Cpm(variables=[v[2], v[1]], no_child=1, C = np.array([[1, 1], [2, 1], [1, 2], [2, 2], [1,3], [2,3]]) - 1, p = np.array([0.99, 0.01, 0.95, 0.05, 0.9, 0.1]).T)
+    M[3] = cpm.Cpm(variables=[v[3], v[1]], no_child=1, C = np.array([[1, 1], [2, 1], [1, 2], [2, 2], [1,3], [2,3]]) - 1, p = np.array([0.95, 0.05, 0.90, 0.10, 0.85, 0.15]).T)
+    M[4] = cpm.Cpm(variables=[v[4], v[1]], no_child=1, C = np.array([[1, 1], [2, 1], [1, 2], [2, 2], [1,3], [2,3]]) - 1, p = np.array([0.99, 0.01, 0.95, 0.05, 0.9, 0.1]).T)
+    M[5] = cpm.Cpm(variables=[v[5], v[2], v[3], v[4]], no_child=1, C = np.array([[2, 3, 3, 2], [1, 1, 3, 1], [1, 2, 1, 1], [2, 2, 2, 1]]) - 1, p = np.array([1, 1, 1, 1]).T)
+
+    return M, v
 
 def test_iscompatible1(setup_iscompatible):
 
     M, v = setup_iscompatible
+
+    # M[2]
+    C = np.array([[1, 1], [2, 1], [1, 2], [2, 2]]) - 1 #M[2].C
+    variables = [v[2], v[1]]
+    checkVars = [v[1]]
+    checkStates = [1-1]
+    result = cpm.iscompatible(C, variables, checkVars, checkStates)
+    expected = np.array([1, 1, 0, 0])
+    np.testing.assert_array_equal(expected, result)
+
+def test_iscompatible1f(setup_iscompatible_Bfly):
+
+    M, v = setup_iscompatible_Bfly
 
     # M[2]
     C = np.array([[1, 1], [2, 1], [1, 2], [2, 2]]) - 1 #M[2].C
@@ -540,6 +592,32 @@ def test_iscompatible1s(setup_iscompatible):
     checkStates = ['Mild']
     result = cpm.iscompatible(C, variables, checkVars, checkStates)
     expected = np.array([1, 1, 0, 0])
+    np.testing.assert_array_equal(expected, result)
+
+def test_iscompatible1sf(setup_iscompatible_Bfly):
+    # using string for checkVars, checkStates
+    M, v = setup_iscompatible_Bfly
+
+    # M[2]
+    C = np.array([[1, 1], [2, 1], [1, 2], [2, 2]]) - 1 #M[2].C
+    variables = [v[2], v[1]]
+    checkVars = ['1']
+    checkStates = ['Mild']
+    result = cpm.iscompatible(C, variables, checkVars, checkStates)
+    expected = np.array([1, 1, 0, 0])
+    np.testing.assert_array_equal(expected, result)
+
+def test_iscompatible1f2(setup_iscompatible_Bfly2):
+
+    M, v = setup_iscompatible_Bfly2
+
+    # M[2]
+    C = np.array([[0, 0], [1, 0], [0, 1], [1, 1], [0, 2], [1, 2]]) #M[2].C
+    variables = [v[2], v[1]]
+    checkVars = [v[1]]
+    checkStates = [3]
+    result = cpm.iscompatible(C, variables, checkVars, checkStates)
+    expected = np.array([1, 1, 1, 1, 0, 0])
     np.testing.assert_array_equal(expected, result)
 
 
@@ -660,7 +738,21 @@ def test_iscompatible4(setup_iscompatible):
     assert x2 == {0}
 
     expected = np.array([1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0]).T
-    np.testing.assert_array_equal(compatCheck, expected)
+    np.testing.assert_array_equal(compatCheck, expected)#
+
+def test_iscompatible5(setup_iscompatible_Bfly2):
+
+    M, v = setup_iscompatible_Bfly2
+
+    st0 = v[1].B_fly({0})
+    st1 = v[1].B_fly({1})
+    st2 = v[1].B_fly({2})
+    st3 = v[1].B_fly({0,1})
+    st4 = v[1].B_fly({0,2})
+    st5 = v[1].B_fly({1,2})
+    st6 = v[1].B_fly({0,1,2})
+
+    assert [st0, st1, st2, st3, st4, st5, st6] == [0, 1, 2, 3, 4, 5, 6]
 
 
 def test_get_subset1(setup_iscompatible):
@@ -728,6 +820,24 @@ def test_iscompatibleCpm1s(var_A1_to_A5):
     expected = np.array([1, 1, 1, 1])
     np.testing.assert_array_equal(result, expected)
 
+def test_iscompatibleCpm1sf(var_A1_to_A5):
+
+    A1, A2, A3, A4, A5 = var_A1_to_A5
+
+    M = {}
+    M[1] = cpm.Cpm(variables=[A1], no_child=1, C = np.array([[1, 2]]).T - 1, p = np.array([0.9, 0.1]).T)
+    M[2] = cpm.Cpm(variables=[A2, A1], no_child=1, C = np.array([[1, 1], [2, 1], [1, 2], [2, 2]]) - 1, p = np.array([0.99, 0.01, 0.9, 0.1]).T)
+    M[3] = cpm.Cpm(variables=[A3, A1], no_child=1, C = np.array([[1, 1], [2, 1], [1, 2], [2, 2]]) - 1, p = np.array([0.95, 0.05, 0.85, 0.15]).T)
+    M[4] = cpm.Cpm(variables=[A4, A1], no_child=1, C = np.array([[1, 1], [2, 1], [1, 2], [2, 2]]) - 1, p = np.array([0.99, 0.01, 0.9, 0.1]).T)
+    M[5] = cpm.Cpm(variables=[A5, A2, A3, A4], no_child=1, C = np.array([[2, 3, 3, 2], [1, 1, 3, 1], [1, 2, 1, 1], [2, 2, 2, 1]]) - 1, p = np.array([1, 1, 1, 1]).T)
+
+    # M[5]
+    rowIndex = [0]  # 1 -> 0
+    M_sys_select = M[5].get_subset(rowIndex)
+    result = M[3].iscompatible(M_sys_select, flag=True)
+    expected = np.array([1, 1, 1, 1])
+    np.testing.assert_array_equal(result, expected)
+
 
 def test_iscompatibleCpm2(setup_iscompatible):
 
@@ -776,6 +886,28 @@ def test_iscompatibleCpm4(setup_bridge):
     result = M.iscompatible(Mc, flag=False)
 
     expected = np.array([True, False, False, False])
+    np.testing.assert_array_equal(result, expected)
+
+def test_iscompatibleCpm5(setup_iscompatible_Bfly):
+
+    # M[5]
+    M, _ = setup_iscompatible_Bfly
+    rowIndex = [0]  # 1 -> 0
+    M_sys_select = M[5].get_subset(rowIndex)
+
+    result = M[4].iscompatible(M_sys_select, flag=True)
+    expected = np.array([0, 1, 0, 1])
+    np.testing.assert_array_equal(result, expected)
+
+def test_iscompatibleCpm6(setup_iscompatible_Bfly):
+
+    # M[5]
+    M, _ = setup_iscompatible_Bfly
+    rowIndex = [0]  # 1 -> 0
+    M_sys_select = M[5].get_subset(rowIndex)
+
+    result = M[4].iscompatible(M_sys_select, flag=True)
+    expected = np.array([0, 1, 0, 1])
     np.testing.assert_array_equal(result, expected)
 
 

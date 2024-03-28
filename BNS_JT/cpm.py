@@ -701,11 +701,22 @@ def iscompatible(C, variables, check_vars, check_states):
         if isinstance(state, str):
             state = variable.values.index(state)
 
-        x1 = [variable.B(int(k)) for k in C[is_cmp, i]]
         try:
-            check = [bool(variable.B(state).intersection(x)) for x in x1]
+            B = variable.B
+        except NameError:
+            print(f'{variable} is not defined')
+        except AttributeError:
+            x1 = [variable.B_fly(int(k)) for k in C[is_cmp, i]]
+        else:
+            x1 = [B[int(k)] for k in C[is_cmp, i]]
+
+        try:
+            check = [bool(B[state].intersection(x)) for x in x1]
         except IndexError:
             print('IndexError: {state}')
+        except NameError:
+            check = [bool(variable.B_fly(state).intersection(x)) for x in x1]
+            is_cmp[np.where(is_cmp > 0)[0][:len(check)]] = check
         else:
             is_cmp[np.where(is_cmp > 0)[0][:len(check)]] = check
 

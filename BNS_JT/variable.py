@@ -73,22 +73,18 @@ class Variable(object):
     (A user does not have to enter composite states for all possible permutations but is enough define those being used).
     '''
 
-    def __init__(self, name, values=[]):
+    def __init__(self, name, values=[], B_flag='None'):
 
         assert isinstance(name, str), 'name should be a string'
 
         assert isinstance(values, list), 'values must be a list'
 
         self.name = name
-        self._values = values
-
-        ddd = 1
+        self.values = values
+        self.B_flag = B_flag
         
-        #Do not create B explicitly
-        """
-        if self._values:
-            self._B = self.gen_B()
-        """
+        if self.values and ( (len(self.values) <= 6 and B_flag!='fly') or (B_flag=='store') ):
+            self.B = self.gen_B()
 
     @property
     def B(self):
@@ -107,16 +103,36 @@ class Variable(object):
 
         #self._B = self.gen_B()
 
-    def B(self, st=None):
+    @property
+    def B_flag(self):
+        return self._B_flag
+    @B_flag.setter
+    def B_flag(self, value):
 
+        assert value in ['None', 'store', 'fly'], 'B_flag must be either None, store, or fly'
+
+        self._B_flag = value
+
+        if self._values and value=='store':
+            self._B = self.gen_B()
+
+
+    def gen_B(self):
         n = len(self._values)
+        B = [set(x) for x in chain.from_iterable(combinations(range(n), r) for r in range(1, n + 1))]
+        #for n in range(1, len(self._values) + 1):
+        #    [B.append(set(x)) for x in itertools.combinations(range(len(self._values)), n)]
+        return B
+
+    def B_fly(self, st=None):
 
         if st == None:
-            B = [set(x) for x in chain.from_iterable(combinations(range(n), r) for r in range(1, n + 1))]
-            return B
+            return self.gen_B()
         
         else:
             assert isinstance(st, int) or isinstance(st, set), 'Given state must be an integer or a set'
+
+            n = len(self._values)
 
             nst_len = [math.comb(n,r) for r in range(1,n+1)]  # number of states in each length from 1 to n
             nst_len_cum = np.cumsum(nst_len)
@@ -124,35 +140,28 @@ class Variable(object):
             #FIXME: still not passing tests
             if isinstance(st, int):
                 
-                st_len = np.argmax(~(nst_len_cum<st)) + 1 # length of the state
+                st_len = np.argmax(~(nst_len_cum<=st)) + 1 # length of the state
                 
-                st_to_go = st - ( 2**(st_len-1) - 1 )
+                st_to_go = st - sum([math.comb(n,k) for k in range(1,st_len)]) 
                 st_idx = 0
-                for x in chain.from_iterable(combinations(range(n), st_len)):
+                for x in combinations(range(n), st_len):
                     if st_idx==st_to_go:
                         break
                     st_idx += 1
-                return {x}
+                return set(x)
             
             else:
                 
                 #FIXME: still not passing tests
                 st_len = len(st)
+                nst_len_cum = np.concatenate(([0], nst_len_cum))
                 st_idx = nst_len_cum[st_len-1]
-                for x in chain.from_iterable(combinations(range(n), st_len)):
-                    st_idx += 1
+                for x in combinations(range(n), st_len):
                     if set(x)==st:
                         break
+                    st_idx += 1
                 return st_idx
 
-
-
-    """def gen_B(self):
-        n = len(self._values)
-        B = [set(x) for x in chain.from_iterable(combinations(range(n), r) for r in range(1, n + 1))]
-        #for n in range(1, len(self._values) + 1):
-        #    [B.append(set(x)) for x in itertools.combinations(range(len(self._values)), n)]
-        return B"""
 
     """
     def B_times_values(self):
