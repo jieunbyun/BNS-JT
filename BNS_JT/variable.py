@@ -82,14 +82,21 @@ class Variable(object):
         self.name = name
         self.values = values
         self.B_flag = B_flag
+
+        if ( len(self.values) > 0 ) and ( (len(self.values) <= 6 and B_flag!='fly') or (B_flag=='store') ):
+            B = self.gen_B() 
+            self.B = B     
+        else:
+            self.B = None 
         
-        if self.values and ( (len(self.values) <= 6 and B_flag!='fly') or (B_flag=='store') ):
-            self.B = self.gen_B()
 
     @property
     def B(self):
         return self._B
-
+    @B.setter
+    def B(self, value):
+        self._B = value
+        
     @property
     def values(self):
         return self._values
@@ -110,11 +117,7 @@ class Variable(object):
     def B_flag(self, value):
 
         assert value in ['None', 'store', 'fly'], 'B_flag must be either None, store, or fly'
-
         self._B_flag = value
-
-        if self._values and value=='store':
-            self._B = self.gen_B()
 
 
     def gen_B(self):
@@ -130,7 +133,7 @@ class Variable(object):
             return self.gen_B()
         
         else:
-            assert isinstance(st, int) or isinstance(st, set), 'Given state must be an integer or a set'
+            assert isinstance(st, int) or isinstance(st, np.integer) or isinstance(st, set), 'Given state must be an integer or a set'
 
             n = len(self._values)
 
@@ -138,7 +141,7 @@ class Variable(object):
             nst_len_cum = np.cumsum(nst_len)
 
             #FIXME: still not passing tests
-            if isinstance(st, int):
+            if isinstance(st, int) or isinstance(st, np.integer):
                 
                 st_len = np.argmax(~(nst_len_cum<=st)) + 1 # length of the state
                 
@@ -161,6 +164,16 @@ class Variable(object):
                         break
                     st_idx += 1
                 return st_idx
+            
+    def update_B(self, val=None):
+        if not val is None:
+            self.B = val
+        else:
+            if ( len(self.values) > 0 ) and ( (len(self.values) <= 6 and self.B_flag!='fly') or (self.B_flag=='store') ):
+                B = self.gen_B() 
+                self.B = B     
+            else:
+                self.B = None
 
 
     """

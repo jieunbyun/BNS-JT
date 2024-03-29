@@ -26,13 +26,14 @@ def test_init2():
     a = variable.Variable(name)
     value = ['survival', 'fail']
     a.values = value
+    a.update_B()
 
     assert isinstance(a, variable.Variable)
     np.testing.assert_array_equal(a.name, name)
     np.testing.assert_array_equal(a.B, [{0}, {1}, {0, 1}])
     np.testing.assert_array_equal(a.values, value)
 
-
+#FIXME: Not sure what this is meant
 def test_init3():
 
     name = 'A'
@@ -44,7 +45,7 @@ def test_init3():
     with pytest.raises(AttributeError):
         a.B = B
 
-
+#FIXME: Not sure what this is meant (as test_init3)
 def test_init4():
 
     name = 'A'
