@@ -62,7 +62,7 @@ def plot_monitoring(monitor, output_file='monitor.png'):
 
 
 
-def proposed_branch_and_bound_using_probs(sys_fun, varis, probs, max_br, output_path=Path(sys.argv[0]).parent, key=None, flag=False):
+def proposed_branch_and_bound_using_probs(sys_fun, varis, probs, max_sf, output_path=Path(sys.argv[0]).parent, key=None, flag=False):
 
     assert isinstance(varis, dict), f'varis must be a dict: {type(varis)}'
     assert isinstance(probs, dict), f'probs must be a dict: {type(probs)}'
@@ -90,7 +90,7 @@ def proposed_branch_and_bound_using_probs(sys_fun, varis, probs, max_br, output_
               }
 
     stop_br = False
-    while no_bu and len(brs) < max_br:
+    while no_bu and no_sf < max_sf:
 
         no_iter += 1
 
@@ -198,8 +198,8 @@ def proposed_branch_and_bound_using_probs(sys_fun, varis, probs, max_br, output_
             len_rs = 0
         """
         #print(f'# of unknown branches to go: {no_bu}, {max_bu}\n')
-        if len(brs) >= max_br:
-            print(f'*** Terminated due to the # of branches: {len(brs)} >= {max_br}')
+        if no_sf >= max_sf:
+            print(f'*** Terminated due to the # of system function runs: {no_sf} >= {max_sf}')
 
     print(f'**Algorithm Terminated**')
     #print(f'[System function runs {no_sf}]..')
