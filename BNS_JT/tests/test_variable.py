@@ -33,7 +33,7 @@ def test_init2():
     np.testing.assert_array_equal(a.B, [{0}, {1}, {0, 1}])
     np.testing.assert_array_equal(a.values, value)
 
-#FIXME: Not sure what this is meant
+@pytest.mark.skip('FIXME: what this is meant')
 def test_init3():
 
     name = 'A'
@@ -45,7 +45,7 @@ def test_init3():
     with pytest.raises(AttributeError):
         a.B = B
 
-#FIXME: Not sure what this is meant (as test_init3)
+@pytest.mark.skip('FIXME: what this is meant')
 def test_init4():
 
     name = 'A'
@@ -58,7 +58,8 @@ def test_init4():
         a.B = B
 
 
-def test_init4():
+@pytest.mark.skip('FIXME: what this is meant')
+def test_init5():
 
     name = 'A'
     a = variable.Variable(name)

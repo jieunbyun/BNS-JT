@@ -73,7 +73,7 @@ class Variable(object):
     (A user does not have to enter composite states for all possible permutations but is enough define those being used).
     '''
 
-    def __init__(self, name, values=[], B_flag='None'):
+    def __init__(self, name, values=[], B_flag=None):
 
         assert isinstance(name, str), 'name should be a string'
 
@@ -83,20 +83,18 @@ class Variable(object):
         self.values = values
         self.B_flag = B_flag
 
-        if ( len(self.values) > 0 ) and ( (len(self.values) <= 6 and B_flag!='fly') or (B_flag=='store') ):
-            B = self.gen_B() 
-            self.B = B     
-        else:
-            self.B = None 
-        
+        self.B = None
+        if len(self.values) > 0 and ((len(self.values) <= 6 and B_flag != 'fly') or B_flag=='store'):
+            self.B = self.gen_B()
 
     @property
     def B(self):
         return self._B
+
     @B.setter
     def B(self, value):
         self._B = value
-        
+
     @property
     def values(self):
         return self._values
@@ -113,10 +111,11 @@ class Variable(object):
     @property
     def B_flag(self):
         return self._B_flag
+
     @B_flag.setter
     def B_flag(self, value):
 
-        assert value in ['None', 'store', 'fly'], 'B_flag must be either None, store, or fly'
+        assert value in [None, 'store', 'fly'], 'B_flag must be either None, store, or fly'
         self._B_flag = value
 
 
@@ -131,7 +130,7 @@ class Variable(object):
 
         if st == None:
             return self.gen_B()
-        
+
         else:
             assert isinstance(st, int) or isinstance(st, np.integer) or isinstance(st, set), 'Given state must be an integer or a set'
 
@@ -142,9 +141,9 @@ class Variable(object):
 
             #FIXME: still not passing tests
             if isinstance(st, int) or isinstance(st, np.integer):
-                
+
                 st_len = np.argmax(~(nst_len_cum<=st)) + 1 # length of the state
-                
+
                 st_to_go = st - sum([math.comb(n,k) for k in range(1,st_len)]) 
                 st_idx = 0
                 for x in combinations(range(n), st_len):
@@ -152,9 +151,9 @@ class Variable(object):
                         break
                     st_idx += 1
                 return set(x)
-            
+
             else:
-                
+
                 #FIXME: still not passing tests
                 st_len = len(st)
                 nst_len_cum = np.concatenate(([0], nst_len_cum))
@@ -164,14 +163,14 @@ class Variable(object):
                         break
                     st_idx += 1
                 return st_idx
-            
+
+
     def update_B(self, val=None):
-        if not val is None:
+        if val:
             self.B = val
         else:
-            if ( len(self.values) > 0 ) and ( (len(self.values) <= 6 and self.B_flag!='fly') or (self.B_flag=='store') ):
-                B = self.gen_B() 
-                self.B = B     
+            if len(self.values) > 0 and ((len(self.values) <= 6 and self.B_flag!='fly') or self.B_flag=='store'):
+                self.B = self.gen_B()
             else:
                 self.B = None
 

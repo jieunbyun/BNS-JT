@@ -142,7 +142,7 @@ def test_variable_elim(setup_sys):
     assert cpm_od1.p[2] == pytest.approx(0.012, abs=1.0e-4)
 
 
-@pytest.mark.skip('FIXME')
+#@pytest.mark.skip('FIXME')
 def test_mcs_product(setup_sys):
 
     arcs, cpms, varis = setup_sys
