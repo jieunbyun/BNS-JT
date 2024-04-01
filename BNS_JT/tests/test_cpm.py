@@ -2211,7 +2211,7 @@ def test_prod_cpm_sys_and_comps():
     sys_fun = trans.sys_fun_wrap(od_pair, cfg.infra['edges'], varis)
 
     brs, _, _, _ = gen_bnb.proposed_branch_and_bound_using_probs(
-            sys_fun, varis, probs, max_br=1000, output_path=HOME, key='routine')
+            sys_fun, varis, probs, max_sf=1000, output_path=HOME, key='routine')
 
     csys_by_od, varis_by_od = gen_bnb.get_csys_from_brs(brs, varis, st_br_to_cs)
 

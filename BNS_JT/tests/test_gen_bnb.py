@@ -261,7 +261,7 @@ def setup_inference_not_used(main_sys):
     output_path = Path(__file__).parent
     #pdb.set_trace()
     brs, rules, sys_res = gen_bnb.proposed_branch_and_bound(
-            sys_fun, varis, max_br=1000, output_path=output_path, key='bridge', flag=False)
+            sys_fun, varis, max_sf=1000, output_path=output_path, key='bridge', flag=False)
 
     st_br_to_cs = {'f': 0, 's': 1, 'u': 2}
     csys, varis = gen_bnb.get_csys_from_brs(brs, varis, st_br_to_cs)
@@ -634,7 +634,7 @@ def test_proposed_branch_and_bound_using_probs(main_sys):
     output_path = Path(__file__).parent
     #t1 = time.perf_counter()
     brs, rules, _, monitor = gen_bnb.proposed_branch_and_bound_using_probs(
-            sys_fun, varis, probs, max_br=100,
+            sys_fun, varis, probs, max_sf=100,
             output_path=output_path, key='bridge', flag=False)
 
     st_br_to_cs = {'f': 0, 's': 1, 'u': 2}
@@ -1123,7 +1123,7 @@ def test_get_csys_from_brs3(main_sys):
     output_path = Path(__file__).parent
     #pdb.set_trace()
     brs, rules, _, monitor = gen_bnb.proposed_branch_and_bound_using_probs(
-            sys_fun, varis, probs, max_br=100,
+            sys_fun, varis, probs, max_sf=100,
             output_path=output_path, key='bridge', flag=False)
 
 
