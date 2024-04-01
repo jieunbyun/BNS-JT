@@ -62,7 +62,7 @@ def plot_monitoring(monitor, output_file='monitor.png'):
 
 
 
-def proposed_branch_and_bound_using_probs(sys_fun, varis, probs, max_br, output_path=Path(sys.argv[0]).parent, key=None, flag=False):
+def proposed_branch_and_bound_using_probs(sys_fun, varis, probs, max_sf, output_path=Path(sys.argv[0]).parent, key=None, flag=False):
 
     assert isinstance(varis, dict), f'varis must be a dict: {type(varis)}'
     assert isinstance(probs, dict), f'probs must be a dict: {type(probs)}'
@@ -90,15 +90,16 @@ def proposed_branch_and_bound_using_probs(sys_fun, varis, probs, max_br, output_
               }
 
     stop_br = False
-    while no_bu and len(brs) < max_br:
+    while no_bu and no_sf < max_sf:
 
         no_iter += 1
 
-        print(f'[System function runs {no_sf}]..')
-        print(f'The # of found non-dominated rules (f, s): {no_rf + no_rs} ({no_rf}, {no_rs})')
-        print(f'Probability of branchs (f, s, u): ({pr_bf:.2f}, {pr_bs:.2f}, {pr_bu:.2f})')
+        if stop_br:
+            print(f'[System function runs {no_sf}]..')
+            print(f'The # of found non-dominated rules (f, s): {no_rf + no_rs} ({no_rf}, {no_rs})')
+            print(f'Probability of branchs (f, s, u): ({pr_bf:.2f}, {pr_bs:.2f}, {pr_bu:.2f})')
         #print('The # of branching: ', no_iter)
-        #print(f'The # of branches (f, s, u): {len(brs)} ({no_bf}, {no_bs}, {no_bu})')
+            print(f'The # of branches (f, s, u): {len(brs)} ({no_bf}, {no_bs}, {no_bu})')
         stop_br = False
 
         brs = sorted(brs, key=lambda x: x.p, reverse=True)
@@ -128,6 +129,12 @@ def proposed_branch_and_bound_using_probs(sys_fun, varis, probs, max_br, output_
                     pr_bs = sum([b[4] for b in brs if b.down_state == 's']) # prob. of survival branches
                     no_bu = sum([(b.up_state == 'u') or (b.down_state == 'u') or (b.down_state != b.up_state) for b in brs]) # no. of unknown branches
                     pr_bu = sum([b[4] for b in brs if (b.up_state == 'u') or (b.down_state == 'u') or (b.down_state != b.up_state)])
+
+                    no_rf = len(rules['f']) # no. of failure rules
+                    no_rs = len(rules['s']) # no. of survival rules
+
+                    no_bf = sum([b.up_state == 'f' for b in brs])
+                    no_bs = sum([b.down_state == 's' for b in brs])
 
                     monitor['r_ns'].append(len(rules['f']) + len(rules['s']))
                     monitor['pf_up'].append(1.0-pr_bs)
@@ -165,16 +172,19 @@ def proposed_branch_and_bound_using_probs(sys_fun, varis, probs, max_br, output_
             brs = brs_new
             brs_new = []
 
-        #ok = any([(b.up_state == 'u') or (b.down_state == 'u') or (b.down_state != b.up_state) for b in brs])  # exit for loop
-        pr_bf = sum([b[4] for b in brs if b.up_state == 'f']) # prob. of failure branches
-        pr_bs = sum([b[4] for b in brs if b.down_state == 's']) # prob. of survival branches
-        no_bu = sum([(b.up_state == 'u') or (b.down_state == 'u') or (b.down_state != b.up_state) for b in brs]) # no. of unknown branches
-        pr_bu = sum([b[4] for b in brs if (b.up_state == 'u') or (b.down_state == 'u') or (b.down_state != b.up_state)])
-        if no_bu > max_bu:
-            max_bu = no_bu
+            #ok = any([(b.up_state == 'u') or (b.down_state == 'u') or (b.down_state != b.up_state) for b in brs])  # exit for loop
+            #pr_bf = sum([b[4] for b in brs if b.up_state == 'f']) # prob. of failure branches
+            #pr_bs = sum([b[4] for b in brs if b.down_state == 's']) # prob. of survival branches
+            no_bu = sum([(b.up_state == 'u') or (b.down_state == 'u') or (b.down_state != b.up_state) for b in brs]) # no. of unknown branches
+            #pr_bu = sum([b[4] for b in brs if (b.up_state == 'u') or (b.down_state == 'u') or (b.down_state != b.up_state)])
+            if no_bu > max_bu:
+                max_bu = no_bu
 
-        no_rf = len(rules['f']) # no. of failure rules
-        no_rs = len(rules['s']) # no. of survival rules
+        #no_bf = sum([b.up_state == 'f' for b in brs])
+        #no_bs = sum([b.down_state == 's' for b in brs])
+
+        #no_rf = len(rules['f']) # no. of failure rules
+        #no_rs = len(rules['s']) # no. of survival rules
 
         """
         if no_rf > 0:
@@ -187,9 +197,9 @@ def proposed_branch_and_bound_using_probs(sys_fun, varis, probs, max_br, output_
         else:
             len_rs = 0
         """
-        print(f'# of unknown branches to go: {no_bu}, {max_bu}\n')
-        if len(brs) >= max_br:
-            print(f'*** Terminated due to the # of branches: {len(brs)} >= {max_br}')
+        #print(f'# of unknown branches to go: {no_bu}, {max_bu}\n')
+        if no_sf >= max_sf:
+            print(f'*** Terminated due to the # of system function runs: {no_sf} >= {max_sf}')
 
     print(f'**Algorithm Terminated**')
     #print(f'[System function runs {no_sf}]..')
@@ -202,6 +212,9 @@ def proposed_branch_and_bound_using_probs(sys_fun, varis, probs, max_br, output_
     pr_bs = sum([b[4] for b in brs if b.down_state == 's']) # prob. of survival branches
     no_bu = sum([(b.up_state == 'u') or (b.down_state == 'u') or (b.down_state != b.up_state) for b in brs]) # no. of unknown branches
     pr_bu = sum([b[4] for b in brs if (b.up_state == 'u') or (b.down_state == 'u') or (b.down_state != b.up_state)])
+
+    no_bf = sum([b.up_state == 'f' for b in brs])
+    no_bs = sum([b.down_state == 's' for b in brs])
 
     monitor['r_ns'].append(len(rules['f']) + len(rules['s']))
     monitor['pf_up'].append(float(1.0-pr_bs))
