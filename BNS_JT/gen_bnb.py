@@ -172,19 +172,19 @@ def proposed_branch_and_bound_using_probs(sys_fun, varis, probs, max_sf, output_
             brs = brs_new
             brs_new = []
 
-        #ok = any([(b.up_state == 'u') or (b.down_state == 'u') or (b.down_state != b.up_state) for b in brs])  # exit for loop
-        #pr_bf = sum([b[4] for b in brs if b.up_state == 'f']) # prob. of failure branches
-        #pr_bs = sum([b[4] for b in brs if b.down_state == 's']) # prob. of survival branches
-        no_bu = sum([(b.up_state == 'u') or (b.down_state == 'u') or (b.down_state != b.up_state) for b in brs]) # no. of unknown branches
-        #pr_bu = sum([b[4] for b in brs if (b.up_state == 'u') or (b.down_state == 'u') or (b.down_state != b.up_state)])
-        if no_bu > max_bu:
-            max_bu = no_bu
+            #ok = any([(b.up_state == 'u') or (b.down_state == 'u') or (b.down_state != b.up_state) for b in brs])  # exit for loop
+            #pr_bf = sum([b[4] for b in brs if b.up_state == 'f']) # prob. of failure branches
+            #pr_bs = sum([b[4] for b in brs if b.down_state == 's']) # prob. of survival branches
+            no_bu = sum([(b.up_state == 'u') or (b.down_state == 'u') or (b.down_state != b.up_state) for b in brs]) # no. of unknown branches
+            #pr_bu = sum([b[4] for b in brs if (b.up_state == 'u') or (b.down_state == 'u') or (b.down_state != b.up_state)])
+            if no_bu > max_bu:
+                max_bu = no_bu
 
         #no_bf = sum([b.up_state == 'f' for b in brs])
         #no_bs = sum([b.down_state == 's' for b in brs])
 
-        no_rf = len(rules['f']) # no. of failure rules
-        no_rs = len(rules['s']) # no. of survival rules
+        #no_rf = len(rules['f']) # no. of failure rules
+        #no_rs = len(rules['s']) # no. of survival rules
 
         """
         if no_rf > 0:
