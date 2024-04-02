@@ -153,9 +153,8 @@ def test_mcs_product(setup_sys):
     #assert cpm_h_mcs.C.sum() == pytest.approx(nsample * cpms['haz'].p[1], abs=3)
 
     cpms_cp = list(cpms.values())
-    #pdb.set_trace()
     elim_order = ['e1', 'e2', 'e3', 'e4', 'e5', 'e6'] # except 'haz' and 'od1'
-    for _c, _p in zip(cpm_h_mcs.C, cpm_h_mcs.q):
+    for _c, _p in zip(cpm_h_mcs.Cs, cpm_h_mcs.q):
         cpms_c = cpm.condition(cpms, [varis['haz']], _c.tolist() )
 
         for i in elim_order:

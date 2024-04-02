@@ -1050,7 +1050,7 @@ def single_sample(cpms, sample_order, sample_vars, var_add_order, sample_idx, is
             try:
                 sample_prob += np.log(M.p[[irow]])
             except NameError:
-                sample_prob=0.0
+                sample_prob = np.log(M.p[[irow]])
         else:
             try:
                 sample_prob = np.append(
