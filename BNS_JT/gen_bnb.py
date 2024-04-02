@@ -99,7 +99,7 @@ def proposed_branch_and_bound_using_probs(sys_fun, varis, probs, max_sf, output_
             print(f'The # of found non-dominated rules (f, s): {no_rf + no_rs} ({no_rf}, {no_rs})')
             print(f'Probability of branchs (f, s, u): ({pr_bf:.2f}, {pr_bs:.2f}, {pr_bu:.2f})')
         #print('The # of branching: ', no_iter)
-            print(f'The # of branches (f, s, u): {len(brs)} ({no_bf}, {no_bs}, {no_bu})')
+            print(f'The # of branches (f, s, u), min len of rf: {len(brs)} ({no_bf}, {no_bs}, {no_bu}), {min_len_rf}')
         stop_br = False
 
         brs = sorted(brs, key=lambda x: x.p, reverse=True)
@@ -129,6 +129,11 @@ def proposed_branch_and_bound_using_probs(sys_fun, varis, probs, max_sf, output_
                     pr_bs = sum([b[4] for b in brs if b.down_state == 's']) # prob. of survival branches
                     no_bu = sum([(b.up_state == 'u') or (b.down_state == 'u') or (b.down_state != b.up_state) for b in brs]) # no. of unknown branches
                     pr_bu = sum([b[4] for b in brs if (b.up_state == 'u') or (b.down_state == 'u') or (b.down_state != b.up_state)])
+
+                    try:
+                        min_len_rf = min( [len(x) for x in rules['f']] )
+                    except ValueError:
+                        min_len_rf = 0
 
                     no_rf = len(rules['f']) # no. of failure rules
                     no_rs = len(rules['s']) # no. of survival rules
