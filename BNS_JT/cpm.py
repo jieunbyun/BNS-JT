@@ -1138,8 +1138,8 @@ def rejection_sampling_sys(cpms, sys_name, sys_fun, nsamp_cov, sys_st_monitor = 
                 if sys_val == sys_st_monitor:
                     nfail +=1
 
-                if nfail > 0 and nsamp > 9:
-                    pf_s = nfail/nsamp
+                if nsamp > 9:
+                    pf_s = (0.01+nfail)/(0.02+nsamp) # Bayesian inference of Bernoulli distribution
                     std_s = np.sqrt(pf_s*(1-pf_s)/nsamp)
 
                     pf = sys_st_prob + (1-known_prob) *pf_s
