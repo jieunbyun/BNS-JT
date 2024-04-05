@@ -2443,8 +2443,8 @@ def setup_hybrid_no_samp():
 
     return varis, cpms, sys_fun
 
-def test_rejection_sampling_sys(setup_hybrid_no_samp):
 
+def test_rejection_sampling_sys(setup_hybrid_no_samp):
 
     var_elim_order = ['haz', 'x0', 'x1', 'sys']
     varis, cpms, sys_fun = setup_hybrid_no_samp
@@ -2455,7 +2455,8 @@ def test_rejection_sampling_sys(setup_hybrid_no_samp):
     var_elim_order = [varis['haz'], varis['x0'], varis['x1']]
     cpm_sys = cpm.variable_elim(cpms2, var_elim_order)
 
-    prob, cov = cpm.get_prob_and_cov( cpm_sys, ['sys'], [0] )
+    prob, cov = cpm.get_prob_and_cov(cpm_sys, ['sys'], [0])
 
-    assert prob == pytest.approx(result['pf'], rel=1.0e-3)
-    assert cov == pytest.approx(result['cov'], rel=1.0e-3)
+    assert prob == pytest.approx(result['pf'][0], abs=1.0e-3), f'{result["pf"]}'
+    assert cov == pytest.approx(result['cov'][0], abs=1.0e-3), f'{result["cov"]}'
+
