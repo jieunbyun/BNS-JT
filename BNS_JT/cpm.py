@@ -1150,9 +1150,13 @@ def rejection_sampling_sys(cpms, sys_name, sys_fun, nsamp_cov, sys_st_monitor = 
                     cov = std/pf
                     stop = cov
                 else:
-                    stop = nsamp_cov+1
+                    stop = nsamp_cov+1 # do not stop the sampling until a few samples are secured
 
             sys_vals.append(sys_val)
+
+        if nsamp_tot % 1000 == 0: # For monitoring
+            print(f'[No. of samples] (total, accept): {nsamp_tot, nsamp}')
+            print(f'(pf, c.o.v.): {pf, cov}')
 
 
     #Result
