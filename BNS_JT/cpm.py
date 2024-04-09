@@ -5,7 +5,7 @@ import collections
 import warnings
 import random
 
-from BNS_JT.utils import all_equal
+#from BNS_JT.utils import all_equal
 from BNS_JT.variable import Variable
 
 
@@ -58,6 +58,7 @@ class Cpm(object):
     @property
     def no_child(self):
         return self._no_child
+
     @no_child.setter
     def no_child(self,value):
         assert isinstance(value, (int, np.int32, np.int64)), 'no_child must be a numeric scalar'
@@ -67,6 +68,7 @@ class Cpm(object):
     @property
     def C(self):
         return self._C
+
     @C.setter
     def C(self, value):
         if isinstance(value,list):
@@ -134,10 +136,10 @@ class Cpm(object):
     def q(self, value):
         if isinstance(value, list):
             value = np.array(value)[:, np.newaxis]
-        
+
         if value.ndim == 1:
             value.shape = (len(value), 1)
-                
+
         if value.size and self._Cs.size:
             assert len(value) == self._Cs.shape[0], 'q must have the same length as the number of rows in Cs'
 
