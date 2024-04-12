@@ -454,7 +454,7 @@ class Cpm(object):
             Cs = np.empty((len(self.Cs), len(vars_rem)), dtype=np.int32)
             for i,r in enumerate(res):
                 Cs[:,i] = self.Cs[:,r]
-            
+
             Ms.Cs = Cs.copy()
             Ms.q = self.q.copy()
             Ms.ps = self.ps.copy()
@@ -561,7 +561,7 @@ class Cpm(object):
                 M.ps = np.prod(M.ps, axis=1)
             else:
                 M.ps = M.q.copy()
-            
+
             for i in range(self.Cs.shape[0]):
 
                 #c1 = get_value_given_condn(self.Cs[i, :], idx_vars)
@@ -1155,9 +1155,14 @@ def rejection_sampling_sys(cpms, sys_name, sys_fun, nsamp_cov, sys_st_monitor = 
                     cov = std/pf
                     stop = cov
                 else:
-                    stop = nsamp_cov + 1
+
+                    stop = nsamp_cov + 1 # do not stop the sampling until a few samples are secured
 
             sys_vals.append(sys_val)
+
+        if nsamp_tot % 1000 == 0: # For monitoring
+            print(f'[No. of samples] (total, accept): {nsamp_tot, nsamp}')
+            print(f'(pf, c.o.v.): {pf, cov}')
 
 
     #Result
