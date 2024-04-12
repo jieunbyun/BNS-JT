@@ -6,8 +6,8 @@ import matplotlib.pyplot as plt
 HOME = Path(__file__).parent
 output_path = HOME.joinpath('./output')
 
-#key = 'ema1'
-key = 'ema2'
+key = 'ema1'
+#key = 'ema2'
 
 ### Load data ###
 fout_monitor = output_path.joinpath(f'monitor_{key}.pk')
@@ -28,6 +28,7 @@ plt.plot(monitor['pf_up'], label='Upper bound', linewidth=lin_wd)
 plt.plot(monitor['pf_low'], linestyle='--', label='Lower bound', linewidth=lin_wd)
 #plt.yscale('log')
 plt.ylim(0, 1)
+plt.xlim(0,200)
 plt.xlabel('No. of system function runs', fontsize=lab_sz, fontfamily=font_fam)
 plt.ylabel('System failure probability', fontsize=lab_sz, fontfamily=font_fam)
 plt.xticks(fontsize=tic_sz, fontfamily=font_fam)
@@ -47,6 +48,7 @@ plt.plot(monitor['br_f_ns'], linestyle=':', label='Failure', linewidth=lin_wd)
 plt.plot(monitor['br_u_ns'], linestyle='-.', label='Unknown', linewidth=lin_wd)
 plt.yscale('log')
 plt.ylim(0, 52000)
+plt.xlim(0,200)
 plt.xlabel('No. of system function runs', fontsize=lab_sz, fontfamily=font_fam)
 plt.ylabel('No. of branches', fontsize=lab_sz, fontfamily=font_fam)
 plt.xticks(fontsize=tic_sz, fontfamily=font_fam)
@@ -65,6 +67,7 @@ plt.plot(monitor['r_s_ns'], linestyle='--', label='Survival', linewidth=lin_wd)
 plt.plot(monitor['r_f_ns'], linestyle=':', label='Failure', linewidth=lin_wd)
 #plt.yscale('log')
 plt.ylim(0, 139)
+plt.xlim(0,200)
 plt.xlabel('No. of system function runs', fontsize=lab_sz, fontfamily=font_fam)
 plt.ylabel('No. of non-dominated rules', fontsize=lab_sz, fontfamily=font_fam)
 plt.xticks(fontsize=tic_sz, fontfamily=font_fam)
