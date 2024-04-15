@@ -1288,7 +1288,7 @@ def get_prob(M, var_inds, var_states, flag=True):
 
     return prob
 
-def get_prob_and_cov(M, var_inds, var_states, flag=True, nsample_repeat = 0):
+def get_prob_and_cov(M, var_inds, var_states, method='MLE', flag=True, nsample_repeat = 0):
 
     assert isinstance(nsample_repeat, int), 'nsample_repeat must be a nonnegative integer, representing if samples are repeated (to calculate c.o.v.)'
 
@@ -1318,21 +1318,34 @@ def get_prob_and_cov(M, var_inds, var_states, flag=True, nsample_repeat = 0):
             w[~is_cmp] = 0
         else:
             w[is_cmp] = 0
-        mean = w.sum() / nsamp
-        prob_Cs += mean
 
-        if np.allclose(w_ori, w_ori[0], atol=1e-4): # this is MCS then
-            var1 = np.square( w_ori[0] ) * (1-mean) * mean / nsamp
+        if method=='MLE':
+            mean = w.sum() / nsamp
+            prob_Cs += mean
+
+            if np.allclose(w_ori, w_ori[0], atol=1e-4): # this is MCS
+                var1 = np.square( w_ori[0] ) * (1-mean) * mean / nsamp
+                var += var1[0]
+            else:
+                var1 = np.square( ( w - mean ) / nsamp )
+                var += var1.sum()
+
+        elif method=='Bayesian':
+            neff = len(w_ori)*w_ori.mean()**2 / (sum(x**2 for x in w_ori)/len(w_ori)) # effective sample size
+            w_eff = w / w_ori.sum() *neff
+            nTrue = w_eff.sum()
+            nFalse = neff - nTrue
+
+            mean = (0.01+nTrue) / (0.02+neff)
+            var1 = mean*(1-mean)/neff
+
+            prob_Cs += mean[0]
             var += var1[0]
-        else:
-            var1 = np.square( ( w - mean ) / nsamp )
-            var += var1.sum()
 
     prob = prob_C + (1-M.p.sum()) * prob_Cs
-    cov = (1-M.p.sum()) * np.sqrt(var) / prob 
-    cov = cov
+    cov = (1-M.p.sum()) * np.sqrt(var) / prob
 
-    return prob, cov       
+    return prob, cov   
 
 
 def get_variables_from_cpms(M, variables):
