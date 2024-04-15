@@ -1474,7 +1474,7 @@ def merge_cpms( cpm1, cpm2 ):
 
     M_new = copy.deepcopy( cpm1 )
     C1_list = cpm1.C.tolist()
-    for c1, p1 in zip( cpm2.C, cpm2.p ):
+    for c1, p1 in zip( cpm2.C.tolist(), cpm2.p.tolist() ):
         if c1 in C1_list:
             idx = C1_list.index(c1)
             M_new.p[idx] += p1
