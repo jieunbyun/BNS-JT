@@ -1334,10 +1334,9 @@ def get_prob_and_cov(M, var_inds, var_states, method='MLE', flag=True, nsample_r
             neff = len(w_ori)*w_ori.mean()**2 / (sum(x**2 for x in w_ori)/len(w_ori)) # effective sample size
             w_eff = w / w_ori.sum() *neff
             nTrue = w_eff.sum()
-            nFalse = neff - nTrue
 
             mean = (0.01+nTrue) / (0.02+neff)
-            var1 = mean*(1-mean)/neff
+            var1 = mean*(1-mean)/(0.02+neff)
 
             prob_Cs += mean[0]
             var += var1[0]
