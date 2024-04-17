@@ -494,15 +494,35 @@ class Cpm(object):
             if M.q.size:
                 self.q = np.ones(shape=(self.Cs.shape[0], 1))"""
 
-        Cprod, pprod = [], []
+        if self.C.size or self.Cs.size:
+            idx_vars, _ = ismember(self.variables, M.variables)
+            com_vars = get_value_given_condn(self.variables, idx_vars)
+            prod_vars = M.variables + get_value_given_condn(self.variables, flip(idx_vars))
+
+            new_child = self.variables[:self.no_child] + M.variables[:M.no_child]
+            ##FIXME: sort required?
+            new_child = sorted(new_child)
+
+            new_parent = self.variables[self.no_child:] + M.variables[M.no_child:]
+            new_parent, _ = setdiff(new_parent, new_child)
+
+            if new_parent:
+                new_vars = new_child + new_parent
+            else:
+                new_vars = new_child
+            _, idx_vars2 = ismember(new_vars, prod_vars)
+
+            Mprod = Cpm(variables=new_vars,
+                        no_child = len(new_child))
+        else:
+            Mprod = M
+            
 
         if self.C.size:
             # FIXME: defined but not used
             #com_vars = list(set(self.variables).intersection(M.variables))
 
-            idx_vars, _ = ismember(self.variables, M.variables)
-            com_vars = get_value_given_condn(self.variables, idx_vars)
-
+            Cprod, pprod = [], []
             for i in range(self.C.shape[0]):
 
                 c1 = get_value_given_condn(self.C[i, :], idx_vars)
@@ -519,34 +539,18 @@ class Cpm(object):
                 if self.p.size:
                     pprod.append(get_prod(Mc.p, self.p[i]))
 
-            prod_vars = M.variables + get_value_given_condn(self.variables, flip(idx_vars))
-
-            new_child = self.variables[:self.no_child] + M.variables[:M.no_child]
-            ##FIXME: sort required?
-            new_child = sorted(new_child)
-
-            new_parent = self.variables[self.no_child:] + M.variables[M.no_child:]
-            new_parent, _ = setdiff(new_parent, new_child)
-
-            if new_parent:
-                new_vars = new_child + new_parent
-            else:
-                new_vars = new_child
-
-            _, idx_vars2 = ismember(new_vars, prod_vars)
-
             Cprod = np.concatenate(Cprod, axis=0)
+            Cprod = Cprod[:, idx_vars2].astype(int)
             pprod = np.concatenate(pprod, axis=0)
 
-            Mprod = Cpm(variables=new_vars,
-                        no_child = len(new_child),
-                        C = Cprod[:, idx_vars2].astype(int),
-                        p = pprod)
-
-            Mprod.sort()
-
         else:
-            Mprod = M
+            Cprod = np.empty((0,len(idx_vars2)), dtype=int)
+            pprod = np.empty((0,1), dtype=float)
+
+        Mprod.C = Cprod
+        Mprod.p = pprod
+        Mprod.sort()
+            
 
         if self.Cs.size and M.Cs.size:
             Csprod, qprod, psprod, sample_idx_prod = [], [], [], []
@@ -1293,8 +1297,7 @@ def get_prob(M, var_inds, var_states, flag=True):
 
     return prob
 
-
-def get_prob_and_cov(M, var_inds, var_states, flag=True, nsample_repeat=0):
+def get_prob_and_cov(M, var_inds, var_states, method='MLE', flag=True, nsample_repeat = 0):
 
     assert isinstance(nsample_repeat, int), 'nsample_repeat must be a nonnegative integer, representing if samples are repeated (to calculate c.o.v.)'
 
@@ -1324,19 +1327,31 @@ def get_prob_and_cov(M, var_inds, var_states, flag=True, nsample_repeat=0):
             w[~is_cmp] = 0
         else:
             w[is_cmp] = 0
-        mean = w.sum() / nsamp
-        prob_Cs += mean
 
-        if np.allclose(w_ori, w_ori[0], atol=1e-4): # this is MCS then
-            var1 = np.square( w_ori[0] ) * (1-mean) * mean / nsamp
+        if method=='MLE':
+            mean = w.sum() / nsamp
+            prob_Cs += mean
+
+            if np.allclose(w_ori, w_ori[0], atol=1e-4): # this is MCS
+                var1 = np.square( w_ori[0] ) * (1-mean) * mean / nsamp
+                var += var1[0]
+            else:
+                var1 = np.square( ( w - mean ) / nsamp )
+                var += var1.sum()
+
+        elif method=='Bayesian':
+            neff = len(w_ori)*w_ori.mean()**2 / (sum(x**2 for x in w_ori)/len(w_ori)) # effective sample size
+            w_eff = w / w_ori.sum() *neff
+            nTrue = w_eff.sum()
+
+            mean = (0.01+nTrue) / (0.02+neff)
+            var1 = mean*(1-mean)/(0.02+neff)
+
+            prob_Cs += mean[0]
             var += var1[0]
-        else:
-            var1 = np.square((w - mean) / nsamp)
-            var += var1.sum()
 
     prob = prob_C + (1 - M.p.sum()) * prob_Cs
     cov = (1 - M.p.sum()) * np.sqrt(var) / prob
-    cov = cov
 
     return prob, cov
 
@@ -1388,23 +1403,46 @@ def prod_cpm_sys_and_comps(cpm_sys, cpm_comps, varis):
 
     """
     p = cpm_sys.p.copy()
-    for i in range(len(cpm_sys.variables) - cpm_sys.no_child):
-        name = cpm_sys.variables[cpm_sys.no_child + i].name
-        try:
-            M1 = cpm_comps[name]
-        except KeyError:
-            print(f'{name} is not in cpm_comps')
-        else:
-            c1 = [c[0] for c in M1.C] # TODO: For now this only works for marginal distributions of component evets
-            for j in range(len(p)):
-                st = cpm_sys.C[j][cpm_sys.no_child + i]
-                p_st = 0.0
-                for k in varis[name].B[st]:
-                    p_st += M1.p[c1.index(k)][0]
+    if cpm_sys.C.size:
+        for i in range(len(cpm_sys.variables) - cpm_sys.no_child):
+            name = cpm_sys.variables[cpm_sys.no_child + i].name
+            try:
+                M1 = cpm_comps[name]
+            except KeyError:
+                print(f'{name} is not in cpm_comps')
+            else:
+                c1 = [c[0] for c in M1.C] # TODO: For now this only works for marginal distributions of component evets
+                for j in range(len(p)):
+                    st = cpm_sys.C[j][cpm_sys.no_child + i]
+                    p_st = 0.0
+                    for k in varis[name].B[st]:
+                        p_st += M1.p[c1.index(k)][0]
 
-                p[j] *= p_st
+                    p[j] *= p_st
 
-    return Cpm(variables=cpm_sys.variables, no_child=len(cpm_sys.variables), C=cpm_sys.C, p=p)
+    if cpm_sys.Cs.size and all(M.Cs.size for _, M in cpm_comps.items()):
+        cpms_noC = {}
+        cpms_noC[cpm_sys.variables[0]] = copy.deepcopy( cpm_sys )
+        for v in cpm_sys.variables[cpm_sys.no_child:]:
+            cpms_noC[v.name] = copy.deepcopy(cpm_comps[v.name])
+
+        for k, v in cpms_noC.items():
+            v.C, v.p = np.empty((0,len(v.variables))), np.empty((0,1))
+        
+        cpm_sys2 = prod_cpms(cpms_noC)
+        Cs = cpm_sys2.Cs
+        q = cpm_sys2.q
+        ps = cpm_sys2.ps
+        sample_idx = cpm_sys2.sample_idx
+
+        v_idx = cpm_sys2.get_col_ind([v.name for v in cpm_sys.variables])
+        Cs = Cs[:, v_idx]
+        
+    else:
+        Cs = np.empty((0, len(cpm_sys.variables)))
+        q, ps, sample_idx = np.empty((0,1)), np.empty((0,1)), np.empty((0,1))
+
+    return Cpm(cpm_sys.variables, len(cpm_sys.variables), cpm_sys.C, p, Cs, q, ps, sample_idx)
 
 
 def get_inf_vars(vars_star, cpms, VE_ord=None):
@@ -1444,7 +1482,7 @@ def merge_cpms( cpm1, cpm2 ):
 
     M_new = copy.deepcopy( cpm1 )
     C1_list = cpm1.C.tolist()
-    for c1, p1 in zip( cpm2.C, cpm2.p ):
+    for c1, p1 in zip( cpm2.C.tolist(), cpm2.p.tolist() ):
         if c1 in C1_list:
             idx = C1_list.index(c1)
             M_new.p[idx] += p1
