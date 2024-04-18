@@ -828,12 +828,13 @@ def get_st_decomp( brs, surv_first=True, varis = None, probs=None ): # 'brs' is 
 
     return x_star
 
+
 def run_brc(varis, probs, sys_fun, max_sf, max_nb, surv_first=True, rules=None):
 
 
     if rules == None:
         rules = {'s': [], 'f': []}
-    
+
     sys_res = pd.DataFrame(data={'sys_val': [], 'comp_st': [], 'comp_st_min': []}) # system function results
 
     monitor = {'pf_up': [], # upper bound on pf

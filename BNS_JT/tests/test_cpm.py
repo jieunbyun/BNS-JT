@@ -2460,3 +2460,7 @@ def test_rejection_sampling_sys(setup_hybrid_no_samp):
     assert prob == pytest.approx(result['pf'][0], abs=1.0e-3), f'{result["pf"]}'
     assert cov == pytest.approx(result['cov'][0], abs=1.0e-3), f'{result["cov"]}'
 
+# FIXME: NYI
+def test_get_means():
+
+    pass

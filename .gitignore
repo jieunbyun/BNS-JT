@@ -1,11 +1,17 @@
 *.so
 *.pyc
-
+*.m
 .DS_Store
 *.ipynb
+.ipynb_checkpoints
 *.coverage
 *.swp
 __pycache__
 # pycharm
 .idea
 .vscode
+*.pk
+*.png
+*.pdf
+@*
++*

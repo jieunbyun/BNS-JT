@@ -360,7 +360,7 @@ class Cpm(object):
 
         return is_cmp
 
-
+    # FIXME: NOT_USED
     def get_col_ind(self, v_names):
         """
         INPUT:
@@ -454,7 +454,7 @@ class Cpm(object):
             Cs = np.empty((len(self.Cs), len(vars_rem)), dtype=np.int32)
             for i,r in enumerate(res):
                 Cs[:,i] = self.Cs[:,r]
-            
+
             Ms.Cs = Cs.copy()
             Ms.q = self.q.copy()
             Ms.ps = self.ps.copy()
@@ -565,7 +565,7 @@ class Cpm(object):
                 M.ps = np.prod(M.ps, axis=1)
             else:
                 M.ps = M.q.copy()
-            
+
             for i in range(self.Cs.shape[0]):
 
                 #c1 = get_value_given_condn(self.Cs[i, :], idx_vars)
@@ -712,7 +712,7 @@ def iscompatible(C, variables, check_vars, check_states):
         if isinstance(state, str):
             state = variable.values.index(state)
 
-        try: 
+        try:
             B = variable.B
         except NameError:
             print(f'{variable} is not defined')
@@ -721,7 +721,6 @@ def iscompatible(C, variables, check_vars, check_states):
             x1 = [B[int(k)] for k in C[is_cmp, i]]
         except TypeError:
             x1 = [variable.B_fly(int(k)) for k in C[is_cmp, i]]
-            
 
         try:
             check = [bool(B[state].intersection(x)) for x in x1]
@@ -849,7 +848,7 @@ def condition(M, cnd_vars, cnd_states, sample_idx=[]):
         return Mc
 
 
-
+#FIXME: UNUSED
 def add_new_states(states, B):
     """
 
@@ -1086,7 +1085,7 @@ def rejection_sampling_sys(cpms, sys_name, sys_fun, nsamp_cov, sys_st_monitor = 
     - known_prob: a float representing already known probability (i.e. those represented by cpms[sys_name].C)
     - sys_st_prob: a float representing already known probility of sys_st
     - rand_seed: a scalar representing random ssed
-    
+
     OUTPUT:
     - cpms: a list;dictionary of cpms with samples added
     - result: a dictionary including the summary of sampling result 
@@ -1096,39 +1095,44 @@ def rejection_sampling_sys(cpms, sys_name, sys_fun, nsamp_cov, sys_st_monitor = 
 
     assert isinstance(nsamp_cov, (float, int)), 'nsamp_cov must be either an integer (considered number of samples) or a float value (target c.o.v.)'
     if isinstance(nsamp_cov,int):
-        isNsamp=True
+        is_nsamp = True
         stop = 0 # stop criterion: number of samples
     elif isinstance(nsamp_cov,float):
-        isNsamp=False
-        stop = nsamp_cov+1 # current c.o.v.
+        is_nsamp = False
+        stop = nsamp_cov + 1 # current c.o.v.
 
     comp_vars = cpms[sys_name].variables[cpms[sys_name].no_child:]
     comp_names = [x.name for x in comp_vars]
     C_reject = cpms[sys_name].C[:,cpms[sys_name].no_child:]
 
-    cpms_no_sys = {k:m for k,m in cpms.items() if not k==sys_name } 
+    cpms_no_sys = {k:m for k,m in cpms.items() if not k==sys_name}
 
     sample_order, sample_vars, var_add_order = get_sample_order(cpms_no_sys)
     sample_vars_str = [x.name for x in sample_vars]
     comp_vars_loc = [sample_vars_str.index(x) for x in comp_names]
 
-    cpms_v_idxs_ = {k: get_var_ind(sample_vars, [y.name for y in x.variables[:x.no_child]]) for k, x in cpms_no_sys.items()}
-    cpms_v_idxs = {k: [cpms_v_idxs_[y.name][0] for y in x.variables] for k, x in cpms_no_sys.items()}
+    cpms_v_idxs_ = {k: get_var_ind(sample_vars, [y.name for y in x.variables[:x.no_child]])
+                    for k, x in cpms_no_sys.items()}
+    cpms_v_idxs = {k: [cpms_v_idxs_[y.name][0]
+                   for y in x.variables] for k, x in cpms_no_sys.items()}
 
     nsamp_tot = 0 # total number of samples (including rejected ones)
     nsamp = 0 # accepted samples
     nfail = 0 # number of occurrences in system state to be monitored
     sys_vals = []
-    samples = np.empty((0,len(sample_vars)), dtype=int)
-    samples_sys = np.empty((0,1), dtype=int)
-    sample_probs = np.empty((0,len(sample_vars)), dtype=float)
-    while (isNsamp and stop < nsamp_cov) or (not isNsamp and stop > nsamp_cov):
+    samples = np.empty((0, len(sample_vars)), dtype=int)
+    samples_sys = np.empty((0, 1), dtype=int)
+    sample_probs = np.empty((0, len(sample_vars)), dtype=float)
+
+    while (is_nsamp and stop < nsamp_cov) or (not is_nsamp and stop > nsamp_cov):
+
         nsamp_tot += 1
 
         sample, sample_prob = single_sample(cpms_no_sys, sample_order, sample_vars, var_add_order, [nsamp], is_scalar=False)
 
         sample_comp = sample[comp_vars_loc]
         is_cpt = iscompatible(C_reject, comp_vars, comp_names, sample_comp)
+
         if (~is_cpt).all():
 
             comp_st = {x:sample_comp[i] for i,x in enumerate(comp_names)}
@@ -1139,22 +1143,24 @@ def rejection_sampling_sys(cpms, sys_name, sys_fun, nsamp_cov, sys_st_monitor = 
             sample_probs = np.vstack((sample_probs, sample_prob))
 
             nsamp += 1
-            if isNsamp: stop += 1
+            if is_nsamp:
+                stop += 1
             else:
                 if sys_val == sys_st_monitor:
                     nfail +=1
 
                 if nsamp > 9:
-                    pf_s = (0.01+nfail)/(0.02+nsamp) # Bayesian inference of Bernoulli distribution
-                    std_s = np.sqrt(pf_s*(1-pf_s)/nsamp)
+                    pf_s = (0.01 + nfail)/(0.02 + nsamp) # Bayesian inference of Bernoulli distribution
+                    std_s = np.sqrt(pf_s*(1 - pf_s)/nsamp)
 
-                    pf = sys_st_prob + (1-known_prob) *pf_s
-                    std = (1-known_prob) *std_s
+                    pf = sys_st_prob + (1 - known_prob) *pf_s
+                    std = (1 - known_prob) * std_s
 
                     cov = std/pf
                     stop = cov
                 else:
-                    stop = nsamp_cov+1 # do not stop the sampling until a few samples are secured
+
+                    stop = nsamp_cov + 1 # do not stop the sampling until a few samples are secured
 
             sys_vals.append(sys_val)
 
@@ -1172,7 +1178,7 @@ def rejection_sampling_sys(cpms, sys_name, sys_fun, nsamp_cov, sys_st_monitor = 
 
         Cs = samples[:,col_loc]
         q = sample_probs[:,col_loc_c]
-        
+
         M2 = Cpm(variables=M.variables,
                  no_child = M.no_child,
                  C = M.C,
@@ -1183,7 +1189,7 @@ def rejection_sampling_sys(cpms, sys_name, sys_fun, nsamp_cov, sys_st_monitor = 
 
         cpms[k] = M2
 
-    Cs_sys = np.hstack((samples_sys,samples[:,comp_vars_loc])) 
+    Cs_sys = np.hstack((samples_sys,samples[:,comp_vars_loc]))
     M = cpms[sys_name]
     M2 = Cpm(variables=M.variables,
              no_child = M.no_child,
@@ -1194,11 +1200,14 @@ def rejection_sampling_sys(cpms, sys_name, sys_fun, nsamp_cov, sys_st_monitor = 
              sample_idx = np.arange(nsamp))
 
     cpms[sys_name] = M2
-    
-    result = {'pf': pf, 'cov': cov, 'nsamp_tot': nsamp_tot, 'nsamp': nsamp, 'sys_vals': sys_vals}
+
+    result = {'pf': pf,
+              'cov': cov,
+              'nsamp_tot': nsamp_tot,
+              'nsamp': nsamp,
+              'sys_vals': sys_vals}
 
     return cpms, result
-
 
 
 def isinscope(idx, Ms):
@@ -1297,15 +1306,15 @@ def get_prob_and_cov(M, var_inds, var_states, method='MLE', flag=True, nsample_r
     if not nsample_repeat:
         n_round = 1
         nsamp = len(M.Cs)
-    else: 
+    else:
         assert len(M.Cs) % nsample_repeat == 0, 'Given number of samples is not divided by given nsample_repeat'
-        n_round = int( len(M.Cs) / nsample_repeat )
+        n_round = int(len(M.Cs) / nsample_repeat)
         nsamp = nsample_repeat
 
     prob_Cs = 0
     var = 0
     for i in range(n_round):
-        col_range = range(i*nsamp, (i+1)*nsamp)
+        col_range = range(i*nsamp, (i + 1)*nsamp)
         is_cmp = iscompatible(M.Cs[col_range,:], M.variables, var_inds, var_states)
 
         try:
@@ -1341,10 +1350,10 @@ def get_prob_and_cov(M, var_inds, var_states, method='MLE', flag=True, nsample_r
             prob_Cs += mean[0]
             var += var1[0]
 
-    prob = prob_C + (1-M.p.sum()) * prob_Cs
-    cov = (1-M.p.sum()) * np.sqrt(var) / prob
+    prob = prob_C + (1 - M.p.sum()) * prob_Cs
+    cov = (1 - M.p.sum()) * np.sqrt(var) / prob
 
-    return prob, cov   
+    return prob, cov
 
 
 def get_variables_from_cpms(M, variables):
@@ -1368,7 +1377,7 @@ def get_variables_from_cpms(M, variables):
     assert len(res) == len(variables), f'not all variables found in M: {set(variables).difference([x.name for x in res])}'
     return sorted(res, key=lambda x: variables.index(x.name))
 
-#FIXME: NIY
+#FIXME: UNUSED
 def append(cpm1, cpm2):
     """
     return a list of combined cpm1 and cpm2
@@ -1487,6 +1496,7 @@ def merge_cpms( cpm1, cpm2 ):
     M_new.sample_idx = np.vstack((cpm1.sample_idx, cpm2.sample_idx))
 
     return M_new
+
 
 def cal_Msys_by_cond_VE(cpms, varis, cond_names, ve_order, sys_name):
     """
