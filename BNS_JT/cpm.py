@@ -1231,7 +1231,7 @@ def isinscope(idx, Ms):
     return isin
 
 
-def variable_elim(cpms, var_elim):
+def variable_elim(cpms, var_elim, prod=True):
     """
     cpms: list or dict of cpms
 
@@ -1255,7 +1255,8 @@ def variable_elim(cpms, var_elim):
         cpms = [y for x, y in zip(isin, cpms) if x == False]
         cpms.insert(0, mult)
 
-    cpms = prod_cpms(cpms)
+    if prod:
+        cpms = prod_cpms(cpms)
 
     return cpms
 
@@ -1397,34 +1398,80 @@ def append(cpm1, cpm2):
     assert len(cpm1) == len(cpm2), 'Given CPMs have different lengths'
 
 
-def prod_cpm_sys_and_comps(cpm_sys, cpm_comps, varis):
+def prod_Msys_and_Mcomps(Msys, Mcomps_list):
     """
 
 
     """
-    p = cpm_sys.p.copy()
-    if cpm_sys.C.size:
-        for i in range(len(cpm_sys.variables) - cpm_sys.no_child):
-            name = cpm_sys.variables[cpm_sys.no_child + i].name
-            try:
-                M1 = cpm_comps[name]
-            except KeyError:
-                print(f'{name} is not in cpm_comps')
-            else:
-                c1 = [c[0] for c in M1.C] # TODO: For now this only works for marginal distributions of component evets
-                for j in range(len(p)):
-                    st = cpm_sys.C[j][cpm_sys.no_child + i]
-                    p_st = 0.0
-                    for k in varis[name].B[st]:
-                        p_st += M1.p[c1.index(k)][0]
 
-                    p[j] *= p_st
+    # New CPM's scope
+    assert all(x.no_child == 1 for x in Mcomps_list), 'All CPMs of component events must have one child node.'
 
-    if cpm_sys.Cs.size and all(M.Cs.size for _, M in cpm_comps.items()):
+    sys_vars_ch = Msys.variables[:Msys.no_child] # child variables
+    sys_vars_par = [] # parent variables
+
+    comp_names = [x.variables[0].name for x in Mcomps_list]
+    mult_idxs = []
+    for v in Msys.variables[Msys.no_child:]:
+        
+        if v.name in comp_names:
+            idx = comp_names.index(v.name)
+            sys_vars_ch += [v]
+            mult_idxs += [idx]
+        else:
+            sys_vars_par += [v]
+
+    cond_vars, cond_st = [], []
+    if len(Mcomps_list[0].variables) > Mcomps_list[0].no_child: # component CPMs are conditional distributions.
+        cond_vars = Mcomps_list[0].variables[Mcomps_list[0].no_child:]
+
+        assert all(x.variables[1:] == cond_vars for x in Mcomps_list), "All CPMS of component events must have the same conditional variables."
+
+        cond_st = Mcomps_list[0].C[0][Mcomps_list[0].no_child:]
+        for m in Mcomps_list:
+            assert all( c[1:]==cond_st for c in m.C ), "All instances of component events must be conditioned on the same states."
+
+
+    if Msys.C.size:
+        C = np.empty_like(Msys.C)
+
+        for i, v in enumerate(sys_vars_ch):
+            col_idx = Msys.get_col_ind([v.name])
+            C[:,i] = np.squeeze( Msys.C[:,col_idx] )
+
+        no_ch = len(sys_vars_ch)
+        for i, v in enumerate(sys_vars_par):
+            col_idx = Msys.get_col_ind([v.name])
+            C[:,i+no_ch] = np.squeeze( Msys.C[:,col_idx] )
+
+        if len(cond_vars) > 0:
+            for v, s in zip(cond_vars, cond_st):
+                if v not in sys_vars_par:
+                    sys_vars_par += [v]
+
+                    cond_tiles = np.tile([s], (C.shape[0], 1))
+                    C = np.concatenate((C, cond_tiles), axis=1)
+
+        p = Msys.p.copy()
+        for i, idx in enumerate(mult_idxs):
+            m_i = Mcomps_list[idx]
+
+            c1 = [c[0] for c in m_i.C]
+            for j in range(len(p)):
+                st = C[j][Msys.no_child + i]
+                p_st = 0.0
+                for k in m_i.variables[0].B[st]:
+                    p_st += m_i.p[c1.index(k)][0]
+
+                p[j] = p[j] * p_st
+
+    
+
+    if Msys.Cs.size and all(M.Cs.size for _, M in Mcomps_list.items()):
         cpms_noC = {}
-        cpms_noC[cpm_sys.variables[0]] = copy.deepcopy( cpm_sys )
-        for v in cpm_sys.variables[cpm_sys.no_child:]:
-            cpms_noC[v.name] = copy.deepcopy(cpm_comps[v.name])
+        cpms_noC[Msys.variables[0]] = copy.deepcopy( Msys )
+        for v in Msys.variables[Msys.no_child:]:
+            cpms_noC[v.name] = copy.deepcopy(Mcomps_list[v.name])
 
         for k, v in cpms_noC.items():
             v.C, v.p = np.empty((0,len(v.variables))), np.empty((0,1))
@@ -1435,14 +1482,14 @@ def prod_cpm_sys_and_comps(cpm_sys, cpm_comps, varis):
         ps = cpm_sys2.ps
         sample_idx = cpm_sys2.sample_idx
 
-        v_idx = cpm_sys2.get_col_ind([v.name for v in cpm_sys.variables])
+        v_idx = cpm_sys2.get_col_ind([v.name for v in sys_vars_ch+sys_vars_par])
         Cs = Cs[:, v_idx]
         
     else:
-        Cs = np.empty((0, len(cpm_sys.variables)))
+        Cs = np.empty((0, len(Msys.variables)))
         q, ps, sample_idx = np.empty((0,1)), np.empty((0,1)), np.empty((0,1))
 
-    return Cpm(cpm_sys.variables, len(cpm_sys.variables), cpm_sys.C, p, Cs, q, ps, sample_idx)
+    return Cpm(sys_vars_ch+sys_vars_par, len(sys_vars_ch), C, p, Cs, q, ps, sample_idx)
 
 
 def get_inf_vars(vars_star, cpms, VE_ord=None):
@@ -1512,11 +1559,12 @@ def cal_Msys_by_cond_VE(cpms, varis, cond_names, ve_order, sys_name):
     """
 
     vars_inf = get_inf_vars([sys_name], cpms, ve_order) # inference only ancestors of sys_name
-    ve_names = [x for x in vars_inf if x not in cond_names]
+    comp_names = [x.name for x in cpms[sys_name].variables[cpms[sys_name].no_child:]]
+    ve_names = [x for x in vars_inf if x not in cond_names and x not in comp_names]
 
     ve_vars = [varis[v] for v in ve_names if v != sys_name] # other variables
 
-    cpms_inf = {v: cpms[v] for v in ve_names}
+    cpms_inf = {v: cpms[v] for v in ve_names+comp_names}
     cpms_inf[sys_name] = cpms[sys_name]
     cond_cpms = [cpms[v] for v in cond_names]
 
@@ -1529,7 +1577,12 @@ def cal_Msys_by_cond_VE(cpms, varis, cond_names, ve_order, sys_name):
         m1 = m1[0]
         VE_cpms_m1 = condition( cpms_inf, m1.variables, m1.C[0] )
 
-        m_m1 = variable_elim( VE_cpms_m1, ve_vars )
+        VE_cpms_m1_no_sys = {k: v for k,v in VE_cpms_m1.items() if k!=sys_name}
+        cpms_comps = variable_elim( VE_cpms_m1_no_sys, ve_vars, prod=False )
+
+        m_m1 = prod_Msys_and_Mcomps( VE_cpms_m1[sys_name], [cpms_comps[x] for x in comp_names] )
+        m_m1 = m_m1.sum(comp_names)
+
         m_m1 = m_m1.product(m1)
         m_m1 = m_m1.sum(cond_names)
 

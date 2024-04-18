@@ -2399,6 +2399,101 @@ def test_variable_elim1(setup_hybrid):
     assert prob == pytest.approx(0.193, rel=1.0e-3)
     assert cov == pytest.approx(0.4200, rel=1.0e-3)
 
+@pytest.fixture()
+def setup_Msys_Mcomps():
+    varis, cpms = {}, {}
+
+    varis['x0'] = variable.Variable(name='x0', values=['fail', 'surv'])
+    cpms['x0'] = cpm.Cpm( [varis['x0']], 1, np.array([0, 1]), p = [0.1, 0.9] )
+
+    varis['x1'] = variable.Variable(name='x1', values=['fail', 'surv'])
+    cpms['x1'] = cpm.Cpm( [varis['x1']], 1, np.array([0, 1]), p = [0.2, 0.8] )
+
+    varis['x2'] = variable.Variable(name='x2', values=['fail', 'surv'])
+    cpms['x2'] = cpm.Cpm( [varis['x2']], 1, np.array([0, 1]), p = [0.3, 0.7] )
+
+    varis['sys'] = variable.Variable(name='sys', values=['fail', 'surv'])
+    cpms['sys'] = cpm.Cpm(variables=[varis['sys'], varis['x0'], varis['x1'], varis['x2']], no_child=1, C=np.array([[0,0,2,2],[1,1,1,2],[1,1,0,1],[0,1,0,0]]), p=np.array([1,1,1,1], dtype=float))
+
+    # Conditional model
+    varis['haz'] = variable.Variable(name='haz', values=['mild', 'severe'])
+    cpms['x0_c'] = cpm.Cpm( [varis['x0'], varis['haz']], 1, np.array([[0,0], [1,0]]), p = [0.05, 0.95] )
+    cpms['x1_c'] = cpm.Cpm( [varis['x1'], varis['haz']], 1, np.array([[0,0], [1,0]]), p = [0.1, 0.9] )
+    cpms['x2_c'] = cpm.Cpm( [varis['x2'], varis['haz']], 1, np.array([[0,0], [1,0]]), p = [0.2, 0.8] )
+
+    return varis, cpms
+
+def test_prod_cpm_sys_and_comps1(setup_Msys_Mcomps):
+
+    varis, cpms = setup_Msys_Mcomps
+
+    Msys = cpm.prod_Msys_and_Mcomps(cpms['sys'], [cpms['x0'], cpms['x1'], cpms['x2']])
+
+    assert Msys.variables == [varis['sys'], varis['x0'], varis['x1'], varis['x2']]
+    assert Msys.no_child == 4
+    np.testing.assert_array_almost_equal(Msys.C, np.array([[0,0,2,2],[1,1,1,2],[1,1,0,1],[0,1,0,0]]))
+    np.testing.assert_array_almost_equal(Msys.p, np.array([[0.1, 0.72, 0.126, 0.054]]).T, decimal=3)
+
+def test_prod_cpm_sys_and_comps2(setup_Msys_Mcomps):
+
+    varis, cpms = setup_Msys_Mcomps
+
+    Msys = cpm.prod_Msys_and_Mcomps(cpms['sys'], [cpms['x0_c'], cpms['x1_c'], cpms['x2_c']])
+
+    assert Msys.variables == [varis['sys'], varis['x0'], varis['x1'], varis['x2'], varis['haz']]
+    assert Msys.no_child == 4
+    np.testing.assert_array_almost_equal(Msys.C, np.array([[0,0,2,2,0],[1,1,1,2,0],[1,1,0,1,0],[0,1,0,0,0]]))
+    np.testing.assert_array_almost_equal(Msys.p, np.array([[0.05, 0.855, 0.076, 0.019]]).T, decimal=3)
+    
+def test_prod_cpm_sys_and_comps3(setup_Msys_Mcomps):
+
+    varis, cpms = setup_Msys_Mcomps
+
+    Msys = cpm.prod_Msys_and_Mcomps(cpms['sys'], [cpms['x0'], cpms['x2']])
+
+    assert Msys.variables == [varis['sys'], varis['x0'], varis['x2'], varis['x1']]
+    assert Msys.no_child == 3
+    np.testing.assert_array_almost_equal(Msys.C, np.array([[0,0,2,2],[1,1,2,1],[1,1,1,0],[0,1,0,0]]))
+    np.testing.assert_array_almost_equal(Msys.p, np.array([[0.1, 0.9, 0.63, 0.27]]).T, decimal=3)
+
+def test_prod_cpm_sys_and_comps4(setup_Msys_Mcomps):
+
+    varis, cpms = setup_Msys_Mcomps
+
+    Msys = cpm.prod_Msys_and_Mcomps(cpms['sys'], [cpms['x1_c'], cpms['x2_c']])
+
+    assert Msys.variables == [varis['sys'], varis['x1'], varis['x2'], varis['x0'], varis['haz']]
+    assert Msys.no_child == 3
+    np.testing.assert_array_almost_equal(Msys.C, np.array([[0,2,2,0,0],[1,1,2,1,0],[1,0,1,1,0],[0,0,0,1,0]]))
+    np.testing.assert_array_almost_equal(Msys.p, np.array([[1.0, 0.9, 0.08, 0.02]]).T, decimal=3)
+
+def test_prod_cpm_sys_and_comps5(setup_Msys_Mcomps):
+
+    varis, cpms = setup_Msys_Mcomps
+
+    cpms['x1_c'].C = np.array([[0,1], [1,1]])
+    with pytest.raises(AssertionError):
+        Msys = cpm.prod_Msys_and_Mcomps(cpms['sys'], [cpms['x0_c'], cpms['x1_c']])
+
+    varis['haz2'] = variable.Variable(name='haz2', values=['mild', 'severe'])
+    cpms['x2_c'].variables = [varis['x2'], varis['haz2']]
+    with pytest.raises(AssertionError):
+        Msys = cpm.prod_Msys_and_Mcomps(cpms['sys'], [cpms['x0_c'], cpms['x2_c']])
+
+def test_prod_cpm_sys_and_comps6(setup_Msys_Mcomps):
+
+    varis, cpms = setup_Msys_Mcomps
+
+    varis['x3'] = variable.Variable(name='x3', values=['fail', 'surv'])
+    cpms['x3'] = cpm.Cpm( [varis['x3']], 1, np.array([0, 1]), p = [0.3, 0.7] )
+    Msys = cpm.prod_Msys_and_Mcomps(cpms['sys'], [cpms['x0'], cpms['x2'], cpms['x3']])
+
+    assert Msys.variables == [varis['sys'], varis['x0'], varis['x2'], varis['x1']]
+    assert Msys.no_child == 3
+    np.testing.assert_array_almost_equal(Msys.C, np.array([[0,0,2,2],[1,1,2,1],[1,1,1,0],[0,1,0,0]]))
+    np.testing.assert_array_almost_equal(Msys.p, np.array([[0.1, 0.9, 0.63, 0.27]]).T, decimal=3)
+
+
 def test_cal_Msys_by_cond_VE1(setup_hybrid):
 
     varis, cpms = setup_hybrid
