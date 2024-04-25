@@ -4,10 +4,11 @@ import copy
 import collections
 import warnings
 import random
+from scipy.stats import norm, beta
 
 #from BNS_JT.utils import all_equal
 from BNS_JT.variable import Variable
-
+from BNS_JT import betasumrat
 
 class Cpm(object):
     """
@@ -1150,8 +1151,11 @@ def rejection_sampling_sys(cpms, sys_name, sys_fun, nsamp_cov, sys_st_monitor = 
                     nfail +=1
 
                 if nsamp > 9:
-                    pf_s = (0.01 + nfail)/(0.02 + nsamp) # Bayesian inference of Bernoulli distribution
-                    std_s = np.sqrt(pf_s*(1 - pf_s)/nsamp)
+                    prior = 0.01
+                    a, b = prior + nfail, prior + (nsamp-nfail) # Bayesian estimation assuming beta conjucate distribution
+                    pf_s = a / (a+b)
+                    var_s = a*b / (a+b)**2 / (a+b+1)
+                    std_s = np.sqrt(var_s)
 
                     pf = sys_st_prob + (1 - known_prob) *pf_s
                     std = (1 - known_prob) * std_s
@@ -1298,7 +1302,26 @@ def get_prob(M, var_inds, var_states, flag=True):
 
     return prob
 
-def get_prob_and_cov(M, var_inds, var_states, method='MLE', flag=True, nsample_repeat = 0):
+def get_prob_bnd(M, var_inds, var_states, flag=True, cvar_inds=None, cvar_states=None, cflag=True):
+
+    prob1 = get_prob( M, var_inds, var_states, flag )
+    prob_unk = 1.0 - np.sum(M.p) # Unknown probs
+    prob1_bnd = [prob1, prob1 + prob_unk]
+
+    if cvar_inds is None:
+        prob_bnd = prob1_bnd
+    else:
+        prob2 =  get_prob( M, cvar_inds, cvar_states, cflag )
+        prob2_bnd = [prob2, prob2 + prob_unk]
+
+        prob_bnd = [prob1_bnd[0] / prob2_bnd[1], prob1_bnd[1] / prob2_bnd[0]]
+
+    prob_bnd[1] = min( 1, prob_bnd[1] )
+    return prob_bnd
+
+
+
+def get_prob_and_cov(M, var_inds, var_states, method='MLE', flag=True, nsample_repeat = 0, conf_p=0.95):
 
     assert isinstance(nsample_repeat, int), 'nsample_repeat must be a nonnegative integer, representing if samples are repeated (to calculate c.o.v.)'
 
@@ -1315,11 +1338,11 @@ def get_prob_and_cov(M, var_inds, var_states, method='MLE', flag=True, nsample_r
     prob_Cs = 0
     var = 0
     for i in range(n_round):
-        col_range = range(i*nsamp, (i + 1)*nsamp)
-        is_cmp = iscompatible(M.Cs[col_range,:], M.variables, var_inds, var_states)
+        row_range = range(i*nsamp, (i + 1)*nsamp)
+        is_cmp = iscompatible(M.Cs[row_range,:], M.variables, var_inds, var_states)
 
         try:
-            w = M.ps[col_range] / M.q[col_range]
+            w = M.ps[row_range] / M.q[row_range]
         except IndexError:
             w = np.ones_like(M.q) # if ps is empty, assume ps is the same as q
 
@@ -1345,17 +1368,94 @@ def get_prob_and_cov(M, var_inds, var_states, method='MLE', flag=True, nsample_r
             w_eff = w / w_ori.sum() *neff
             nTrue = w_eff.sum()
 
-            mean = (0.01+nTrue) / (0.02+neff)
-            var1 = mean*(1-mean)/(0.02+neff)
+            try:
+                a, b = a + nTrue, b + (neff[0] - nTrue)
+            except NameError:
+                prior = 0.01
+                a, b = prior + nTrue, prior + (neff[0] - nTrue) 
 
-            prob_Cs += mean[0]
-            var += var1[0]
+    if method == 'MLE':
+        prob = prob_C + (1 - M.p.sum()) * prob_Cs
+        cov = (1 - M.p.sum()) * np.sqrt(var) / prob
 
-    prob = prob_C + (1 - M.p.sum()) * prob_Cs
+        # confidence interval
+        z = norm.pdf( 1 - (1 - conf_p)*0.5 ) # for both tails
+        prob_Cs_int = prob_Cs + z * np.sqrt(var) * np.array([-1, 1])
+        cint = prob_C + (1 - M.p.sum()) * prob_Cs_int
+
+    elif method == 'Bayesian':
+
+        mean = a / (a + b)
+        var = a*b / (a+b)**2 / (a+b+1)
+
+        prob = prob_C + (1 - M.p.sum()) * mean
+        cov = (1 - M.p.sum()) * np.sqrt(var) / prob
+
+        low = beta.ppf( 0.5*(1-conf_p), a, b )
+        up = beta.ppf( 1 - 0.5*(1-conf_p), a, b )
+        cint = prob_C + (1 - M.p.sum()) * np.array([low, up])
+
+    return prob, cov, cint
+
+def get_prob_and_cov_cond(M, var_inds, var_states, cvar_inds, cvar_states, nsample_repeat = 0, conf_p=0.95):
+    # Assuming beta distribution (i.e. Bayeisan inference)
+
+    assert isinstance(nsample_repeat, int), 'nsample_repeat must be a nonnegative integer, representing if samples are repeated (to calculate c.o.v.)'
+
+    prob_C = get_prob(M, var_inds, var_states)
+
+    if not nsample_repeat:
+        n_round = 1
+        nsamp = len(M.Cs)
+    else:
+        assert len(M.Cs) % nsample_repeat == 0, 'Given number of samples is not divided by given nsample_repeat'
+        n_round = int(len(M.Cs) / nsample_repeat)
+        nsamp = nsample_repeat
+
+    for i in range(n_round):
+        row_range = range(i*nsamp, (i + 1)*nsamp)
+
+        try:
+            w_ori = M.ps[row_range] / M.q[row_range] # weight before compatibility check
+        except IndexError:
+            w_ori = np.ones_like(M.q) # if ps is empty, assume ps is the same as q
+
+        is_cmp1 = iscompatible(M.Cs[row_range,:], M.variables, var_inds, var_states)
+        w1 = w_ori.copy() 
+        w1[~is_cmp1] = 0
+
+        is_cmp2 = iscompatible(M.Cs[row_range,:], M.variables, cvar_inds, cvar_states)
+        w2 = w_ori.copy() 
+        w2[~is_cmp2] = 0       
+
+        neff = len(w_ori)*w_ori.mean()**2 / (sum(x**2 for x in w_ori)/len(w_ori)) # effective sample size
+        
+        w1_eff = w1 / w_ori.sum() *neff
+        nTrue1 = w1_eff.sum()
+
+        w2_eff = w2 / w_ori.sum() *neff
+        nTrue2 = w2_eff.sum()
+
+        try:
+            a1, b1 = a1 + nTrue1, b1 + (neff[0] - nTrue1)
+            a2, b2 = a2 + nTrue2, b2 + (neff[0] - nTrue2)
+        except NameError:
+            prior = 0.01
+            a1, b1 = prior + nTrue1, prior + (neff[0] - nTrue1) 
+            a2, b2 = prior + nTrue2, prior + (neff[0] - nTrue2) 
+
+    dist = betasumrat.BetaSumRat()
+    mean = dist.mean(a1, b1, a2, b2)
+    var = dist.var(a1, b1, a2, b2)
+
+    low = dist.ppf( 0.5*(1-conf_p), a1, b1, a2, b2 )
+    up = dist.ppf( 1 - 0.5*(1-conf_p), a1, b1, a2, b2 )
+
+    prob = prob_C + (1 - M.p.sum()) * mean
     cov = (1 - M.p.sum()) * np.sqrt(var) / prob
+    cint = prob_C + (1 - M.p.sum()) * np.array([low, up])
 
-    return prob, cov
-
+    return prob, cov, cint
 
 def get_variables_from_cpms(M, variables):
 

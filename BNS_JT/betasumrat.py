@@ -55,6 +55,24 @@ class BetaSumRat(stats.rv_continuous):
 	def _cdf(self, w, a1, b1, a2, b2):
 		return self._do_vectorized(self._cdf_one, w, a1, b1, a2, b2)
 	
+	def _ppf_one(self, p, a1, b1, a2, b2):
+		epsilon = 1e-4 # Tolerance for convergence
+		low, up = 0, 1
+		while True:
+			mid_point = (low+up) / 2
+			cdf_v = self._cdf_one(mid_point, a1, b1, a2, b2)
+
+			if abs(cdf_v - p) / p < epsilon:
+				return mid_point
+			
+			if cdf_v < p:
+				low = mid_point
+			else:
+				up = mid_point
+		
+	def _ppf(self, p, a1, b1, a2, b2):
+		return self._do_vectorized(self._ppf_one, p, a1, b1, a2, b2)
+
 	def _moment_one(self, k, a1, b1, a2, b2):
 		"""Moments of the distribution, by numerical integration"""
 		x_k = lambda x: x**k * self._pdf_one(x, a1, b1, a2, b2)

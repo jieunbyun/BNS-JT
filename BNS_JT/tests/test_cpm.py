@@ -9,7 +9,7 @@ from pathlib import Path
 np.set_printoptions(precision=3)
 #pd.set_option.display_precision = 3
 
-from BNS_JT import cpm, variable, config, trans, gen_bnb
+from BNS_JT import cpm, variable, config, trans, gen_bnb, betasumrat
 
 HOME = Path(__file__).parent
 
@@ -2498,7 +2498,7 @@ def test_cal_Msys_by_cond_VE1(setup_hybrid):
 
     varis, cpms = setup_hybrid
 
-    var_elim_order = ['haz', 'x0', 'x1', 'sys']
+    var_elim_order = ['haz', 'x0', 'x1']
     result = cpm.cal_Msys_by_cond_VE(cpms, varis, ['haz'], var_elim_order, 'sys')
 
     np.testing.assert_array_almost_equal(result.C, np.array([[0], [1]]))
@@ -2518,7 +2518,7 @@ def test_cal_Msys_by_cond_VE2(setup_hybrid):
 
     varis, cpms = setup_hybrid
 
-    var_elim_order = ['haz', 'x1', 'sys']
+    var_elim_order = ['haz', 'x1']
     result = cpm.cal_Msys_by_cond_VE(cpms, varis, ['haz'], var_elim_order, 'sys')
 
     np.testing.assert_array_almost_equal(result.C, np.array([[0, 0], [1, 1]]))
@@ -2534,6 +2534,20 @@ def test_cal_Msys_by_cond_VE2(setup_hybrid):
     assert cov == pytest.approx(0.3143, rel=1.0e-3) # In this case, applying conditioning to the same samples reduces c.o.v.; not sure if this is universal
 
 
+def test_get_prob_and_cov_cond1(setup_hybrid):
+
+    varis, cpms = setup_hybrid
+
+    var_elim_order = ['haz', 'x1']
+    result = cpm.cal_Msys_by_cond_VE(cpms, varis, ['haz'], var_elim_order, 'sys')
+
+    prob_m, cov_m, cint_m = cpm.get_prob_and_cov( result, ['sys'], [0], method='MLE', nsample_repeat=5 )
+    prob_b, cov_b, cint_b = cpm.get_prob_and_cov( result, ['sys'], [0], method='Bayesian', nsample_repeat=5 )
+
+    prob_c, cov_c, cint_c = cpm.get_prob_and_cov_cond( result, ['x0', 'sys'], [0,0], ['sys'], [0], nsample_repeat=5, conf_p=0.95 )
+
+    assert prob_m == pytest.approx(prob_b, rel=1.0e-2)
+
 
 @pytest.fixture()
 def setup_hybrid_no_samp(): 
@@ -2548,7 +2562,7 @@ def setup_hybrid_no_samp():
     cpms['x1'] = cpm.Cpm(variables=[varis['x1'], varis['haz']], no_child=1, C=np.array([[0,0],[1,0],[0,1],[1,1]]), p=[0.3,0.7,0.4,0.6])
 
     varis['sys'] = variable.Variable(name='sys', values=['fail', 'surv'])
-    cpms['sys'] = cpm.Cpm(variables=[varis['sys'], varis['x0'], varis['x1']], no_child=1, C=np.array([[0,0,0],[1,1,1]]), p=[1,1]) # incomplete C (i.e. C does not include all samples)
+    cpms['sys'] = cpm.Cpm(variables=[varis['sys'], varis['x0'], varis['x1']], no_child=1, C=np.array([[0,0,0],[1,1,1]]), p=np.array([1.0,1.0])) # incomplete C (i.e. C does not include all samples)
 
     def sys_fun(comp_st): # ground truth (similar format for gen_bnb.py but no "min_comps_st") # TODO: can we put this as a property of a CPM..?
         if [comp_st['x0'], comp_st['x1']] == [0,1] or [comp_st['x0'], comp_st['x1']] == [0,0]:
@@ -2559,6 +2573,34 @@ def setup_hybrid_no_samp():
 
     return varis, cpms, sys_fun
 
+def test_cal_Msys_by_cond_VE3(setup_hybrid_no_samp):
+
+    varis, cpms, _ = setup_hybrid_no_samp
+
+    var_elim_order = ['haz', 'x0', 'x1']
+    result = cpm.cal_Msys_by_cond_VE(cpms, varis, ['haz'], var_elim_order, 'sys')
+
+    np.testing.assert_array_almost_equal(result.C, np.array([[0], [1]]))
+    np.testing.assert_array_almost_equal(result.p, np.array([[0.045, 0.585]]).T, decimal=3)
+
+    prob_bnd_s0 = cpm.get_prob_bnd( result, ['sys'], [0] )
+
+    assert prob_bnd_s0 == pytest.approx([0.045, 0.415], rel=1.0e-3)
+
+def test_cal_Msys_by_cond_VE4(setup_hybrid_no_samp):
+
+    varis, cpms, _ = setup_hybrid_no_samp
+
+    var_elim_order = ['haz', 'x1']
+    result = cpm.cal_Msys_by_cond_VE(cpms, varis, ['haz'], var_elim_order, 'sys')
+
+    np.testing.assert_array_almost_equal(result.C, np.array([[0, 0], [1, 1]]))
+    np.testing.assert_array_almost_equal(result.p, np.array([[0.045, 0.585]]).T, decimal=3)
+
+    prob_bnd_x0_s0 = cpm.get_prob_bnd( result, ['x0','sys'], [0,0], cvar_inds = ['sys'], cvar_states = [0] )
+
+    assert prob_bnd_x0_s0 == pytest.approx( [0.045/0.415, 1], rel=1.0e-3 )
+
 
 def test_rejection_sampling_sys(setup_hybrid_no_samp):
 
@@ -2566,15 +2608,18 @@ def test_rejection_sampling_sys(setup_hybrid_no_samp):
     varis, cpms, sys_fun = setup_hybrid_no_samp
     Msys = cpm.cal_Msys_by_cond_VE(cpms, varis, ['haz'], var_elim_order, 'sys')
 
-    cpms2, result = cpm.rejection_sampling_sys(cpms, 'sys', sys_fun, 0.3, sys_st_monitor = 0, known_prob = Msys.p.sum(), sys_st_prob = Msys.p[0], rand_seed = 1)
+    cpms2, result = cpm.rejection_sampling_sys(cpms, 'sys', sys_fun, 0.05, sys_st_monitor = 0, known_prob = Msys.p.sum(), sys_st_prob = Msys.p[0], rand_seed = 1)
 
     var_elim_order = [varis['haz'], varis['x0'], varis['x1']]
     cpm_sys = cpm.variable_elim(cpms2, var_elim_order)
 
-    prob, cov = cpm.get_prob_and_cov(cpm_sys, ['sys'], [0])
+    prob_m, cov_m, cint_m = cpm.get_prob_and_cov(cpm_sys, ['sys'], [0], method='MLE')
+    prob_b, cov_b, cint_b = cpm.get_prob_and_cov(cpm_sys, ['sys'], [0], method='Bayesian') # confidence interval (cint) is more conservative than with MLE
 
-    assert prob == pytest.approx(result['pf'][0], abs=1.0e-3), f'{result["pf"]}'
-    assert cov == pytest.approx(result['cov'][0], abs=1.0e-3), f'{result["cov"]}'
+    assert prob_m == pytest.approx(prob_b, abs=1.0e-3), f'{result["pf"]}'
+    assert cov_b == pytest.approx(result['cov'][0], abs=1.0e-3), f'{result["cov"]}'
+    assert prob_m > cint_m[0] and prob_m < cint_m[1]
+    assert prob_b > cint_b[0] and prob_b < cint_b[1]
 
 # FIXME: NYI
 def test_get_means():
