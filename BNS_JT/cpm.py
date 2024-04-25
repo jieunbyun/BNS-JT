@@ -1467,11 +1467,13 @@ def prod_Msys_and_Mcomps(Msys, Mcomps_list):
 
     
 
-    if Msys.Cs.size and all(M.Cs.size for _, M in Mcomps_list.items()):
+    if Msys.Cs.size and all(M.Cs.size for M in Mcomps_list):
         cpms_noC = {}
         cpms_noC[Msys.variables[0]] = copy.deepcopy( Msys )
         for v in Msys.variables[Msys.no_child:]:
-            cpms_noC[v.name] = copy.deepcopy(Mcomps_list[v.name])
+            m_x = next((m for m in Mcomps_list if m.variables[0].name == v.name), None)
+            assert m_x is not None, f'There is no cpm found for component event {v}'
+            cpms_noC[v.name] = copy.deepcopy(m_x)
 
         for k, v in cpms_noC.items():
             v.C, v.p = np.empty((0,len(v.variables))), np.empty((0,1))
@@ -1580,7 +1582,15 @@ def cal_Msys_by_cond_VE(cpms, varis, cond_names, ve_order, sys_name):
         VE_cpms_m1_no_sys = {k: v for k,v in VE_cpms_m1.items() if k!=sys_name}
         cpms_comps = variable_elim( VE_cpms_m1_no_sys, ve_vars, prod=False )
 
-        m_m1 = prod_Msys_and_Mcomps( VE_cpms_m1[sys_name], [cpms_comps[x] for x in comp_names] )
+        """
+        cpms_comps_dict = {}
+        for x in comp_names:
+            m_x = next((m for m in cpms_comps if m.variables[0].name == x), None)
+            assert m_x is not None, f'There is no cpm found for component event {x}'
+            cpms_comps_dict[x] = m_x
+        """
+
+        m_m1 = prod_Msys_and_Mcomps( VE_cpms_m1[sys_name], cpms_comps )
         m_m1 = m_m1.sum(comp_names)
 
         m_m1 = m_m1.product(m1)

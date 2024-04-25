@@ -2272,7 +2272,7 @@ def setup_hybrid():
     cpms['x1'] = cpm.Cpm(variables=[varis['x1'], varis['haz']], no_child=1, C=np.array([[0,0],[1,0],[0,1],[1,1]]), p=[0.3,0.7,0.4,0.6])
 
     varis['sys'] = variable.Variable(name='sys', values=['fail', 'surv'])
-    cpms['sys'] = cpm.Cpm(variables=[varis['sys'], varis['x0'], varis['x1']], no_child=1, C=np.array([[0,0,0],[1,1,1]]), p=[1,1]) # incomplete C (i.e. C does not include all samples)
+    cpms['sys'] = cpm.Cpm(variables=[varis['sys'], varis['x0'], varis['x1']], no_child=1, C=np.array([[0,0,0],[1,1,1]]), p=np.array([1.0,1.0])) # incomplete C (i.e. C does not include all samples)
 
     # samples
     cpms['haz'].Cs, cpms['haz'].q, cpms['haz'].sample_idx = np.array([0,0,0,1,0]), [0.7,0.7,0.7,0.3,0.7], [0,1,2,3,4]
@@ -2413,7 +2413,7 @@ def setup_Msys_Mcomps():
     cpms['x2'] = cpm.Cpm( [varis['x2']], 1, np.array([0, 1]), p = [0.3, 0.7] )
 
     varis['sys'] = variable.Variable(name='sys', values=['fail', 'surv'])
-    cpms['sys'] = cpm.Cpm(variables=[varis['sys'], varis['x0'], varis['x1'], varis['x2']], no_child=1, C=np.array([[0,0,2,2],[1,1,1,2],[1,1,0,1],[0,1,0,0]]), p=np.array([1,1,1,1], dtype=float))
+    cpms['sys'] = cpm.Cpm(variables=[varis['sys'], varis['x0'], varis['x1'], varis['x2']], no_child=1, C=np.array([[0,0,2,2],[1,1,1,2],[1,1,0,1],[0,1,0,0]]), p=np.array([1.0,1.0,1.0,1.0], dtype=float))
 
     # Conditional model
     varis['haz'] = variable.Variable(name='haz', values=['mild', 'severe'])
@@ -2512,6 +2512,7 @@ def test_cal_Msys_by_cond_VE1(setup_hybrid):
 
     assert prob == pytest.approx(0.1873, rel=1.0e-3)
     assert cov == pytest.approx(0.3143, rel=1.0e-3) # In this case, applying conditioning to the same samples reduces c.o.v.; not sure if this is universal
+
 
 
 @pytest.fixture()
