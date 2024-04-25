@@ -2513,6 +2513,26 @@ def test_cal_Msys_by_cond_VE1(setup_hybrid):
     assert prob == pytest.approx(0.1873, rel=1.0e-3)
     assert cov == pytest.approx(0.3143, rel=1.0e-3) # In this case, applying conditioning to the same samples reduces c.o.v.; not sure if this is universal
 
+def test_cal_Msys_by_cond_VE2(setup_hybrid):
+    #(sys, x*) is computed for e.g. component importance.
+
+    varis, cpms = setup_hybrid
+
+    var_elim_order = ['haz', 'x1', 'sys']
+    result = cpm.cal_Msys_by_cond_VE(cpms, varis, ['haz'], var_elim_order, 'sys')
+
+    np.testing.assert_array_almost_equal(result.C, np.array([[0, 0], [1, 1]]))
+    np.testing.assert_array_almost_equal(result.p, np.array([[0.045, 0.585]]).T, decimal=3)
+    np.testing.assert_array_almost_equal(result.Cs, np.array([[0,0],[1,1],[1,1],[0,0],[1,1],[0,0],[1,1],[1,1],[0,0],[1,1]]), decimal=3)
+    np.testing.assert_array_almost_equal(result.q, np.array([[0.049, 0.189, 0.189, 0.036, 0.189, 0.049, 0.189, 0.189, 0.036, 0.189]]).T, decimal=3)
+    np.testing.assert_array_almost_equal(result.ps, np.array([[0.0343, 0.1323, 0.1323, 0.0147, 0.1323, 0.0252, 0.0672, 0.0672, 0.0108, 0.0672]]).T, decimal=3)
+    np.testing.assert_array_almost_equal(result.sample_idx, np.array([[0,1,2,3,4,0,1,2,3,4]]).T)
+
+    prob, cov = cpm.get_prob_and_cov( result, ['sys', 'x0'], [0,0], flag = True, nsample_repeat = 5 )
+
+    assert prob == pytest.approx(0.1873, rel=1.0e-3)
+    assert cov == pytest.approx(0.3143, rel=1.0e-3) # In this case, applying conditioning to the same samples reduces c.o.v.; not sure if this is universal
+
 
 
 @pytest.fixture()

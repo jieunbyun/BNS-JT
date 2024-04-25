@@ -819,9 +819,9 @@ def condition(M, cnd_vars, cnd_states, sample_idx=[]):
         if Mx.p.size:
             Mx.p = Mx.p[is_cmp]
 
-        if Mx.Cs.size:
+        if Mx.Cs.size: # NB: ps is not properly updated if the corresponding instance is not in C.
             _, res = ismember(Mx.variables, cnd_vars)
-            if any(not isinstance(r,bool) for r in res[:Mx.no_child]):
+            if any(not isinstance(r,bool) for r in res[:Mx.no_child]): # conditioned variables belong to child nodes
                 ps = []
                 for c, q in zip(Mx.Cs, Mx.q):
                     var_states = [cnd_states[r] if not isinstance(r,bool) else c[i] for i,r in enumerate(res)]
@@ -830,10 +830,10 @@ def condition(M, cnd_vars, cnd_states, sample_idx=[]):
 
                 Mx.ps = ps # the conditioned variables' samples are removed.
 
-            elif all(isinstance(r,bool) and r==False for r in res):
+            elif all(isinstance(r,bool) and r==False for r in res): # conditioned variables are not in the scope.
                 Mx.ps = Mx.q.copy()
 
-            else:
+            else: # conditioned variables are in parent nodes.
                 ps = []
                 for c in Mx.Cs:
                     var_states = [cnd_states[r] if not isinstance(r,bool) else c[i] for i,r in enumerate(res)]
@@ -1471,9 +1471,10 @@ def prod_Msys_and_Mcomps(Msys, Mcomps_list):
         cpms_noC = {}
         cpms_noC[Msys.variables[0]] = copy.deepcopy( Msys )
         for v in Msys.variables[Msys.no_child:]:
-            m_x = next((m for m in Mcomps_list if m.variables[0].name == v.name), None)
-            assert m_x is not None, f'There is no cpm found for component event {v}'
-            cpms_noC[v.name] = copy.deepcopy(m_x)
+            if v not in cond_vars:
+                m_x = next((m for m in Mcomps_list if m.variables[0].name == v.name), None)
+                assert m_x is not None, f'There is no cpm found for component event {v}'
+                cpms_noC[v.name] = copy.deepcopy(m_x)
 
         for k, v in cpms_noC.items():
             v.C, v.p = np.empty((0,len(v.variables))), np.empty((0,1))
@@ -1512,14 +1513,17 @@ def get_inf_vars(vars_star, cpms, VE_ord=None):
         vars_inf_new.remove(v1)
         vars_inf.append(v1)
 
-        v1_sco = [x.name for x in cpms[v1].variables] # Scope of v1
+        v1_sco = [x.name for x in cpms[v1].variables[cpms[v1].no_child:]] # Scope of v1 (child nodes do not have to be multiplied again)
         for p in v1_sco:
             if p not in vars_inf and p not in vars_inf_new:
                 vars_inf_new.append(p)
 
     if VE_ord is not None:
         def get_ord_inf( x, VE_ord ):
-            return VE_ord.index(x)
+            try:
+                return VE_ord.index(x)
+            except ValueError:
+                return len(VE_ord)
 
         vars_inf.sort( key=(lambda x: get_ord_inf(x, VE_ord)) )
 
@@ -1561,12 +1565,14 @@ def cal_Msys_by_cond_VE(cpms, varis, cond_names, ve_order, sys_name):
     """
 
     vars_inf = get_inf_vars([sys_name], cpms, ve_order) # inference only ancestors of sys_name
-    comp_names = [x.name for x in cpms[sys_name].variables[cpms[sys_name].no_child:]]
-    ve_names = [x for x in vars_inf if x not in cond_names and x not in comp_names]
+    c_names = [x.name for x in cpms[sys_name].variables[cpms[sys_name].no_child:]]
+    ve_names = [x for x in vars_inf if (x in ve_order) and (x not in cond_names) and (x not in c_names)]
+    c_jnt_names = [x for x in c_names if x not in ve_order] # if non-empty, a joint distribution (sys, c_jnt) is computed
+    c_elm_names = [x for x in c_names if x not in c_jnt_names]
 
     ve_vars = [varis[v] for v in ve_names if v != sys_name] # other variables
 
-    cpms_inf = {v: cpms[v] for v in ve_names+comp_names}
+    cpms_inf = {v: cpms[v] for v in ve_names + c_names + c_jnt_names}
     cpms_inf[sys_name] = cpms[sys_name]
     cond_cpms = [cpms[v] for v in cond_names]
 
@@ -1579,19 +1585,15 @@ def cal_Msys_by_cond_VE(cpms, varis, cond_names, ve_order, sys_name):
         m1 = m1[0]
         VE_cpms_m1 = condition( cpms_inf, m1.variables, m1.C[0] )
 
+        for x_name in c_jnt_names:
+            VE_cpms_m1[sys_name] = VE_cpms_m1[sys_name].product(VE_cpms_m1[x_name])
+            del VE_cpms_m1[x_name]
+
         VE_cpms_m1_no_sys = {k: v for k,v in VE_cpms_m1.items() if k!=sys_name}
         cpms_comps = variable_elim( VE_cpms_m1_no_sys, ve_vars, prod=False )
 
-        """
-        cpms_comps_dict = {}
-        for x in comp_names:
-            m_x = next((m for m in cpms_comps if m.variables[0].name == x), None)
-            assert m_x is not None, f'There is no cpm found for component event {x}'
-            cpms_comps_dict[x] = m_x
-        """
-
         m_m1 = prod_Msys_and_Mcomps( VE_cpms_m1[sys_name], cpms_comps )
-        m_m1 = m_m1.sum(comp_names)
+        m_m1 = m_m1.sum(c_elm_names)
 
         m_m1 = m_m1.product(m1)
         m_m1 = m_m1.sum(cond_names)
