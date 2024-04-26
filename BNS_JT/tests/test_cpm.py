@@ -910,6 +910,16 @@ def test_iscompatibleCpm6(setup_iscompatible_Bfly):
     expected = np.array([0, 1, 0, 1])
     np.testing.assert_array_equal(result, expected)
 
+def test_iscompatible():
+    C = np.array([[0,1], [0,1], [2,1], [1,1]])
+    varis = {'e1': variable.Variable('e1', [0,1,2]), 'sys': variable.Variable('sys', [0,1])}
+    variables = [varis['e1'], varis['sys']]
+    check_vars = ['sys', 'e1']
+    check_states = [0, 3]
+    iscmp = cpm.iscompatible( C, variables, check_vars, check_states )
+
+    np.testing.assert_array_equal(iscmp, np.array([False, False, False, False]))
+
 
 @pytest.fixture
 def setup_product():

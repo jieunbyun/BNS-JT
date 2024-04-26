@@ -697,8 +697,8 @@ def iscompatible(C, variables, check_vars, check_states):
     var: dict of instance of Variable
     """
     if check_vars and isinstance(check_vars[0], str):
-        check_vars = [x for x in variables for y in check_vars if x.name == y]
-
+        check_vars = [x for y in check_vars for x in variables if x.name == y]
+        
     _, idx = ismember(check_vars, variables)
     check_vars = get_value_given_condn(check_vars, idx)
     check_states = get_value_given_condn(check_states, idx)
