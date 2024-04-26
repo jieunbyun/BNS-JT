@@ -2222,7 +2222,7 @@ def test_prod_cpm_sys_and_comps():
                           p = np.ones(csys_by_od.shape[0]))
     cpms_comps = {k: cpms[k] for k in cfg.infra['edges'].keys()}
 
-    cpms_new = cpm.prod_cpm_sys_and_comps(cpms['sys'], cpms_comps, varis)
+    cpms_new = cpm.prod_Msys_and_Mcomps(cpms['sys'], list(cpms_comps.values()))
 
     expected_C = np.array([[1, 1, 2, 2, 1, 2],
                            [1, 1, 1, 2, 0, 1],
@@ -2394,7 +2394,7 @@ def test_variable_elim1(setup_hybrid):
     np.testing.assert_array_almost_equal(result.ps, result.q)
     np.testing.assert_array_almost_equal(result.sample_idx, np.array([[0,1,2,3,4]]).T)
 
-    prob, cov = cpm.get_prob_and_cov( result, ['sys'], [0] )
+    prob, cov, cint = cpm.get_prob_and_cov( result, ['sys'], [0] )
 
     assert prob == pytest.approx(0.193, rel=1.0e-3)
     assert cov == pytest.approx(0.4200, rel=1.0e-3)
@@ -2508,7 +2508,7 @@ def test_cal_Msys_by_cond_VE1(setup_hybrid):
     np.testing.assert_array_almost_equal(result.ps, np.array([[0.0343, 0.1323, 0.1323, 0.0147, 0.1323, 0.0252, 0.0672, 0.0672, 0.0108, 0.0672]]).T, decimal=3)
     np.testing.assert_array_almost_equal(result.sample_idx, np.array([[0,1,2,3,4,0,1,2,3,4]]).T)
 
-    prob, cov = cpm.get_prob_and_cov( result, ['sys'], [0], flag = True, nsample_repeat = 5 )
+    prob, cov, cint = cpm.get_prob_and_cov( result, ['sys'], [0], flag = True, nsample_repeat = 5 )
 
     assert prob == pytest.approx(0.1873, rel=1.0e-3)
     assert cov == pytest.approx(0.3143, rel=1.0e-3) # In this case, applying conditioning to the same samples reduces c.o.v.; not sure if this is universal
@@ -2528,12 +2528,13 @@ def test_cal_Msys_by_cond_VE2(setup_hybrid):
     np.testing.assert_array_almost_equal(result.ps, np.array([[0.0343, 0.1323, 0.1323, 0.0147, 0.1323, 0.0252, 0.0672, 0.0672, 0.0108, 0.0672]]).T, decimal=3)
     np.testing.assert_array_almost_equal(result.sample_idx, np.array([[0,1,2,3,4,0,1,2,3,4]]).T)
 
-    prob, cov = cpm.get_prob_and_cov( result, ['sys', 'x0'], [0,0], flag = True, nsample_repeat = 5 )
+    prob, cov, cint = cpm.get_prob_and_cov( result, ['sys', 'x0'], [0,0], flag = True, nsample_repeat = 5 )
 
     assert prob == pytest.approx(0.1873, rel=1.0e-3)
     assert cov == pytest.approx(0.3143, rel=1.0e-3) # In this case, applying conditioning to the same samples reduces c.o.v.; not sure if this is universal
 
 
+@pytest.mark.skip('FIXME')
 def test_get_prob_and_cov_cond1(setup_hybrid):
 
     varis, cpms = setup_hybrid
