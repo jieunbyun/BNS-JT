@@ -8,7 +8,7 @@ from scipy.stats import norm, beta
 
 #from BNS_JT.utils import all_equal
 from BNS_JT.variable import Variable
-from BNS_JT import betasumrat
+from BNS_JT import utils
 
 class Cpm(object):
     """
@@ -1402,8 +1402,6 @@ def get_prob_and_cov_cond(M, var_inds, var_states, cvar_inds, cvar_states, nsamp
 
     assert isinstance(nsample_repeat, int), 'nsample_repeat must be a nonnegative integer, representing if samples are repeated (to calculate c.o.v.)'
 
-    prob_C = get_prob(M, var_inds, var_states)
-
     if not nsample_repeat:
         n_round = 1
         nsamp = len(M.Cs)
@@ -1438,22 +1436,18 @@ def get_prob_and_cov_cond(M, var_inds, var_states, cvar_inds, cvar_states, nsamp
 
         try:
             a1, b1 = a1 + nTrue1, b1 + (neff[0] - nTrue1)
-            a2, b2 = a2 + nTrue2, b2 + (neff[0] - nTrue2)
+            a2, b2 = a2 + (nTrue2-nTrue1), b2 + (neff[0] - (nTrue2-nTrue1))
         except NameError:
             prior = 0.01
             a1, b1 = prior + nTrue1, prior + (neff[0] - nTrue1) 
-            a2, b2 = prior + nTrue2, prior + (neff[0] - nTrue2) 
+            a2, b2 = prior + (nTrue2-nTrue1), prior + (neff[0] - (nTrue2-nTrue1)) 
 
-    dist = betasumrat.BetaSumRat()
-    mean = dist.mean(a1, b1, a2, b2)
-    var = dist.var(a1, b1, a2, b2)
+    prob_C = get_prob(M, var_inds, var_states)
+    prob_C_c = get_prob(M, cvar_inds, cvar_states)
 
-    low = dist.ppf( 0.5*(1-conf_p), a1, b1, a2, b2 )
-    up = dist.ppf( 1 - 0.5*(1-conf_p), a1, b1, a2, b2 )
+    prob, std, cint = utils.get_rat_dist( prob_C, prob_C_c - prob_C, 1 - M.p.sum(), a1, a2, b1, b2, conf_p )
 
-    prob = prob_C + (1 - M.p.sum()) * mean
-    cov = (1 - M.p.sum()) * np.sqrt(var) / prob
-    cint = prob_C + (1 - M.p.sum()) * np.array([low, up])
+    cov = std/prob
 
     return prob, cov, cint
 

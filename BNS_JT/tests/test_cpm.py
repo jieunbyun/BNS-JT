@@ -2534,7 +2534,6 @@ def test_cal_Msys_by_cond_VE2(setup_hybrid):
     assert cov == pytest.approx(0.3143, rel=1.0e-3) # In this case, applying conditioning to the same samples reduces c.o.v.; not sure if this is universal
 
 
-@pytest.mark.skip('FIXME')
 def test_get_prob_and_cov_cond1(setup_hybrid):
 
     varis, cpms = setup_hybrid
@@ -2547,7 +2546,21 @@ def test_get_prob_and_cov_cond1(setup_hybrid):
 
     prob_c, cov_c, cint_c = cpm.get_prob_and_cov_cond( result, ['x0', 'sys'], [0,0], ['sys'], [0], nsample_repeat=5, conf_p=0.95 )
 
-    assert prob_m == pytest.approx(prob_b, rel=1.0e-2)
+    assert prob_c >= cint_c[0] and prob_c <= cint_c[1]
+    assert cint_c[0] <= 1 and cint_c[1] >= 1 # Truth: P(X0=0 | S = 0) = 1
+
+def test_get_prob_and_cov_cond2(setup_hybrid):
+
+    varis, cpms = setup_hybrid
+
+    var_elim_order = ['haz', 'x0']
+    result = cpm.cal_Msys_by_cond_VE(cpms, varis, ['haz'], var_elim_order, 'sys')
+
+    prob_c, cov_c, cint_c = cpm.get_prob_and_cov_cond( result, ['x1', 'sys'], [0,0], ['sys'], [0], nsample_repeat=5, conf_p=0.95 )
+
+    assert prob_c >= cint_c[0] and prob_c <= cint_c[1]
+    pr_x0_s0 = 0.3462 # True value of P(X1=0 | S = 0) 
+    assert cint_c[0] <= pr_x0_s0 and cint_c[1] >= pr_x0_s0 
 
 
 @pytest.fixture()
