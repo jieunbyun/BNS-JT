@@ -505,8 +505,10 @@ def approx_branch_prob(lower, upper, probs):
     """
     p = 1.0
 
-    for dx, ux in zip(lower.items(), upper.items()):
-        p *= sum([probs[dx[0]][x] for x in range(dx[1], ux[1] + 1)])
+    #for dx, ux in zip(lower.items(), upper.items()):
+    for k, v in lower.items():
+        p *= sum([probs[k][x] for x in range(v, upper[k] + 1)])
+        #p *= sum([probs[dx[0]][x] for x in range(dx[1], ux[1] + 1)])
 
     return p
 
@@ -829,7 +831,21 @@ def get_st_decomp( brs, surv_first=True, varis = None, probs=None ): # 'brs' is 
     return x_star
 
 
-def run_brc(varis, probs, sys_fun, max_sf, max_nb, surv_first=True, rules=None):
+def run_brc(varis, probs, sys_fun, max_sf, max_nb, pf_bnd_wr = 0.0, surv_first=True, rules=None):
+
+    """
+    INPUTS:
+    varis: a dictionary of variables
+    probs: a dictionary of probabilities
+    sys_fun: a system function
+    **Iteration termination conditions**
+    max_sf: maximum number of system function runs
+    max_nb: maximum number of branches
+    pf_bnd_wr: bound of system failure probability in ratio (width / lower bound)
+    surv_first: True if survival branches are considered first
+    ************************************
+    rules: provided if there are some known rules
+    """
 
 
     if rules == None:
@@ -848,11 +864,12 @@ def run_brc(varis, probs, sys_fun, max_sf, max_nb, surv_first=True, rules=None):
               }
 
     no_sf = 0
+    pr_bf, pr_bs = 0.0, 0.0
     while no_sf < max_sf:
         brs, _ = decomp_df(varis, rules, probs, max_nb)
         x_star = get_st_decomp( brs, surv_first, varis, probs )
 
-        if x_star == None or len(brs) >= max_nb:
+        if x_star == None or len(brs) >= max_nb or (1-pr_bf-pr_bs) < pr_bf*pf_bnd_wr:
             break # all braches have been specified or number of branches reached its max.
         else:
             rule, sys_res_ = run_sys_fn(x_star, sys_fun, varis)
@@ -1373,3 +1390,31 @@ def get_compat_rules_old(cst, rules, rules_st):
 
     return cr_inds, cst_state
 '''
+
+def run_MCS_indep_comps(probs, sys_fun, cov_t = 0.01):
+    nsamp, nfail = 0, 0
+    cov = 1.0
+    while cov > cov_t:
+
+        # generate samples
+        nsamp += 1
+        samp = {}
+        for k, v in probs.items():
+            st1 = np.random.choice(list(v.keys()), size=1, p=list(v.values()))
+            samp[k] = st1[0]
+
+        # run system function
+        _, sys_st, _ = sys_fun(samp)
+
+        if sys_st == 'f':
+            nfail += 1
+
+            pf = nfail / nsamp
+            if nfail > 5:
+                std = np.sqrt( pf*(1-pf) / nsamp )
+                cov = std / pf
+            
+        if nsamp%1000 == 0:
+            print(f'nsamp: {nsamp}, cov: {cov}, pf: {pf}')
+
+    return pf, nsamp
