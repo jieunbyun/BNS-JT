@@ -2,9 +2,37 @@
         "od1": {
             "origin": "n10",
             "destination": "n12",
+            "target_flow": 1,
+            "edge_bidirectional": false,
+            "key": "d1"
+        },
+        "od2": {
+            "origin": "n10",
+            "destination": "n12",
+            "target_flow": 2,
+            "edge_bidirectional": false,
+            "key": "d2"
+        },
+        "od3": {
+            "origin": "n10",
+            "destination": "n12",
             "target_flow": 3,
             "edge_bidirectional": false,
-            "key": "net1_od1"
+            "key": "d3"
+        },
+        "od4": {
+            "origin": "n10",
+            "destination": "n12",
+            "target_flow": 4,
+            "edge_bidirectional": false,
+            "key": "d4"
+        },
+        "od5": {
+            "origin": "n10",
+            "destination": "n12",
+            "target_flow": 5,
+            "edge_bidirectional": false,
+            "key": "d5"
         }
     },
     "edge_list": {
