@@ -8,6 +8,7 @@ import warnings
 import sys
 import pickle
 import numpy as np
+import time
 
 from BNS_JT import variable, branch
 
@@ -420,7 +421,10 @@ def get_state(comp, rules):
         state = 'f'
 
     if no_s > 0 and no_f > 0:
-        print("Conflicting rules found. The given system is not coherent.")
+        rules_s = [rule for rule in rules['s'] if all([comp[k] >= v for k, v in rule.items()])]
+        rules_f = [rule for rule in rules['f'] if all([comp[k] <= v for k, v in rule.items()])]
+
+        print(f"Conflicting rules found: {rules_s} vs. {rules_f}. The given system is not coherent.")
 
     return state
 
@@ -860,12 +864,15 @@ def run_brc(varis, probs, sys_fun, max_sf, max_nb, pf_bnd_wr = 0.0, surv_first=T
                'br_u_ns': [], # number of branches-unknown
                'r_s_ns': [], # number of rules-survival
                'r_f_ns': [], # number of rules-failure
-               'sf_ns': [] # number of system function runs
+               'sf_ns': [], # number of system function runs
+               'time': [] # time taken for each iteration (sec)
               }
 
     no_sf = 0
     pr_bf, pr_bs = 0.0, 0.0
     while no_sf < max_sf:
+        start = time.time() # monitoring purpose
+
         brs, _ = decomp_df(varis, rules, probs, max_nb)
         x_star = get_st_decomp( brs, surv_first, varis, probs )
 
@@ -877,6 +884,8 @@ def run_brc(varis, probs, sys_fun, max_sf, max_nb, pf_bnd_wr = 0.0, surv_first=T
             rules = update_rule_set(rules, rule)
             sys_res = pd.concat([sys_res, sys_res_], ignore_index=True)
             no_sf += 1
+
+            end = time.time() # monitoring purpose
 
             ######## monitoring ############
             pr_bf = sum([b[4] for b in brs if b.up_state == 'f']) # prob. of failure branches
@@ -897,6 +906,7 @@ def run_brc(varis, probs, sys_fun, max_sf, max_nb, pf_bnd_wr = 0.0, surv_first=T
             monitor['br_f_ns'].append(no_bf)
             monitor['br_u_ns'].append(no_bu)
             monitor['sf_ns'].append(no_sf)
+            monitor['time'].append(end-start)
 
             try:
                 min_len_rf = min( [len(x) for x in rules['f']] )
@@ -1414,7 +1424,7 @@ def run_MCS_indep_comps(probs, sys_fun, cov_t = 0.01):
                 std = np.sqrt( pf*(1-pf) / nsamp )
                 cov = std / pf
             
-        if nsamp%1000 == 0:
+        if nsamp%20000 == 0:
             print(f'nsamp: {nsamp}, cov: {cov}, pf: {pf}')
 
-    return pf, nsamp
+    return pf, cov, nsamp
