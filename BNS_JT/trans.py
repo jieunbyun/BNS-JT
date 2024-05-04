@@ -221,6 +221,30 @@ def get_time_and_path_given_comps(comps_st, od_pair, arcs, vari):
 
     return d_time, path
 
+def get_time_and_path_multi_dest(comps_st, origin, dests, arcs, varis):
+    """
+    Compute time and path given multiple destinations--NB: works only for bidirectional graph
+    """
+
+    assert isinstance(comps_st, dict)
+    assert all([comps_st[k] < len(v.values) for k, v in varis.items()])
+
+    G = nx.Graph()
+    first = next(iter(arcs.items()))[1]
+
+    if isinstance(first, (list, tuple)):
+        for k, x in arcs.items():
+            G.add_edge(x[0], x[1], time=varis[k].values[comps_st[k]])
+
+    elif isinstance(first, dict):
+        for k, x in arcs.items():
+            G.add_edge(x['origin'], x['destination'], time=varis[k].values[comps_st[k]])
+
+    d_time, path = nx.multi_source_dijkstra(G, sources = dests, target = origin, weight = 'time')
+    path = path[::-1]
+
+    return d_time, path
+
 
 def get_all_paths_and_times(ODs, G, key='time'):
     """

@@ -887,3 +887,45 @@ def test_sf_min_path(setup_sys_rbd):
     assert min_comps_st == {}
 
 
+def test_get_time_and_path_multi_dest1():
+
+    arcs = {'e1': ['n1', 'n2'],
+            'e2': ['n1', 'n5'],
+            'e3': ['n2', 'n5'],
+            'e4': ['n3', 'n4'],
+            'e5': ['n3', 'n5'],
+            'e6': ['n4', 'n5']}
+
+    arc_times_h = {'e1': [np.inf, 0.15], 'e2': [np.inf, 0.0901], 'e3': [np.inf, 0.0901], 'e4': [np.inf, 0.1054],
+                   'e5': [np.inf, 0.0943], 'e6': [np.inf, 0.0707]}
+    
+    varis = {k: variable.Variable(name=k, values=v) for k, v in arc_times_h.items()}
+
+    G = nx.Graph()
+    for k, x in arcs.items():
+        G.add_edge(x[0], x[1], time=arc_times_h[k], label=k)
+
+    origin = 'n1'
+    dests = ['n3', 'n4']
+
+    arcs_state = {'e1': 1,
+                  'e2': 0,
+                  'e3': 1,
+                  'e4': 1,
+                  'e5': 1,
+                  'e6': 0}
+    
+    d_time1, path1 = trans.get_time_and_path_multi_dest(arcs_state, origin, dests, arcs, varis)
+
+    assert d_time1 == pytest.approx(0.3344, rel=1.0e-4)
+    assert path1 == ['n1', 'n2', 'n5', 'n3']
+
+
+    arcs_state['e3'] = 0 # no path available in this case
+    d_time2, path2 = trans.get_time_and_path_multi_dest(arcs_state, origin, dests, arcs, varis)
+    
+    assert d_time2 == np.inf
+
+
+
+    
