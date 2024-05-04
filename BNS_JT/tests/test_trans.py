@@ -886,9 +886,8 @@ def test_sf_min_path(setup_sys_rbd):
     assert sys_st == 'f'
     assert min_comps_st == {}
 
-
-def test_get_time_and_path_multi_dest1():
-
+@pytest.fixture
+def setup_multi_dest():
     arcs = {'e1': ['n1', 'n2'],
             'e2': ['n1', 'n5'],
             'e3': ['n2', 'n5'],
@@ -901,12 +900,15 @@ def test_get_time_and_path_multi_dest1():
     
     varis = {k: variable.Variable(name=k, values=v) for k, v in arc_times_h.items()}
 
-    G = nx.Graph()
-    for k, x in arcs.items():
-        G.add_edge(x[0], x[1], time=arc_times_h[k], label=k)
-
     origin = 'n1'
     dests = ['n3', 'n4']
+
+    return origin, dests, arcs, varis
+
+
+def test_get_time_and_path_multi_dest1(setup_multi_dest):
+
+    origin, dests, arcs, varis = setup_multi_dest
 
     arcs_state = {'e1': 1,
                   'e2': 0,
@@ -923,9 +925,32 @@ def test_get_time_and_path_multi_dest1():
 
     arcs_state['e3'] = 0 # no path available in this case
     d_time2, path2 = trans.get_time_and_path_multi_dest(arcs_state, origin, dests, arcs, varis)
-    
+
     assert d_time2 == np.inf
 
+def test_sys_fun_wrap1(setup_multi_dest):
 
+    origin, dests, arcs, varis = setup_multi_dest
 
+    arcs_state = {'e1': 1,
+                  'e2': 0,
+                  'e3': 1,
+                  'e4': 1,
+                  'e5': 1,
+                  'e6': 0}
+
+    od_pair = {'origin': origin, 'dests': dests}
+    sys_fun = trans.sys_fun_wrap( od_pair, arcs, varis, thres = 0.5 )
+    d_time1, sys_st1, min_comps_st1 = sys_fun(arcs_state)
+
+    assert d_time1 == pytest.approx(0.3344, rel=1.0e-4)
+    assert sys_st1 == 's'
+    assert min_comps_st1 == {'e1': 1, 'e3': 1, 'e5': 1}
+
+    arcs_state['e3'] = 0
+    d_time2, sys_st2, min_comps_st2 = sys_fun(arcs_state)
+
+    assert d_time2 == np.inf
+    assert sys_st2 == 'f'
+    assert min_comps_st2 == {}
     

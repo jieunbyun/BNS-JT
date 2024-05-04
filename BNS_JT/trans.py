@@ -70,7 +70,10 @@ def sf_min_path(comps_st, od_pair, arcs, vari, thres=None):
     first = next(iter(arcs.items()))[1]
 
     if thres:
-        d_time, path = get_time_and_path_given_comps(comps_st, od_pair, arcs, vari)
+        if isinstance(od_pair, (list, tuple)):
+            d_time, path = get_time_and_path_given_comps(comps_st, od_pair, arcs, vari)
+        elif isinstance(od_pair, dict): # multiple destinations, e.g. {origin: n1, dests: [n2, n3, n4]}
+            d_time, path = get_time_and_path_multi_dest(comps_st, od_pair['origin'], od_pair['dests'], arcs, vari)
 
         min_comps_st = {}
         if isinstance(first, list):
