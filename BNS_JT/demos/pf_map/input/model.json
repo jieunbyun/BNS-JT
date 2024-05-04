@@ -1,0 +1,992 @@
+{
+    "system": {
+        "delay_thres": 2.0
+    },
+    "origin_list": {
+        "o1": {
+            "ID": "n22",
+            "type": "international_airport",
+            "name": "Boston Logan International Airport"
+        },
+        "o2": {
+            "ID": "n66",
+            "type": "international_airport",
+            "name": "Bradley International Airport"
+        }  
+    },
+    "eq_scenario": {
+        "s1": {
+            "Mw": 8.0,
+            "epicentre": [-10.0, 10.0]
+        },
+        "s2": {
+            "Mw": 7.0,
+            "epicentre": [-5.0, 30.0]
+        }
+    },
+    "fragility_data": {
+        "HWB11": {
+            "name": "Non_CA_Seismic_Continuous_Concrete",
+            "damage_state_name": ["slight", "moderate", "extensive", "complete"],
+            "Sa_g": [0.90, 0.90, 1.10, 1.50],
+            "Sa_g_dispersion": 0.6
+        },
+        "HWB2": {
+            "name": "Non_CA_Seismic_Major_Bridge",
+            "damage_state_name": ["slight", "moderate", "extensive", "complete"],
+            "Sa_g": [0.60, 0.90, 1.10, 1.70],
+            "Sa_g_dispersion": 0.6
+        },
+        "HWB4": {
+            "name": "NON_CA_Seismic_Single_Span",
+            "damage_state_name": ["slight", "moderate", "extensive", "complete"],
+            "Sa_g": [0.80, 1.00, 1.20, 1.70],
+            "Sa_g_dispersion": 0.6
+        }
+    },
+    "edge_list": {
+        "e1": {
+            "origin": "n1",
+            "destination": "n3",
+            "fragility_type": "HWB11"
+        },
+        "e2": {
+            "origin": "n1",
+            "destination": "n7",
+            "fragility_type": "HWB11"
+        },
+        "e3": {
+            "origin": "n1",
+            "destination": "n9",
+            "fragility_type": "HWB11"
+        },
+        "e4": {
+            "origin": "n2",
+            "destination": "n3",
+            "fragility_type": "HWB11"
+        },
+        "e5": {
+            "origin": "n3",
+            "destination": "n6",
+            "fragility_type": "HWB11"
+        },
+        "e6": {
+            "origin": "n3",
+            "destination": "n7",
+            "fragility_type": "HWB11"
+        },
+        "e7": {
+            "origin": "n4",
+            "destination": "n6",
+            "fragility_type": "HWB11"
+        },
+        "e8": {
+            "origin": "n4",
+            "destination": "n8",
+            "fragility_type": "HWB11"
+        },
+        "e9": {
+            "origin": "n5",
+            "destination": "n10",
+            "fragility_type": "HWB11"
+        },
+        "e10": {
+            "origin": "n5",
+            "destination": "n11",
+            "fragility_type": "HWB11"
+        },
+        "e11": {
+            "origin": "n6",
+            "destination": "n8",
+            "fragility_type": "HWB4"
+        },
+        "e12": {
+            "origin": "n6",
+            "destination": "n13",
+            "fragility_type": "HWB11"
+        },
+        "e13": {
+            "origin": "n6",
+            "destination": "n17",
+            "fragility_type": "HWB11"
+        },
+        "e14": {
+            "origin": "n7",
+            "destination": "n9",
+            "fragility_type": "HWB11"
+        },
+        "e15": {
+            "origin": "n7",
+            "destination": "n13",
+            "fragility_type": "HWB11"
+        },
+        "e16": {
+            "origin": "n8",
+            "destination": "n11",
+            "fragility_type": "HWB11"
+        },
+        "e17": {
+            "origin": "n8",
+            "destination": "n16",
+            "fragility_type": "HWB11"
+        },
+        "e18": {
+            "origin": "n9",
+            "destination": "n12",
+            "fragility_type": "HWB11"
+        },
+        "e19": {
+            "origin": "n9",
+            "destination": "n13",
+            "fragility_type": "HWB11"
+        },
+        "e20": {
+            "origin": "n10",
+            "destination": "n11",
+            "fragility_type": "HWB4"
+        },
+        "e21": {
+            "origin": "n10",
+            "destination": "n18",
+            "fragility_type": "HWB11"
+        },
+        "e22": {
+            "origin": "n10",
+            "destination": "n20",
+            "fragility_type": "HWB11"
+        },
+        "e23": {
+            "origin": "n11",
+            "destination": "n19",
+            "fragility_type": "HWB11"
+        },
+        "e24": {
+            "origin": "n13",
+            "destination": "n14",
+            "fragility_type": "HWB4"
+        },
+        "e25": {
+            "origin": "n13",
+            "destination": "n15",
+            "fragility_type": "HWB11"
+        },
+        "e26": {
+            "origin": "n14",
+            "destination": "n17",
+            "fragility_type": "HWB11"
+        },
+        "e27": {
+            "origin": "n14",
+            "destination": "n22",
+            "fragility_type": "HWB2"
+        },
+        "e28": {
+            "origin": "n16",
+            "destination": "n17",
+            "fragility_type": "HWB4"
+        },
+        "e29": {
+            "origin": "n16",
+            "destination": "n19",
+            "fragility_type": "HWB11"
+        },
+        "e30": {
+            "origin": "n16",
+            "destination": "n22",
+            "fragility_type": "HWB2"
+        },
+        "e31": {
+            "origin": "n17",
+            "destination": "n22",
+            "fragility_type": "HWB2"
+        },
+        "e32": {
+            "origin": "n18",
+            "destination": "n19",
+            "fragility_type": "HWB4"
+        },
+        "e33": {
+            "origin": "n18",
+            "destination": "n21",
+            "fragility_type": "HWB11"
+        },
+        "e34": {
+            "origin": "n19",
+            "destination": "n22",
+            "fragility_type": "HWB2"
+        },
+        "e35": {
+            "origin": "n20",
+            "destination": "n21",
+            "fragility_type": "HWB11"
+        },
+        "e36": {
+            "origin": "n20",
+            "destination": "n30",
+            "fragility_type": "HWB11"
+        },
+        "e37": {
+            "origin": "n20",
+            "destination": "n58",
+            "fragility_type": "HWB11"
+        },
+        "e38": {
+            "origin": "n21",
+            "destination": "n22",
+            "fragility_type": "HWB2"
+        },
+        "e39": {
+            "origin": "n21",
+            "destination": "n23",
+            "fragility_type": "HWB11"
+        },
+        "e40": {
+            "origin": "n22",
+            "destination": "n23",
+            "fragility_type": "HWB2"
+        },
+        "e41": {
+            "origin": "n22",
+            "destination": "n25",
+            "fragility_type": "HWB2"
+        },
+        "e42": {
+            "origin": "n22",
+            "destination": "n28",
+            "fragility_type": "HWB2"
+        },
+        "e43": {
+            "origin": "n22",
+            "destination": "n29",
+            "fragility_type": "HWB2"
+        },
+        "e44": {
+            "origin": "n22",
+            "destination": "n40",
+            "fragility_type": "HWB2"
+        },
+        "e45": {
+            "origin": "n23",
+            "destination": "n24",
+            "fragility_type": "HWB4"
+        },
+        "e46": {
+            "origin": "n23",
+            "destination": "n31",
+            "fragility_type": "HWB11"
+        },
+        "e47": {
+            "origin": "n24",
+            "destination": "n25",
+            "fragility_type": "HWB4"
+        },
+        "e48": {
+            "origin": "n24",
+            "destination": "n26",
+            "fragility_type": "HWB4"
+        },
+        "e49": {
+            "origin": "n24",
+            "destination": "n33",
+            "fragility_type": "HWB11"
+        },
+        "e50": {
+            "origin": "n25",
+            "destination": "n26",
+            "fragility_type": "HWB4"
+        },
+        "e51": {
+            "origin": "n26",
+            "destination": "n27",
+            "fragility_type": "HWB4"
+        },
+        "e52": {
+            "origin": "n26",
+            "destination": "n28",
+            "fragility_type": "HWB4"
+        },
+        "e53": {
+            "origin": "n27",
+            "destination": "n28",
+            "fragility_type": "HWB4"
+        },
+        "e54": {
+            "origin": "n27",
+            "destination": "n33",
+            "fragility_type": "HWB11"
+        },
+        "e55": {
+            "origin": "n27",
+            "destination": "n35",
+            "fragility_type": "HWB11"
+        },
+        "e56": {
+            "origin": "n28",
+            "destination": "n37",
+            "fragility_type": "HWB11"
+        },
+        "e57": {
+            "origin": "n29",
+            "destination": "n41",
+            "fragility_type": "HWB11"
+        },
+        "e58": {
+            "origin": "n29",
+            "destination": "n49",
+            "fragility_type": "HWB2"
+        },
+        "e59": {
+            "origin": "n30",
+            "destination": "n31",
+            "fragility_type": "HWB4"
+        },
+        "e60": {
+            "origin": "n30",
+            "destination": "n60",
+            "fragility_type": "HWB11"
+        },
+        "e61": {
+            "origin": "n31",
+            "destination": "n32",
+            "fragility_type": "HWB4"
+        },
+        "e62": {
+            "origin": "n31",
+            "destination": "n60",
+            "fragility_type": "HWB11"
+        },
+        "e63": {
+            "origin": "n32",
+            "destination": "n33",
+            "fragility_type": "HWB11"
+        },
+        "e64": {
+            "origin": "n32",
+            "destination": "n34",
+            "fragility_type": "HWB4"
+        },
+        "e65": {
+            "origin": "n32",
+            "destination": "n60",
+            "fragility_type": "HWB11"
+        },
+        "e66": {
+            "origin": "n33",
+            "destination": "n34",
+            "fragility_type": "HWB11"
+        },
+        "e67": {
+            "origin": "n34",
+            "destination": "n35",
+            "fragility_type": "HWB11"
+        },
+        "e68": {
+            "origin": "n34",
+            "destination": "n60",
+            "fragility_type": "HWB11"
+        },
+        "e69": {
+            "origin": "n35",
+            "destination": "n36",
+            "fragility_type": "HWB11"
+        },
+        "e70": {
+            "origin": "n35",
+            "destination": "n71",
+            "fragility_type": "HWB4"
+        },
+        "e71": {
+            "origin": "n36",
+            "destination": "n43",
+            "fragility_type": "HWB11"
+        },
+        "e72": {
+            "origin": "n36",
+            "destination": "n44",
+            "fragility_type": "HWB11"
+        },
+        "e73": {
+            "origin": "n36",
+            "destination": "n71",
+            "fragility_type": "HWB11"
+        },
+        "e74": {
+            "origin": "n37",
+            "destination": "n38",
+            "fragility_type": "HWB4"
+        },
+        "e75": {
+            "origin": "n37",
+            "destination": "n42",
+            "fragility_type": "HWB11"
+        },
+        "e76": {
+            "origin": "n38",
+            "destination": "n39",
+            "fragility_type": "HWB4"
+        },
+        "e77": {
+            "origin": "n38",
+            "destination": "n42",
+            "fragility_type": "HWB11"
+        },
+        "e78": {
+            "origin": "n39",
+            "destination": "n40",
+            "fragility_type": "HWB4"
+        },
+        "e79": {
+            "origin": "n39",
+            "destination": "n48",
+            "fragility_type": "HWB11"
+        },
+        "e80": {
+            "origin": "n40",
+            "destination": "n41",
+            "fragility_type": "HWB4"
+        },
+        "e81": {
+            "origin": "n40",
+            "destination": "n48",
+            "fragility_type": "HWB11"
+        },
+        "e82": {
+            "origin": "n41",
+            "destination": "n49",
+            "fragility_type": "HWB11"
+        },
+        "e83": {
+            "origin": "n42",
+            "destination": "n43",
+            "fragility_type": "HWB11"
+        },
+        "e84": {
+            "origin": "n42",
+            "destination": "n45",
+            "fragility_type": "HWB11"
+        },
+        "e85": {
+            "origin": "n43",
+            "destination": "n44",
+            "fragility_type": "HWB4"
+        },
+        "e86": {
+            "origin": "n43",
+            "destination": "n45",
+            "fragility_type": "HWB4"
+        },
+        "e87": {
+            "origin": "n44",
+            "destination": "n46",
+            "fragility_type": "HWB4"
+        },
+        "e88": {
+            "origin": "n44",
+            "destination": "n54",
+            "fragility_type": "HWB11"
+        },
+        "e89": {
+            "origin": "n45",
+            "destination": "n46",
+            "fragility_type": "HWB4"
+        },
+        "e90": {
+            "origin": "n45",
+            "destination": "n47",
+            "fragility_type": "HWB4"
+        },
+        "e91": {
+            "origin": "n46",
+            "destination": "n47",
+            "fragility_type": "HWB4"
+        },
+        "e92": {
+            "origin": "n46",
+            "destination": "n54",
+            "fragility_type": "HWB11"
+        },
+        "e93": {
+            "origin": "n47",
+            "destination": "n48",
+            "fragility_type": "HWB11"
+        },
+        "e94": {
+            "origin": "n47",
+            "destination": "n74",
+            "fragility_type": "HWB11"
+        },
+        "e95": {
+            "origin": "n48",
+            "destination": "n49",
+            "fragility_type": "HWB11"
+        },
+        "e96": {
+            "origin": "n48",
+            "destination": "n51",
+            "fragility_type": "HWB11"
+        },
+        "e97": {
+            "origin": "n48",
+            "destination": "n52",
+            "fragility_type": "HWB11"
+        },
+        "e98": {
+            "origin": "n48",
+            "destination": "n53",
+            "fragility_type": "HWB11"
+        },
+        "e99": {
+            "origin": "n48",
+            "destination": "n54",
+            "fragility_type": "HWB11"
+        },
+        "e100": {
+            "origin": "n48",
+            "destination": "n74",
+            "fragility_type": "HWB11"
+        },
+        "e101": {
+            "origin": "n49",
+            "destination": "n50",
+            "fragility_type": "HWB11"
+        },
+        "e102": {
+            "origin": "n49",
+            "destination": "n73",
+            "fragility_type": "HWB11"
+        },
+        "e103": {
+            "origin": "n50",
+            "destination": "n51",
+            "fragility_type": "HWB11"
+        },
+        "e104": {
+            "origin": "n50",
+            "destination": "n73",
+            "fragility_type": "HWB11"
+        },
+        "e105": {
+            "origin": "n51",
+            "destination": "n52",
+            "fragility_type": "HWB11"
+        },
+        "e106": {
+            "origin": "n52",
+            "destination": "n53",
+            "fragility_type": "HWB11"
+        },
+        "e107": {
+            "origin": "n53",
+            "destination": "n54",
+            "fragility_type": "HWB11"
+        },
+        "e108": {
+            "origin": "n55",
+            "destination": "n57",
+            "fragility_type": "HWB11"
+        },
+        "e109": {
+            "origin": "n56",
+            "destination": "n57",
+            "fragility_type": "HWB11"
+        },
+        "e110": {
+            "origin": "n57",
+            "destination": "n58",
+            "fragility_type": "HWB11"
+        },
+        "e111": {
+            "origin": "n57",
+            "destination": "n59",
+            "fragility_type": "HWB11"
+        },
+        "e112": {
+            "origin": "n58",
+            "destination": "n59",
+            "fragility_type": "HWB11"
+        },
+        "e113": {
+            "origin": "n59",
+            "destination": "n60",
+            "fragility_type": "HWB11"
+        },
+        "e114": {
+            "origin": "n59",
+            "destination": "n72",
+            "fragility_type": "HWB11"
+        },
+        "e115": {
+            "origin": "n60",
+            "destination": "n61",
+            "fragility_type": "HWB11"
+        },
+        "e116": {
+            "origin": "n60",
+            "destination": "n63",
+            "fragility_type": "HWB11"
+        },
+        "e117": {
+            "origin": "n60",
+            "destination": "n65",
+            "fragility_type": "HWB11"
+        },
+        "e118": {
+            "origin": "n60",
+            "destination": "n67",
+            "fragility_type": "HWB11"
+        },
+        "e119": {
+            "origin": "n60",
+            "destination": "n69",
+            "fragility_type": "HWB11"
+        },
+        "e120": {
+            "origin": "n60",
+            "destination": "n71",
+            "fragility_type": "HWB11"
+        },
+        "e121": {
+            "origin": "n60",
+            "destination": "n72",
+            "fragility_type": "HWB11"
+        },
+        "e122": {
+            "origin": "n62",
+            "destination": "n63",
+            "fragility_type": "HWB11"
+        },
+        "e123": {
+            "origin": "n63",
+            "destination": "n65",
+            "fragility_type": "HWB4"
+        },
+        "e124": {
+            "origin": "n64",
+            "destination": "n65",
+            "fragility_type": "HWB11"
+        },
+        "e125": {
+            "origin": "n65",
+            "destination": "n66",
+            "fragility_type": "HWB11"
+        },
+        "e126": {
+            "origin": "n67",
+            "destination": "n68",
+            "fragility_type": "HWB4"
+        },
+        "e127": {
+            "origin": "n67",
+            "destination": "n69",
+            "fragility_type": "HWB11"
+        },
+        "e128": {
+            "origin": "n69",
+            "destination": "n70",
+            "fragility_type": "HWB11"
+        },
+        "e129": {
+            "origin": "n69",
+            "destination": "n71",
+            "fragility_type": "HWB11"
+        }
+    },
+    "node_list": {
+        "n1": {
+            "pos_x": 62.1517,
+            "pos_y": 75.44
+        },
+        "n2": {
+            "pos_x": 47.6078,
+            "pos_y": 71.464
+        },
+        "n3": {
+            "pos_x": 51.5838,
+            "pos_y": 70.6269
+        },
+        "n4": {
+            "pos_x": 46.98,
+            "pos_y": 68.1157
+        },
+        "n5": {
+            "pos_x": 36.2028,
+            "pos_y": 65.7092
+        },
+        "n6": {
+            "pos_x": 49.1773,
+            "pos_y": 64.7675
+        },
+        "n7": {
+            "pos_x": 57.4432,
+            "pos_y": 64.7675
+        },
+        "n8": {
+            "pos_x": 47.1892,
+            "pos_y": 63.4073
+        },
+        "n9": {
+            "pos_x": 59.4312,
+            "pos_y": 61.6285
+        },
+        "n10": {
+            "pos_x": 40.702,
+            "pos_y": 59.6405
+        },
+        "n11": {
+            "pos_x": 42.4808,
+            "pos_y": 60.2683
+        },
+        "n12": {
+            "pos_x": 61.8378,
+            "pos_y": 57.4432
+        },
+        "n13": {
+            "pos_x": 57.234,
+            "pos_y": 56.9201
+        },
+        "n14": {
+            "pos_x": 56.5015,
+            "pos_y": 54.5135
+        },
+        "n15": {
+            "pos_x": 62.7795,
+            "pos_y": 52.7348
+        },
+        "n16": {
+            "pos_x": 50.5375,
+            "pos_y": 53.3626
+        },
+        "n17": {
+            "pos_x": 51.7931,
+            "pos_y": 53.3626
+        },
+        "n18": {
+            "pos_x": 46.0383,
+            "pos_y": 52.0023
+        },
+        "n19": {
+            "pos_x": 47.6078,
+            "pos_y": 52.3162
+        },
+        "n20": {
+            "pos_x": 32.8546,
+            "pos_y": 54.5135
+        },
+        "n21": {
+            "pos_x": 44.6781,
+            "pos_y": 48.6541
+        },
+        "n22": {
+            "pos_x": 52.7348,
+            "pos_y": 46.0383
+        },
+        "n23": {
+            "pos_x": 43.841,
+            "pos_y": 45.0966
+        },
+        "n24": {
+            "pos_x": 44.0503,
+            "pos_y": 43.5271
+        },
+        "n25": {
+            "pos_x": 46.0383,
+            "pos_y": 43.9456
+        },
+        "n26": {
+            "pos_x": 45.0966,
+            "pos_y": 42.69
+        },
+        "n27": {
+            "pos_x": 43.5271,
+            "pos_y": 41.1206
+        },
+        "n28": {
+            "pos_x": 46.0383,
+            "pos_y": 41.5391
+        },
+        "n29": {
+            "pos_x": 54.5135,
+            "pos_y": 39.9696
+        },
+        "n30": {
+            "pos_x": 29.0878,
+            "pos_y": 44.8873
+        },
+        "n31": {
+            "pos_x": 30.1341,
+            "pos_y": 43.1086
+        },
+        "n32": {
+            "pos_x": 29.7156,
+            "pos_y": 39.9696
+        },
+        "n33": {
+            "pos_x": 34.6333,
+            "pos_y": 40.3881
+        },
+        "n34": {
+            "pos_x": 30.1341,
+            "pos_y": 38.4001
+        },
+        "n35": {
+            "pos_x": 33.7963,
+            "pos_y": 31.4944
+        },
+        "n36": {
+            "pos_x": 36.4121,
+            "pos_y": 27.7276
+        },
+        "n37": {
+            "pos_x": 48.2356,
+            "pos_y": 35.7843
+        },
+        "n38": {
+            "pos_x": 50.0143,
+            "pos_y": 34.6333
+        },
+        "n39": {
+            "pos_x": 52.3162,
+            "pos_y": 34.6333
+        },
+        "n40": {
+            "pos_x": 54.095,
+            "pos_y": 34.6333
+        },
+        "n41": {
+            "pos_x": 55.4552,
+            "pos_y": 36.2028
+        },
+        "n42": {
+            "pos_x": 46.4568,
+            "pos_y": 30.1341
+        },
+        "n43": {
+            "pos_x": 43.1086,
+            "pos_y": 26.5766
+        },
+        "n44": {
+            "pos_x": 42.0622,
+            "pos_y": 24.1701
+        },
+        "n45": {
+            "pos_x": 45.6198,
+            "pos_y": 24.5886
+        },
+        "n46": {
+            "pos_x": 44.4688,
+            "pos_y": 23.4377
+        },
+        "n47": {
+            "pos_x": 46.2475,
+            "pos_y": 22.1821
+        },
+        "n48": {
+            "pos_x": 54.7228,
+            "pos_y": 15.9041
+        },
+        "n49": {
+            "pos_x": 69.8945,
+            "pos_y": 21.0311
+        },
+        "n50": {
+            "pos_x": 76.8002,
+            "pos_y": 7.2196
+        },
+        "n51": {
+            "pos_x": 68.8482,
+            "pos_y": 8.4752
+        },
+        "n52": {
+            "pos_x": 58.8034,
+            "pos_y": 0.0
+        },
+        "n53": {
+            "pos_x": 50.5375,
+            "pos_y": 1.7788
+        },
+        "n54": {
+            "pos_x": 39.7603,
+            "pos_y": 12.5559
+        },
+        "n55": {
+            "pos_x": 9.8355,
+            "pos_y": 63.4073
+        },
+        "n56": {
+            "pos_x": 3.8714,
+            "pos_y": 57.6525
+        },
+        "n57": {
+            "pos_x": 13.7069,
+            "pos_y": 56.5015
+        },
+        "n58": {
+            "pos_x": 22.8099,
+            "pos_y": 54.3042
+        },
+        "n59": {
+            "pos_x": 19.4616,
+            "pos_y": 47.2939
+        },
+        "n60": {
+            "pos_x": 20.8219,
+            "pos_y": 37.2492
+        },
+        "n61": {
+            "pos_x": 0.0,
+            "pos_y": 38.9233
+        },
+        "n62": {
+            "pos_x": 3.5575,
+            "pos_y": 30.8666
+        },
+        "n63": {
+            "pos_x": 6.2779,
+            "pos_y": 30.5527
+        },
+        "n64": {
+            "pos_x": 3.139,
+            "pos_y": 29.0878
+        },
+        "n65": {
+            "pos_x": 5.6502,
+            "pos_y": 28.7739
+        },
+        "n66": {
+            "pos_x": 3.139,
+            "pos_y": 23.8562
+        },
+        "n67": {
+            "pos_x": 15.9041,
+            "pos_y": 25.7396
+        },
+        "n68": {
+            "pos_x": 16.5319,
+            "pos_y": 23.0191
+        },
+        "n69": {
+            "pos_x": 25.7396,
+            "pos_y": 25.9488
+        },
+        "n70": {
+            "pos_x": 29.0878,
+            "pos_y": 23.0191
+        },
+        "n71": {
+            "pos_x": 31.9129,
+            "pos_y": 29.9249
+        },
+        "n72": {
+            "pos_x": 20.2987,
+            "pos_y": 44.2595
+        },
+        "n73": {
+            "pos_x": 77.3234,
+            "pos_y": 16.7412
+        },
+        "n74": {
+            "pos_x": 50.3282,
+            "pos_y": 19.8802
+        }
+    }
+}
