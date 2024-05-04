@@ -230,7 +230,7 @@ def get_time_and_path_multi_dest(comps_st, origin, dests, arcs, varis):
     """
 
     assert isinstance(comps_st, dict)
-    assert all([comps_st[k] < len(v.values) for k, v in varis.items()])
+    assert all([comps_st[k] < len(varis[k].values) for k in comps_st.keys()])
 
     G = nx.Graph()
     first = next(iter(arcs.items()))[1]

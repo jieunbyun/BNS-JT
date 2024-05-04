@@ -1106,7 +1106,10 @@ def rejection_sampling_sys(cpms, sys_name, sys_fun, nsamp_cov, sys_st_monitor = 
     comp_names = [x.name for x in comp_vars]
     C_reject = cpms[sys_name].C[:,cpms[sys_name].no_child:]
 
-    cpms_no_sys = {k:m for k,m in cpms.items() if not k==sys_name}
+    cpms_no_sys = {}
+    for k, m in cpms.items():
+        if ( k != sys_name ) and ( set([v.name for v in m.variables[:m.no_child]]) & set([v.name for v in cpms[sys_name].variables]) ):
+            cpms_no_sys[k] = m
 
     sample_order, sample_vars, var_add_order = get_sample_order(cpms_no_sys)
     sample_vars_str = [x.name for x in sample_vars]
@@ -1125,6 +1128,7 @@ def rejection_sampling_sys(cpms, sys_name, sys_fun, nsamp_cov, sys_st_monitor = 
     samples_sys = np.empty((0, 1), dtype=int)
     sample_probs = np.empty((0, len(sample_vars)), dtype=float)
 
+    pf, cov = 0, 1
     while (is_nsamp and stop < nsamp_cov) or (not is_nsamp and stop > nsamp_cov):
 
         nsamp_tot += 1

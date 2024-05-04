@@ -95,12 +95,12 @@ def proposed_branch_and_bound_using_probs(sys_fun, varis, probs, max_sf, output_
 
         no_iter += 1
 
-        if stop_br:
+        if stop_br and no_sf % 20 == 0:
             print(f'[System function runs {no_sf}]..')
             print(f'The # of found non-dominated rules (f, s): {no_rf + no_rs} ({no_rf}, {no_rs})')
             print(f'Probability of branchs (f, s, u): ({pr_bf:.2f}, {pr_bs:.2f}, {pr_bu:.2f})')
-        #print('The # of branching: ', no_iter)
-            print(f'The # of branches (f, s, u), min len of rf: {len(brs)} ({no_bf}, {no_bs}, {no_bu}), {min_len_rf}')
+            #print('The # of branching: ', no_iter)
+            print(f'The # of branches (f, s, u), min len of rf: {len(brs)} ({no_bf}, {no_bs}, {no_bu}), {min_len_rf:.2f}')  
         stop_br = False
 
         brs = sorted(brs, key=lambda x: x.p, reverse=True)
@@ -876,8 +876,15 @@ def run_brc(varis, probs, sys_fun, max_sf, max_nb, pf_bnd_wr = 0.0, surv_first=T
         brs, _ = decomp_df(varis, rules, probs, max_nb)
         x_star = get_st_decomp( brs, surv_first, varis, probs )
 
-        if x_star == None or len(brs) >= max_nb or (1-pr_bf-pr_bs) < pr_bf*pf_bnd_wr:
-            break # all braches have been specified or number of branches reached its max.
+        if x_star == None:
+            monitor['out_flag'] = 'complete'
+            break
+        elif len(brs) >= max_nb:
+            monitor['out_flag'] = 'max_nb'
+            break
+        elif (1-pr_bf-pr_bs) < pr_bf*pf_bnd_wr:
+            monitor['out_flag'] = 'pf_bnd'
+            break 
         else:
             rule, sys_res_ = run_sys_fn(x_star, sys_fun, varis)
 
@@ -915,15 +922,25 @@ def run_brc(varis, probs, sys_fun, max_sf, max_nb, pf_bnd_wr = 0.0, surv_first=T
                 min_len_rf = 0
                 avg_len_rf = 0
 
-
-            print(f'[System function runs {no_sf}]..')
-            print(f'The # of found non-dominated rules (f, s): {no_rf + no_rs} ({no_rf}, {no_rs})')
-            print(f'Probability of branchs (f, s, u): ({pr_bf:.4f}, {pr_bs:.2f}, {1.0-pr_bs-pr_bf:.4f})')
-            print(f'The # of branches (f, s, u), (min, avg) len of rf: {len(brs)} ({no_bf}, {no_bs}, {no_bu}), {min_len_rf, avg_len_rf}')
+            if no_sf % 20 == 0:
+                print(f'[System function runs {no_sf}]..')
+                print(f'The # of found non-dominated rules (f, s): {no_rf + no_rs} ({no_rf}, {no_rs})')
+                print(f'Probability of branchs (f, s, u): ({pr_bf:.4e}, {pr_bs:.2e}, {1.0-pr_bs-pr_bf:.4e})')
+                print(f'The # of branches (f, s, u), (min, avg) len of rf: {len(brs)} ({no_bf}, {no_bs}, {no_bu}), ({min_len_rf}, {avg_len_rf:.2f})')
             #################################
 
+        if not (no_sf < max_sf):
+            monitor['out_flag'] = 'max_sf'
 
     brs, _ = decomp_df(varis, rules, probs, max_nb)
+    try:
+        out_flag = monitor['out_flag']
+        print(f'***Analysis completed with f_sys runs {no_sf}: out_flag = {out_flag}***')
+        print(f'The # of found non-dominated rules (f, s): {no_rf + no_rs} ({no_rf}, {no_rs})')
+        print(f'Probability of branchs (f, s, u): ({pr_bf:.4e}, {pr_bs:.2e}, {1.0-pr_bs-pr_bf:.4e})')
+        print(f'The # of branches (f, s, u), (min, avg) len of rf: {len(brs)} ({no_bf}, {no_bs}, {no_bu}), ({min_len_rf}, {avg_len_rf:.2f})')
+    except NameError: # analysis is terminated before the first system function run
+        print(f'***Analysis terminated without any evaluation***')
 
     return brs, rules, sys_res, monitor
 
