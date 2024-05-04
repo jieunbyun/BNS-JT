@@ -69,8 +69,8 @@ def main():
 
 
     ### BRC algorithm ###
-    brs1, rules1, sys_res1, monitor1 = gen_bnb.run_brc(varis, probs, sys_fun, max_sf=100, max_nb=10000, surv_first=False)
-    brs2, rules2, sys_res2, monitor2 = gen_bnb.run_brc(varis, probs, sys_fun, max_sf=100, max_nb=50000, surv_first=True, rules=rules1)
+    brs1, rules1, sys_res1, monitor1 = gen_bnb.run_brc(varis, probs, sys_fun, max_sf=100, max_nb=10000, surv_first=True)
+    brs2, rules2, sys_res2, monitor2 = gen_bnb.run_brc(varis, probs, sys_fun, max_sf=100, max_nb=50000, surv_first=False, rules=rules1)
 
 
     csys, varis = gen_bnb.get_csys_from_brs(brs2, varis, st_br_to_cs)
