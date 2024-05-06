@@ -5,6 +5,8 @@ from pathlib import Path
 from scipy.stats import norm
 from BNS_JT import variable, cpm, gen_bnb, trans
 import copy, pickle, time
+import concurrent.futures
+from multiprocessing import freeze_support
 
 HOME = Path(__file__).parent
 output_path = HOME.joinpath('./output')
@@ -154,50 +156,56 @@ def gmpe_cam03( Mw, Rrup ):
     return ln_Sa, std_al, std_ep
 
 
-## ANALYSIS ##
-cfg_name = 'config.json'
-eq_name = 's1'
+freeze_support() # for parallel processing
 
-cfg = config_pm.Config_pm(HOME.joinpath('./input/'+cfg_name))
+def configure(cfg_name, eq_name):
+    ## ANALYSIS ##
+    #cfg_name = 'config.json'
+    #eq_name = 's1'
 
-# raods' failure probability
-pf, MEAN, VAR, COV, Rrup, ln_Sa, std_al, std_ep, frag_mean_beta = cal_edge_dist(cfg.infra, eq_name)
-probs = {k: {0:v, 1:1-v} for k,v in pf.items()}
+    cfg = config_pm.Config_pm(HOME.joinpath('./input/'+cfg_name))
 
-# arcs and nodes
-arcs = {}
-for k, v in cfg.infra['edges'].items():
-    arcs[k] = [v['origin'], v['destination']]
+    # raods' failure probability
+    pf, MEAN, VAR, COV, Rrup, ln_Sa, std_al, std_ep, frag_mean_beta = cal_edge_dist(cfg.infra, eq_name)
+    probs = {k: {0:v, 1:1-v} for k,v in pf.items()}
 
-node_coords = {}
-for k, v in cfg.infra['nodes'].items():
-    node_coords[k] = (v['pos_x'], v['pos_y'])
+    # arcs and nodes
+    arcs = {}
+    for k, v in cfg.infra['edges'].items():
+        arcs[k] = [v['origin'], v['destination']]
 
-arc_len = trans.get_arcs_length(arcs, node_coords)
-speed = 100.0 # (km/h) assume homogeneous speed for all roads
-arc_time = {k: v/speed for k, v in arc_len.items()}
+    node_coords = {}
+    for k, v in cfg.infra['nodes'].items():
+        node_coords[k] = (v['pos_x'], v['pos_y'])
 
-# variables
-varis = {}
-for k, v in cfg.infra['edges'].items():
-    varis[k] = variable.Variable(name=k, values = [np.inf, arc_time[k]])
+    arc_len = trans.get_arcs_length(arcs, node_coords)
+    speed = 100.0 # (km/h) assume homogeneous speed for all roads
+    arc_time = {k: v/speed for k, v in arc_len.items()}
 
-# cpms
-cpms = {}
-for k, v in cfg.infra['edges'].items():
-    cpms[k] = cpm.Cpm([varis[k]], 1, C=np.array([[0],[1]]), p = np.array([pf[k], 1-pf[k]]))
+    # variables
+    varis = {}
+    for k, v in cfg.infra['edges'].items():
+        varis[k] = variable.Variable(name=k, values = [np.inf, arc_time[k]])
 
-comps_st_itc = {k: len(v.values)-1 for k,v in varis.items()}
-st_br_to_cs = {'f': 0, 's': 1, 'u': 2}
+    # cpms
+    cpms = {}
+    for k, v in cfg.infra['edges'].items():
+        cpms[k] = cpm.Cpm([varis[k]], 1, C=np.array([[0],[1]]), p = np.array([pf[k], 1-pf[k]]))
 
-dests = cfg.infra['origins']
-thres = cfg.infra['thres']
+    comps_st_itc = {k: len(v.values)-1 for k,v in varis.items()}
+    st_br_to_cs = {'f': 0, 's': 1, 'u': 2}
 
-sys_pfs = {}
-sys_nsamps = {}
+    dests = cfg.infra['origins']
+    thres = cfg.infra['thres']
 
-for node in cfg.infra['nodes'].keys():
-#for node in ['n68']: # for test
+    return dests, thres, comps_st_itc, st_br_to_cs, arcs, varis, probs, cpms, cfg, output_path
+
+#sys_pfs = {}
+#sys_nsamps = {}
+
+#for node in cfg.infra['nodes'].keys():
+#for node in ['n30']: # for test
+def process_node(node, dests, thres, comps_st_itc, st_br_to_cs, arcs, varis, probs, cpms, cfg, output_path):
     print(f'-----Analysis begins for node: {node}-----')
 
     if node not in dests:
@@ -211,11 +219,12 @@ for node in cfg.infra['nodes'].keys():
         monitor['out_flag'] = [monitor1['out_flag'], monitor2['out_flag']]
 
         csys, varis = gen_bnb.get_csys_from_brs(brs, varis, st_br_to_cs)
-        varis[node] = variable.Variable(node, values = ['f', 's', 'u'])
+        #varis[node] = variable.Variable(node, values = ['f', 's', 'u'])
+        vari_node = variable.Variable(node, values = ['f', 's', 'u'])
 
         pf_u, pf_l = monitor['pf_up'][-1], monitor['pf_low'][-1]
-        if monitor['out_flag'][-1] == 'max_sf' or monitor['out_flag'][-1] == 'max_nb':
-            print(f'*Rejection sampling started..*')
+        if (monitor['out_flag'][-1] == 'max_sf' or monitor['out_flag'][-1] == 'max_nb') and (1.0-pf_u-pf_l > 1.0e-4):
+            print(f'*[node {node}] Rejection sampling started..*')
 
             csys = csys[ csys[:,0] != st_br_to_cs['u'] ] # remove unknown state instances
             cpms[node] = cpm.Cpm( [varis[node]] + [varis[k] for k in arcs.keys()], 1, csys, np.ones((len(csys),1), dtype=float) )
@@ -228,52 +237,106 @@ for node in cfg.infra['nodes'].keys():
                     return val, 0
 
             start = time.time()
-            cpm2_, result_ = cpm.rejection_sampling_sys(cpms, node, sys_fun_rs, cfg.cov_t, 0, 1.0-pf_l-pf_u, pf_l, rand_seed=0 )
-            cpms[node] = copy.deepcopy(cpm2_)
+            cpm2_, result_rs = cpm.rejection_sampling_sys(cpms, node, sys_fun_rs, cfg.cov_t, 0, 1.0-pf_l-pf_u, pf_l, rand_seed=0 )
+            #cpms[node] = copy.deepcopy(cpm2_)
+            cpm_node = copy.deepcopy(cpm2_)
             end = time.time()
 
-            sys_pfs[node] = result_['pf']
-            sys_nsamps[node] = result_['cov']
+            #sys_pfs[node] = result_['pf']
+            sys_pf_node = result_rs['pf']
+            #sys_nsamps[node] = result_['nsamp']
+            sys_nsamp_node = result_rs['nsamp']
 
-            fout_rs = output_path.joinpath(f'rs_{node}.txt')
+            """fout_rs = output_path.joinpath(f'rs_{node}.txt')
             with open(fout_rs, 'w') as f:
-                for k, v in result_.items():
+                for k, v in result_rs.items():
                     if k in ['pf', 'cov']:
                         f.write(f"{k}\t{v:.4e}\n")
                     elif k in ['nsamp', 'nsamp_tot']:
                         f.write(f"{k}\t{v:d}\n")
-                f.write(f"time (sec)\t{end-start:.4e}\n")
+                f.write(f"time (sec)\t{end-start:.4e}\n")"""
+            result_rs['time'] = end-start
 
         else:
-            cpms[node] = cpm.Cpm( [varis[node]] + [varis[k] for k in arcs.keys()], 1, csys, np.ones((len(csys),1), dtype=float) )
-            sys_pfs[node] = pf_u
-            sys_nsamps[node] = 0
+            #cpms[node] = cpm.Cpm( [varis[node]] + [varis[k] for k in arcs.keys()], 1, csys, np.ones((len(csys),1), dtype=float) )
+            cpm_node = cpm.Cpm( [vari_node] + [varis[k] for k in arcs.keys()], 1, csys, np.ones((len(csys),1), dtype=float) )
+            #sys_pfs[node] = pf_u
+            sys_pf_node = pf_u
+            #sys_nsamps[node] = 0
+            sys_nsamp_node = 0
+            result_rs = None
 
         # save results
+        """fout_monitor = output_path.joinpath(f'brc_{node}.pk')
+        with open(fout_monitor, 'wb') as fout:
+            pickle.dump(monitor, fout)"""
+
+    else:
+
+        #sys_pfs[node] = 0
+        sys_pf_node = 0
+        #sys_nsamps[node] = 0
+        sys_nsamp_node = 0
+        cpm_node = None
+        vari_node = None
+        monitor = None
+        result_rs = None
+
+    print(f'-----Analysis completed for node: {node}-----')
+
+    return node, vari_node, cpm_node, sys_pf_node, sys_nsamp_node, monitor, result_rs
+
+def main(cfg_name, eq_name):
+    dests, thres, comps_st_itc, st_br_to_cs, arcs, varis, probs, cpms, cfg, output_path = configure(cfg_name, eq_name)
+
+    # Run the analysis in parallel
+    futures = []
+    with concurrent.futures.ProcessPoolExecutor(max_workers = 8) as exec:
+        for node in cfg.infra['nodes'].keys():
+        #for node in ['n1', 'n2']: # for test
+            futures.append(exec.submit(process_node, node, dests, thres, comps_st_itc, st_br_to_cs, arcs, varis, probs, cpms, cfg, output_path))
+
+    # Collect the results
+    sys_pfs, sys_nsamps = {}, {}
+    for future in concurrent.futures.as_completed(futures):
+        node, vari_node, cpm_node, sys_pf_node, sys_nsamp_node, monitor, result_rs = future.result()
+
+        if vari_node is not None:
+            varis[node] = vari_node
+            cpms[node] = cpm_node
+        sys_pfs[node] = sys_pf_node
+        sys_nsamps[node] = sys_nsamp_node
+
         fout_monitor = output_path.joinpath(f'brc_{node}.pk')
         with open(fout_monitor, 'wb') as fout:
             pickle.dump(monitor, fout)
 
-    else:
+        if result_rs is not None:
+            fout_rs = output_path.joinpath(f'rs_{node}.txt')
+            with open(fout_rs, 'w') as f:
+                for k, v in result_rs.items():
+                    if k in ['pf', 'cov']:
+                        f.write(f"{k}\t{v:.4e}\n")
+                    elif k in ['nsamp', 'nsamp_tot']:
+                        f.write(f"{k}\t{v:d}\n")
+                f.write(f"time (sec)\t{result_rs['time']:.4e}\n")
 
-        sys_pfs[node] = 0
-        sys_nsamps[node] = 0
+    # save results
+    fout = output_path.joinpath(f'result.txt')
+    with open(fout, 'w') as f:
+        for k, v in sys_pfs.items():
+            f.write(f'{k}\t{v:.4e}\t{sys_nsamps[k]}\n')
 
-    print(f'***Analysis completed***')
+    fout_varis = output_path.joinpath(f'varis.pk')
+    with open(fout_varis, 'wb') as fout:
+        pickle.dump(varis, fout)
 
-# save results
-fout = output_path.joinpath(f'result.txt')
-with open(fout, 'w') as f:
-    for k, v in sys_pfs.items():
-        f.write(f'{k}\t{v:.4e}\t{sys_nsamps[k]}\n')
+    fout_cpm = output_path.joinpath(f'cpms.pk')
+    with open(fout_cpm, 'wb') as fout:
+        pickle.dump(cpms, fout)
 
-fout_varis = output_path.joinpath(f'varis.pk')
-with open(fout_varis, 'wb') as fout:
-    pickle.dump(varis, fout)
+    print(f'-----All nodes completed. Results saved-----')
 
-fout_cpm = output_path.joinpath(f'cpms.pk')
-with open(fout_cpm, 'wb') as fout:
-    pickle.dump(cpms, fout)
-
-print(f'-----All nodes completed. Results saved-----')
-
+if __name__ == '__main__':
+    freeze_support()
+    main('config.json', 's1')
