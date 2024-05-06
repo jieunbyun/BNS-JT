@@ -155,8 +155,104 @@ def gmpe_cam03( Mw, Rrup ):
 
     return ln_Sa, std_al, std_ep
 
+def mcs_unknown(brs_u, probs, sys_fun_rs, cpms, sys_name, cov_t, sys_st_monitor, sys_st_prob, rand_seed=None):
+    """
+    Perform Monte Carlo simulation for the unknown state.
 
-freeze_support() # for parallel processing
+    INPUTS:
+    brs_u: Unspecified branches (list)
+    probs: a dictionary of failure probabilities for each component
+    sys_fun_rs: System function 
+    cpms: a list of cpms containing component events and system event
+    sys_name: a string of the system event's name in cpms
+    cov_t: a target c.o.v.
+    sys_st_monitor: System state to monitor (e.g. 0)
+    sys_st_prob: known probability of sys_st_monitor
+    rand_seed: Random seed
+
+    OUTPUTS:
+    result: Results of the Monte Carlo simulation
+    """
+
+    # Set the random seed
+    if rand_seed:
+        np.random.seed(rand_seed)
+
+    brs_u_probs = [b[4] for b in brs_u]
+    brs_u_prob = sum(brs_u_probs)
+
+
+    samples = []
+    samples_sys = np.empty((0, 1), dtype=int)
+    sample_probs = []
+
+    nsamp, nfail = 0, 0
+    pf, cov = 0.0, 1.0
+    while cov > cov_t:
+        nsamp += 1
+
+        sample1 = {}
+        s_prob1 = {}
+
+        # select a branch
+        br_id = np.random.choice(range(len(brs_u)), p=brs_u_probs / brs_u_prob)
+        br = brs_u[br_id]
+        for e in br.down.keys():
+            d = br.down[e]
+            u = br.up[e]
+
+            if d < u: # (fail, surv)
+                st = np.random.choice(range(d, u+1), p=[probs[e][d], probs[e][u] ])
+            else:
+                st = d
+
+            sample1[e] = st
+            s_prob1[e] = probs[e][st]
+        
+        # system function run
+        val, sys_st = sys_fun_rs(sample1)
+
+        samples.append(sample1)
+        sample_probs.append(s_prob1)
+        samples_sys = np.vstack((samples_sys, [sys_st]))
+
+        if st == sys_st_monitor:
+            nfail += 1
+
+        if nsamp > 9:
+            prior = 0.01
+            a,b = prior + nfail, prior + (nsamp-nfail) # Bayesian estimation assuming beta conjucate distribution
+            
+            pf_s = a / (a+b)
+            var_s = a*b / (a+b)**2 / (a+b+1)
+            std_s = np.sqrt(var_s)
+
+            pf = sys_st_prob + brs_u_prob *pf_s
+            std = brs_u_prob * std_s
+
+            cov = std/pf
+
+        if nsamp%1000 == 0:
+            print(f'nsamp: {nsamp}, pf: {pf:.4e}, cov: {cov:.4e}')
+
+    # Allocate samples to CPMs
+    Csys = np.zeros( (nsamp, len(probs)), dtype=int )
+    Csys = np.hstack( (samples_sys, Csys))
+    for i, v in enumerate(cpms[sys_name].variables[1:]):
+        Cv = np.array( [s[v.name] for s in samples], dtype=int ).T
+        cpms[v.name].Cs, cpms[v.name].q = Cv, np.array([p[v.name] for p in sample_probs], dtype=float).T
+        cpms[v.name].sample_idx = np.arange(nsamp, dtype=int)
+
+        Csys[:,i+1] = Cv.flatten()
+
+    cpms[sys_name].Cs, cpms[sys_name].q = Csys, np.ones((nsamp,1), dtype=float)
+    cpms[sys_name].sample_idx = np.arange(nsamp, dtype=int)
+
+    result = {'pf': pf, 'cov': cov, 'nsamp': nsamp}
+
+    return cpms, result
+
+
 
 def configure(cfg_name, eq_name):
     ## ANALYSIS ##
@@ -221,13 +317,14 @@ def process_node(node, dests, thres, comps_st_itc, st_br_to_cs, arcs, varis, pro
         csys, varis = gen_bnb.get_csys_from_brs(brs, varis, st_br_to_cs)
         #varis[node] = variable.Variable(node, values = ['f', 's', 'u'])
         vari_node = variable.Variable(node, values = ['f', 's', 'u'])
+        cpms[node] = cpm.Cpm( [vari_node] + [varis[k] for k in arcs.keys()], 1, csys, np.ones((len(csys),1), dtype=float) )
 
         pf_u, pf_l = monitor['pf_up'][-1], monitor['pf_low'][-1]
-        if (monitor['out_flag'][-1] == 'max_sf' or monitor['out_flag'][-1] == 'max_nb') and (1.0-pf_u-pf_l > 1.0e-4):
-            print(f'*[node {node}] Rejection sampling started..*')
+        if (monitor['out_flag'][-1] == 'max_sf' or monitor['out_flag'][-1] == 'max_nb'):
+            print(f'*[node {node}] MCS on unknown started..*')
 
-            csys = csys[ csys[:,0] != st_br_to_cs['u'] ] # remove unknown state instances
-            cpms[node] = cpm.Cpm( [varis[node]] + [varis[k] for k in arcs.keys()], 1, csys, np.ones((len(csys),1), dtype=float) )
+            #csys = csys[ csys[:,0] != st_br_to_cs['u'] ] # remove unknown state instances
+            #cpms[node] = cpm.Cpm( [varis[node]] + [varis[k] for k in arcs.keys()], 1, csys, np.ones((len(csys),1), dtype=float) )
 
             def sys_fun_rs(x):
                 val, st, _ = sys_fun(x)
@@ -237,15 +334,18 @@ def process_node(node, dests, thres, comps_st_itc, st_br_to_cs, arcs, varis, pro
                     return val, 0
 
             start = time.time()
-            cpm2_, result_rs = cpm.rejection_sampling_sys(cpms, node, sys_fun_rs, cfg.cov_t, 0, 1.0-pf_l-pf_u, pf_l, rand_seed=0 )
+            #cpm2_, result_rs = cpm.rejection_sampling_sys(cpms, node, sys_fun_rs, cfg.cov_t, 0, 1.0-pf_l-pf_u, pf_l, rand_seed=0 )
+            brs_u = [b for b in brs if b.up_state == 'u' or b.down_state == 'u' or b.up_state!=b.down_state]
+            cpms, result_mcs = mcs_unknown(brs_u, probs, sys_fun_rs, cpms, node, cov_t=0.01, sys_st_monitor=0, sys_st_prob=pf_l, rand_seed=1)
+
             #cpms[node] = copy.deepcopy(cpm2_)
-            cpm_node = copy.deepcopy(cpm2_)
+            #cpm_node = copy.deepcopy(cpm2_)
             end = time.time()
 
             #sys_pfs[node] = result_['pf']
-            sys_pf_node = result_rs['pf']
+            sys_pf_node = result_mcs['pf']
             #sys_nsamps[node] = result_['nsamp']
-            sys_nsamp_node = result_rs['nsamp']
+            sys_nsamp_node = result_mcs['nsamp']
 
             """fout_rs = output_path.joinpath(f'rs_{node}.txt')
             with open(fout_rs, 'w') as f:
@@ -255,16 +355,17 @@ def process_node(node, dests, thres, comps_st_itc, st_br_to_cs, arcs, varis, pro
                     elif k in ['nsamp', 'nsamp_tot']:
                         f.write(f"{k}\t{v:d}\n")
                 f.write(f"time (sec)\t{end-start:.4e}\n")"""
-            result_rs['time'] = end-start
+            result_mcs['time'] = end-start
+            print(f'*[node {node}] MCS on unknown completed*')
 
         else:
             #cpms[node] = cpm.Cpm( [varis[node]] + [varis[k] for k in arcs.keys()], 1, csys, np.ones((len(csys),1), dtype=float) )
-            cpm_node = cpm.Cpm( [vari_node] + [varis[k] for k in arcs.keys()], 1, csys, np.ones((len(csys),1), dtype=float) )
+            #cpm_node = cpm.Cpm( [vari_node] + [varis[k] for k in arcs.keys()], 1, csys, np.ones((len(csys),1), dtype=float) )
             #sys_pfs[node] = pf_u
             sys_pf_node = pf_u
             #sys_nsamps[node] = 0
             sys_nsamp_node = 0
-            result_rs = None
+            result_mcs = None
 
         # save results
         """fout_monitor = output_path.joinpath(f'brc_{node}.pk')
@@ -277,14 +378,14 @@ def process_node(node, dests, thres, comps_st_itc, st_br_to_cs, arcs, varis, pro
         sys_pf_node = 0
         #sys_nsamps[node] = 0
         sys_nsamp_node = 0
-        cpm_node = None
-        vari_node = None
         monitor = None
-        result_rs = None
+        result_mcs = None
+        cpms = None
+        vari_node = None
 
     print(f'-----Analysis completed for node: {node}-----')
 
-    return node, vari_node, cpm_node, sys_pf_node, sys_nsamp_node, monitor, result_rs
+    return node, vari_node, cpms, sys_pf_node, sys_nsamp_node, monitor, result_mcs
 
 def main(cfg_name, eq_name):
     dests, thres, comps_st_itc, st_br_to_cs, arcs, varis, probs, cpms, cfg, output_path = configure(cfg_name, eq_name)
@@ -293,33 +394,37 @@ def main(cfg_name, eq_name):
     futures = []
     with concurrent.futures.ProcessPoolExecutor(max_workers = 8) as exec:
         for node in cfg.infra['nodes'].keys():
-        #for node in ['n1', 'n2']: # for test
+        #for node in ['n30']: # for test
             futures.append(exec.submit(process_node, node, dests, thres, comps_st_itc, st_br_to_cs, arcs, varis, probs, cpms, cfg, output_path))
 
     # Collect the results
     sys_pfs, sys_nsamps = {}, {}
     for future in concurrent.futures.as_completed(futures):
-        node, vari_node, cpm_node, sys_pf_node, sys_nsamp_node, monitor, result_rs = future.result()
+        node, vari_node, cpms, sys_pf_node, sys_nsamp_node, monitor, result_mcs = future.result()
 
         if vari_node is not None:
             varis[node] = vari_node
-            cpms[node] = cpm_node
-        sys_pfs[node] = sys_pf_node
-        sys_nsamps[node] = sys_nsamp_node
 
-        fout_monitor = output_path.joinpath(f'brc_{node}.pk')
-        with open(fout_monitor, 'wb') as fout:
-            pickle.dump(monitor, fout)
+            fout_cpm = output_path.joinpath(f'cpms_{node}.pk')
+            with open(fout_cpm, 'wb') as fout:
+                pickle.dump(cpms, fout)
 
-        if result_rs is not None:
+            sys_pfs[node] = sys_pf_node
+            sys_nsamps[node] = sys_nsamp_node
+
+            fout_monitor = output_path.joinpath(f'brc_{node}.pk')
+            with open(fout_monitor, 'wb') as fout:
+                pickle.dump(monitor, fout)
+
+        if result_mcs is not None:
             fout_rs = output_path.joinpath(f'rs_{node}.txt')
             with open(fout_rs, 'w') as f:
-                for k, v in result_rs.items():
+                for k, v in result_mcs.items():
                     if k in ['pf', 'cov']:
                         f.write(f"{k}\t{v:.4e}\n")
                     elif k in ['nsamp', 'nsamp_tot']:
                         f.write(f"{k}\t{v:d}\n")
-                f.write(f"time (sec)\t{result_rs['time']:.4e}\n")
+                f.write(f"time (sec)\t{result_mcs['time']:.4e}\n")
 
     # save results
     fout = output_path.joinpath(f'result.txt')
@@ -330,10 +435,6 @@ def main(cfg_name, eq_name):
     fout_varis = output_path.joinpath(f'varis.pk')
     with open(fout_varis, 'wb') as fout:
         pickle.dump(varis, fout)
-
-    fout_cpm = output_path.joinpath(f'cpms.pk')
-    with open(fout_cpm, 'wb') as fout:
-        pickle.dump(cpms, fout)
 
     print(f'-----All nodes completed. Results saved-----')
 
