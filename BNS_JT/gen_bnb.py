@@ -934,6 +934,32 @@ def run_brc(varis, probs, sys_fun, max_sf, max_nb, pf_bnd_wr = 0.0, surv_first=T
 
     brs, _ = decomp_df(varis, rules, probs, max_nb)
     try:
+        pr_bf = sum([b[4] for b in brs if b.up_state == 'f']) # prob. of failure branches
+        pr_bs = sum([b[4] for b in brs if b.down_state == 's']) # prob. of survival branches
+    
+        no_rf = len(rules['f'])
+        no_rs = len(rules['s'])
+
+        no_bf = sum([b.up_state == 'f' for b in brs])
+        no_bs = sum([b.down_state == 's' for b in brs])
+        no_bu = len(brs) - no_bf - no_bs
+
+        monitor['r_f_ns'].append( no_rf )
+        monitor['r_s_ns'].append( no_rs )
+        monitor['pf_up'].append(1.0-pr_bs)
+        monitor['pf_low'].append(pr_bf)
+        monitor['br_s_ns'].append(no_bs)
+        monitor['br_f_ns'].append(no_bf)
+        monitor['br_u_ns'].append(no_bu)
+        monitor['sf_ns'].append(no_sf)
+        monitor['time'].append(end-start)
+        try:
+            min_len_rf = min( [len(x) for x in rules['f']] )
+            avg_len_rf = sum( [len(x) for x in rules['f']] ) / no_rf
+        except ValueError:
+            min_len_rf = 0
+            avg_len_rf = 0
+
         out_flag = monitor['out_flag']
         print(f'***Analysis completed with f_sys runs {no_sf}: out_flag = {out_flag}***')
         print(f'The # of found non-dominated rules (f, s): {no_rf + no_rs} ({no_rf}, {no_rs})')

@@ -1128,7 +1128,7 @@ def rejection_sampling_sys(cpms, sys_name, sys_fun, nsamp_cov, sys_st_monitor = 
     samples_sys = np.empty((0, 1), dtype=int)
     sample_probs = np.empty((0, len(sample_vars)), dtype=float)
 
-    pf, cov = 0, 1
+    pf, cov = 0.0, 1.0
     while (is_nsamp and stop < nsamp_cov) or (not is_nsamp and stop > nsamp_cov):
 
         nsamp_tot += 1
