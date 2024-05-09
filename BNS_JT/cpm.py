@@ -944,30 +944,32 @@ def get_sample_order(cpms):
 
     sample_order = []
     sample_vars = []
+    var_add_order = []
 
     for i in range(ncpms):
 
         cpm_prod_idx = get_prod_idx(cpms_, sample_vars)
 
-        sample_order.append(cpms_idx[cpm_prod_idx])
-        cpm_prod = cpms_[cpm_prod_idx]
+        if cpm_prod_idx is not None:
+            sample_order.append(cpms_idx[cpm_prod_idx])
+            cpm_prod = cpms_[cpm_prod_idx]
 
-        vars_prod = cpm_prod.variables[:cpm_prod.no_child]
+            vars_prod = cpm_prod.variables[:cpm_prod.no_child]
 
-        if set(sample_vars).intersection(vars_prod):
-            print('Given Cpms must not have common child nodes')
-        else:
-            [sample_vars.append(x) for x in vars_prod]
+            if set(sample_vars).intersection(vars_prod):
+                print('Given Cpms must not have common child nodes')
+            else:
+                [sample_vars.append(x) for x in vars_prod]
 
-        try:
-            var_add_order = np.append(
-                var_add_order,
-                i*np.ones(len(vars_prod)))
-        except NameError:
-            var_add_order = i*np.ones(len(vars_prod))
+            try:
+                var_add_order = np.append(
+                    var_add_order,
+                    i*np.ones(len(vars_prod)))
+            except NameError:
+                var_add_order = i*np.ones(len(vars_prod))
 
-        cpms_.pop(cpm_prod_idx)
-        cpms_idx.pop(cpm_prod_idx)
+            cpms_.pop(cpm_prod_idx)
+            cpms_idx.pop(cpm_prod_idx)
 
     return sample_order, sample_vars, var_add_order
 
@@ -1068,9 +1070,12 @@ def single_sample(cpms, sample_order, sample_vars, var_add_order, sample_idx, is
         idx = M.C[irow, :M.no_child]
         sample[var_add_order == i] = idx
 
-    sample_prob = np.exp(sample_prob)
-
-    return sample, sample_prob
+    try:
+        sample_prob = np.exp(sample_prob)
+    except NameError:
+        return sample, None
+    else:
+        return sample, sample_prob
 
 
 def rejection_sampling_sys(cpms, sys_name, sys_fun, nsamp_cov, sys_st_monitor = None, known_prob=0.0, sys_st_prob = 0.0, rand_seed = None):
@@ -1113,7 +1118,10 @@ def rejection_sampling_sys(cpms, sys_name, sys_fun, nsamp_cov, sys_st_monitor = 
 
     sample_order, sample_vars, var_add_order = get_sample_order(cpms_no_sys)
     sample_vars_str = [x.name for x in sample_vars]
-    comp_vars_loc = [sample_vars_str.index(x) for x in comp_names]
+    try:
+        comp_vars_loc = [sample_vars_str.index(x) for x in comp_names]
+    except ValueError:
+        comp_vars_loc = []
 
     cpms_v_idxs_ = {k: get_var_ind(sample_vars, [y.name for y in x.variables[:x.no_child]])
                     for k, x in cpms_no_sys.items()}

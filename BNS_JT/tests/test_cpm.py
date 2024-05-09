@@ -9,7 +9,7 @@ from pathlib import Path
 np.set_printoptions(precision=3)
 #pd.set_option.display_precision = 3
 
-from BNS_JT import cpm, variable, config, trans, gen_bnb, betasumrat
+from BNS_JT import cpm, variable, config, trans, gen_bnb
 
 HOME = Path(__file__).parent
 
@@ -1755,7 +1755,6 @@ def test_get_sample_order(setup_mcs_product):
     cpms = [cpms[k] for k in [1, 2, 3]]
 
     sampleOrder, sampleVars, varAdditionOrder = cpm.get_sample_order(cpms)
-
     expected = [0, 1, 2]
     np.testing.assert_array_equal(sampleOrder, expected)
     np.testing.assert_array_equal(varAdditionOrder, expected)
@@ -1976,8 +1975,14 @@ def test_mcs_product3(setup_mcs_product):
     nSample = 10
     cpms = setup_mcs_product
     cpms = [cpms[k] for k in [2, 5]]
-    with pytest.raises(TypeError):
-        Mcs = cpm.mcs_product(cpms, nSample)
+
+    #with pytest.raises(TypeError):
+    Mcs = cpm.mcs_product(cpms, nSample)
+    assert Mcs.variables == []
+    assert Mcs.no_child == 0
+    assert Mcs.C.shape[0] == 0
+    assert Mcs.p.shape[0] == 0
+
 
 def test_get_value_given_condn1():
 
