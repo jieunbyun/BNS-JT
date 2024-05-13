@@ -1,68 +1,96 @@
-import config_pm
+import json
 import numpy as np
 from scipy import interpolate
 from pathlib import Path
 from scipy.stats import norm
-from BNS_JT import variable, cpm, gen_bnb, trans
 import copy, pickle, time
 import concurrent.futures
 from multiprocessing import freeze_support
 
+from BNS_JT import variable, cpm, gen_bnb, trans, config
+
 HOME = Path(__file__).parent
-output_path = HOME.joinpath('./output')
-output_path.mkdir(parents=True, exist_ok=True)
+#output_path = HOME.joinpath('./output')
+#output_path.mkdir(parents=True, exist_ok=True)
+
+
+def read_model_from_json_custom(file_input):
+
+    with open(file_input, 'r') as f:
+        model = json.load(f)
+
+    """
+    # read node information
+    nodes = {}
+    for k, v in model['component_list'].items():
+        nodes[k] = v
+
+    edges = {}
+    for k, v in model['node_conn_df'].items():
+        edges[k] = v
+    """
+
+    origins = []
+    for k, v in model['origin_list'].items():
+        origins += [v['ID']]
+
+    eq = {}
+    for k, v in model['eq_scenario'].items():
+        eq[k] = v
+
+    frag = {}
+    for k, v in model['fragility_data'].items():
+        frag[k] = v
+
+    thres = model['system']['delay_thres']
+
+    return {'origins': origins, 'eq': eq, 'frag': frag, 'thres': thres}
+
 
 # Edge failure probability calculation
-def cal_edge_dist(infra_data, eq_name):
+def cal_edge_dist(cfg, eq_name):
 
     # Distance to epicentre
     Rrup = {}
-    epi_loc = infra_data['eq'][eq_name]['epicentre']
+    epi_loc = cfg.infra['eq'][eq_name]['epicentre']
 
-    for k, v in infra_data['edges'].items():
-        x1, y1 = infra_data['nodes'][v['origin']]['pos_x'], infra_data['nodes'][v['origin']]['pos_y']
-        x2, y2 = infra_data['nodes'][v['destination']]['pos_x'], infra_data['nodes'][v['destination']]['pos_y']
-        Rrup[k] = shortest_distance(x1, y1, x2, y2, epi_loc[0], epi_loc[1])
+    for k, v in cfg.infra['edges'].items():
+        org = cfg.infra['nodes'][v['origin']]
+        dest = cfg.infra['nodes'][v['destination']]
+        Rrup[k] = shortest_distance(org.values(), dest.values(), epi_loc)
 
     # GMPE model (Campbell 2003)
-    Mw = infra_data['eq'][eq_name]['Mw']
+    Mw = cfg.infra['eq'][eq_name]['Mw']
     ln_Sa, std_al, std_ep = gmpe_cam03(Mw, Rrup)
 
-    # fragility curves
-    frag_mean_beta = {}
-    dam_st = 2 # Extensive damage
-    for k, v in infra_data['edges'].items():
-
-        mean = infra_data['frag'][v['fragility_type']]['Sa_g'][dam_st]
-        beta = infra_data['frag'][v['fragility_type']]['Sa_g_dispersion']
-
-        frag_mean_beta[k] = (mean, beta)
+    dmg_st = 2 # Extensive damage
 
     # mean and covariance matrix between failures of roads
-    VAR = {}
-    COV = np.zeros(shape=(len(ln_Sa), len(ln_Sa)))
-    for i1, (k1, std_ep1) in enumerate(std_ep.items()):
+    no_edges = len(cfg.infra['edges'])
+    vari = {}
+    cov = np.zeros(shape=(no_edges, no_edges))
 
-        std_beta = frag_mean_beta[k1][1]
+    for i1, (k1, v1) in enumerate(cfg.infra['edges'].items()):
 
-        for i2, k2 in enumerate(std_ep.keys()):
+        mean_ = cfg.infra['frag'][v1['fragility_type']]['Sa_g'][dmg_st]
+        std_ = cfg.infra['frag'][v1['fragility_type']]['Sa_g_dispersion']
 
-            if k1==k2:
-                COV[i1, i2] = std_al**2 + std_ep1**2 + std_beta**2
-                VAR[k1] = std_al**2 + std_ep1**2 + std_beta**2
+        vari[k1] = std_al**2 + std_ep[k1]**2 + std_**2
+
+        for i2, k2 in enumerate(cfg.infra['edges'].items()):
+
+            if k1 == k2:
+                cov[i1, i2] = std_al**2 + std_ep[k1]**2 + std_**2
             else:
-                COV[i1,i2] = std_al**2
+                cov[i1, i2] = std_al**2
 
-    MEAN = {k: np.log(frag_mean_beta[k][0]) - v for k, v in ln_Sa.items()}
+        v1['mean'] = np.log(mean_) - ln_Sa[k1]
 
-
-    # failure probability
-    pf = {k: norm.cdf(0, MEAN[k], np.sqrt(VAR[k])) for k in MEAN.keys()}
-
-    return pf, MEAN, VAR, COV, Rrup, ln_Sa, std_al, std_ep, frag_mean_beta
+        # failure probability
+        v1['pf'] = norm.cdf(0, mean_, np.sqrt(vari[k1]))
 
 
-def shortest_distance(x1, y1, x2, y2, x0, y0):
+def shortest_distance(line_pt1, line_pt2, pt):
     """
     Calculate the shortest distance between a point and a line.
 
@@ -72,6 +100,9 @@ def shortest_distance(x1, y1, x2, y2, x0, y0):
     Returns:
     - distance: The shortest distance between the line and the point. In case the projection of the point is outside the line segment, the distance is calculated to the closest endpoint.
     """
+    x1, y1 = line_pt1
+    x2, y2 = line_pt2
+    x0, y0 = pt
     # Calculate the dot products
     dot1 = ((x0 - x1) * (x2 - x1) + (y0 - y1) * (y2 - y1)) / ((x2 - x1)**2 + (y2 - y1)**2)
     dot2 = ((x0 - x2) * (x1 - x2) + (y0 - y2) * (y1 - y2)) / ((x1 - x2)**2 + (y1 - y2)**2)
@@ -86,9 +117,11 @@ def shortest_distance(x1, y1, x2, y2, x0, y0):
     numerator = abs((y2 - y1)*x0 - (x2 - x1)*y0 + x2*y1 - y2*x1)
     denominator = np.sqrt((y2 - y1)**2 + (x2 - x1)**2)
     distance = numerator / denominator
+
     return distance
 
-def gmpe_cam03( Mw, Rrup ):
+
+def gmpe_cam03(Mw, Rrup):
     """
     Calculate Sa (g) at T=0.1s of each edge (given as keys in Rrup) using the GMPE model by Campbell (2003).
 
@@ -119,8 +152,8 @@ def gmpe_cam03( Mw, Rrup ):
                            [0.14, 0.13, 0.13, 0.14, 0.15, 0.16, 0.16, 0.16, 0.18, 0.21, 0.27],
                            [0.15, 0.15, 0.14, 0.15, 0.15, 0.17, 0.18, 0.18, 0.20, 0.22, 0.28],
                            [0.17, 0.17, 0.16, 0.16, 0.17, 0.18, 0.20, 0.21, 0.22, 0.23, 0.29]])
-    
-    Mw_grid, rrup_grid = np.meshgrid(std_eps_Mw, std_eps_rrup) 
+
+    Mw_grid, rrup_grid = np.meshgrid(std_eps_Mw, std_eps_rrup)
     std_ep_f = interpolate.bisplrep( Mw_grid, rrup_grid, std_eps_val, s=0 )
     ######################
 
@@ -151,9 +184,10 @@ def gmpe_cam03( Mw, Rrup ):
     if Mw < M1:
         std_al = c11 + c12
     else:
-        std_al = c13 
+        std_al = c13
 
     return ln_Sa, std_al, std_ep
+
 
 def mcs_unknown(brs_u, probs, sys_fun_rs, cpms, sys_name, cov_t, sys_st_monitor, sys_st_prob, rand_seed=None):
     """
@@ -208,7 +242,7 @@ def mcs_unknown(brs_u, probs, sys_fun_rs, cpms, sys_name, cov_t, sys_st_monitor,
 
             sample1[e] = st
             s_prob1[e] = probs[e][st]
-        
+
         # system function run
         val, sys_st = sys_fun_rs(sample1)
 
@@ -222,7 +256,7 @@ def mcs_unknown(brs_u, probs, sys_fun_rs, cpms, sys_name, cov_t, sys_st_monitor,
         if nsamp > 9:
             prior = 0.01
             a,b = prior + nfail, prior + (nsamp-nfail) # Bayesian estimation assuming beta conjucate distribution
-            
+
             pf_s = a / (a+b)
             var_s = a*b / (a+b)**2 / (a+b+1)
             std_s = np.sqrt(var_s)
@@ -232,7 +266,7 @@ def mcs_unknown(brs_u, probs, sys_fun_rs, cpms, sys_name, cov_t, sys_st_monitor,
 
             cov = std/pf
 
-        if nsamp%1000 == 0:
+        if nsamp % 1000 == 0:
             print(f'nsamp: {nsamp}, pf: {pf:.4e}, cov: {cov:.4e}')
 
     # Allocate samples to CPMs
@@ -253,56 +287,34 @@ def mcs_unknown(brs_u, probs, sys_fun_rs, cpms, sys_name, cov_t, sys_st_monitor,
     return cpms, result
 
 
+def config_custom(cfg_name, eq_name):
 
-def configure(cfg_name, eq_name):
-    ## ANALYSIS ##
-    #cfg_name = 'config.json'
-    #eq_name = 's1'
+    cfg = config.Config(HOME.joinpath(f'input/{cfg_name}'))
 
-    cfg = config_pm.Config_pm(HOME.joinpath('./input/'+cfg_name))
+    if cfg.data['MAX_SYS_FUN']:
+        cfg.max_sys_fun = cfg.data['MAX_SYS_FUN']
+    else:
+        cfg.max_sys_fun = float('inf')
 
-    # raods' failure probability
-    pf, MEAN, VAR, COV, Rrup, ln_Sa, std_al, std_ep, frag_mean_beta = cal_edge_dist(cfg.infra, eq_name)
-    probs = {k: {0:v, 1:1-v} for k,v in pf.items()}
+    cfg.sys_bnd_wr = cfg.data['SYS_BND_WIDTH_RATIO']
 
-    # arcs and nodes
-    arcs = {}
-    for k, v in cfg.infra['edges'].items():
-        arcs[k] = [v['origin'], v['destination']]
+    cfg.cov_t = cfg.data['MCS_COV']
 
-    node_coords = {}
-    for k, v in cfg.infra['nodes'].items():
-        node_coords[k] = (v['pos_x'], v['pos_y'])
+    # append cfg attributes
+    added = read_model_from_json_custom(cfg.file_model)
+    cfg.infra.update(added)
 
-    arc_len = trans.get_arcs_length(arcs, node_coords)
-    speed = 100.0 # (km/h) assume homogeneous speed for all roads
-    arc_time = {k: v/speed for k, v in arc_len.items()}
+   # roads' failure probability
+    cal_edge_dist(cfg, eq_name)
 
-    # variables
-    varis = {}
-    for k, v in cfg.infra['edges'].items():
-        varis[k] = variable.Variable(name=k, values = [np.inf, arc_time[k]])
+    return cfg
 
-    # cpms
-    cpms = {}
-    for k, v in cfg.infra['edges'].items():
-        cpms[k] = cpm.Cpm([varis[k]], 1, C=np.array([[0],[1]]), p = np.array([pf[k], 1-pf[k]]))
 
-    comps_st_itc = {k: len(v.values)-1 for k,v in varis.items()}
-    st_br_to_cs = {'f': 0, 's': 1, 'u': 2}
+def process_node(cfg, node, comps_st_itc, st_br_to_cs, arcs, varis, probs, cpms):
+    print(f'-----Analysis begins for node: {node}-----')
 
     dests = cfg.infra['origins']
     thres = cfg.infra['thres']
-
-    return dests, thres, comps_st_itc, st_br_to_cs, arcs, varis, probs, cpms, cfg, output_path
-
-#sys_pfs = {}
-#sys_nsamps = {}
-
-#for node in cfg.infra['nodes'].keys():
-#for node in ['n30']: # for test
-def process_node(node, dests, thres, comps_st_itc, st_br_to_cs, arcs, varis, probs, cpms, cfg, output_path):
-    print(f'-----Analysis begins for node: {node}-----')
 
     if node not in dests:
 
@@ -387,15 +399,46 @@ def process_node(node, dests, thres, comps_st_itc, st_br_to_cs, arcs, varis, pro
 
     return node, vari_node, cpms, sys_pf_node, sys_nsamp_node, monitor, result_mcs
 
+
 def main(cfg_name, eq_name):
-    dests, thres, comps_st_itc, st_br_to_cs, arcs, varis, probs, cpms, cfg, output_path = configure(cfg_name, eq_name)
+
+    cfg = config_custom(cfg_name, eq_name)
+
+    probs = {k: {0: v['pf'], 1: 1 - v['pf']} for k, v in cfg.infra['edges'].items()}
+
+    # arcs and nodes
+    arcs = {}
+    for k, v in cfg.infra['edges'].items():
+        arcs[k] = [v['origin'], v['destination']]
+
+    node_coords = {}
+    for k, v in cfg.infra['nodes'].items():
+        node_coords[k] = (v['pos_x'], v['pos_y'])
+
+    arc_len = trans.get_arcs_length(arcs, node_coords)
+    speed = 100.0 # (km/h) assume homogeneous speed for all roads
+    arc_time = {k: v/speed for k, v in arc_len.items()}
+
+    # variables
+    varis = {}
+    for k, v in cfg.infra['edges'].items():
+        varis[k] = variable.Variable(name=k, values = [np.inf, arc_time[k]])
+
+    # cpms
+    cpms = {}
+    comps_st_itc = {}
+    for k, v in cfg.infra['edges'].items():
+        cpms[k] = cpm.Cpm([varis[k]], 1, C=np.array([[0],[1]]), p = np.array([v['pf'], 1-v['pf']]))
+        comps_st_itc[k] = len(varis[k].values) - 1
+
+    st_br_to_cs = {'f': 0, 's': 1, 'u': 2}
 
     # Run the analysis in parallel
     futures = []
     with concurrent.futures.ProcessPoolExecutor(max_workers = 8) as exec:
         for node in cfg.infra['nodes'].keys():
         #for node in ['n30']: # for test
-            futures.append(exec.submit(process_node, node, dests, thres, comps_st_itc, st_br_to_cs, arcs, varis, probs, cpms, cfg, output_path))
+            futures.append(exec.submit(process_node, cfg, node, comps_st_itc, st_br_to_cs, arcs, varis, probs, cpms))
 
     # Collect the results
     sys_pfs, sys_nsamps = {}, {}
@@ -437,6 +480,7 @@ def main(cfg_name, eq_name):
         pickle.dump(varis, fout)
 
     print(f'-----All nodes completed. Results saved-----')
+
 
 if __name__ == '__main__':
     freeze_support()
