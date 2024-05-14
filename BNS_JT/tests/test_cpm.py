@@ -2630,7 +2630,7 @@ def test_cal_Msys_by_cond_VE4(setup_hybrid_no_samp):
 
     assert prob_bnd_x0_s0 == pytest.approx( [0.045/0.415, 1], rel=1.0e-3 )
 
-
+#FIXME: Does not work anymore. "get_sample_order" seems to return an empty list. Can't find a reason.
 def test_rejection_sampling_sys(setup_hybrid_no_samp):
 
     var_elim_order = ['haz', 'x0', 'x1', 'sys']
