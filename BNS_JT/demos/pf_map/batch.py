@@ -385,7 +385,7 @@ def process_node(node, dests, thres, comps_st_itc, st_br_to_cs, arcs, varis, pro
 
     print(f'-----Analysis completed for node: {node}-----')
 
-    return node, vari_node, cpms, sys_pf_node, sys_nsamp_node, monitor, result_mcs
+    return node, vari_node, cpms, sys_pf_node, sys_nsamp_node, rules, monitor, result_mcs
 
 def main(cfg_name, eq_name):
     dests, thres, comps_st_itc, st_br_to_cs, arcs, varis, probs, cpms, cfg, output_path = configure(cfg_name, eq_name)
@@ -400,7 +400,7 @@ def main(cfg_name, eq_name):
     # Collect the results
     sys_pfs, sys_nsamps = {}, {}
     for future in concurrent.futures.as_completed(futures):
-        node, vari_node, cpms, sys_pf_node, sys_nsamp_node, monitor, result_mcs = future.result()
+        node, vari_node, cpms, sys_pf_node, sys_nsamp_node, rules, monitor, result_mcs = future.result()
 
         if vari_node is not None:
             varis[node] = vari_node
@@ -425,6 +425,10 @@ def main(cfg_name, eq_name):
                     elif k in ['nsamp', 'nsamp_tot']:
                         f.write(f"{k}\t{v:d}\n")
                 f.write(f"time (sec)\t{result_mcs['time']:.4e}\n")
+
+        fout_rules = output_path.joinpath(f'rules_{node}.pk')
+        with open(fout_rules, 'wb') as fout:
+            pickle.dump(rules, fout)
 
     # save results
     fout = output_path.joinpath(f'result.txt')
