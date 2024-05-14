@@ -1380,6 +1380,12 @@ def get_prob_and_cov(M, var_inds, var_states, method='MLE', flag=True, nsample_r
             w_eff = w / w_ori.sum() *neff
             nTrue = w_eff.sum()
 
+            # to avoid numerical errors
+            if np.isnan(nTrue):
+                nTrue = 0.0 
+            if np.isnan(neff[0]):
+                neff[0] = 0.0 
+
             try:
                 a, b = a + nTrue, b + (neff[0] - nTrue)
             except NameError:
