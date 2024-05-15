@@ -1,9 +1,10 @@
 {
     "MODEL_NAME": "model.json",
-    "OUTPUT_PATH": "./output/",
+    "OUTPUT_PATH": "../output/",
     "MAX_BRANCHES": 50000,
     "MAX_SYS_FUN": null,
     "SYS_BND_WIDTH_RATIO": 0.05,
+    "SCENARIO_NAME": null,
     "MCS_COV": 0.01,
-    "KEY": "ema"
+    "CONFIGURATION_ID": "ema"
 }

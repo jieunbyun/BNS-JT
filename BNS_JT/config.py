@@ -36,39 +36,47 @@ template_edges = {
 class Config(object):
     """
     """
+    REQ = ['MODEL_NAME', 'MAX_BRANCHES', 'CONFIGURATION_ID', 'OUTPUT_PATH']
+
     def __init__(self, file_cfg):
         """
         :param file_cfg: config file
         """
 
         with open(file_cfg, 'r') as f:
-            cfg = json.load(f)
+            data = json.load(f)
+
+        assert all(x in data for x in self.REQ), f'{self.REQ} should be defined in the config file'
 
         HOME = Path(file_cfg).absolute().parent
 
-        file_model = HOME.joinpath(cfg['MODEL_NAME'])
-        assert file_model.exists(), f'{file_model} does not exist'
-        self.infra = read_model_from_json(file_model)
+        # process required
+        self.file_model = HOME.joinpath(data['MODEL_NAME'])
+        assert self.file_model.exists(), f'{self.file_model} does not exist'
+
+        self.infra = read_model_from_json(self.file_model)
 
         # scenario can be empty
-        if cfg['SCENARIO_NAME']:
-
-            file_scenarios = HOME.joinpath(cfg['SCENARIO_NAME'])
-            assert file_scenarios.exists(), f'{file_scenarios} does not exist'
-            self.scenarios = read_scenarios_from_json(file_scenarios)
+        if data['SCENARIO_NAME']:
+            self.file_scenarios = HOME.joinpath(data['SCENARIO_NAME'])
+            assert self.file_scenarios.exists(), f'{file_scenarios} does not exist'
+            self.scenarios = read_scenarios_from_json(self.file_scenarios)
             self.no_ds = len(self.scenarios['damage_states'])
-
+            data.pop('SCENARIO_NAME')
         else:
             print(f'scenario to be added later')
 
-        self.key = cfg['CONFIGURATION_ID']
+        self.key = data['CONFIGURATION_ID']
 
-        self.max_branches = cfg['MAX_BRANCHES']
+        self.max_branches = data['MAX_BRANCHES']
 
-        self.output_path = HOME.joinpath(cfg['OUTPUT_PATH'])
+        self.output_path = HOME.joinpath(data['OUTPUT_PATH'])
         if not self.output_path.exists():
             self.output_path.mkdir(parents=True, exist_ok=True)
             print(f'{self.output_path} created')
+
+        [data.pop(x) for x in self.REQ]
+        self.data = data.copy()
 
 
 def read_model_from_json(file_input):
