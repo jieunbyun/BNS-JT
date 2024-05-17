@@ -121,13 +121,14 @@ def main(cfg_fname, od_name):
     cfg, varis, _, _, _, _, probs, sys_fun = init_prob( cfg_fname, od_name )
 
     # run BRC
-    brs, rules, sys_res, monitor = gen_bnb.run_brc(varis, probs, sys_fun, max_sf = cfg.max_sys_fun, max_nb = 0.01*cfg.max_branches, pf_bnd_wr = cfg.sys_bnd_wr, surv_first=False, rules=None)
+    """brs, rules, sys_res, monitor = gen_bnb.run_brc(varis, probs, sys_fun, max_sf = cfg.max_sys_fun, max_nb = 0.01*cfg.max_branches, pf_bnd_wr = cfg.sys_bnd_wr, surv_first=False, rules=None)
 
     if monitor['pf_low'][-1] * cfg.sys_bnd_wr < monitor['pf_up'][-1] - monitor['pf_low'][-1]:
         brs, rules, sys_res2, monitor2 = gen_bnb.run_brc(varis, probs, sys_fun, max_sf = cfg.max_sys_fun, max_nb = cfg.max_branches, pf_bnd_wr = cfg.sys_bnd_wr, surv_first=True, rules=rules)
         sys_res = pd.concat([sys_res, sys_res2], ignore_index=True)
         for k, v in monitor.items():
-            monitor[k] += monitor2[k]
+            monitor[k] += monitor2[k]"""
+    brs, rules, sys_res, monitor = gen_bnb.run_brc(varis, probs, sys_fun, max_sf = cfg.max_sys_fun, max_nb = cfg.max_branches, pf_bnd_wr = cfg.sys_bnd_wr, surv_first=True)
 
     # Store result
     ### Data Store ###
@@ -150,26 +151,25 @@ def main(cfg_fname, od_name):
 
     print(f"{key} done. Output files saved")
 
-#if __name__=='__main__':
-#    app()
+if __name__=='__main__':
+    #app()
+
+    cfg_fname = 'config.json'
+    """
+    od_name = 'od1'
+
+    cfg, varis, edges, od_pair, target_flow, is_bi_dir, probs, sys_fun = init_prob( cfg_fname, od_name )
+
+    # case 1
+    comps_st = {k: 0 for k in varis.keys()}
+    for e in ['e1', 'e10', 'e15', 'e17', 'e20']:
+        comps_st[e] = 1
+    mf, sys_st, min_comps_st = max_flow_fun(comps_st, od_pair, edges, varis, target_flow, is_bi_dir)
+    print(mf, sys_st, min_comps_st)
+    """
 
 
-cfg_fname = 'config.json'
-od_name = 'od1'
-
-"""
-cfg, varis, edges, od_pair, target_flow, is_bi_dir, probs, sys_fun = init_prob( cfg_fname, od_name )
-
-# case 1
-comps_st = {k: 0 for k in varis.keys()}
-for e in ['e1', 'e10', 'e15', 'e17', 'e20']:
-    comps_st[e] = 1
-mf, sys_st, min_comps_st = max_flow_fun(comps_st, od_pair, edges, varis, target_flow, is_bi_dir)
-print(mf, sys_st, min_comps_st)
-"""
-
-
-for i in range(5):
-    od_name = f'od{i+1}'
-    main(cfg_fname, od_name)
-    run_MCS(cfg_fname, od_name)
+    for i in range(5):
+        od_name = f'od{i+1}'
+        main(cfg_fname, od_name)
+        #run_MCS(cfg_fname, od_name)

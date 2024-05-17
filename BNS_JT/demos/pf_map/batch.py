@@ -365,10 +365,11 @@ def process_node(cfg, node, comps_st_itc, st_br_to_cs, arcs, varis, probs, cpms)
         d_time_itc, _ = trans.get_time_and_path_multi_dest(comps_st_itc, node, dests, arcs, varis)
         sys_fun = trans.sys_fun_wrap({'origin': node, 'dests': dests}, arcs, varis, thres * d_time_itc)
 
-        brs, rules, sys_res1, monitor1 = gen_bnb.run_brc( {k: varis[k] for k in arcs.keys()}, probs, sys_fun, 0.01*cfg.max_sys_fun, 0.01*cfg.max_branches, cfg.sys_bnd_wr, surv_first=False)
+        """brs, rules, sys_res1, monitor1 = gen_bnb.run_brc( {k: varis[k] for k in arcs.keys()}, probs, sys_fun, 0.01*cfg.max_sys_fun, 0.01*cfg.max_branches, cfg.sys_bnd_wr, surv_first=False)
         brs, rules, sys_res2, monitor2 = gen_bnb.run_brc( {k: varis[k] for k in arcs.keys()}, probs, sys_fun, cfg.max_sys_fun, cfg.max_branches, cfg.sys_bnd_wr, surv_first=True, rules=rules)
         monitor = {k: v + monitor2[k] for k, v in monitor1.items() if k != 'out_flag'}
-        monitor['out_flag'] = [monitor1['out_flag'], monitor2['out_flag']]
+        monitor['out_flag'] = [monitor1['out_flag'], monitor2['out_flag']]"""
+        brs, rules, sys_res, monitor = gen_bnb.run_brc( {k: varis[k] for k in arcs.keys()}, probs, sys_fun, cfg.max_sys_fun, cfg.max_branches, cfg.sys_bnd_wr, surv_first=True)
 
         csys, varis = gen_bnb.get_csys_from_brs(brs, varis, st_br_to_cs)
         #varis[node] = variable.Variable(node, values = ['f', 's', 'u'])
@@ -376,7 +377,7 @@ def process_node(cfg, node, comps_st_itc, st_br_to_cs, arcs, varis, probs, cpms)
         cpms[node] = cpm.Cpm( [vari_node] + [varis[k] for k in arcs.keys()], 1, csys, np.ones((len(csys),1), dtype=float) )
 
         pf_u, pf_l = monitor['pf_up'][-1], monitor['pf_low'][-1]
-        if (monitor['out_flag'][-1] == 'max_sf' or monitor['out_flag'][-1] == 'max_nb'):
+        if (monitor['out_flag'] == 'max_sf' or monitor['out_flag'] == 'max_nb'):
             print(f'*[node {node}] MCS on unknown started..*')
 
             #csys = csys[ csys[:,0] != st_br_to_cs['u'] ] # remove unknown state instances
@@ -486,37 +487,10 @@ def main(cfg_name, eq_name):
         #for node in ['n15', 'n53']: # for test
             res1 = exec.submit(process_node, cfg, node, comps_st_itc, st_br_to_cs, arcs, varis, probs, cpms)
             futures.append(res1)
-
-            """res2 = concurrent.futures.as_completed(res1)
-            node, vari_node, cpms, sys_pf_node, sys_nsamp_node, rules, monitor, result_mcs = res2.result()
-
-            if vari_node is not None:
-                varis[node] = vari_node
-
-                fout_cpm = output_path.joinpath(f'cpms_{node}.pk')
-                with open(fout_cpm, 'wb') as fout:
-                    pickle.dump(cpms, fout)
-
-                sys_pfs[node] = sys_pf_node
-                sys_nsamps[node] = sys_nsamp_node
-
-                fout_monitor = output_path.joinpath(f'brc_{node}.pk')
-                with open(fout_monitor, 'wb') as fout:
-                    pickle.dump(monitor, fout)
-
-            if result_mcs is not None:
-                fout_rs = output_path.joinpath(f'rs_{node}.txt')
-                with open(fout_rs, 'w') as f:
-                    for k, v in result_mcs.items():
-                        if k in ['pf', 'cov']:
-                            f.write(f"{k}\t{v:.4e}\n")
-                        elif k in ['nsamp', 'nsamp_tot']:
-                            f.write(f"{k}\t{v:d}\n")
-                    f.write(f"time (sec)\t{result_mcs['time']:.4e}\n")
-
-            fout_rules = output_path.joinpath(f'rules_{node}.pk')
-            with open(fout_rules, 'wb') as fout:
-                pickle.dump(rules, fout)"""
+    
+    # For debugging
+    """cfg.max_branches = 100
+    node, vari_node, cpms, sys_pf_node, sys_nsamp_node, rules, monitor, result_mcs = process_node(cfg, 'n1', comps_st_itc, st_br_to_cs, arcs, varis, probs, cpms)"""
 
     # Collect the results
     sys_pfs, sys_nsamps = {}, {}
