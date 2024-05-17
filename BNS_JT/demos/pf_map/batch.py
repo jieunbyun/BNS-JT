@@ -10,8 +10,8 @@ from multiprocessing import freeze_support
 from BNS_JT import variable, cpm, gen_bnb, trans, config
 
 HOME = Path(__file__).parent
-#output_path = HOME.joinpath('./output')
-#output_path.mkdir(parents=True, exist_ok=True)
+output_path = HOME.joinpath('./output')
+output_path.mkdir(parents=True, exist_ok=True)
 
 
 def read_model_from_json_custom(file_input):
@@ -77,7 +77,7 @@ def cal_edge_dist(cfg, eq_name):
 
         vari[k1] = std_al**2 + std_ep[k1]**2 + std_**2
 
-        for i2, k2 in enumerate(cfg.infra['edges'].items()):
+        for i2, k2 in enumerate(cfg.infra['edges'].keys()):
 
             if k1 == k2:
                 cov[i1, i2] = std_al**2 + std_ep[k1]**2 + std_**2
@@ -87,7 +87,51 @@ def cal_edge_dist(cfg, eq_name):
         v1['mean'] = np.log(mean_) - ln_Sa[k1]
 
         # failure probability
-        v1['pf'] = norm.cdf(0, mean_, np.sqrt(vari[k1]))
+        v1['pf'] = norm.cdf(0, v1['mean'], np.sqrt(vari[k1]))
+
+def cal_edge_dist_output(cfg, eq_name):
+
+    # Distance to epicentre
+    Rrup = {}
+    epi_loc = cfg.infra['eq'][eq_name]['epicentre']
+
+    for k, v in cfg.infra['edges'].items():
+        org = cfg.infra['nodes'][v['origin']]
+        dest = cfg.infra['nodes'][v['destination']]
+        Rrup[k] = shortest_distance(org.values(), dest.values(), epi_loc)
+
+    # GMPE model (Campbell 2003)
+    Mw = cfg.infra['eq'][eq_name]['Mw']
+    ln_Sa, std_al, std_ep = gmpe_cam03(Mw, Rrup)
+
+    dmg_st = 2 # Extensive damage
+
+    # mean and covariance matrix between failures of roads
+    no_edges = len(cfg.infra['edges'])
+    vari = {}
+    COV = np.zeros(shape=(no_edges, no_edges))
+
+    pf, MEAN = {}, {}
+    for i1, (k1, v1) in enumerate(cfg.infra['edges'].items()):
+
+        mean_ = cfg.infra['frag'][v1['fragility_type']]['Sa_g'][dmg_st]
+        std_ = cfg.infra['frag'][v1['fragility_type']]['Sa_g_dispersion']
+
+        vari[k1] = std_al**2 + std_ep[k1]**2 + std_**2
+
+        for i2, k2 in enumerate(cfg.infra['edges'].keys()):
+
+            if k1 == k2:
+                COV[i1, i2] = std_al**2 + std_ep[k1]**2 + std_**2
+            else:
+                COV[i1, i2] = std_al**2
+
+        MEAN[k1] = np.log(mean_) - ln_Sa[k1]
+
+        # failure probability
+        pf[k1] = norm.cdf(0, MEAN[k1], np.sqrt(vari[k1]))
+
+    return pf, MEAN, COV, ln_Sa
 
 
 def shortest_distance(line_pt1, line_pt2, pt):
@@ -394,6 +438,7 @@ def process_node(cfg, node, comps_st_itc, st_br_to_cs, arcs, varis, probs, cpms)
         result_mcs = None
         cpms = None
         vari_node = None
+        rules = None
 
     print(f'-----Analysis completed for node: {node}-----')
 
@@ -434,11 +479,44 @@ def main(cfg_name, eq_name):
     st_br_to_cs = {'f': 0, 's': 1, 'u': 2}
 
     # Run the analysis in parallel
+    sys_pfs, sys_nsamps = {}, {}
     futures = []
-    with concurrent.futures.ProcessPoolExecutor(max_workers = 8) as exec:
+    with concurrent.futures.ProcessPoolExecutor() as exec:
         for node in cfg.infra['nodes'].keys():
-        #for node in ['n30']: # for test
-            futures.append(exec.submit(process_node, cfg, node, comps_st_itc, st_br_to_cs, arcs, varis, probs, cpms))
+        #for node in ['n15', 'n53']: # for test
+            res1 = exec.submit(process_node, cfg, node, comps_st_itc, st_br_to_cs, arcs, varis, probs, cpms)
+            futures.append(res1)
+
+            """res2 = concurrent.futures.as_completed(res1)
+            node, vari_node, cpms, sys_pf_node, sys_nsamp_node, rules, monitor, result_mcs = res2.result()
+
+            if vari_node is not None:
+                varis[node] = vari_node
+
+                fout_cpm = output_path.joinpath(f'cpms_{node}.pk')
+                with open(fout_cpm, 'wb') as fout:
+                    pickle.dump(cpms, fout)
+
+                sys_pfs[node] = sys_pf_node
+                sys_nsamps[node] = sys_nsamp_node
+
+                fout_monitor = output_path.joinpath(f'brc_{node}.pk')
+                with open(fout_monitor, 'wb') as fout:
+                    pickle.dump(monitor, fout)
+
+            if result_mcs is not None:
+                fout_rs = output_path.joinpath(f'rs_{node}.txt')
+                with open(fout_rs, 'w') as f:
+                    for k, v in result_mcs.items():
+                        if k in ['pf', 'cov']:
+                            f.write(f"{k}\t{v:.4e}\n")
+                        elif k in ['nsamp', 'nsamp_tot']:
+                            f.write(f"{k}\t{v:d}\n")
+                    f.write(f"time (sec)\t{result_mcs['time']:.4e}\n")
+
+            fout_rules = output_path.joinpath(f'rules_{node}.pk')
+            with open(fout_rules, 'wb') as fout:
+                pickle.dump(rules, fout)"""
 
     # Collect the results
     sys_pfs, sys_nsamps = {}, {}
