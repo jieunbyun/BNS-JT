@@ -263,11 +263,11 @@ def update_pfs( config_fname, eq_name, fout_name ):
 
 if __name__=='__main__':
 
-    eval_pfs_dep( 'config.json', 's1', 'pf_dep.txt' )
-    update_pfs( 'config.json', 's2', 'pf_upd.txt' )
+    #eval_pfs_dep( 'config.json', 's1', 'pf_dep.txt' )
+    #update_pfs( 'config.json', 's2', 'pf_upd.txt' )
 
     # for debugging
-    """eq_name = 's1'
+    eq_name = 's1'
     cfg = batch.config_custom('config.json', eq_name)
     node_coords = {}
     for k, v in cfg.infra['nodes'].items():
@@ -279,6 +279,6 @@ if __name__=='__main__':
     os_list = cfg.infra['origins']
 
     node, pf, sec, pf_bnd, cov = cal_prob_dep( 'n21', cfg, eq_name, arcs, output_path )
-    ddd = 1"""
+    ddd = 1
 
     #app()
