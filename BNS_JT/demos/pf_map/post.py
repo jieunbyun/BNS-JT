@@ -69,8 +69,8 @@ def cal_prob_dep( node, cfg, eq_name, arcs, output_path ):
         p_ = multivariate_normal.cdf(np.zeros((len(arcs_idx_),), dtype=float), mean_, cov_, allow_singular=True)
         p_node[j] = p_
 
-        p_node = p_node / sum(p_node) # normalisation due to numerical errors from mvn cdf
-        cpm_node.p = p_node
+    p_node = p_node / sum(p_node) # normalisation due to numerical errors from mvn cdf
+    cpm_node.p = p_node
 
     if len(cpm_node.Cs) == 0:
 
@@ -264,7 +264,7 @@ def update_pfs( config_fname, eq_name, fout_name ):
 if __name__=='__main__':
 
     update_pfs( 'config.json', 's2', 'pf_upd.txt' )
-    eval_pfs_dep( 'config.json', 's1', 'pf_dep.txt' )
+    #eval_pfs_dep( 'config.json', 's1', 'pf_dep.txt' )
 
     # for debugging
     """eq_name = 's1'
@@ -278,7 +278,16 @@ if __name__=='__main__':
     epi_loc = cfg.infra['eq'][eq_name]['epicentre']
     os_list = cfg.infra['origins']
 
-    node, pf, sec, pf_bnd, cov = cal_prob_dep( 'n21', cfg, eq_name, arcs, output_path )
+    # node, pf, sec, pf_bnd, cov = cal_prob_dep( 'n29', cfg, eq_name, arcs, output_path )
+
+    with open(output_path / "varis.pk", 'rb') as f:
+        varis = pickle.load(f)
+
+    epi_loc = cfg.infra['eq'][eq_name]['epicentre']
+    os_list = cfg.infra['origins']
+    pf, MEAN, COV, ln_Sa = batch.cal_edge_dist_output(cfg, eq_name)
+    new_probs = {k: {0:v, 1:1-v} for k,v in pf.items()}
+    node, pf, sec, pf_bnd, cov = update_pf1( 'n29', arcs, varis, new_probs )
     ddd = 1"""
 
     #app()

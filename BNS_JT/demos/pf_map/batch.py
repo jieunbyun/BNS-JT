@@ -493,7 +493,7 @@ def main(cfg_name, eq_name):
     node, vari_node, cpms, sys_pf_node, sys_nsamp_node, rules, monitor, result_mcs = process_node(cfg, 'n1', comps_st_itc, st_br_to_cs, arcs, varis, probs, cpms)"""
 
     # Collect the results
-    sys_pfs, sys_nsamps = {}, {}
+    sys_pfs, sys_nsamps, bnds_or_cov = {}, {}, {}
     for future in concurrent.futures.as_completed(futures):
         node, vari_node, cpms, sys_pf_node, sys_nsamp_node, rules, monitor, result_mcs = future.result()
 
@@ -506,6 +506,7 @@ def main(cfg_name, eq_name):
 
             sys_pfs[node] = sys_pf_node
             sys_nsamps[node] = sys_nsamp_node
+            bnds_or_cov[node] = monitor['pf_up'][-1] - monitor['pf_low'][-1]
 
             fout_monitor = output_path.joinpath(f'brc_{node}.pk')
             with open(fout_monitor, 'wb') as fout:
@@ -513,6 +514,7 @@ def main(cfg_name, eq_name):
 
         if result_mcs is not None:
             fout_rs = output_path.joinpath(f'rs_{node}.txt')
+            bnds_or_cov[node] = result_mcs['cov']
             with open(fout_rs, 'w') as f:
                 for k, v in result_mcs.items():
                     if k in ['pf', 'cov']:
@@ -526,10 +528,12 @@ def main(cfg_name, eq_name):
             pickle.dump(rules, fout)
 
     # save results
+    os_list = cfg.infra['origins']
     fout = output_path.joinpath(f'result.txt')
     with open(fout, 'w') as f:
-        for k, v in sys_pfs.items():
-            f.write(f'{k}\t{v:.4e}\t{sys_nsamps[k]}\n')
+        for node in node_coords:
+            if node != 'epi' and node not in os_list:
+                f.write(f'{k}\t{v:.4e}\t{bnds_or_cov[k]}\t{sys_nsamps[k]}\n')
 
     fout_varis = output_path.joinpath(f'varis.pk')
     with open(fout_varis, 'wb') as fout:
