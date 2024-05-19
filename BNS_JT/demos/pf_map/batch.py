@@ -6,6 +6,7 @@ from scipy.stats import norm
 import copy, pickle, time
 import concurrent.futures
 from multiprocessing import freeze_support
+from scipy.stats import beta
 
 from BNS_JT import variable, cpm, gen_bnb, trans, config
 
@@ -307,8 +308,12 @@ def mcs_unknown(brs_u, probs, sys_fun_rs, cpms, sys_name, cov_t, sys_st_monitor,
 
             pf = sys_st_prob + brs_u_prob *pf_s
             std = brs_u_prob * std_s
-
             cov = std/pf
+
+            conf_p = 0.95 # confidence interval
+            low = beta.ppf( 0.5*(1-conf_p), a, b )
+            up = beta.ppf( 1 - 0.5*(1-conf_p), a, b )
+            cint = sys_st_prob + brs_u_prob * np.array([low, up])
 
         if nsamp % 1000 == 0:
             print(f'nsamp: {nsamp}, pf: {pf:.4e}, cov: {cov:.4e}')
@@ -326,7 +331,7 @@ def mcs_unknown(brs_u, probs, sys_fun_rs, cpms, sys_name, cov_t, sys_st_monitor,
     cpms[sys_name].Cs, cpms[sys_name].q = Csys, np.ones((nsamp,1), dtype=float)
     cpms[sys_name].sample_idx = np.arange(nsamp, dtype=int)
 
-    result = {'pf': pf, 'cov': cov, 'nsamp': nsamp}
+    result = {'pf': pf, 'cov': cov, 'nsamp': nsamp, 'cint_low': cint[0], 'cint_up': cint[1]}
 
     return cpms, result
 
@@ -480,7 +485,6 @@ def main(cfg_name, eq_name):
     st_br_to_cs = {'f': 0, 's': 1, 'u': 2}
 
     # Run the analysis in parallel
-    sys_pfs, sys_nsamps = {}, {}
     futures = []
     with concurrent.futures.ProcessPoolExecutor() as exec:
         for node in cfg.infra['nodes'].keys():
@@ -493,7 +497,7 @@ def main(cfg_name, eq_name):
     node, vari_node, cpms, sys_pf_node, sys_nsamp_node, rules, monitor, result_mcs = process_node(cfg, 'n1', comps_st_itc, st_br_to_cs, arcs, varis, probs, cpms)"""
 
     # Collect the results
-    sys_pfs, sys_nsamps, bnds_or_cov = {}, {}, {}
+    sys_pfs_low, sys_pfs_up, sys_nsamps, covs = {}, {}, {}, {}
     for future in concurrent.futures.as_completed(futures):
         node, vari_node, cpms, sys_pf_node, sys_nsamp_node, rules, monitor, result_mcs = future.result()
 
@@ -504,9 +508,10 @@ def main(cfg_name, eq_name):
             with open(fout_cpm, 'wb') as fout:
                 pickle.dump(cpms, fout)
 
-            sys_pfs[node] = sys_pf_node
+            sys_pfs_low[node] = monitor['pf_low'][-1]
+            sys_pfs_up[node] = monitor['pf_up'][-1]
             sys_nsamps[node] = sys_nsamp_node
-            bnds_or_cov[node] = monitor['pf_up'][-1] - monitor['pf_low'][-1]
+            covs[node] = 0.0
 
             fout_monitor = output_path.joinpath(f'brc_{node}.pk')
             with open(fout_monitor, 'wb') as fout:
@@ -514,7 +519,10 @@ def main(cfg_name, eq_name):
 
         if result_mcs is not None:
             fout_rs = output_path.joinpath(f'rs_{node}.txt')
-            bnds_or_cov[node] = result_mcs['cov']
+
+            sys_pfs_low[node] = result_mcs['cint_low']
+            sys_pfs_up[node] = result_mcs['cint_up']
+            covs[node] = result_mcs['cov']
             with open(fout_rs, 'w') as f:
                 for k, v in result_mcs.items():
                     if k in ['pf', 'cov']:
@@ -533,7 +541,7 @@ def main(cfg_name, eq_name):
     with open(fout, 'w') as f:
         for node in node_coords:
             if node != 'epi' and node not in os_list:
-                f.write(f'{k}\t{v:.4e}\t{bnds_or_cov[k]}\t{sys_nsamps[k]}\n')
+                f.write(f'{node}\t{sys_pfs_low[node]:.4e}\t{sys_pfs_up[node]:.4e}\t{sys_nsamps[k]}\t{covs[node]}\n')
 
     fout_varis = output_path.joinpath(f'varis.pk')
     with open(fout_varis, 'wb') as fout:
