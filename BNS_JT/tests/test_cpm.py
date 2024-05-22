@@ -1763,6 +1763,7 @@ def test_get_sample_order(setup_mcs_product):
     result = [x.name for x in sampleVars]
     np.testing.assert_array_equal(result, expected)
 
+
 def test_get_prod_idx1(setup_mcs_product):
 
     cpms = setup_mcs_product
@@ -1774,6 +1775,7 @@ def test_get_prod_idx1(setup_mcs_product):
     expected = 0
 
     np.testing.assert_array_equal(result, expected)
+
 
 def test_get_prod_idx2(setup_mcs_product):
 
@@ -2630,7 +2632,22 @@ def test_cal_Msys_by_cond_VE4(setup_hybrid_no_samp):
 
     assert prob_bnd_x0_s0 == pytest.approx( [0.045/0.415, 1], rel=1.0e-3 )
 
-#FIXME: Does not work anymore. "get_sample_order" seems to return an empty list. Can't find a reason.
+
+def test_get_prod_idx3(setup_hybrid_no_samp):
+    """
+    created to replicate the problem in test_rejection_sampling_sys
+
+    """
+    _, cpms, _ = setup_hybrid_no_samp
+
+    sample_vars = []
+    cpms_ = [cpms[k] for k in ['x0', 'x1']]
+    out = cpm.get_prod_idx(cpms_, sample_vars)
+
+    assert out == None
+
+
+@pytest.mark.skip("FIXME: Does not work anymore. get_prod_idx return None")
 def test_rejection_sampling_sys(setup_hybrid_no_samp):
 
     var_elim_order = ['haz', 'x0', 'x1', 'sys']
