@@ -57,8 +57,8 @@ def cal_prob_dep( node, cfg, eq_name, arcs, output_path ):
                     mean_ = np.vstack((mean_, MEAN[k]))
 
                 cov1_ = np.zeros((len(arcs_idx_), 1), dtype=float)
-                """for i,c_idx2 in enumerate(arcs_idx_):
-                    cov1_[i] = COV[c_idx2, j2]"""
+                for i,c_idx2 in enumerate(arcs_idx_):
+                    cov1_[i] = COV[c_idx2, j2]
                 cov_ = np.hstack( (cov_, cov1_) )
                 cov1_ = np.vstack( (cov1_, COV[j2, j2]) )
                 cov_ = np.vstack( (cov_, cov1_.T ) )
@@ -263,8 +263,8 @@ def update_pfs( config_fname, eq_name, fout_name ):
 
 if __name__=='__main__':
 
-    update_pfs( 'config.json', 's2', 'pf_upd.txt' )
-    #eval_pfs_dep( 'config.json', 's1', 'pf_dep.txt' )
+    #update_pfs( 'config.json', 's2', 'pf_upd.txt' )
+    eval_pfs_dep( 'config.json', 's1', 'pf_dep.txt' )
 
     # for debugging
     """eq_name = 's1'
@@ -278,9 +278,9 @@ if __name__=='__main__':
     epi_loc = cfg.infra['eq'][eq_name]['epicentre']
     os_list = cfg.infra['origins']
 
-    # node, pf, sec, pf_bnd, cov = cal_prob_dep( 'n29', cfg, eq_name, arcs, output_path )
+    node, pf, sec, pf_bnd, cov = cal_prob_dep( 'n43', cfg, eq_name, arcs, output_path )"""
 
-    with open(output_path / "varis.pk", 'rb') as f:
+    """with open(output_path / "varis.pk", 'rb') as f:
         varis = pickle.load(f)
 
     epi_loc = cfg.infra['eq'][eq_name]['epicentre']

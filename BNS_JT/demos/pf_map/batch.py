@@ -358,6 +358,39 @@ def config_custom(cfg_name, eq_name):
 
     return cfg
 
+def run_MCS(node, cfg_fname, eq_name):
+        
+    cfg = batch.config_custom(cfg_fname, eq_name)
+
+    node_coords = {}
+    for k, v in cfg.infra['nodes'].items():
+        node_coords[k] = (v['pos_x'], v['pos_y'])
+
+    arcs = {}
+    for k, v in cfg.infra['edges'].items():
+        arcs[k] = [v['origin'], v['destination']]
+
+    with open(output_path / "varis.pk", 'rb') as f:
+        varis = pickle.load(f)
+
+    dests = cfg.infra['origins']
+    thres = cfg.infra['thres']
+    comps_st_itc = {k: 1 for k in arcs.keys()}
+
+    d_time_itc, _ = trans.get_time_and_path_multi_dest(comps_st_itc, node, dests, arcs, varis)
+    sys_fun = trans.sys_fun_wrap({'origin': node, 'dests': dests}, arcs, varis, thres * d_time_itc)
+
+    pf, _, _, _ = batch.cal_edge_dist_output(cfg, eq_name)
+    probs = {k: {0:v, 1:1-v} for k,v in pf.items()}
+
+    pf, cov, nsamp = gen_bnb.run_MCS_indep_comps(probs, sys_fun, cov_t=0.01)
+    print(f'pf: {pf:.4e}, cov: {cov:.4e}, nsamp: {nsamp:d}')
+
+    with open(output_path.joinpath(f'mcs_{node}_{eq_name}.txt'), 'w') as fout:
+        fout.write(f"pf: {pf:.4e} \n")
+        fout.write(f"cov: {cov:.4e} \n")
+        fout.write(f"no_samples: {nsamp:d}")
+
 
 def process_node(cfg, node, comps_st_itc, st_br_to_cs, arcs, varis, probs, cpms):
     print(f'-----Analysis begins for node: {node}-----')
@@ -541,7 +574,7 @@ def main(cfg_name, eq_name):
     with open(fout, 'w') as f:
         for node in node_coords:
             if node != 'epi' and node not in os_list:
-                f.write(f'{node}\t{sys_pfs_low[node]:.4e}\t{sys_pfs_up[node]:.4e}\t{sys_nsamps[k]}\t{covs[node]}\n')
+                f.write(f'{node}\t{sys_pfs_low[node]:.4e}\t{sys_pfs_up[node]:.4e}\t{sys_nsamps[node]}\t{covs[node]}\n')
 
     fout_varis = output_path.joinpath(f'varis.pk')
     with open(fout_varis, 'wb') as fout:
@@ -553,3 +586,9 @@ def main(cfg_name, eq_name):
 if __name__ == '__main__':
     freeze_support()
     main('config.json', 's1')
+
+    # To compare results with MCS results
+    """for node in ['n67', 'n29', 'n62', 'n63', 'n64', 'n65']:
+        print(f"{node} begins..")
+        run_MCS(node, 'config.json', 's1')
+        run_MCS(node, 'config.json', 's2')"""
