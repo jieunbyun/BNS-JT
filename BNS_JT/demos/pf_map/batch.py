@@ -6,12 +6,13 @@ from scipy.stats import norm
 import copy, pickle, time
 import concurrent.futures
 from multiprocessing import freeze_support
+from scipy.stats import beta
 
 from BNS_JT import variable, cpm, gen_bnb, trans, config
 
 HOME = Path(__file__).parent
-#output_path = HOME.joinpath('./output')
-#output_path.mkdir(parents=True, exist_ok=True)
+output_path = HOME.joinpath('./output')
+output_path.mkdir(parents=True, exist_ok=True)
 
 
 def read_model_from_json_custom(file_input):
@@ -77,7 +78,7 @@ def cal_edge_dist(cfg, eq_name):
 
         vari[k1] = std_al**2 + std_ep[k1]**2 + std_**2
 
-        for i2, k2 in enumerate(cfg.infra['edges'].items()):
+        for i2, k2 in enumerate(cfg.infra['edges'].keys()):
 
             if k1 == k2:
                 cov[i1, i2] = std_al**2 + std_ep[k1]**2 + std_**2
@@ -87,7 +88,51 @@ def cal_edge_dist(cfg, eq_name):
         v1['mean'] = np.log(mean_) - ln_Sa[k1]
 
         # failure probability
-        v1['pf'] = norm.cdf(0, mean_, np.sqrt(vari[k1]))
+        v1['pf'] = norm.cdf(0, v1['mean'], np.sqrt(vari[k1]))
+
+def cal_edge_dist_output(cfg, eq_name):
+
+    # Distance to epicentre
+    Rrup = {}
+    epi_loc = cfg.infra['eq'][eq_name]['epicentre']
+
+    for k, v in cfg.infra['edges'].items():
+        org = cfg.infra['nodes'][v['origin']]
+        dest = cfg.infra['nodes'][v['destination']]
+        Rrup[k] = shortest_distance(org.values(), dest.values(), epi_loc)
+
+    # GMPE model (Campbell 2003)
+    Mw = cfg.infra['eq'][eq_name]['Mw']
+    ln_Sa, std_al, std_ep = gmpe_cam03(Mw, Rrup)
+
+    dmg_st = 2 # Extensive damage
+
+    # mean and covariance matrix between failures of roads
+    no_edges = len(cfg.infra['edges'])
+    vari = {}
+    COV = np.zeros(shape=(no_edges, no_edges))
+
+    pf, MEAN = {}, {}
+    for i1, (k1, v1) in enumerate(cfg.infra['edges'].items()):
+
+        mean_ = cfg.infra['frag'][v1['fragility_type']]['Sa_g'][dmg_st]
+        std_ = cfg.infra['frag'][v1['fragility_type']]['Sa_g_dispersion']
+
+        vari[k1] = std_al**2 + std_ep[k1]**2 + std_**2
+
+        for i2, k2 in enumerate(cfg.infra['edges'].keys()):
+
+            if k1 == k2:
+                COV[i1, i2] = std_al**2 + std_ep[k1]**2 + std_**2
+            else:
+                COV[i1, i2] = std_al**2
+
+        MEAN[k1] = np.log(mean_) - ln_Sa[k1]
+
+        # failure probability
+        pf[k1] = norm.cdf(0, MEAN[k1], np.sqrt(vari[k1]))
+
+    return pf, MEAN, COV, ln_Sa
 
 
 def shortest_distance(line_pt1, line_pt2, pt):
@@ -263,8 +308,12 @@ def mcs_unknown(brs_u, probs, sys_fun_rs, cpms, sys_name, cov_t, sys_st_monitor,
 
             pf = sys_st_prob + brs_u_prob *pf_s
             std = brs_u_prob * std_s
-
             cov = std/pf
+
+            conf_p = 0.95 # confidence interval
+            low = beta.ppf( 0.5*(1-conf_p), a, b )
+            up = beta.ppf( 1 - 0.5*(1-conf_p), a, b )
+            cint = sys_st_prob + brs_u_prob * np.array([low, up])
 
         if nsamp % 1000 == 0:
             print(f'nsamp: {nsamp}, pf: {pf:.4e}, cov: {cov:.4e}')
@@ -282,7 +331,7 @@ def mcs_unknown(brs_u, probs, sys_fun_rs, cpms, sys_name, cov_t, sys_st_monitor,
     cpms[sys_name].Cs, cpms[sys_name].q = Csys, np.ones((nsamp,1), dtype=float)
     cpms[sys_name].sample_idx = np.arange(nsamp, dtype=int)
 
-    result = {'pf': pf, 'cov': cov, 'nsamp': nsamp}
+    result = {'pf': pf, 'cov': cov, 'nsamp': nsamp, 'cint_low': cint[0], 'cint_up': cint[1]}
 
     return cpms, result
 
@@ -321,10 +370,11 @@ def process_node(cfg, node, comps_st_itc, st_br_to_cs, arcs, varis, probs, cpms)
         d_time_itc, _ = trans.get_time_and_path_multi_dest(comps_st_itc, node, dests, arcs, varis)
         sys_fun = trans.sys_fun_wrap({'origin': node, 'dests': dests}, arcs, varis, thres * d_time_itc)
 
-        brs, rules, sys_res1, monitor1 = gen_bnb.run_brc( {k: varis[k] for k in arcs.keys()}, probs, sys_fun, 0.01*cfg.max_sys_fun, 0.01*cfg.max_branches, cfg.sys_bnd_wr, surv_first=False)
+        """brs, rules, sys_res1, monitor1 = gen_bnb.run_brc( {k: varis[k] for k in arcs.keys()}, probs, sys_fun, 0.01*cfg.max_sys_fun, 0.01*cfg.max_branches, cfg.sys_bnd_wr, surv_first=False)
         brs, rules, sys_res2, monitor2 = gen_bnb.run_brc( {k: varis[k] for k in arcs.keys()}, probs, sys_fun, cfg.max_sys_fun, cfg.max_branches, cfg.sys_bnd_wr, surv_first=True, rules=rules)
         monitor = {k: v + monitor2[k] for k, v in monitor1.items() if k != 'out_flag'}
-        monitor['out_flag'] = [monitor1['out_flag'], monitor2['out_flag']]
+        monitor['out_flag'] = [monitor1['out_flag'], monitor2['out_flag']]"""
+        brs, rules, sys_res, monitor = gen_bnb.run_brc( {k: varis[k] for k in arcs.keys()}, probs, sys_fun, cfg.max_sys_fun, cfg.max_branches, cfg.sys_bnd_wr, surv_first=True)
 
         csys, varis = gen_bnb.get_csys_from_brs(brs, varis, st_br_to_cs)
         #varis[node] = variable.Variable(node, values = ['f', 's', 'u'])
@@ -332,7 +382,7 @@ def process_node(cfg, node, comps_st_itc, st_br_to_cs, arcs, varis, probs, cpms)
         cpms[node] = cpm.Cpm( [vari_node] + [varis[k] for k in arcs.keys()], 1, csys, np.ones((len(csys),1), dtype=float) )
 
         pf_u, pf_l = monitor['pf_up'][-1], monitor['pf_low'][-1]
-        if (monitor['out_flag'][-1] == 'max_sf' or monitor['out_flag'][-1] == 'max_nb'):
+        if (monitor['out_flag'] == 'max_sf' or monitor['out_flag'] == 'max_nb'):
             print(f'*[node {node}] MCS on unknown started..*')
 
             #csys = csys[ csys[:,0] != st_br_to_cs['u'] ] # remove unknown state instances
@@ -394,6 +444,7 @@ def process_node(cfg, node, comps_st_itc, st_br_to_cs, arcs, varis, probs, cpms)
         result_mcs = None
         cpms = None
         vari_node = None
+        rules = None
 
     print(f'-----Analysis completed for node: {node}-----')
 
@@ -435,13 +486,18 @@ def main(cfg_name, eq_name):
 
     # Run the analysis in parallel
     futures = []
-    with concurrent.futures.ProcessPoolExecutor(max_workers = 8) as exec:
+    with concurrent.futures.ProcessPoolExecutor() as exec:
         for node in cfg.infra['nodes'].keys():
-        #for node in ['n30']: # for test
-            futures.append(exec.submit(process_node, cfg, node, comps_st_itc, st_br_to_cs, arcs, varis, probs, cpms))
+        #for node in ['n15', 'n53']: # for test
+            res1 = exec.submit(process_node, cfg, node, comps_st_itc, st_br_to_cs, arcs, varis, probs, cpms)
+            futures.append(res1)
+    
+    # For debugging
+    """cfg.max_branches = 100
+    node, vari_node, cpms, sys_pf_node, sys_nsamp_node, rules, monitor, result_mcs = process_node(cfg, 'n1', comps_st_itc, st_br_to_cs, arcs, varis, probs, cpms)"""
 
     # Collect the results
-    sys_pfs, sys_nsamps = {}, {}
+    sys_pfs_low, sys_pfs_up, sys_nsamps, covs = {}, {}, {}, {}
     for future in concurrent.futures.as_completed(futures):
         node, vari_node, cpms, sys_pf_node, sys_nsamp_node, rules, monitor, result_mcs = future.result()
 
@@ -452,8 +508,10 @@ def main(cfg_name, eq_name):
             with open(fout_cpm, 'wb') as fout:
                 pickle.dump(cpms, fout)
 
-            sys_pfs[node] = sys_pf_node
+            sys_pfs_low[node] = monitor['pf_low'][-1]
+            sys_pfs_up[node] = monitor['pf_up'][-1]
             sys_nsamps[node] = sys_nsamp_node
+            covs[node] = 0.0
 
             fout_monitor = output_path.joinpath(f'brc_{node}.pk')
             with open(fout_monitor, 'wb') as fout:
@@ -461,6 +519,10 @@ def main(cfg_name, eq_name):
 
         if result_mcs is not None:
             fout_rs = output_path.joinpath(f'rs_{node}.txt')
+
+            sys_pfs_low[node] = result_mcs['cint_low']
+            sys_pfs_up[node] = result_mcs['cint_up']
+            covs[node] = result_mcs['cov']
             with open(fout_rs, 'w') as f:
                 for k, v in result_mcs.items():
                     if k in ['pf', 'cov']:
@@ -474,10 +536,12 @@ def main(cfg_name, eq_name):
             pickle.dump(rules, fout)
 
     # save results
+    os_list = cfg.infra['origins']
     fout = output_path.joinpath(f'result.txt')
     with open(fout, 'w') as f:
-        for k, v in sys_pfs.items():
-            f.write(f'{k}\t{v:.4e}\t{sys_nsamps[k]}\n')
+        for node in node_coords:
+            if node != 'epi' and node not in os_list:
+                f.write(f'{node}\t{sys_pfs_low[node]:.4e}\t{sys_pfs_up[node]:.4e}\t{sys_nsamps[k]}\t{covs[node]}\n')
 
     fout_varis = output_path.joinpath(f'varis.pk')
     with open(fout_varis, 'wb') as fout:
