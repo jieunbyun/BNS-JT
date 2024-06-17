@@ -9,7 +9,7 @@ from scipy.stats import lognorm
 
 np.set_printoptions(precision=3)
 
-from BNS_JT import cpm, variable, trans
+from BNS_JT import cpm, variable, trans, operation
 
 
 @pytest.fixture(scope='package')
@@ -112,9 +112,9 @@ def test_exact(setup_sys):
 
     cpms_cp = list(cpms.values())
     for i in ['haz'] + list(arcs.keys()):
-        is_inscope = cpm.isinscope([varis[i]], cpms_cp)
+        is_inscope = operation.isinscope([varis[i]], cpms_cp)
         cpm_sel = [y for x, y in zip(is_inscope, cpms_cp) if x]
-        cpm_mult = cpm.prod_cpms(cpm_sel)
+        cpm_mult = cpm.product(cpm_sel)
         cpm_mult = cpm_mult.sum([varis[i]])
 
         cpms_cp = [y for (x,y) in zip(is_inscope, cpms_cp) if x == False]
@@ -134,7 +134,7 @@ def test_variable_elim(setup_sys):
     #M = [cpms[k] for k in ['haz'] + list(arcs.keys()) + ['od1']]
     M = [cpms[k] for k in ['od1'] + ['haz'] + list(arcs.keys())]
     elim = [varis[k] for k in ['haz', 'e1', 'e2', 'e3', 'e4', 'e5', 'e6']]
-    cpm_od1 = cpm.variable_elim(M, elim)
+    cpm_od1 = operation.variable_elim(M, elim)
 
     # prob disruption
     assert cpm_od1.p[1] + cpm_od1.p[2] == pytest.approx(0.0634, abs=1.0e-4)
@@ -149,20 +149,20 @@ def test_mcs_product(setup_sys):
 
     nsample = 10
     var_mcs = ['haz']
-    cpm_h_mcs = cpm.mcs_product({'haz': cpms['haz']}, nsample)
+    cpm_h_mcs = operation.mcs_product({'haz': cpms['haz']}, nsample)
     #assert cpm_h_mcs.C.sum() == pytest.approx(nsample * cpms['haz'].p[1], abs=3)
 
     cpms_cp = list(cpms.values())
     elim_order = ['e1', 'e2', 'e3', 'e4', 'e5', 'e6'] # except 'haz' and 'od1'
     for _c, _p in zip(cpm_h_mcs.Cs, cpm_h_mcs.q):
-        cpms_c = cpm.condition(cpms, [varis['haz']], _c.tolist() )
+        cpms_c = operation.condition(cpms, [varis['haz']], _c.tolist() )
 
         for i in elim_order:
-            is_inscope = cpm.isinscope([varis[i]], cpms_cp)
+            is_inscope = operation.isinscope([varis[i]], cpms_cp)
             cpm_sel = [y for x, y in zip(is_inscope, cpms_cp) if x]
 
             if cpm_sel:
-                cpm_mult = cpm.prod_cpms(cpm_sel)
+                cpm_mult = cpm.product(cpm_sel)
                 cpm_mult = cpm_mult.sum([varis[i]])
 
                 cpms_cp = [y for x, y in zip(is_inscope, cpms_cp) if not x]

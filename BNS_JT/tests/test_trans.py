@@ -26,7 +26,7 @@ else:
     matplotlib.use("TKAgg")
 import matplotlib.pyplot as plt
 
-from BNS_JT import cpm, variable, config, branch, model, trans
+from BNS_JT import cpm, variable, config, branch, model, trans, operation
 
 
 HOME = Path(__file__).absolute().parent
@@ -349,6 +349,26 @@ def setup_bridge_alt(data_bridge):
     return cpms_arc, vars_arc, arcs, var_ODs
 
 
+@pytest.fixture
+def setup_multi_dest():
+    arcs = {'e1': ['n1', 'n2'],
+            'e2': ['n1', 'n5'],
+            'e3': ['n2', 'n5'],
+            'e4': ['n3', 'n4'],
+            'e5': ['n3', 'n5'],
+            'e6': ['n4', 'n5']}
+
+    arc_times_h = {'e1': [np.inf, 0.15], 'e2': [np.inf, 0.0901], 'e3': [np.inf, 0.0901], 'e4': [np.inf, 0.1054],
+                   'e5': [np.inf, 0.0943], 'e6': [np.inf, 0.0707]}
+
+    varis = {k: variable.Variable(name=k, values=v) for k, v in arc_times_h.items()}
+
+    origin = 'n1'
+    dests = ['n3', 'n4']
+
+    return origin, dests, arcs, varis
+
+
 def test_prob_delay1(setup_bridge, expected_probs):
 
     ## Inference - by variable elimination (would not work for large-scale systems)
@@ -367,9 +387,9 @@ def test_prob_delay1(setup_bridge, expected_probs):
     # get different variables order
     for i in arcs.keys():
 
-        is_inscope = cpm.isinscope([vars_arc[i]], cpms_arc_cp)
+        is_inscope = operation.isinscope([vars_arc[i]], cpms_arc_cp)
         cpm_sel = [y for x, y in zip(is_inscope, cpms_arc_cp) if x]
-        cpm_mult = cpm.prod_cpms(cpm_sel)
+        cpm_mult = cpm.product(cpm_sel)
         cpm_mult = cpm_mult.sum([vars_arc[i]])
 
         cpms_arc_cp = [y for x, y in zip(is_inscope, cpms_arc_cp) if x == False]
@@ -386,20 +406,21 @@ def test_prob_delay1(setup_bridge, expected_probs):
 
     #disconn_state = 3 - 1
     disconn_state = 0
+
     for j, idx in enumerate(var_ODs):
 
         # Prob. of disconnection
-        [cpm_ve] = cpm.condition(cpms_arc_cp,
-                               cnd_vars=[vars_arc[idx]],
-                               cnd_states=[disconn_state])
-        ODs_prob_disconn[j] = cpm_ve.p.sum(axis=0)
+        [cpm_ve] = operation.condition(cpms_arc_cp,
+                                       cnd_vars=[vars_arc[idx]],
+                                       cnd_states=[disconn_state])
+        ODs_prob_disconn[j] = cpm_ve.p.sum(axis=0).item()
 
         # Prob. of delay
         var_loc = cpms_arc_cp[0].variables.index(vars_arc[idx])
         # except the shortest path (which is state 0)
         rows_to_keep = np.where(cpms_arc_cp[0].C[:, var_loc] < 2)[0]
         cpm_ve = cpms_arc_cp[0].get_subset(rows_to_keep)
-        ODs_prob_delay[j] = cpm_ve.p.sum(axis=0)
+        ODs_prob_delay[j] = cpm_ve.p.sum(axis=0).item()
 
         # Prob. of disconnection alternative
         rows_to_keep = np.where(cpms_arc_cp[0].C[:, var_loc] == disconn_state)[0]
@@ -425,7 +446,7 @@ def test_prob_delay2(setup_bridge, expected_probs):
     # Probability of delay and disconnection
     M = [cpms_arc[k] for k in list(arcs.keys()) + list(var_ODs.keys())]
     var_elim_order = [vars_arc[i] for i in arcs.keys()]
-    M_VE2 = cpm.variable_elim(M, var_elim_order)
+    M_VE2 = operation.variable_elim(M, var_elim_order)
 
     # "M_VE2" same as "M_VE"
     # Retrieve example results
@@ -439,11 +460,11 @@ def test_prob_delay2(setup_bridge, expected_probs):
         # FIXME 2 -> 3?? 
         #disconn_state = vars_arc[idx].values.index(np.inf) + 1
         # the state of disconnection is assigned an arbitrarily large number 100
-        ODs_prob_disconn2[j] = cpm.get_prob(M_VE2, [vars_arc[idx]], [0])
+        ODs_prob_disconn2[j] = M_VE2.get_prob([vars_arc[idx]], [0])
 
         # Prob. of delay
         #ODs_prob_delay2[j] = cpm.get_prob(M_VE2, [vars_arc[idx]], [1-1], flag=False) # Any state greater than 1 means delay.
-        ODs_prob_delay2[j] = cpm.get_prob(M_VE2, [vars_arc[idx]], [0]) + cpm.get_prob(M_VE2, [vars_arc[idx]], [1]) # 0, 1
+        ODs_prob_delay2[j] = M_VE2.get_prob([vars_arc[idx]], [0]) + M_VE2.get_prob([vars_arc[idx]], [1]) # 0, 1
 
     # Check if the results are the same
     np.testing.assert_array_almost_equal(ODs_prob_disconn2, expected_probs['disconn'], decimal=4)
@@ -460,7 +481,7 @@ def test_prob_delay3(setup_bridge_alt, expected_probs):
     #M = [cpms_arc[k] for k in list(arcs.keys()) + list(var_ODs.keys())]
     M = [cpms_arc[k] for k in list(arcs.keys()) + ['od1']]
     var_elim_order = [vars_arc[i] for i in arcs.keys()]
-    M_VE2 = cpm.variable_elim(M, var_elim_order)
+    M_VE2 = operation.variable_elim(M, var_elim_order)
 
     # "M_VE2" same as "M_VE"
     # Retrieve example results
@@ -474,10 +495,10 @@ def test_prob_delay3(setup_bridge_alt, expected_probs):
         # FIXME 2 -> 3?? 
         #disconn_state = vars_arc[idx].values.index(np.inf) + 1
         # the state of disconnection is assigned an arbitrarily large number 100
-        ODs_prob_disconn2[j] = cpm.get_prob(M_VE2, [vars_arc[idx]], [2])
+        ODs_prob_disconn2[j] = M_VE2.get_prob([vars_arc[idx]], [2])
 
         # Prob. of delay
-        ODs_prob_delay2[j] = cpm.get_prob(M_VE2, [vars_arc[idx]], [1-1], flag=False) # Any state greater than 1 means delay.
+        ODs_prob_delay2[j] = M_VE2.get_prob([vars_arc[idx]], [1-1], flag=False) # Any state greater than 1 means delay.
 
     # Check if the results are the same
     np.testing.assert_array_almost_equal(ODs_prob_disconn2[0], expected_probs['disconn'][0], decimal=4)
@@ -521,7 +542,7 @@ def test_prob_damage(setup_bridge, expected_probs):
                              p= [1, 1, 1])
 
     # using string
-    cpm_ve = cpm.condition(cpms_arc,
+    cpm_ve = operation.condition(cpms_arc,
                            cnd_vars=['od_obs1', 'od_obs2', 'od_obs3'],
                            cnd_states=[1, 1, 0])
 
@@ -544,7 +565,7 @@ def test_prob_damage(setup_bridge, expected_probs):
     np.testing.assert_array_almost_equal(cpm_ve[13].p, np.array([[1, 1, 1]]).T)
     """
 
-    Mcond_mult = cpm.prod_cpms(cpm_ve)
+    Mcond_mult = cpm.product(cpm_ve)
 
     assert Mcond_mult.C.shape == (8, 14)
     #assert [x.name for x in Mcond_mult.variables] == ['e1', 'e2', 'e3', 'e4', 'e5', 'e6', 'od1', 'od2', 'od3', 'od4', 'od_obs1', 'od_obs2', 'od_obs3', 'od_obs4']
@@ -583,13 +604,11 @@ def test_prob_damage(setup_bridge, expected_probs):
     for j, i in enumerate(arcs.keys()):
 
         iM = Mcond_mult_sum.sum([vars_arc[i]], 0)
-        [iM_fail] = cpm.condition(iM,
-                               cnd_vars=[vars_arc[i]],
-                               cnd_states=[arc_fail],
-                               )
+        iM_fail = iM.condition(cnd_vars=[vars_arc[i]],
+                               cnd_states=[arc_fail])
         fail_prob = iM_fail.p / iM.p.sum(axis=0)
         if fail_prob.size:
-            arcs_prob_damage[j] = fail_prob
+            arcs_prob_damage[j] = fail_prob.item()
 
     # Check if the results are the same
     np.testing.assert_array_almost_equal(arcs_prob_damage,  expected_probs['damage'], decimal=4)
@@ -886,25 +905,6 @@ def test_sf_min_path(setup_sys_rbd):
     assert sys_st == 'f'
     assert min_comps_st == {}
 
-@pytest.fixture
-def setup_multi_dest():
-    arcs = {'e1': ['n1', 'n2'],
-            'e2': ['n1', 'n5'],
-            'e3': ['n2', 'n5'],
-            'e4': ['n3', 'n4'],
-            'e5': ['n3', 'n5'],
-            'e6': ['n4', 'n5']}
-
-    arc_times_h = {'e1': [np.inf, 0.15], 'e2': [np.inf, 0.0901], 'e3': [np.inf, 0.0901], 'e4': [np.inf, 0.1054],
-                   'e5': [np.inf, 0.0943], 'e6': [np.inf, 0.0707]}
-    
-    varis = {k: variable.Variable(name=k, values=v) for k, v in arc_times_h.items()}
-
-    origin = 'n1'
-    dests = ['n3', 'n4']
-
-    return origin, dests, arcs, varis
-
 
 def test_get_time_and_path_multi_dest1(setup_multi_dest):
 
@@ -916,7 +916,7 @@ def test_get_time_and_path_multi_dest1(setup_multi_dest):
                   'e4': 1,
                   'e5': 1,
                   'e6': 0}
-    
+
     d_time1, path1 = trans.get_time_and_path_multi_dest(arcs_state, origin, dests, arcs, varis)
 
     assert d_time1 == pytest.approx(0.3344, rel=1.0e-4)
@@ -953,4 +953,4 @@ def test_sys_fun_wrap1(setup_multi_dest):
     assert d_time2 == np.inf
     assert sys_st2 == 'f'
     assert min_comps_st2 == {}
-    
+

@@ -2,7 +2,8 @@
 #from BNS_JT.tests.test_gen_bnb import info_bridge
 from BNS_JT.tests.test_trans import data_bridge, setup_bridge, expected_probs
 from BNS_JT.tests.test_gen_bnb import main_sys, setup_inference, setup_brs
-from BNS_JT.tests.test_operation import setup_sys_rbd
+from BNS_JT.tests.test_operations import setup_sys_rbd
+from BNS_JT.tests.test_cpm import setup_condition, setup_hybrid
 
 #, setup_bridge_alt
 # Import fixture_a and fixture_b from 'examples.py'

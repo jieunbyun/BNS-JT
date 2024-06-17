@@ -2,7 +2,7 @@ import numpy as np
 import itertools
 #from dask.distributed import Variable
 
-from BNS_JT import variable, cpm, branch, trans, gen_bnb
+from BNS_JT import variable, cpm, branch, trans, gen_bnb, operation
 
 
 def setup_model(cfg):
@@ -132,13 +132,13 @@ def compute_prob(cfg, cpms, varis, var_elim, key, idx_state, flag):
     #M = [cpms_arc[k] for k in list(arcs.keys()) + list(var_ODs.keys())]
     M = [cpms[k] for k in var_elim + [key]]
     var_elim = [varis[i] for i in var_elim]
-    M_VE2 = cpm.variable_elim(M, var_elim)
+    M_VE2 = operation.variable_elim(M, var_elim)
 
     # Retrieve example results
     # Prob. of disconnection
     #prob = np.zeros(len(varis[key].values))
     #for idx_state in enumerate(varis[key].values):
-    prob = cpm.get_prob(M_VE2, [varis[key]], [idx_state], flag)
+    prob = M_VE2.get_prob([varis[key]], [idx_state], flag)
 
     # Prob. of delay
     #ODs_prob_delay2[j] = cpm.get_prob(M_VE2, [vars_arc[idx]], [1-1], flag=False) # Any state greater than 1 means delay.

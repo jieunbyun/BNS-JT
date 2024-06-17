@@ -11,8 +11,6 @@ from scipy.stats import beta
 from BNS_JT import variable, cpm, gen_bnb, trans, config
 
 HOME = Path(__file__).parent
-output_path = HOME.joinpath('./output')
-output_path.mkdir(parents=True, exist_ok=True)
 
 
 def read_model_from_json_custom(file_input):
@@ -20,17 +18,7 @@ def read_model_from_json_custom(file_input):
     with open(file_input, 'r') as f:
         model = json.load(f)
 
-    """
-    # read node information
-    nodes = {}
-    for k, v in model['component_list'].items():
-        nodes[k] = v
-
-    edges = {}
-    for k, v in model['node_conn_df'].items():
-        edges[k] = v
-    """
-
+    # added
     origins = []
     for k, v in model['origin_list'].items():
         origins += [v['ID']]
@@ -90,6 +78,7 @@ def cal_edge_dist(cfg, eq_name):
         # failure probability
         v1['pf'] = norm.cdf(0, v1['mean'], np.sqrt(vari[k1]))
 
+
 def cal_edge_dist_output(cfg, eq_name):
 
     # Distance to epicentre
@@ -148,6 +137,7 @@ def shortest_distance(line_pt1, line_pt2, pt):
     x1, y1 = line_pt1
     x2, y2 = line_pt2
     x0, y0 = pt
+
     # Calculate the dot products
     dot1 = ((x0 - x1) * (x2 - x1) + (y0 - y1) * (y2 - y1)) / ((x2 - x1)**2 + (y2 - y1)**2)
     dot2 = ((x0 - x2) * (x1 - x2) + (y0 - y2) * (y1 - y2)) / ((x1 - x2)**2 + (y1 - y2)**2)
@@ -241,7 +231,7 @@ def mcs_unknown(brs_u, probs, sys_fun_rs, cpms, sys_name, cov_t, sys_st_monitor,
     INPUTS:
     brs_u: Unspecified branches (list)
     probs: a dictionary of failure probabilities for each component
-    sys_fun_rs: System function 
+    sys_fun_rs: System function
     cpms: a list of cpms containing component events and system event
     sys_name: a string of the system event's name in cpms
     cov_t: a target c.o.v.
@@ -260,14 +250,15 @@ def mcs_unknown(brs_u, probs, sys_fun_rs, cpms, sys_name, cov_t, sys_st_monitor,
     brs_u_probs = [b[4] for b in brs_u]
     brs_u_prob = sum(brs_u_probs)
 
-
     samples = []
     samples_sys = np.empty((0, 1), dtype=int)
     sample_probs = []
 
     nsamp, nfail = 0, 0
     pf, cov = 0.0, 1.0
+
     while cov > cov_t:
+
         nsamp += 1
 
         sample1 = {}
@@ -276,12 +267,13 @@ def mcs_unknown(brs_u, probs, sys_fun_rs, cpms, sys_name, cov_t, sys_st_monitor,
         # select a branch
         br_id = np.random.choice(range(len(brs_u)), p=brs_u_probs / brs_u_prob)
         br = brs_u[br_id]
+
         for e in br.down.keys():
             d = br.down[e]
             u = br.up[e]
 
             if d < u: # (fail, surv)
-                st = np.random.choice(range(d, u+1), p=[probs[e][d], probs[e][u] ])
+                st = np.random.choice(range(d, u + 1), p=[probs[e][d], probs[e][u]])
             else:
                 st = d
 
@@ -300,7 +292,7 @@ def mcs_unknown(brs_u, probs, sys_fun_rs, cpms, sys_name, cov_t, sys_st_monitor,
 
         if nsamp > 9:
             prior = 0.01
-            a,b = prior + nfail, prior + (nsamp-nfail) # Bayesian estimation assuming beta conjucate distribution
+            a, b = prior + nfail, prior + (nsamp-nfail) # Bayesian estimation assuming beta conjucate distribution
 
             pf_s = a / (a+b)
             var_s = a*b / (a+b)**2 / (a+b+1)
@@ -311,24 +303,27 @@ def mcs_unknown(brs_u, probs, sys_fun_rs, cpms, sys_name, cov_t, sys_st_monitor,
             cov = std/pf
 
             conf_p = 0.95 # confidence interval
-            low = beta.ppf( 0.5*(1-conf_p), a, b )
-            up = beta.ppf( 1 - 0.5*(1-conf_p), a, b )
+            low = beta.ppf(0.5*(1-conf_p), a, b)
+            up = beta.ppf(1 - 0.5*(1-conf_p), a, b)
             cint = sys_st_prob + brs_u_prob * np.array([low, up])
 
         if nsamp % 1000 == 0:
             print(f'nsamp: {nsamp}, pf: {pf:.4e}, cov: {cov:.4e}')
 
     # Allocate samples to CPMs
-    Csys = np.zeros( (nsamp, len(probs)), dtype=int )
-    Csys = np.hstack( (samples_sys, Csys))
+    Csys = np.zeros((nsamp, len(probs)), dtype=int)
+    Csys = np.hstack((samples_sys, Csys))
+
     for i, v in enumerate(cpms[sys_name].variables[1:]):
-        Cv = np.array( [s[v.name] for s in samples], dtype=int ).T
-        cpms[v.name].Cs, cpms[v.name].q = Cv, np.array([p[v.name] for p in sample_probs], dtype=float).T
+        Cv = np.array([s[v.name] for s in samples], dtype=int).T
+        cpms[v.name].Cs = Cv
+        cpms[v.name].q = np.array([p[v.name] for p in sample_probs], dtype=float).T
         cpms[v.name].sample_idx = np.arange(nsamp, dtype=int)
 
-        Csys[:,i+1] = Cv.flatten()
+        Csys[:, i+1] = Cv.flatten()
 
-    cpms[sys_name].Cs, cpms[sys_name].q = Csys, np.ones((nsamp,1), dtype=float)
+    cpms[sys_name].Cs = Csys
+    cpms[sys_name].q = np.ones((nsamp,1), dtype=float)
     cpms[sys_name].sample_idx = np.arange(nsamp, dtype=int)
 
     result = {'pf': pf, 'cov': cov, 'nsamp': nsamp, 'cint_low': cint[0], 'cint_up': cint[1]}
@@ -336,9 +331,9 @@ def mcs_unknown(brs_u, probs, sys_fun_rs, cpms, sys_name, cov_t, sys_st_monitor,
     return cpms, result
 
 
-def config_custom(cfg_name, eq_name):
+def config_custom(file_cfg, eq_name):
 
-    cfg = config.Config(HOME.joinpath(f'input/{cfg_name}'))
+    cfg = config.Config(file_cfg)
 
     if cfg.data['MAX_SYS_FUN']:
         cfg.max_sys_fun = cfg.data['MAX_SYS_FUN']
@@ -358,9 +353,10 @@ def config_custom(cfg_name, eq_name):
 
     return cfg
 
-def run_MCS(node, cfg_fname, eq_name):
-        
-    cfg = batch.config_custom(cfg_fname, eq_name)
+
+def run_MCS(file_cfg, eq_name, node):
+
+    cfg = batch.config_custom(file_cfg, eq_name)
 
     node_coords = {}
     for k, v in cfg.infra['nodes'].items():
@@ -370,7 +366,7 @@ def run_MCS(node, cfg_fname, eq_name):
     for k, v in cfg.infra['edges'].items():
         arcs[k] = [v['origin'], v['destination']]
 
-    with open(output_path / "varis.pk", 'rb') as f:
+    with open(cfg.output_path.joinpath("varis.pk"), 'rb') as f:
         varis = pickle.load(f)
 
     dests = cfg.infra['origins']
@@ -386,17 +382,20 @@ def run_MCS(node, cfg_fname, eq_name):
     pf, cov, nsamp = gen_bnb.run_MCS_indep_comps(probs, sys_fun, cov_t=0.01)
     print(f'pf: {pf:.4e}, cov: {cov:.4e}, nsamp: {nsamp:d}')
 
-    with open(output_path.joinpath(f'mcs_{node}_{eq_name}.txt'), 'w') as fout:
+    with open(cfg.output_path.joinpath(f'mcs_{node}_{eq_name}.txt'), 'w') as fout:
         fout.write(f"pf: {pf:.4e} \n")
         fout.write(f"cov: {cov:.4e} \n")
         fout.write(f"no_samples: {nsamp:d}")
 
 
 def process_node(cfg, node, comps_st_itc, st_br_to_cs, arcs, varis, probs, cpms):
+
     print(f'-----Analysis begins for node: {node}-----')
 
     dests = cfg.infra['origins']
     thres = cfg.infra['thres']
+
+    st_br_to_cs = {'f': 0, 's': 1, 'u': 2}
 
     if node not in dests:
 
@@ -407,7 +406,7 @@ def process_node(cfg, node, comps_st_itc, st_br_to_cs, arcs, varis, probs, cpms)
         brs, rules, sys_res2, monitor2 = gen_bnb.run_brc( {k: varis[k] for k in arcs.keys()}, probs, sys_fun, cfg.max_sys_fun, cfg.max_branches, cfg.sys_bnd_wr, surv_first=True, rules=rules)
         monitor = {k: v + monitor2[k] for k, v in monitor1.items() if k != 'out_flag'}
         monitor['out_flag'] = [monitor1['out_flag'], monitor2['out_flag']]"""
-        brs, rules, sys_res, monitor = gen_bnb.run_brc( {k: varis[k] for k in arcs.keys()}, probs, sys_fun, cfg.max_sys_fun, cfg.max_branches, cfg.sys_bnd_wr, surv_first=True)
+        brs, rules, sys_res, monitor = gen_bnb.run_brc({k: varis[k] for k in arcs.keys()}, probs, sys_fun, cfg.max_sys_fun, cfg.max_branches, cfg.sys_bnd_wr, surv_first=True)
 
         csys, varis = gen_bnb.get_csys_from_brs(brs, varis, st_br_to_cs)
         #varis[node] = variable.Variable(node, values = ['f', 's', 'u'])
@@ -415,7 +414,9 @@ def process_node(cfg, node, comps_st_itc, st_br_to_cs, arcs, varis, probs, cpms)
         cpms[node] = cpm.Cpm( [vari_node] + [varis[k] for k in arcs.keys()], 1, csys, np.ones((len(csys),1), dtype=float) )
 
         pf_u, pf_l = monitor['pf_up'][-1], monitor['pf_low'][-1]
+
         if (monitor['out_flag'] == 'max_sf' or monitor['out_flag'] == 'max_nb'):
+
             print(f'*[node {node}] MCS on unknown started..*')
 
             #csys = csys[ csys[:,0] != st_br_to_cs['u'] ] # remove unknown state instances
@@ -423,10 +424,7 @@ def process_node(cfg, node, comps_st_itc, st_br_to_cs, arcs, varis, probs, cpms)
 
             def sys_fun_rs(x):
                 val, st, _ = sys_fun(x)
-                if st == 's':
-                    return val, 1
-                elif st == 'f':
-                    return val, 0
+                return val, st_br_to_cs[st]
 
             start = time.time()
             #cpm2_, result_rs = cpm.rejection_sampling_sys(cpms, node, sys_fun_rs, cfg.cov_t, 0, 1.0-pf_l-pf_u, pf_l, rand_seed=0 )
@@ -484,9 +482,9 @@ def process_node(cfg, node, comps_st_itc, st_br_to_cs, arcs, varis, probs, cpms)
     return node, vari_node, cpms, sys_pf_node, sys_nsamp_node, rules, monitor, result_mcs
 
 
-def main(cfg_name, eq_name):
+def main(file_cfg, eq_name):
 
-    cfg = config_custom(cfg_name, eq_name)
+    cfg = config_custom(file_cfg, eq_name)
 
     probs = {k: {0: v['pf'], 1: 1 - v['pf']} for k, v in cfg.infra['edges'].items()}
 
@@ -505,14 +503,11 @@ def main(cfg_name, eq_name):
 
     # variables
     varis = {}
-    for k, v in cfg.infra['edges'].items():
-        varis[k] = variable.Variable(name=k, values = [np.inf, arc_time[k]])
-
-    # cpms
     cpms = {}
     comps_st_itc = {}
     for k, v in cfg.infra['edges'].items():
-        cpms[k] = cpm.Cpm([varis[k]], 1, C=np.array([[0],[1]]), p = np.array([v['pf'], 1-v['pf']]))
+        varis[k] = variable.Variable(name=k, values = [np.inf, arc_time[k]])
+        cpms[k] = cpm.Cpm([varis[k]], 1, C=np.array([[0],[1]]), p = np.array([v['pf'], 1 - v['pf']]))
         comps_st_itc[k] = len(varis[k].values) - 1
 
     st_br_to_cs = {'f': 0, 's': 1, 'u': 2}
@@ -524,7 +519,7 @@ def main(cfg_name, eq_name):
         #for node in ['n15', 'n53']: # for test
             res1 = exec.submit(process_node, cfg, node, comps_st_itc, st_br_to_cs, arcs, varis, probs, cpms)
             futures.append(res1)
-    
+
     # For debugging
     """cfg.max_branches = 100
     node, vari_node, cpms, sys_pf_node, sys_nsamp_node, rules, monitor, result_mcs = process_node(cfg, 'n1', comps_st_itc, st_br_to_cs, arcs, varis, probs, cpms)"""
@@ -537,7 +532,7 @@ def main(cfg_name, eq_name):
         if vari_node is not None:
             varis[node] = vari_node
 
-            fout_cpm = output_path.joinpath(f'cpms_{node}.pk')
+            fout_cpm = cfg.output_path.joinpath(f'cpms_{node}.pk')
             with open(fout_cpm, 'wb') as fout:
                 pickle.dump(cpms, fout)
 
@@ -546,12 +541,12 @@ def main(cfg_name, eq_name):
             sys_nsamps[node] = sys_nsamp_node
             covs[node] = 0.0
 
-            fout_monitor = output_path.joinpath(f'brc_{node}.pk')
+            fout_monitor = cfg.output_path.joinpath(f'brc_{node}.pk')
             with open(fout_monitor, 'wb') as fout:
                 pickle.dump(monitor, fout)
 
         if result_mcs is not None:
-            fout_rs = output_path.joinpath(f'rs_{node}.txt')
+            fout_rs = cfg.output_path.joinpath(f'rs_{node}.txt')
 
             sys_pfs_low[node] = result_mcs['cint_low']
             sys_pfs_up[node] = result_mcs['cint_up']
@@ -564,19 +559,19 @@ def main(cfg_name, eq_name):
                         f.write(f"{k}\t{v:d}\n")
                 f.write(f"time (sec)\t{result_mcs['time']:.4e}\n")
 
-        fout_rules = output_path.joinpath(f'rules_{node}.pk')
+        fout_rules = cfg.output_path.joinpath(f'rules_{node}.pk')
         with open(fout_rules, 'wb') as fout:
             pickle.dump(rules, fout)
 
     # save results
     os_list = cfg.infra['origins']
-    fout = output_path.joinpath(f'result.txt')
+    fout = cfg.output_path.joinpath(f'result.txt')
     with open(fout, 'w') as f:
         for node in node_coords:
             if node != 'epi' and node not in os_list:
                 f.write(f'{node}\t{sys_pfs_low[node]:.4e}\t{sys_pfs_up[node]:.4e}\t{sys_nsamps[node]}\t{covs[node]}\n')
 
-    fout_varis = output_path.joinpath(f'varis.pk')
+    fout_varis = cfg.output_path.joinpath(f'varis.pk')
     with open(fout_varis, 'wb') as fout:
         pickle.dump(varis, fout)
 
@@ -585,10 +580,10 @@ def main(cfg_name, eq_name):
 
 if __name__ == '__main__':
     freeze_support()
-    main('config.json', 's1')
+    main(HOME.joinpath('./input/config.json'), 's1')
 
     # To compare results with MCS results
     """for node in ['n67', 'n29', 'n62', 'n63', 'n64', 'n65']:
         print(f"{node} begins..")
-        run_MCS(node, 'config.json', 's1')
-        run_MCS(node, 'config.json', 's2')"""
+        run_MCS('config.json', 's1', node)
+        run_MCS('config.json', 's2', node)"""

@@ -10,7 +10,7 @@ import pdb
 import warnings
 import pytest
 
-from BNS_JT import bnb_fns, branch, cpm
+from BNS_JT import bnb_fns, branch, cpm, operation
 
 
 def test_bnb(setup_bridge, expected_probs):
@@ -49,13 +49,13 @@ def test_bnb(setup_bridge, expected_probs):
     #M_bnb = [cpms_arc[i] for i in list(arcs.keys()) + ['od1']]
     #M_bnb[od_var_id].C = C_od
     #M_bnb[od_var_id].p = np.ones(shape=(C_od.shape[0], 1))
-    M_bnb_VE= cpm.variable_elim(M_bnb, var_elim_order)
+    M_bnb_VE= operation.variable_elim(M_bnb, var_elim_order)
 
     #print(M_bnb_VE)
     # FIXME: index issue
     disconn_state = 0 # max basic state
-    disconn_prob = cpm.get_prob(M_bnb_VE, [vars_arc['od1']], [disconn_state])
-    delay_prob = cpm.get_prob(M_bnb_VE, [vars_arc['od1']], [0]) + cpm.get_prob(M_bnb_VE, [vars_arc['od1']], [1])
+    disconn_prob = M_bnb_VE.get_prob([vars_arc['od1']], [disconn_state])
+    delay_prob = M_bnb_VE.get_prob([vars_arc['od1']], [0]) + M_bnb_VE.get_prob([vars_arc['od1']], [1])
 
     # Check if the results are the same
     # FIXME: index issue
@@ -64,8 +64,8 @@ def test_bnb(setup_bridge, expected_probs):
 
     # using variable name instead
     disconn_state = 0 # max basic state
-    disconn_prob = cpm.get_prob(M_bnb_VE, ['od1'], np.array([disconn_state]))
-    delay_prob = cpm.get_prob(M_bnb_VE, ['od1'], [0]) + cpm.get_prob(M_bnb_VE, ['od1'], [1])
+    disconn_prob = M_bnb_VE.get_prob(['od1'], np.array([disconn_state]))
+    delay_prob = M_bnb_VE.get_prob(['od1'], [0]) + M_bnb_VE.get_prob(['od1'], [1])
     #delay_prob = cpm.get_prob(M_bnb_VE, ['od1'], np.array([1-1]), 0)
 
     np.testing.assert_array_almost_equal(expected_probs['disconn'][0], disconn_prob, decimal=4)
