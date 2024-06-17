@@ -2,6 +2,7 @@ from pathlib import Path
 import numpy as np
 import random
 import copy
+import pdb
 import time
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -15,11 +16,11 @@ HOME = Path(__file__).parent
 app = typer.Typer()
 
 @app.command()
-def get_lins( pole1, paths ):
+def get_lins(pole1, paths):
     """
     Get link sets of a pole's end (to be connected to substations) given paths information
     [INPUT]
-    - pole1: a string 
+    - pole1: a string
     - paths: a dictionary of substation: LIST of paths
     [OUTPUT]
     - lins: a list of link-sets
@@ -35,8 +36,8 @@ def get_lins( pole1, paths ):
                 idx = p.index(pole1)
                 lin1 = [s] + p[:(idx+1)]
                 lins += [lin1]
-    
     return lins
+
 
 def read_model_json(model_json):
 
@@ -82,22 +83,21 @@ def write_output_jason(version):
 
 
 
-def quant_cpms( haz, pfs, rep_pri, lins ):
+def quant_cpms(haz, pfs, rep_pri, lins):
 
     """
     Quantify CPMs from user inputs
     """
 
-    cpms={}
-    vars={}
+    cpms = {}
+    varis = {}
 
     ## Hazard
-    vals_h, p_h = [], []
-    for s, p in haz.items():
-        vals_h.append( s )
-        p_h.append( p )
-    vars['haz'] = variable.Variable( name='haz', values=vals_h) # values=(mild, medium, intense)
-    cpms['haz'] = cpm.Cpm( variables=[vars['haz']], no_child=1, C=np.array(range(len(p_h))), p=p_h )
+    vals_h = list(haz.keys())
+    p_h = list(haz.values())
+
+    varis['haz'] = variable.Variable(name='haz', values=vals_h) # values=(mild, medium, intense)
+    cpms['haz'] = cpm.Cpm(variables=[varis['haz']], no_child=1, C=np.array(range(len(p_h))), p=p_h)
 
     ## Structures
     C_x = []
@@ -106,68 +106,76 @@ def quant_cpms( haz, pfs, rep_pri, lins ):
     C_x = np.array(C_x)
 
     for s, pf in pfs.items():
-        name = 'x' + s
-        vars[name] = variable.Variable( name=name, values=['fail','surv'] ) # values=(failure, survival)
+        name = f'x{s}'
+        varis[name] = variable.Variable(name=name, values=['fail','surv']) # values=(failure, survival)
 
         p_x = []
         for p in pf:
             p_x += [p, 1-p]
 
-        cpms[name] = cpm.Cpm( variables = [vars[name], vars['haz']], no_child = 1,
+        cpms[name] = cpm.Cpm(variables = [varis[name], varis['haz']], no_child = 1,
                         C=C_x, p=p_x )
-        
+
     ## Number of damaged structures so far (following repair priority)
     for i, s in enumerate(rep_pri):
-        name = 'n' + s
-        vars[name] = variable.Variable( name=name, values=list(range(i+2)) )
+        name = f'n{s}'
+        varis[name] = variable.Variable(name=name, values=list(range(i+2)))
 
         if i < 1: # first element
-            cpms[name] = cpm.Cpm( variables = [vars[name], vars['x'+s]], no_child = 1, C=np.array([[1,0], [0, 1]]), p=np.array([1,1]) )
+            cpms[name] = cpm.Cpm(variables = [varis[name], varis[f'x{s}']], no_child = 1, C=np.array([[1,0], [0, 1]]), p=np.array([1,1]))
+
         else:
-            t_old_vars = vars[n_old].values
+            t_old_vars = varis[n_old].values
 
             Cx = np.empty(shape=(0,3), dtype=int)
             for v in t_old_vars:
-                Cx_new = [[v, 1, v], [v+1, 0, v]]
-                Cx = np.vstack( [Cx, Cx_new] )
+                Cx_new = [[v, 1, v], [v + 1, 0, v]]
+                Cx = np.vstack([Cx, Cx_new])
 
-            cpms[name] = cpm.Cpm( variables = [vars[name], vars['x'+s], vars[n_old]], no_child = 1, C=Cx, p=np.ones(shape=(2*len(t_old_vars)), dtype=np.float32) )
+            cpms[name] = cpm.Cpm(variables = [varis[name], varis[f'x{s}'], varis[n_old]], no_child = 1, C=Cx, p=np.ones(shape=(2*len(t_old_vars)), dtype=np.float32))
 
         n_old = copy.deepcopy(name)
 
+    pdb.set_trace()
+
     ## Closure time
     for s in rep_pri:
-        name = 'c'+s
-        name_n = 'n'+s
-        vals = vars[name_n].values
-        vars[name] = variable.Variable( name=name, values=vals )
+        name = f'c{s}'
+        name_n = f'n{s}'
+        vals = varis[name_n].values
+        varis[name] = variable.Variable(name=name, values=vals)
 
-        cst_all = vars[name_n].B.index(set(vals)) # composite state representing all states
-        Cx = np.array([[0, 1, cst_all]])
-        for v in vals:
-            if v > 0:
-                Cx = np.vstack((Cx, [v, 0, v]))
+        try:
+            cst_all = varis[name_n].B.index(set(vals)) # composite state representing all states
+        except AttributeError:
+            print(name_n)
+        else:
+            Cx = np.array([[0, 1, cst_all]])
+            for v in vals:
+                if v > 0:
+                    Cx = np.vstack((Cx, [v, 0, v]))
 
-        cpms[name] = cpm.Cpm( variables = [vars[name], vars['x'+s], vars[name_n]], no_child = 1, C=Cx, p=np.ones(shape=(len(Cx),1), dtype=np.float32) )
+            cpms[name] = cpm.Cpm(variables = [varis[name], varis[f'x{s}'], varis[name_n]], no_child = 1, C=Cx, p=np.ones(shape=(len(Cx), 1), dtype=np.float32))
 
     ## Power-cut days of houses
     for h, sets in lins.items():
-        if len(sets) == 1:              
-            vars_h = [vars['c' + x] for x in sets[0]]
+        if len(sets) == 1:
+            vars_h = [varis[f'c{x}'] for x in sets[0]]
 
-            cpms[h], vars[h] = quant.sys_max_val( h, vars_h )
-            
+            cpms[h], varis[h] = quant.sys_max_val(h, vars_h)
+
         else:
             names_hs = [h+str(i) for i in range(len(sets))]
             for h_i, s_i in zip(names_hs, sets):
-                vars_h_i = [vars['c'+x] for x in s_i]
+                vars_h_i = [varis['c'+x] for x in s_i]
 
-                cpms[h_i], vars[h_i] = quant.sys_max_val( h_i, vars_h_i )
-                
-            vars_hs = [vars[n] for n in names_hs]
-            cpms[h], vars[h] = quant.sys_min_val( h, vars_hs )
+                cpms[h_i], varis[h_i] = quant.sys_max_val( h_i, vars_h_i )
 
-    return cpms, vars
+            vars_hs = [varis[n] for n in names_hs]
+            cpms[h], varis[h] = quant.sys_min_val( h, vars_hs )
+
+    return cpms, varis
+
 
 def get_pole_conn(paths,houses):
 
@@ -202,6 +210,7 @@ def get_pole_conn(paths,houses):
 
     return conn
 
+
 def add_pole_loc( locs_sub_hou, conn_pol ):
 
     locs = copy.deepcopy(locs_sub_hou)
@@ -210,6 +219,7 @@ def add_pole_loc( locs_sub_hou, conn_pol ):
         locs[pl] = tuple( [0.5*sum(tup) for tup in zip(locs_sub_hou[pair[0]], locs_sub_hou[pair[1]])] )
 
     return locs
+
 
 def plot_result(locs, conn, avg_cut_days, pfs_mar):
 
@@ -238,9 +248,10 @@ def plot_result(locs, conn, avg_cut_days, pfs_mar):
 
     ax.set_xticks([])
     ax.set_yticks([])
-    
-    fig.savefig( 'result.png', dpi=200 )
-    print('result.png is created.') 
+
+    fig.savefig('result.png', dpi=200)
+    print('result.png is created.')
+
 
 @app.command()
 def main(h_list, model_json, plot: bool=False, version=None):
@@ -271,10 +282,10 @@ def main(h_list, model_json, plot: bool=False, version=None):
           'p0': [0.001, 0.01, 0.1], 'p1':[0.005, 0.05, 0.2],
           'p2': [0.001, 0.01, 0.1], 'p3':[0.005, 0.05, 0.2],
           'p4': [0.001, 0.01, 0.1], 'p5':[0.005, 0.05, 0.2],
-          'p6': [0.001, 0.01, 0.1], 'p7':[0.005, 0.05, 0.2]} 
-    
+          'p6': [0.001, 0.01, 0.1], 'p7':[0.005, 0.05, 0.2]}
+
     # Repair priority
-    rep_pri = ['s0', 's1', 'p0', 'p1', 'p2', 'p3', 'p4', 'p5', 'p6', 'p7'] 
+    rep_pri = ['s0', 's1', 'p0', 'p1', 'p2', 'p3', 'p4', 'p5', 'p6', 'p7']
     ###############################################
 
     ############### if plot==True ##############
@@ -291,13 +302,13 @@ def main(h_list, model_json, plot: bool=False, version=None):
     for h, pls in houses.items():
         lins_h = []
         for pl in pls:
-            lins_pl = get_lins( pl, paths )
+            lins_pl = get_lins(pl, paths)
             lins_h += lins_pl
-        
+
         lins[h] = lins_h
 
     # CPMs
-    cpms, vars = quant_cpms( haz, pfs, rep_pri, lins )
+    cpms, varis = quant_cpms(haz, pfs, rep_pri, lins)
 
     # Inference
     ## Variable Elimination order
@@ -316,31 +327,32 @@ def main(h_list, model_json, plot: bool=False, version=None):
     Mhs = {}
     for h in h_list:
         st=time.time()
-        Mhs[h] = cpm.cal_Msys_by_cond_VE( cpms, vars, cond_names, VE_ord, h )
+        Mhs[h] = cpm.cal_Msys_by_cond_VE( cpms, varis, cond_names, VE_ord, h )
         en = time.time()
 
         print( h + " done. " + "Took {:.2f} sec.".format(en-st) )
 
+
     avg_cut_days = {}
     for h in h_list:
-        days = cpm.get_means( Mhs[h], [h] )
-        avg_cut_days[h] = days[0]
+        cpm.get_means(Mhs[h], [h])
+        avg_cut_days[h] = Mhs[h].means[0]
 
     # Plot
     if plot:
-        
+
         # Get information about paths
         conn = get_pole_conn( paths, houses )
         locs = add_pole_loc( locs, conn )
 
         # failure prob. from marginal distribution
-        pfs_mar = {} 
+        pfs_mar = {}
         for s in pfs.keys():
-            Mx = cpm.cal_Msys_by_cond_VE( cpms, vars, cond_names, VE_ord, 'x'+s )
+            Mx = cpm.cal_Msys_by_cond_VE(cpms, varis, cond_names, VE_ord, 'x' + s)
             pf = cpm.get_prob(Mx, ['x'+s], [0])
             pfs_mar[s] = pf
 
-        plot_result(locs, conn, avg_cut_days, pfs_mar)  
+        plot_result(locs, conn, avg_cut_days, pfs_mar)
 
     return Mhs, avg_cut_days
 
@@ -348,4 +360,4 @@ def main(h_list, model_json, plot: bool=False, version=None):
 """if __name__ == "__main__":
     app()"""
 
-Mhs, avg_cut_days = main( ['h0'], "model.json", plot=True )
+Mhs, avg_cut_days = main(['h0'], "model.json", plot=True)
