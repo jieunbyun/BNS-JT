@@ -657,40 +657,46 @@ def prod_Msys_and_Mcomps(Msys, Mcomps_list):
     return cpm.Cpm(sys_vars_ch+sys_vars_par, len(sys_vars_ch), C, p, Cs, q, ps, sample_idx)
 
 
-def get_inf_vars(vars_star, cpms, VE_ord=None):
+def get_inf_vars(cpms, varis, ve_ord=None):
 
     """
     INPUT:
-    - vars_star: a list of variable names, whose marginal distributions are of interest
     - cpms: a list of CPMs
-    - VE_ord (optional): a list of variable names, representing a VE order. The output list of vars_inf is sorted accordingly.
+    - varis: a list of variable names, whose marginal distributions are of interest
+    - ve_ord (optional): a list of variable names, representing a VE order. The output list of vars_inf is sorted accordingly.
     OUPUT:
-    - vars_inf: a list of variable names
+    - varis_inf: a list of variable names
     """
 
-    vars_inf = [] # relevant variables for inference
-    vars_inf_new = vars_star
-    while len(vars_inf_new) > 0:
-        v1 = copy.deepcopy( vars_inf_new[0] )
-        vars_inf_new.remove(v1)
-        vars_inf.append(v1)
+    def get_ord_inf(x, alist):
+        try:
+            return alist.index(x)
+        except ValueError:
+            return len(alist)
 
-        v1_sco = [x.name for x in cpms[v1].variables[cpms[v1].no_child:]] # Scope of v1 (child nodes do not have to be multiplied again)
-        for p in v1_sco:
-            if p not in vars_inf and p not in vars_inf_new:
-                vars_inf_new.append(p)
+    if isinstance(varis, str):
+        varis = [varis]
 
-    if VE_ord is not None:
-        def get_ord_inf( x, VE_ord ):
-            try:
-                return VE_ord.index(x)
-            except ValueError:
-                return len(VE_ord)
+    assert isinstance(varis, list), f'varis must be a list: {type(varis)}'
 
-        vars_inf.sort( key=(lambda x: get_ord_inf(x, VE_ord)) )
+    varis_inf = [] # relevant variables for inference
+    varis_cp = varis[:]
 
-    return vars_inf
+    while varis_cp:
 
+        v = varis_cp[0]
+        varis_cp.remove(v)
+        varis_inf.append(v)
+
+        scope = [x.name for x in cpms[v].variables[cpms[v].no_child:]] # Scope of v1 (child nodes do not have to be multiplied again)
+        for p in scope:
+            if p not in varis_inf and p not in varis_cp:
+                varis_cp.append(p)
+
+    if ve_ord is not None:
+        varis_inf.sort(key=(lambda x: get_ord_inf(x, ve_ord)))
+
+    return varis_inf
 
 
 def cal_Msys_by_cond_VE(cpms, varis, cond_names, ve_order, sys_name):
@@ -706,7 +712,7 @@ def cal_Msys_by_cond_VE(cpms, varis, cond_names, ve_order, sys_name):
     - Msys: a cpm containing the marginal distribution of variable 'sys_name'
     """
 
-    vars_inf = get_inf_vars([sys_name], cpms, ve_order) # inference only ancestors of sys_name
+    vars_inf = get_inf_vars(cpms, [sys_name], ve_order) # inference only ancestors of sys_name
     c_names = [x.name for x in cpms[sys_name].variables[cpms[sys_name].no_child:]]
     ve_names = [x for x in vars_inf if (x in ve_order) and (x not in cond_names) and (x not in c_names)]
     c_jnt_names = [x for x in c_names if x not in ve_order] # if non-empty, a joint distribution (sys, c_jnt) is computed
@@ -718,30 +724,30 @@ def cal_Msys_by_cond_VE(cpms, varis, cond_names, ve_order, sys_name):
     cpms_inf[sys_name] = cpms[sys_name]
     cond_cpms = [cpms[v] for v in cond_names]
 
-    M_cond = cpm.product( cond_cpms )
+    M_cond = cpm.product(cond_cpms)
     n_crows = len(M_cond.C)
 
     for i in range(n_crows):
         #m1 = M_cond.get_subset([i])
         m1 = condition(M_cond, M_cond.variables, M_cond.C[i,:])
         m1 = m1[0]
-        VE_cpms_m1 = condition( cpms_inf, m1.variables, m1.C[0] )
+        VE_cpms_m1 = condition(cpms_inf, m1.variables, m1.C[0])
 
         for x_name in c_jnt_names:
             VE_cpms_m1[sys_name] = VE_cpms_m1[sys_name].product(VE_cpms_m1[x_name])
             del VE_cpms_m1[x_name]
 
-        VE_cpms_m1_no_sys = {k: v for k,v in VE_cpms_m1.items() if k!=sys_name}
-        cpms_comps = variable_elim( VE_cpms_m1_no_sys, ve_vars, prod=False )
+        VE_cpms_m1_no_sys = {k: v for k,v in VE_cpms_m1.items() if k != sys_name}
+        cpms_comps = variable_elim(VE_cpms_m1_no_sys, ve_vars, prod=False)
 
-        m_m1 = prod_Msys_and_Mcomps( VE_cpms_m1[sys_name], cpms_comps )
+        m_m1 = prod_Msys_and_Mcomps(VE_cpms_m1[sys_name], cpms_comps)
         m_m1 = m_m1.sum(c_elm_names)
 
         m_m1 = m_m1.product(m1)
         m_m1 = m_m1.sum(cond_names)
 
         if i < 1:
-            Msys = copy.deepcopy( m_m1 )
+            Msys = copy.deepcopy(m_m1)
         else:
             Msys = Msys.merge(m_m1)
 
@@ -761,7 +767,7 @@ def sys_max_val(name, vars_p):
     var_new: a new variable representing the system node
     """
 
-    def get_mv( var ): # get minimum values
+    def get_mv(var): # get minimum values
         return min(var.values)
 
     vars_p_s = copy.deepcopy(vars_p)
@@ -779,7 +785,7 @@ def sys_max_val(name, vars_p):
             c_i = np.zeros(shape=(1, 1 + len(vars_p)), dtype='int32')
 
             j = vars_p.index(p)
-            c_i[0][j+1] = p.values.index(v)
+            c_i[0][j + 1] = p.values.index(v)
 
             add = True
             for i2, p2 in enumerate(vars_p_s):
@@ -797,7 +803,7 @@ def sys_max_val(name, vars_p):
                         st_i2 = p2.B.index(vs_i2)
 
                         j2 = vars_p.index(p2)
-                        c_i[0][j2+1] = st_i2
+                        c_i[0][j2 + 1] = st_i2
 
             if add:
                 if v not in vals_new:
@@ -826,7 +832,7 @@ def sys_min_val(name, vars_p):
     var_new: a new variable representing the system node
     """
 
-    def get_mv( var ): # get maximum values
+    def get_mv(var): # get maximum values
         return max(var.values)
 
     vars_p_s = copy.deepcopy(vars_p)
@@ -844,7 +850,7 @@ def sys_min_val(name, vars_p):
             c_i = np.zeros(shape=(1, 1 + len(vars_p)), dtype='int32')
 
             j = vars_p.index(p)
-            c_i[0][j+1] = p.values.index(v)
+            c_i[0][j + 1] = p.values.index(v)
 
             add = True
             for i2, p2 in enumerate(vars_p_s):
@@ -863,7 +869,7 @@ def sys_min_val(name, vars_p):
                         st_i2 = p2.B.index(vs_i2)
 
                         j2 = vars_p.index(p2)
-                        c_i[0][j2+1] = st_i2
+                        c_i[0][j2 + 1] = st_i2
 
             if add:
                 if v not in vals_new:

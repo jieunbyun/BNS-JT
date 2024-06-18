@@ -287,6 +287,7 @@ def test_mcs_product1(setup_mcs_product):
     except AssertionError:
         print(f'{Mcs.q[irow]} vs 0.0765')
 
+
 def test_mcs_product2(setup_mcs_product):
 
     cpms = setup_mcs_product
@@ -873,3 +874,15 @@ def test_sys_min_val2(sys_3comps):
 
     np.testing.assert_array_equal(M.C, [[0, 6, 14, 0], [1, 5, 13, 1], [0, 0, 14, 1], [0, 5, 0, 1]])
     assert v.values==[0,1]
+
+
+def test_get_inf_vars(setup_hybrid):
+
+    varis, cpms = setup_hybrid
+
+    var_elim_order = ['haz', 'x0', 'x1']
+    result = operation.get_inf_vars(cpms, 'sys', ve_ord=var_elim_order)
+    assert result == ['haz', 'x0', 'x1', 'sys']
+
+    result = operation.get_inf_vars(cpms, ['sys'], ve_ord=var_elim_order)
+    assert result == ['haz', 'x0', 'x1', 'sys']
