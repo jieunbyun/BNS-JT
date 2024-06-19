@@ -902,13 +902,20 @@ def run_brc(varis, probs, sys_fun, max_sf, max_nb, pf_bnd_wr = 0.0, surv_first=T
 
     sys_res = pd.DataFrame(data={'sys_val': [], 'comp_st': [], 'comp_st_min': []}) # system function results
 
-    monitor = init_monitor_brc()
+    monitor = {'pf_up': [], # upper bound on pf
+               'pf_low': [], # lower bound on pf
+               'br_s_ns': [], # number of branches-survival
+               'br_f_ns': [], # number of branches=failure
+               'br_u_ns': [], # number of branches-unknown
+               'r_s_ns': [], # number of rules-survival
+               'r_f_ns': [], # number of rules-failure
+               'sf_ns': [], # number of system function runs
+               'time': [] # time taken for each iteration (sec)
+              }
 
     no_sf = 0
     pr_bf, pr_bs = 0.0, 0.0
-
     while no_sf < max_sf:
-
         start = time.time() # monitoring purpose
 
         brs, _ = decomp_df(varis, rules, probs, max_nb)
@@ -917,15 +924,12 @@ def run_brc(varis, probs, sys_fun, max_sf, max_nb, pf_bnd_wr = 0.0, surv_first=T
         if x_star == None:
             monitor['out_flag'] = 'complete'
             break
-
         elif len(brs) >= max_nb:
             monitor['out_flag'] = 'max_nb'
             break
-
         elif (1-pr_bf-pr_bs) < pr_bf*pf_bnd_wr:
             monitor['out_flag'] = 'pf_bnd'
-            break
-
+            break 
         else:
             rule, sys_res_ = run_sys_fn(x_star, sys_fun, varis)
 
@@ -933,13 +937,32 @@ def run_brc(varis, probs, sys_fun, max_sf, max_nb, pf_bnd_wr = 0.0, surv_first=T
             sys_res = pd.concat([sys_res, sys_res_], ignore_index=True)
             no_sf += 1
 
+            end = time.time() # monitoring purpose
+
             ######## monitoring ############
-            monitor = update_monitor_brc(monitor, brs, rules, no_sf, start)
+            pr_bf = sum([b[4] for b in brs if b.up_state == 'f']) # prob. of failure branches
+            pr_bs = sum([b[4] for b in brs if b.down_state == 's']) # prob. of survival branches
+        
+            no_rf = len(rules['f'])
+            no_rs = len(rules['s'])
+
+            no_bf = sum([b.up_state == 'f' for b in brs])
+            no_bs = sum([b.down_state == 's' for b in brs])
+            no_bu = len(brs) - no_bf - no_bs
+
+            monitor['r_f_ns'].append( no_rf )
+            monitor['r_s_ns'].append( no_rs )
+            monitor['pf_up'].append(1.0-pr_bs)
+            monitor['pf_low'].append(pr_bf)
+            monitor['br_s_ns'].append(no_bs)
+            monitor['br_f_ns'].append(no_bf)
+            monitor['br_u_ns'].append(no_bu)
+            monitor['sf_ns'].append(no_sf)
+            monitor['time'].append(end-start)
 
             try:
-                min_len_rf = min([len(x) for x in rules['f']])
-                avg_len_rf = sum([len(x) for x in rules['f']]) / no_rf
-
+                min_len_rf = min( [len(x) for x in rules['f']] )
+                avg_len_rf = sum( [len(x) for x in rules['f']] ) / no_rf
             except ValueError:
                 min_len_rf = 0
                 avg_len_rf = 0
@@ -955,26 +978,38 @@ def run_brc(varis, probs, sys_fun, max_sf, max_nb, pf_bnd_wr = 0.0, surv_first=T
             monitor['out_flag'] = 'max_sf'
 
     brs, _ = decomp_df(varis, rules, probs, max_nb)
-
     try:
+        pr_bf = sum([b[4] for b in brs if b.up_state == 'f']) # prob. of failure branches
+        pr_bs = sum([b[4] for b in brs if b.down_state == 's']) # prob. of survival branches
+    
+        no_rf = len(rules['f'])
+        no_rs = len(rules['s'])
 
-        monitor = update_monitor_brc(monitor, brs, rules, no_sf, start)
+        no_bf = sum([b.up_state == 'f' for b in brs])
+        no_bs = sum([b.down_state == 's' for b in brs])
+        no_bu = len(brs) - no_bf - no_bs
 
+        monitor['r_f_ns'].append( no_rf )
+        monitor['r_s_ns'].append( no_rs )
+        monitor['pf_up'].append(1.0-pr_bs)
+        monitor['pf_low'].append(pr_bf)
+        monitor['br_s_ns'].append(no_bs)
+        monitor['br_f_ns'].append(no_bf)
+        monitor['br_u_ns'].append(no_bu)
+        monitor['sf_ns'].append(no_sf)
+        monitor['time'].append(end-start)
         try:
-            min_len_rf = min([len(x) for x in rules['f']])
-            avg_len_rf = sum([len(x) for x in rules['f']]) / no_rf
-
+            min_len_rf = min( [len(x) for x in rules['f']] )
+            avg_len_rf = sum( [len(x) for x in rules['f']] ) / no_rf
         except ValueError:
             min_len_rf = 0
             avg_len_rf = 0
 
         out_flag = monitor['out_flag']
-
         print(f'***Analysis completed with f_sys runs {no_sf}: out_flag = {out_flag}***')
         print(f'The # of found non-dominated rules (f, s): {no_rf + no_rs} ({no_rf}, {no_rs})')
         print(f'Probability of branchs (f, s, u): ({pr_bf:.4e}, {pr_bs:.2e}, {1.0-pr_bs-pr_bf:.4e})')
         print(f'The # of branches (f, s, u), (min, avg) len of rf: {len(brs)} ({no_bf}, {no_bs}, {no_bu}), ({min_len_rf}, {avg_len_rf:.2f})')
-
     except NameError: # analysis is terminated before the first system function run
         print(f'***Analysis terminated without any evaluation***')
 
