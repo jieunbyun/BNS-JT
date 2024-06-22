@@ -1,4 +1,4 @@
-{"system": {
+{"sysout_setup": {
         "od1": {
             "origin": "n10",
             "destination": "n12",
@@ -35,135 +35,156 @@
             "key": "d5"
         }
     },
-    "edge_list": {
+    "node_conn_df": {
         "e1": {
             "origin": "n10",
             "destination": "n1",
             "link_capacity": [0, 3, 5],
-            "prob": [0.1163, 0.0616, 0.8221]
+            "prob": [0.1163, 0.0616, 0.8221],
+            "weight": null
         },
         "e2": {
             "origin": "n10",
             "destination": "n4",
             "link_capacity": [0, 3, 5],
-            "prob": [0.1624, 0.1224, 0.7152]
+            "prob": [0.1624, 0.1224, 0.7152],
+            "weight": null
         },
         "e3": {
             "origin": "n10",
             "destination": "n6",
             "link_capacity": [0, 3, 5],
-            "prob": [0.2014, 0.0900, 0.7086]
+            "prob": [0.2014, 0.0900, 0.7086],
+            "weight": null
         },
         "e4": {
             "origin": "n10",
             "destination": "n8",
             "link_capacity": [0, 3, 5],
-            "prob": [0.0689, 0.1155, 0.8156]
+            "prob": [0.0689, 0.1155, 0.8156],
+            "weight": null
         },
         "e5": {
             "origin": "n1",
             "destination": "n2",
             "link_capacity": [0, 3, 5],
-            "prob": [0.1863, 0.1366, 0.6771]
+            "prob": [0.1863, 0.1366, 0.6771],
+            "weight": null
         },
         "e6": {
             "origin": "n4",
             "destination": "n1",
             "link_capacity": [0, 3, 5],
-            "prob": [0.2244, 0.0214, 0.7542]
+            "prob": [0.2244, 0.0214, 0.7542],
+            "weight": null
         },
         "e7": {
             "origin": "n4",
             "destination": "n5",
             "link_capacity": [0, 3, 5],
-            "prob": [0.2220, 0.1334, 0.6446]
+            "prob": [0.2220, 0.1334, 0.6446],
+            "weight": null
         },
         "e8": {
             "origin": "n6",
             "destination": "n4",
             "link_capacity": [0, 3, 5],
-            "prob": [0.1265, 0.0762, 0.7973]
+            "prob": [0.1265, 0.0762, 0.7973],
+            "weight": null
         },
         "e9": {
             "origin": "n6",
             "destination": "n5",
             "link_capacity": [0, 3, 5],
-            "prob": [0.2993, 0.0343, 0.6664]
+            "prob": [0.2993, 0.0343, 0.6664],
+            "weight": null
         },
         "e10": {
             "origin": "n6",
             "destination": "n7",
             "link_capacity": [0, 3, 5],
-            "prob": [0.3016, 0.0813, 0.6171]
+            "prob": [0.3016, 0.0813, 0.6171],
+            "weight": null
         },
         "e11": {
             "origin": "n8",
             "destination": "n6",
             "link_capacity": [0, 3, 5],
-            "prob": [0.2385, 0.0785, 0.6830]
+            "prob": [0.2385, 0.0785, 0.6830],
+            "weight": null
         },
         "e12": {
             "origin": "n8",
             "destination": "n7",
             "link_capacity": [0, 3, 5],
-            "prob": [0.3460, 0.0269, 0.6271]
+            "prob": [0.3460, 0.0269, 0.6271],
+            "weight": null
         },
         "e13": {
             "origin": "n8",
             "destination": "n9",
             "link_capacity": [0, 3, 5],
-            "prob": [0.3512, 0.0441, 0.6047]
+            "prob": [0.3512, 0.0441, 0.6047],
+            "weight": null
         },
         "e14": {
             "origin": "n5",
             "destination": "n11",
             "link_capacity": [0, 3, 5],
-            "prob": [0.0326, 0.0182, 0.9492]
+            "prob": [0.0326, 0.0182, 0.9492],
+            "weight": null
         },
         "e15": {
             "origin": "n7",
             "destination": "n5",
             "link_capacity": [0, 3, 5],
-            "prob": [0.0231, 0.1268, 0.8501]
+            "prob": [0.0231, 0.1268, 0.8501],
+            "weight": null
         },
         "e16": {
             "origin": "n2",
             "destination": "n3",
             "link_capacity": [0, 3, 5],
-            "prob": [0.0373, 0.0830, 0.8797]
+            "prob": [0.0373, 0.0830, 0.8797],
+            "weight": null
         },
         "e17": {
             "origin": "n11",
             "destination": "n12",
             "link_capacity": [0, 3, 5],
-            "prob": [0.0222, 0.0192, 0.9586]
+            "prob": [0.0222, 0.0192, 0.9586],
+            "weight": null
         },
         "e18": {
             "origin": "n3",
             "destination": "n11",
             "link_capacity": [0, 3, 5],
-            "prob": [0.0052, 0.0411, 0.9537]
+            "prob": [0.0052, 0.0411, 0.9537],
+            "weight": null
         },
         "e19": {
             "origin": "n9",
             "destination": "n5",
             "link_capacity": [0, 3, 5],
-            "prob": [0.3935, 0.0625, 0.5440]
+            "prob": [0.3935, 0.0625, 0.5440],
+            "weight": null
         },
         "e20": {
             "origin": "n9",
             "destination": "n11",
             "link_capacity": [0, 3, 5],
-            "prob": [0.0651, 0.0457, 0.8892]
+            "prob": [0.0651, 0.0457, 0.8892],
+            "weight": null
         },
         "e21": {
             "origin": "n4",
             "destination": "n2",
             "link_capacity": [0, 3, 5],
-            "prob": [0.1260, 0.0495, 0.8245]
+            "prob": [0.1260, 0.0495, 0.8245],
+            "weight": null
         }
     },
-    "node_list": {
+    "component_list": {
         "n1": {
             "pos_x": 2.0,
             "pos_y": 2.0

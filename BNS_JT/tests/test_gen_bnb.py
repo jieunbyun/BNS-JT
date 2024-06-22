@@ -1258,3 +1258,9 @@ def test_inference2(setup_inference):
     pf_sys = Msys_obs.p[0] / np.sum(Msys_obs.p)
     assert pf_sys == pytest.approx(0.334, rel=1.0e-3)
 
+
+@pytest.mark.skip('TODO')
+def test_run_brc():
+    pass
+
+

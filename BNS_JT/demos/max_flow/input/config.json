@@ -1,7 +1,9 @@
 {
     "MODEL_NAME": "model.json",
-    "OUTPUT_PATH": "./output/",
+    "CONFIGURATION_ID": "max_flow",
+    "OUTPUT_PATH": "../output/",
     "MAX_BRANCHES": 100000,
     "MAX_SYS_FUN": null,
-    "SYS_BND_WIDTH_RATIO": 0.05
+    "SYS_BND_WIDTH_RATIO": 0.05,
+    "SCENARIO_NAME": null
 }

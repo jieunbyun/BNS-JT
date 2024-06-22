@@ -5,6 +5,8 @@ import matplotlib.pyplot as plt
 
 HOME = Path(__file__).parent
 output_path = HOME.joinpath('./output')
+img_path = HOME.joinpath('./img')
+img_path.mkdir(parents=True, exist_ok=True)
 
 key = 'd1' # same as 'd2' and 'd3'
 #key = 'd4' # same as 'd5'
@@ -16,7 +18,6 @@ with open(fout_monitor, 'rb') as file:
 #print(monitor)
 
 ### Plotting ###
-img_path = HOME.joinpath('./img')
 lab_sz = 17
 tic_sz = lab_sz-1
 leg_sz = lab_sz-1
