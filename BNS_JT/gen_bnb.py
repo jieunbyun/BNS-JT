@@ -30,47 +30,101 @@ def init_branch(down, up, rules):
     return [branch.Branch(down, up, down_state, up_state, 1.0)]
 
 
-def init_monitor_brc():
+def init_monitor():
 
     monitor = {'pf_up': [], # upper bound on pf
                'pf_low': [], # lower bound on pf
-               'br_s_ns': [], # number of branches-survival
-               'br_f_ns': [], # number of branches=failure
-               'br_u_ns': [], # number of branches-unknown
-               'r_s_ns': [], # number of rules-survival
-               'r_f_ns': [], # number of rules-failure
-               'sf_ns': [], # number of system function runs
-               'time': [] # time taken for each iteration (sec)
+               'pr_bu': [], # prob. of unknown branches
+               'no_br': [], # number of branches
+               'no_bs': [], # number of branches-survival (br_s_ns)
+               'no_bf': [], # number of branches-failure (br_f_ns)
+               'no_bu': [], # number of branches-unknown (br_us_ns)
+               'no_rs': [], # number of rules-survival (r_s_ns)
+               'no_rf': [], # number of rules-failure (r_f_ns)
+               'no_ra': [], # number of rules (no_rs + no_rf)
+               'no_sf': 0, # number of system function runs (sf_ns)
+               'time': [], # time taken for each iteration (sec)
+               'min_len_rf': [], # min. length of rules-failure
+               'avg_len_rf': [], # avg. length of rules-failure
+               'out_flag': None, # outflag ('complete', 'max_nb', 'pf_bnd', 'max_sf'),
+               'max_bu': 0 # max. number of branches-unknown 
               }
 
-    return monitor
+    # init for ctrl
+    # no_sf, pr_bf, pr_bs = 0, 0, 0
+    ctrl = {'no_sf': 0, # no_sf
+            'pr_bu': 1, # 1 - pr_bf - pr_bs
+            'pf_low': 0, # pr_bf
+            'no_bu': 1, # no_bu
+            }
+
+    return monitor, ctrl
 
 
-def update_monitor_brc(monitor, brs, rules, no_sf, start):
+def update_monitor(monitor, brs, rules, start):
 
     end = time.time() # monitoring purpose
 
     pr_bf = sum([b[4] for b in brs if b.up_state == 'f']) # prob. of failure branches
     pr_bs = sum([b[4] for b in brs if b.down_state == 's']) # prob. of survival branches
 
+    monitor['pf_low'].append(pr_bf) # lower bound on pf
+    monitor['pf_up'].append(1.0 - pr_bs)  # upper bound of pf
+    monitor['pr_bu'].append(1.0 - pr_bf - pr_bs) # prob. of unknown branches
+
     no_rf = len(rules['f'])
     no_rs = len(rules['s'])
 
+    monitor['no_rf'].append(no_rf)
+    monitor['no_rs'].append(no_rs)
+    monitor['no_ra'].append(no_rs + no_rf)
+
+    no_br = len(brs)
     no_bf = sum([b.up_state == 'f' for b in brs])
     no_bs = sum([b.down_state == 's' for b in brs])
-    no_bu = len(brs) - no_bf - no_bs
+    no_bu = no_br - no_bf - no_bs
 
-    monitor['r_f_ns'].append(no_rf)
-    monitor['r_s_ns'].append(no_rs)
-    monitor['pf_up'].append(1.0 - pr_bs)
-    monitor['pf_low'].append(pr_bf)
-    monitor['br_s_ns'].append(no_bs)
-    monitor['br_f_ns'].append(no_bf)
-    monitor['br_u_ns'].append(no_bu)
-    monitor['sf_ns'].append(no_sf)
+    monitor['no_bf'].append(no_bf)
+    monitor['no_bs'].append(no_bs)
+    monitor['no_bu'].append(no_bu)
+    monitor['no_br'].append(no_br)
+
     monitor['time'].append(end - start)
 
-    return monitor
+    try:
+        min_len_rf = min([len(x) for x in rules['f']])
+        avg_len_rf = sum([len(x) for x in rules['f']]) / no_rf
+    except ValueError:
+        min_len_rf = 0
+        avg_len_rf = 0
+
+    monitor['min_len_rf'].append(min_len_rf)
+    monitor['avg_len_rf'].append(avg_len_rf)
+
+    # get the latest value for ctrl
+    keys = ['no_sf', 'pr_bu', 'pf_low', 'no_bu']
+    ctrl = {}
+    for k in keys:
+        try:
+            ctrl[k] = monitor[k][-1]
+        except TypeError:
+            ctrl[k] = monitor[k]
+
+    return monitor, ctrl
+
+
+def display_msg(monitor):
+
+    last = {}
+    for k, v in monitor.items():
+        try:
+            last[k] = v[-1]
+        except TypeError:
+            last[k] = v
+
+    print(f"The # of found non-dominated rules (f, s): {last['no_ra']} ({last['no_rf']}, {last['no_rs']})")
+    print(f"Probability of branchs (f, s, u): ({last['pf_low']:.4e}, {1-last['pf_up']:.2e}, {last['pr_bu']:.4e})")
+    print(f"The # of branches (f, s, u), (min, avg) len of rf: {last['no_br']} ({last['no_bf']}, {last['no_bs']}, {last['no_bu']}), ({last['min_len_rf']}, {last['avg_len_rf']:.2f})")
 
 
 def plot_monitoring(monitor, output_file='monitor.png'):
@@ -81,22 +135,22 @@ def plot_monitoring(monitor, output_file='monitor.png'):
     # bounds vs no. of branches
     fig = plt.figure(figsize=(6, 4*3))
     ax = fig.add_subplot(311)
-    ax.plot(monitor['br_ns'], monitor['pf_low'], linestyle='--', color='blue')
-    ax.plot(monitor['br_ns'], monitor['pf_up'], linestyle='--', color='blue')
+    ax.plot(monitor['no_br'], monitor['pf_low'], linestyle='--', color='blue')
+    ax.plot(monitor['no_br'], monitor['pf_up'], linestyle='--', color='blue')
     ax.set_xlabel('No. of branches')
     ax.set_ylabel('System failure prob. bounds')
 
     # bounds vs sys fn runs
     ax = fig.add_subplot(312)
-    ax.plot(monitor['sf_ns'], monitor['pf_low'], linestyle='--', color='blue')
-    ax.plot(monitor['sf_ns'], monitor['pf_up'], linestyle='--', color='blue')
+    ax.plot(monitor['no_sf'], monitor['pf_low'], linestyle='--', color='blue')
+    ax.plot(monitor['no_sf'], monitor['pf_up'], linestyle='--', color='blue')
     ax.set_xlabel('No. of system function runs')
     ax.set_ylabel('System failure prob. bounds')
 
     # no. of rules vs sys fn runs
     ax = fig.add_subplot(313)
-    ax.plot(monitor['r_ns'], monitor['pf_low'], linestyle='--', color='blue')
-    ax.plot(monitor['r_ns'], monitor['pf_up'], linestyle='--', color='blue')
+    ax.plot(monitor['no_ra'], monitor['pf_low'], linestyle='--', color='blue')
+    ax.plot(monitor['no_ra'], monitor['pf_up'], linestyle='--', color='blue')
     ax.set_xlabel('No. of rules')
     ax.set_ylabel('System failure prob. bounds')
 
@@ -112,11 +166,12 @@ def proposed_branch_and_bound_using_probs(sys_fun, varis, probs, max_sf, output_
     assert isinstance(probs, dict), f'probs must be a dict: {type(probs)}'
 
     # Initialisation
-    no_sf = 0 # number of system function runs so far
     sys_res = pd.DataFrame(data={'sys_val': [], 'comp_st': [], 'comp_st_min': []}) # system function results 
+    """
     no_iter, pr_bf, pr_bs, pr_bu, no_bu =  0, 0, 0, 1, 1
     no_rf, no_rs, len_rf, len_rs = 0, 0, 0, 0
     max_bu = 0
+    """
 
     rules = {'s': [], 'f': []} # a list of known rules
     brs_new = []
@@ -126,29 +181,24 @@ def proposed_branch_and_bound_using_probs(sys_fun, varis, probs, max_sf, output_
     brs = init_branch(worst, best, rules)
 
     # For monitoring purpose (store for each iteration)
-    monitor = {'pf_up': [], # upper bound on pf
-               'pf_low': [], # lower bound on pf
-               'br_ns': [], # number of branches
-               'sf_ns': [], # number of system function runs
-               'r_ns': [], # number of rules
-              }
+    monitor, ctrl = init_monitor()
 
     stop_br = False
-    while no_bu and no_sf < max_sf:
+    while ctrl['no_bu'] and (ctrl['no_sf'] < max_sf):
 
-        no_iter += 1
+        start = time.time() # monitoring purpose
 
-        if stop_br and no_sf % 20 == 0:
-            print(f'[System function runs {no_sf}]..')
-            print(f'The # of found non-dominated rules (f, s): {no_rf + no_rs} ({no_rf}, {no_rs})')
-            print(f'Probability of branchs (f, s, u): ({pr_bf:.2f}, {pr_bs:.2f}, {pr_bu:.2f})')
-            #print('The # of branching: ', no_iter)
-            print(f'The # of branches (f, s, u), min len of rf: {len(brs)} ({no_bf}, {no_bs}, {no_bu}), {min_len_rf:.2f}')
+        #no_iter += 1
+
+        if stop_br and ctrl['no_sf'] % 20 == 0:
+            print(f"[System function runs {ctrl['no_sf']}]..")
+            display_msg(monitor)
+
         stop_br = False
-
         brs = sorted(brs, key=lambda x: x.p, reverse=True)
 
         for br in brs:
+
             if (br.down_state == br.up_state) and (br.down_state != 'u'):
                 brs_new.append(br)
 
@@ -163,38 +213,18 @@ def proposed_branch_and_bound_using_probs(sys_fun, varis, probs, max_sf, output_
 
                     # run system function
                     rule, sys_res_ = run_sys_fn(x_star, sys_fun, varis)
-                    no_sf += 1
+                    monitor['no_sf'] += 1
 
                     rules = update_rule_set(rules, rule)
                     sys_res = pd.concat([sys_res, sys_res_], ignore_index=True)
 
                     ########## FOR MONITORING ##################
-                    pr_bf = sum([b[4] for b in brs if b.up_state == 'f']) # prob. of failure branches
-                    pr_bs = sum([b[4] for b in brs if b.down_state == 's']) # prob. of survival branches
-                    no_bu = sum([(b.up_state == 'u') or (b.down_state == 'u') or (b.down_state != b.up_state) for b in brs]) # no. of unknown branches
-                    pr_bu = sum([b[4] for b in brs if (b.up_state == 'u') or (b.down_state == 'u') or (b.down_state != b.up_state)])
-
-                    try:
-                        min_len_rf = min( [len(x) for x in rules['f']] )
-                    except ValueError:
-                        min_len_rf = 0
-
-                    no_rf = len(rules['f']) # no. of failure rules
-                    no_rs = len(rules['s']) # no. of survival rules
-
-                    no_bf = sum([b.up_state == 'f' for b in brs])
-                    no_bs = sum([b.down_state == 's' for b in brs])
-
-                    monitor['r_ns'].append(len(rules['f']) + len(rules['s']))
-                    monitor['pf_up'].append(1.0-pr_bs)
-                    monitor['pf_low'].append(pr_bf)
-                    monitor['br_ns'].append(len(brs))
-                    monitor['sf_ns'].append(no_sf)
+                    monitor, ctrl = update_monitor(monitor, brs, rules, start)
                     #########################################
 
                     brs = init_branch(worst, best, rules)
                     brs_new = []
-                    no_iter = 0
+                    #no_iter = 0
                     # for loop exit
                     stop_br = True
                     break
@@ -203,74 +233,29 @@ def proposed_branch_and_bound_using_probs(sys_fun, varis, probs, max_sf, output_
                     xd, xd_st = get_decomp_comp_using_probs(br.down, br.up, c_rules, probs)
 
                     # for upper
-                    up = br.up.copy()
-                    up[xd] = xd_st - 1
-                    up_state = get_state(up, rules)
-                    p = approx_branch_prob(br.down, up, probs)
-                    brs_new.append(branch.Branch(br.down, up, br.down_state, up_state, p))
+                    br_new, _ = get_br_new(br, rules, probs, xd, xd_st)
+                    brs_new.append(br_new)
 
                     # for lower
-                    down = br.down.copy()
-                    down[xd] = xd_st
-                    down_state = get_state(down, rules)
-                    p = approx_branch_prob(down, br.up, probs)
-                    brs_new.append(branch.Branch(down, br.up, down_state, br.up_state, p))
+                    br_new, _ = get_br_new(br, rules, probs, xd, xd_st, up_flag=False)
+                    brs_new.append(br_new)
 
         # for the for loop
         if stop_br == False:
             brs = brs_new
             brs_new = []
+            monitor, ctrl = update_monitor(monitor, brs, rules, start)
 
-            #ok = any([(b.up_state == 'u') or (b.down_state == 'u') or (b.down_state != b.up_state) for b in brs])  # exit for loop
-            #pr_bf = sum([b[4] for b in brs if b.up_state == 'f']) # prob. of failure branches
-            #pr_bs = sum([b[4] for b in brs if b.down_state == 's']) # prob. of survival branches
-            no_bu = sum([(b.up_state == 'u') or (b.down_state == 'u') or (b.down_state != b.up_state) for b in brs]) # no. of unknown branches
-            #pr_bu = sum([b[4] for b in brs if (b.up_state == 'u') or (b.down_state == 'u') or (b.down_state != b.up_state)])
-            if no_bu > max_bu:
-                max_bu = no_bu
-
-        #no_bf = sum([b.up_state == 'f' for b in brs])
-        #no_bs = sum([b.down_state == 's' for b in brs])
-
-        #no_rf = len(rules['f']) # no. of failure rules
-        #no_rs = len(rules['s']) # no. of survival rules
-
-        """
-        if no_rf > 0:
-            len_rf = sum([len(x) for x in rules['f']])/no_rf # mean length of failure rules
-        else:
-            len_rf = 0
-
-        if no_rs > 0:
-            len_rs = sum([len(x) for x in rules['s']])/no_rs # mean length of survival rules
-        else:
-            len_rs = 0
-        """
-        #print(f'# of unknown branches to go: {no_bu}, {max_bu}\n')
-        if no_sf >= max_sf:
+        if ctrl['no_sf'] >= max_sf:
             print(f'*** Terminated due to the # of system function runs: {no_sf} >= {max_sf}')
 
-    print(f'**Algorithm Terminated**')
-    #print(f'[System function runs {no_sf}]..')
-    #print(f'The # of found non-dominated rules (f, s): {no_rf + no_rs} ({no_rf}, {no_rs})')
-    #print(f'Probability of branchs (f, s, u): ({pr_bf}, {pr_bs}, {pr_bu})')
-
-
     ########## FOR MONITORING ##################
-    pr_bf = sum([b[4] for b in brs if b.up_state == 'f']) # prob. of failure branches
-    pr_bs = sum([b[4] for b in brs if b.down_state == 's']) # prob. of survival branches
-    no_bu = sum([(b.up_state == 'u') or (b.down_state == 'u') or (b.down_state != b.up_state) for b in brs]) # no. of unknown branches
-    pr_bu = sum([b[4] for b in brs if (b.up_state == 'u') or (b.down_state == 'u') or (b.down_state != b.up_state)])
-
-    no_bf = sum([b.up_state == 'f' for b in brs])
-    no_bs = sum([b.down_state == 's' for b in brs])
-
-    monitor['r_ns'].append(len(rules['f']) + len(rules['s']))
-    monitor['pf_up'].append(float(1.0-pr_bs))
-    monitor['pf_low'].append(float(pr_bf))
-    monitor['br_ns'].append(len(brs))
-    monitor['sf_ns'].append(no_sf)
+    monitor, ctrl = update_monitor(monitor, brs, rules, start)
     #########################################
+
+    print(f'**Algorithm Terminated**')
+    print(f"[System function runs {ctrl['no_sf']}]..")
+    display_msg(monitor)
 
     if flag:
         output_file = output_path.joinpath(f'brs_{key}.pk')
@@ -756,8 +741,44 @@ def run_sys_fn(comp, sys_fun, varis):
     return rule, sys_res
 
 
-def decomp_df(varis, rules, probs, max_nb): # depth-first decomposition of event space using given rules
+def get_br_new(br, rules, probs, xd, xd_st, up_flag=True):
+    """
 
+    """
+    if up_flag:
+        up = br.up.copy()
+        up[xd] = xd_st - 1
+        up_st = get_state(up, rules)
+
+        down = br.down
+        down_st = br.down_state
+
+    else:
+        up = br.up
+        up_st = br.up_state
+
+        down = br.down.copy()
+        down[xd] = xd_st
+        down_st = get_state(down, rules)
+
+    p = approx_branch_prob(down, up, probs)
+    br_new = branch.Branch(down, up, down_st, up_st, p)
+
+    if down_st == up_st:
+        if (~up_flag and down_st != 'u') or (up_flag and up_st != 'u'):
+           cr_new = {'s':[], 'f':[]}
+        else:
+           cr_new = get_compat_rules(br_new.down, br_new.up, rules)
+    else:
+        cr_new = get_compat_rules(br_new.down, br_new.up, rules)
+
+    return br_new, cr_new
+
+
+def decomp_depth_first(varis, rules, probs, max_nb):
+    """
+    depth-first decomposition of event space using given rules
+    """
     worst = {x: 0 for x in varis.keys()}
     best = {k: len(v.values) - 1 for k, v in varis.items()}
 
@@ -766,13 +787,15 @@ def decomp_df(varis, rules, probs, max_nb): # depth-first decomposition of event
     brs_new = []
     brs_new_cr = []
 
-    stop = False
-    while stop == False:
+    go = True
+    while go:
+
         brs_crs = sorted(zip(brs, brs_cr), key=lambda x: x[0].p, reverse=True)
         brs, brs_cr = zip(*brs_crs)
         brs, brs_cr = list(brs), list(brs_cr)
 
         for i, (br, c_rules) in enumerate(zip(brs, brs_cr)):
+
             if (br.down_state == br.up_state) and (br.down_state != 'u'):
                 brs_new.append(br)
                 brs_new_cr.append({'s':[], 'f':[]})
@@ -785,57 +808,43 @@ def decomp_df(varis, rules, probs, max_nb): # depth-first decomposition of event
                 xd, xd_st = get_decomp_comp_using_probs(br.down, br.up, c_rules, probs)
 
                 # for upper
-                up = br.up.copy()
-                up[xd] = xd_st - 1
-                up_state = get_state(up, rules)
-                p = approx_branch_prob(br.down, up, probs)
-                br_new = branch.Branch(br.down, up, br.down_state, up_state, p)
+                br_new, cr_new = get_br_new(br, rules, probs, xd, xd_st)
                 brs_new.append(br_new)
-                if (br_new.down_state == br_new.up_state) and (br_new.up_state != 'u'):
-                    brs_new_cr.append({'s':[], 'f':[]})
-                else:
-                    cr_new = get_compat_rules(br_new.down, br_new.up, rules)
-                    brs_new_cr.append(cr_new)
+                brs_new_cr.append(cr_new)
 
                 # for lower
-                down = br.down.copy()
-                down[xd] = xd_st
-                down_state = get_state(down, rules)
-                p = approx_branch_prob(down, br.up, probs)
-                br_new = branch.Branch(down, br.up, down_state, br.up_state, p)
+                br_new, cr_new = get_br_new(br, rules, probs, xd, xd_st, up_flag=False)
                 brs_new.append(br_new)
-                if (br_new.down_state == br_new.up_state) and (br_new.down_state != 'u'):
-                    brs_new_cr.append({'s':[], 'f':[]})
-                else:
-                    cr_new = get_compat_rules(br_new.down, br_new.up, rules)
-                    brs_new_cr.append(cr_new)
+                brs_new_cr.append(cr_new)
 
-                n_br = len(brs_new) + (len(brs)-(i+1)) # the current number of branches
+                n_br = len(brs_new) + len(brs) - (i + 1) # the current number of branches
                 if n_br >= max_nb:
-                    stop = True
+                    go = False
 
                     try:
-                        brs_new = brs_new + brs[(i+1):]
-                        brs_new_cr = brs_new_cr + brs_cr[(i+1):]
+                        brs_new = brs_new + brs[(i + 1):]
+                        brs_new_cr = brs_new_cr + brs_cr[(i + 1):]
                     except TypeError:
-                        ddd = 1
+                        pass
                     break
 
-        brs = copy.deepcopy( brs_new )
-        brs_cr = copy.deepcopy( brs_new_cr )
+        brs = copy.deepcopy(brs_new)
+        brs_cr = copy.deepcopy(brs_new_cr)
         brs_new = []
         brs_new_cr = []
 
-        if stop==False:
-            ncr = [len(cr['f'])+len(cr['s']) for cr in brs_cr]
+        if go:
+            ncr = [len(cr['f']) + len(cr['s']) for cr in brs_cr]
             if all(x==0 for x in ncr):
-                stop = True
+                go = False
 
     return brs, brs_cr
 
 
-def get_st_decomp( brs, surv_first=True, varis = None, probs=None ): # 'brs' is a list of branches obtained by depth-first decomposition
-
+def get_st_decomp(brs, surv_first=True, varis=None, probs=None):
+    """
+    'brs' is a list of branches obtained by depth-first decomposition
+    """
     brs = sorted(brs, key=lambda x: x.p, reverse=True)
 
     if surv_first:
@@ -859,12 +868,12 @@ def get_st_decomp( brs, surv_first=True, varis = None, probs=None ): # 'brs' is 
         for b in brs:
             if b.up_state == 'u':
                 p_new = approx_branch_prob(b.up, best, probs)
-                b_new = branch.Branch( b.up, best, 'u', 's', p_new )
+                b_new = branch.Branch(b.up, best, 'u', 's', p_new)
                 brs_new.append(b_new)
 
             if b.down_state =='u':
                 p_new = approx_branch_prob(worst, b.down, probs)
-                b_new = branch.Branch( worst, b.down, 'f', 'u', p_new )
+                b_new = branch.Branch(worst, b.down, 'f', 'u', p_new)
                 brs_new.append(b_new)
 
         if len(brs_new) < 1:
@@ -880,7 +889,8 @@ def get_st_decomp( brs, surv_first=True, varis = None, probs=None ): # 'brs' is 
     return x_star
 
 
-def run_brc(varis, probs, sys_fun, max_sf, max_nb, pf_bnd_wr = 0.0, surv_first=True, rules=None):
+
+def run_brc(varis, probs, sys_fun, max_sf, max_nb, pf_bnd_wr=0.0, surv_first=True, rules=None):
 
     """
     INPUTS:
@@ -902,592 +912,56 @@ def run_brc(varis, probs, sys_fun, max_sf, max_nb, pf_bnd_wr = 0.0, surv_first=T
 
     sys_res = pd.DataFrame(data={'sys_val': [], 'comp_st': [], 'comp_st_min': []}) # system function results
 
-    monitor = {'pf_up': [], # upper bound on pf
-               'pf_low': [], # lower bound on pf
-               'br_s_ns': [], # number of branches-survival
-               'br_f_ns': [], # number of branches=failure
-               'br_u_ns': [], # number of branches-unknown
-               'r_s_ns': [], # number of rules-survival
-               'r_f_ns': [], # number of rules-failure
-               'sf_ns': [], # number of system function runs
-               'time': [] # time taken for each iteration (sec)
-              }
+    monitor, ctrl = init_monitor()
 
-    no_sf = 0
-    pr_bf, pr_bs = 0.0, 0.0
-    while no_sf < max_sf:
+    while ctrl['no_sf'] < max_sf:
+
         start = time.time() # monitoring purpose
 
-        brs, _ = decomp_df(varis, rules, probs, max_nb)
-        x_star = get_st_decomp( brs, surv_first, varis, probs )
+        brs, _ = decomp_depth_first(varis, rules, probs, max_nb)
+        x_star = get_st_decomp(brs, surv_first, varis, probs)
 
         if x_star == None:
             monitor['out_flag'] = 'complete'
             break
+
         elif len(brs) >= max_nb:
             monitor['out_flag'] = 'max_nb'
             break
-        elif (1-pr_bf-pr_bs) < pr_bf*pf_bnd_wr:
+
+        elif ctrl['pr_bu'] < ctrl['pf_low']*pf_bnd_wr:
             monitor['out_flag'] = 'pf_bnd'
-            break 
+            break
+
         else:
             rule, sys_res_ = run_sys_fn(x_star, sys_fun, varis)
 
             rules = update_rule_set(rules, rule)
             sys_res = pd.concat([sys_res, sys_res_], ignore_index=True)
-            no_sf += 1
+            monitor['no_sf'] += 1
 
-            end = time.time() # monitoring purpose
+            monitor, ctrl = update_monitor(monitor, brs, rules, start)
 
-            ######## monitoring ############
-            pr_bf = sum([b[4] for b in brs if b.up_state == 'f']) # prob. of failure branches
-            pr_bs = sum([b[4] for b in brs if b.down_state == 's']) # prob. of survival branches
-        
-            no_rf = len(rules['f'])
-            no_rs = len(rules['s'])
+            if ctrl['no_sf'] % 20 == 0:
+                print(f"[System function runs {ctrl['no_sf']}]..")
+                display_msg(monitor)
 
-            no_bf = sum([b.up_state == 'f' for b in brs])
-            no_bs = sum([b.down_state == 's' for b in brs])
-            no_bu = len(brs) - no_bf - no_bs
-
-            monitor['r_f_ns'].append( no_rf )
-            monitor['r_s_ns'].append( no_rs )
-            monitor['pf_up'].append(1.0-pr_bs)
-            monitor['pf_low'].append(pr_bf)
-            monitor['br_s_ns'].append(no_bs)
-            monitor['br_f_ns'].append(no_bf)
-            monitor['br_u_ns'].append(no_bu)
-            monitor['sf_ns'].append(no_sf)
-            monitor['time'].append(end-start)
-
-            try:
-                min_len_rf = min( [len(x) for x in rules['f']] )
-                avg_len_rf = sum( [len(x) for x in rules['f']] ) / no_rf
-            except ValueError:
-                min_len_rf = 0
-                avg_len_rf = 0
-
-            if no_sf % 20 == 0:
-                print(f'[System function runs {no_sf}]..')
-                print(f'The # of found non-dominated rules (f, s): {no_rf + no_rs} ({no_rf}, {no_rs})')
-                print(f'Probability of branchs (f, s, u): ({pr_bf:.4e}, {pr_bs:.2e}, {1.0-pr_bs-pr_bf:.4e})')
-                print(f'The # of branches (f, s, u), (min, avg) len of rf: {len(brs)} ({no_bf}, {no_bs}, {no_bu}), ({min_len_rf}, {avg_len_rf:.2f})')
-            #################################
-
-        if not (no_sf < max_sf):
+        if not (ctrl['no_sf'] < max_sf):
             monitor['out_flag'] = 'max_sf'
 
-    brs, _ = decomp_df(varis, rules, probs, max_nb)
+    brs, _ = decomp_depth_first(varis, rules, probs, max_nb)
+
     try:
-        pr_bf = sum([b[4] for b in brs if b.up_state == 'f']) # prob. of failure branches
-        pr_bs = sum([b[4] for b in brs if b.down_state == 's']) # prob. of survival branches
-    
-        no_rf = len(rules['f'])
-        no_rs = len(rules['s'])
+        monitor, ctrl = update_monitor(monitor, brs, rules, start)
 
-        no_bf = sum([b.up_state == 'f' for b in brs])
-        no_bs = sum([b.down_state == 's' for b in brs])
-        no_bu = len(brs) - no_bf - no_bs
+        print(f"*** Analysis completed with f_sys runs {ctrl['no_sf']}: out_flag = {monitor['out_flag']} ***")
+        display_msg(monitor)
 
-        monitor['r_f_ns'].append( no_rf )
-        monitor['r_s_ns'].append( no_rs )
-        monitor['pf_up'].append(1.0-pr_bs)
-        monitor['pf_low'].append(pr_bf)
-        monitor['br_s_ns'].append(no_bs)
-        monitor['br_f_ns'].append(no_bf)
-        monitor['br_u_ns'].append(no_bu)
-        monitor['sf_ns'].append(no_sf)
-        monitor['time'].append(end-start)
-        try:
-            min_len_rf = min( [len(x) for x in rules['f']] )
-            avg_len_rf = sum( [len(x) for x in rules['f']] ) / no_rf
-        except ValueError:
-            min_len_rf = 0
-            avg_len_rf = 0
-
-        out_flag = monitor['out_flag']
-        print(f'***Analysis completed with f_sys runs {no_sf}: out_flag = {out_flag}***')
-        print(f'The # of found non-dominated rules (f, s): {no_rf + no_rs} ({no_rf}, {no_rs})')
-        print(f'Probability of branchs (f, s, u): ({pr_bf:.4e}, {pr_bs:.2e}, {1.0-pr_bs-pr_bf:.4e})')
-        print(f'The # of branches (f, s, u), (min, avg) len of rf: {len(brs)} ({no_bf}, {no_bs}, {no_bu}), ({min_len_rf}, {avg_len_rf:.2f})')
     except NameError: # analysis is terminated before the first system function run
         print(f'***Analysis terminated without any evaluation***')
 
     return brs, rules, sys_res, monitor
 
-"""
-# FIXME: NOT USED ANYMORE
-def add_rule(rules, rules_st, new_rule, fail_or_surv):
-    # Update a rules list by removing dominated rules and adding a new rule
-    rmv_inds = []
-    add_rule = True
-
-    for i, rule in enumerate(rules):
-
-        if all([k in rule for k in new_rule.keys()]):# does all keys in rule 1 exist for rule_i?
-
-            if fail_or_surv == rules_st[i] == 's':
-
-                if all([rule[k] >= v for k, v in new_rule.items()]): # this rule is dominated by the new rule
-                    rmv_inds.append(i)
-
-                elif all([k in new_rule for k in rule.keys()]) and all([new_rule[k] >= v for k,v in rule.items()]):
-                    add_rule = False
-                    break # the new rule is dominated by an existing one. no further investigation required (assuming that a given list is a set of non-dominated rules)
-
-            elif fail_or_surv == rules_st[i] == 'f':
-
-                if all([rule[k] <= v for k,v in new_rule.items()]): # this rule is dominated by the new rule
-                    rmv_inds.append(i)
-
-                elif all([k in new_rule for k in rule.keys()]) and all([new_rule[k] <= v for k,v in rule.items()]):
-                    add_rule = False
-                    break # the new rule is dominated by an existing one. no further investigation required (assuming that a given list is a set of non-dominated rules)
-
-    #rules_new = copy.deepcopy(rules)
-    #rules_st_new = copy.deepcopy(rules_st)
-
-    for i in rmv_inds[::-1]:
-        try:
-            del rules[i]
-            del rules_st[i]
-        except:
-            pass
-
-    if add_rule == True:
-        rules.append(new_rule)
-        rules_st.append(fail_or_surv)
-
-    return rules, rules_st
-"""
-'''
-# FIXME: NOT USED ANYMORE
-def get_comp_st_for_next_bnb(up, down, rules, rules_st):
-    """
-    up: dict
-    down: dict
-    rules: list
-    rules_st: list
-    """
-
-    assert isinstance(up, dict), f'up must be a dict: {type(up)}'
-    assert isinstance(down, dict), f'down must be a dict: {type(down)}'
-
-    # get the next component and its state for branching
-
-    # rules: a list of rules (in dictionary)
-    # rules_st: a list of rules' state (the same length as rules)
-
-    idx_up, _ = get_compat_rules_old(up, rules, rules_st)
-    idx_down, _ = get_compat_rules_old(down, rules, rules_st)
-
-    idx = set(idx_up + idx_down)
-    c_rules = [rules[i] for i in idx]
-    c_st = [rules_st[i] for i in idx]
-    _len = [len(x) for x in c_rules]
-
-    idx = sorted(range(len(_len)), key=lambda y: _len[y])
-    c_rules = [c_rules[i] for i in idx]
-    c_st = [c_st[i] for i in idx]
-
-    comps_count = {}
-    comp_bnb = None
-    for r, r_st in zip(c_rules, c_st):
-
-        comps = list(r.keys())
-
-        count = [] # counts of components' appearance across rules
-        for x in comps:
-
-            if x not in comps_count:
-                comps_count[x] = sum([x in y for y in c_rules])
-
-            count.append(comps_count[x])
-
-        # order components by their frequency in rules set
-        idx = sorted(range(len(count)), key=lambda y: count[y])
-
-        for j in idx[::-1]:
-            comp = comps[j]
-            comp_st = r[comp]
-
-            if r_st == 's':
-                if comp_st > down[comp]:
-                    comp_bnb = comp
-                    st_up = comp_st # this is always the upper branch's lower state
-                    break
-
-            else: # r_i_st == 'f'
-                if comp_st < up[comp]:
-                    comp_bnb = comp
-                    st_up = comp_st + 1 # this is always the upper branch's lower state
-                    break
-
-        if comp_bnb:
-            break
-
-    # in case nothing has been selected from above
-    if comp_bnb is None: # just randomly select from the components that have higher frequencies
-        for r in rules:
-            for k in r:
-                if k not in comps_cnt:
-                    comps_count[k] = sum([k in r for r in rules])
-
-        for x in sorted(comps_count)[::-1]:
-            if down[x] < up[x]:
-                comp_bnb = x
-                st_up = up[x]
-                break
-
-    return comp_bnb, st_up
-
-
-# FIXME: NOT USED ANYMORE
-def decomp_to_two_branches(br, comp, state):
-    """
-    br: an instance of branch
-    comp: component name
-    state: component state (integer)
-    """
-    assert isinstance(br, branch.Branch_old), f'br must be an instance of Branch_old: f{type(br)}'
-    assert isinstance(comp, str), f'comp must be a string: f{type(comp)}'
-    assert comp in br.names, f'comp must exist in br.names: {comp}'
-    assert isinstance(state, int), f'state must be an integer: f{type(state)}'
-
-    down = {x: y for x, y in zip(br.names, br.down)}
-    up = {x: y for x, y in zip(br.names, br.up)}
-
-    up[comp] = state - 1
-    down[comp] = state
-
-    brs = [branch.Branch_old(br.down, list(up.values()), names=br.names, is_complete=False),
-           branch.Branch_old(list(down.values()), br.up, names=br.names, is_complete=False)]
-
-    return brs
-
-
-# FIXME: NOT USED ANYMORE
-def init_branch_old(varis, rules, rules_st):
-    """
-    return initial branch based on given rules and states
-    """
-    down = {x: 0 for x in varis.keys()} # all components in the worst state
-    up = {k: len(v.values) - 1 for k, v in varis.items()} # all components in the best state
-
-    brs = [branch.Branch_old(list(down.values()), list(up.values()), is_complete=False, names=list(varis.keys()))]
-
-    _, brs[0].up_state = get_compat_rules_old(up, rules, rules_st)
-    _, brs[0].down_state = get_compat_rules_old(down, rules, rules_st)
-
-    return brs
-
-
-# FIXME: NOT USED ANYMORE
-def core(brs, rules, rules_st, cst, stop_br):
-    """
-    brs: list of Branch instance
-    rules_st:
-    cst: changed or passed *FIXEME: cst: does not seem to be necessary
-    stop_br: changed or passed
-
-    """
-    brs_new = []
-    #print(f'brs entering core: {brs}')
-    for i, br in enumerate(brs):
-
-        up = {x: y for x, y in zip(br.names, br.up)}
-        idx, _ = get_compat_rules_old(up, rules, rules_st)
-        #print(f'up, idx: {up}, {idx}')
-        if br.up_state == 'u' and len(idx) == 0:
-            cst = br.up # perform analysis on this state
-            stop_br = True
-            break
-
-        down = {x: y for x, y in zip(br.names, br.down)}
-        idx, _ = get_compat_rules_old(down, rules, rules_st)
-
-        #print(f'down, idx: {down}, {idx}')
-        if br.down_state == 'u' and len(idx) == 0:
-            cst = br.down # perform analysis on this state
-            stop_br = True
-            break
-
-        if br.up_state == 's' and br.down_state == 'f':
-
-            comp, st_up = get_comp_st_for_next_bnb(up, down, rules, rules_st)
-            brs2 = decomp_to_two_branches(br, comp, st_up)
-
-            for b in brs2:
-
-                up = {x: y for x, y in zip(br.names, b.up)}
-                idx, cst_up = get_compat_rules_old(up, rules, rules_st)
-
-                if cst_up == 'u' and len(idx) == 0:
-                    cst = b.up # perform analysis on this state
-                    stop_br = True
-                    break
-
-                else:
-                    b.up_state = cst_up
-
-                down = {x: y for x, y in zip(br.names, b.down)}
-                idx, cst_down = get_compat_rules_old(down, rules, rules_st)
-
-                if cst_down == 'u' and len(idx) == 0:
-                    cst = b.down # perform analysis on this state
-                    stop_br = True
-                    break
-
-                else:
-                    b.down_state = cst_down
-                    brs_new.append(b)
-                    if cst_down == cst_up:
-                        b.is_complete = True
-
-            if stop_br == True:
-                break
-
-        elif br.up_state != 'u' and br.up_state == br.down_state:
-            brs_new.append(br)
-
-        elif br.is_complete == True:
-            brs_new.append(br)
-
-        else:
-            b.down_state = cst_down
-            if cst_down == cst_up:
-                b.is_complete = True
-
-    if stop_br == False:
-        brs = copy.deepcopy(brs_new)
-
-    return brs, cst, stop_br
-
-
-# FIXME: NOT USED ANYMORE
-def get_brs_from_rules( rules, rules_st, varis, max_br ):
-
-    brs = init_branch_old(varis, rules, rules_st)
-    stop_br = False
-    while any([not b.is_complete for b in brs]) and stop_br==False:
-        brs_new = []
-        for i, br in enumerate(brs):
-
-            up = {x: y for x, y in zip(br.names, br.up)}
-            down = {x: y for x, y in zip(br.names, br.down)}
-
-            if br.is_complete == False:
-                comp, st_up = get_comp_st_for_next_bnb(up, down, rules, rules_st)
-                brs2 = decomp_to_two_branches(br, comp, st_up)
-
-                for b in brs2:
-
-                    up = {x: y for x, y in zip(br.names, b.up)}
-                    _, cst_up = get_compat_rules_old(up, rules, rules_st)
-
-                    down = {x: y for x, y in zip(br.names, b.down)}
-                    _, cst_down = get_compat_rules_old(down, rules, rules_st)
-
-                    b.up_state = cst_up
-                    b.down_state = cst_down
-
-                    if cst_up == cst_down:
-                        b.is_complete = True
-
-                    brs_new.append(b)
-
-            else:
-                brs_new.append(br)
-
-
-            if len(brs_new) + (len(brs)-(i+1)) >= max_br:
-                brs_rem = copy.deepcopy( brs[(i+1):] )
-                brs_new += brs_rem
-                stop_br = True
-                break
-
-        brs = copy.deepcopy(brs_new)
-
-    return brs_new
-
-
-# FIXME: NOT USED ANYMORE
-def get_sys_rules(cst, sys_fun, rules, rules_st, varis):
-    """
-    cst:
-
-    """
-    cst = {x: y for x, y in zip(varis.keys(), cst)}
-    #no_sf += 1
-    sys_val, sys_st, min_comps_st = sys_fun(cst)
-    sys_res = pd.DataFrame({'sys_val': [sys_val], 'comps_st': [cst], 'comps_st_min': [min_comps_st]})
-
-    if min_comps_st:
-        rule = min_comps_st
-    else:
-        if sys_st == 'surv':
-            rule = {k: v for k, v in cst.items() if v} # the rule is the same as up_dict_i but includes only components whose state is greater than the worst one (i.e. 0)
-        else:
-            rule = {k: v for k, v in cst.items() if v < len(varis[k].B[0]) - 1} # the rule is the same as up_dict_i but includes only components whose state is less than the best one
-
-    rules, rules_st = add_rule(rules, rules_st, rule, sys_st)
-
-    return sys_res, rules, rules_st
-
-
-# FIXME: NOT USED ANYMORE
-def do_gen_bnb(sys_fun, varis, max_br, output_path=Path(sys.argv[0]).parent, key=None, flag=False):
-    ### MAIN FUNCTION ####
-    """
-    Input:
-    sys_fun: system function that takes in a component vector state and returns system function value, system state, and (optional: if unavailable, "None" can be returned) minimially component state to fulfill the obtained system function value.
-    varis: A dictionary of "Variable"s. All component events need to be defined with its "B matrix".
-    max_br: max. number of branches (the algorithm stops when this number is met)
-    """
-
-    assert isinstance(varis, dict), f'varis must be a dict: {type(varis)}'
-
-    # Initialisation
-    #no_sf = 0 # number of system function runs so far
-    sys_res = pd.DataFrame(data={'sys_val': [], 'comps_st': [], 'comps_st_min': []}) # system function results 
-    rules = [] # a list of known rules
-    rules_st = [] # a list of known rules' states
-    no_iter =  0
-    ok = True
-    brs = []
-    cst = []
-
-    while ok and len(brs) < max_br:
-
-        no_iter += 1
-        ###############
-        print(f'[Iteration {no_iter}]..')
-        print(f'The # of found non-dominated rules: {len(rules)}')
-        #print('System function runs: ', no_sf) # Redundant with iteration number
-        print(f'The # of branches: {len(brs)}')
-        print('---')
-        ###############
-
-        ## Start from the total event ##
-        brs = init_branch_old(varis, rules, rules_st)
-        #print(f'brat at {no_iter}: {brs}')
-        stop_br = False
-
-        while ok:
-
-            brs, cst, stop_br = core(brs, rules, rules_st, cst, stop_br)
-
-            if stop_br:
-                break
-            else:
-                ok = any([not b.is_complete for b in brs])
-
-        # update rules, rules_st
-        sys_res_, rules, rules_st = get_sys_rules(cst, sys_fun, rules, rules_st, varis)
-        #print(f'sys_res_: {sys_res_.values[0]}')
-        #print(f'rules: {rules}')
-        #print(f'rules_st: {rules_st}')
-        #print(f'brs: {brs}')
-        sys_res = pd.concat([sys_res, sys_res_], ignore_index=True)
-
-
-    brs = get_brs_from_rules( rules, rules_st, varis, max_br )
-
-    ###############
-    print('[Algorithm completed.]')
-    print('The # of found non-dominated rules: ', len(rules))
-    print('System function runs: ', no_iter)
-    print('The total # of branches: ', len(brs))
-    print('The # of incomplete branches: ', sum([not b.is_complete for b in brs]))
-    ###############
-
-    if flag:
-        output_file = output_path.joinpath(f'brs_{key}.pk')
-        with open(output_file, 'wb') as fout:
-            pickle.dump(brs, fout)
-        print(f'{output_file} is saved')
-
-    return no_iter, rules, rules_st, brs, sys_res
-'''
-
-'''
-# FIXME: NOT USED ANYMORE
-def get_c_from_br_old(br, varis, st_br_to_cs):
-    """
-    return updated varis and state
-    br: a single branch
-    varis: a dictionary of variables
-    st_br_to_cs: a dictionary that maps state in br to state in C matrix of a system event
-    """
-
-    cst = np.zeros(len(br.names) + 1, dtype=int) # (system, compponents)
-
-    if br.is_complete == True:
-        cst[0] = st_br_to_cs[br.down_state]
-    else:
-        cst[0] = st_br_to_cs['u']
-
-    for i, x in enumerate(br.names):
-        down = br.down[i]
-        up = br.up[i]
-
-        if up > down:
-            varis[x], st = variable.get_composite_state(varis[x], list(range(down, up + 1)))
-        else:
-            st = up
-
-        cst[i + 1] = st
-
-    return varis, cst
-
-# FIXME: NOT USED ANYMORE
-def get_csys_from_brs(brs, varis, st_br_to_cs):
-
-    c_sys = np.empty(shape=(0, len(brs[0].names) + 1), dtype=int)
-
-    for br in brs:
-        varis, c = get_c_from_br_old(br, varis, st_br_to_cs)
-        c_sys = np.vstack([c_sys, c])
-
-    return c_sys, varis
-
-# FIXME: NOT USED ANYMORE
-def get_compat_rules_old(cst, rules, rules_st):
-    #cst: component vector state in dictionary
-    #rules: list of rules
-    #rules_st: list of rules' state (either 'surv' or 'fail') -- must have the same length as rules
-
-    assert isinstance(cst, dict), f'cst should be a dict: {type(cst)}'
-    assert isinstance(rules, list), f'rules should be a list: {type(rules)}'
-    assert isinstance(rules_st, list), f'rules_st should be a list: {type(rultes_st)}'
-
-    cr_inds = [] # compatible rules--stored by their indices
-    no_surv = 0 # number of compatible survival rules
-    no_fail = 0 # number of compatible failure rules
-    for ind, r in enumerate(rules):
-        if rules_st[ind] == 's':
-            if all([cst[k] >= r[k] for k in r]): # the survival rule is satisfied
-                cr_inds.append(ind)
-                no_surv += 1
-
-        else: # rules_st[ind] == 'fail'
-            if all([cst[k] <= r[k] for k in r]): # the failure rule is compatible
-                cr_inds.append(ind)
-                no_fail += 1
-
-    if no_surv == no_fail == 0:
-        cst_state = 'u' # unknown
-    else:
-        if no_surv > no_fail:
-            cst_state = 's'
-        else:
-            cst_state = 'f'
-
-        if no_surv > 0 and no_fail > 0:
-            warnings.warn("[get_compat_rules] Conflicting rules found. The given system is not coherent." )
-
-    return cr_inds, cst_state
-'''
 
 def run_MCS_indep_comps(probs, sys_fun, cov_t = 0.01):
     nsamp, nfail = 0, 0
@@ -1511,7 +985,7 @@ def run_MCS_indep_comps(probs, sys_fun, cov_t = 0.01):
             if nfail > 5:
                 std = np.sqrt( pf*(1-pf) / nsamp )
                 cov = std / pf
-            
+
         if nsamp%20000 == 0:
             print(f'nsamp: {nsamp}, cov: {cov}, pf: {pf}')
 

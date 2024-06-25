@@ -7,10 +7,13 @@ import copy, pickle, time
 import concurrent.futures
 from multiprocessing import freeze_support
 from scipy.stats import beta
+import typer
 
 from BNS_JT import variable, cpm, gen_bnb, trans, config
 
 HOME = Path(__file__).parent
+
+app = typer.Typer()
 
 
 def read_model_from_json_custom(file_input):
@@ -486,6 +489,7 @@ def process_node(cfg, node, comps_st_itc, st_br_to_cs, arcs, varis, probs, cpms)
     return node, vari_node, cpms, sys_pf_node, sys_nsamp_node, rules, monitor, result_mcs
 
 
+@app.command()
 def main(file_cfg, eq_name):
 
     cfg = config_custom(file_cfg, eq_name)
@@ -581,13 +585,20 @@ def main(file_cfg, eq_name):
 
     print(f'-----All nodes completed. Results saved-----')
 
-
-if __name__ == '__main__':
-    freeze_support()
-    #main(HOME.joinpath('./input/config.json'), 's1')
+@app.command()
+def batch_comp():
 
     # To compare results with MCS results
     for node in ['n64', 'n67', 'n29', 'n62', 'n63', 'n65']:
         print(f"{node} begins..")
         run_MCS(HOME.joinpath('./input/config.json'), 's1', node)
         run_MCS(HOME.joinpath('./input/config.json'), 's2', node)
+
+@app.command()
+def parallel():
+    freeze_support()
+    main(HOME.joinpath('./input/config.json'), 's1')
+
+
+if __name__ == '__main__':
+    app()

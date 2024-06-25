@@ -166,6 +166,7 @@ def main(cfg_fname, od_name):
         sys_res = pd.concat([sys_res, sys_res2], ignore_index=True)
         for k, v in monitor.items():
             monitor[k] += monitor2[k]"""
+
     brs, rules, sys_res, monitor = gen_bnb.run_brc(varis, probs, sys_fun, max_sf=cfg.max_sys_fun, max_nb=cfg.max_branches, pf_bnd_wr= cfg.sys_bnd_wr, surv_first=True)
 
     # Store result

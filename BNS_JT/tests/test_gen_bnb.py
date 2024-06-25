@@ -1153,8 +1153,8 @@ def test_get_csys_from_brs3(main_sys):
     Msys = operation.variable_elim([cpms[v] for v in varis.keys()], var_elim_order )
     np.testing.assert_array_almost_equal(Msys.C, np.array([[0, 1]]).T)
     np.testing.assert_array_almost_equal(Msys.p, np.array([[0.1018, 0.8982]]).T)
-
-    gen_bnb.plot_monitoring(monitor, HOME.joinpath('./monitor.png'))
+    #pdb.set_trace()
+    #gen_bnb.plot_monitoring(monitor, HOME.joinpath('./monitor.png'))
 
 
 def test_get_c_from_br(main_sys):
@@ -1263,4 +1263,33 @@ def test_inference2(setup_inference):
 def test_run_brc():
     pass
 
+
+def test_decomp_depth_first():
+
+    br = branch.Branch(down={'e1': 0, 'e2': 0, 'e3': 0, 'e4': 0, 'e5': 0, 'e6': 0, 'e7': 0, 'e8': 0, 'e9': 0, 'e10': 0, 'e11': 0, 'e12': 0, 'e13': 0, 'e14': 0, 'e15': 0, 'e16': 0, 'e17': 0, 'e18': 0, 'e19': 0, 'e20': 0, 'e21': 0}, up={'e1': 2, 'e2': 2, 'e3': 2, 'e4': 2, 'e5': 2, 'e6': 2, 'e7': 2, 'e8': 2, 'e9': 2, 'e10': 2, 'e11': 2, 'e12': 2, 'e13': 2, 'e14': 2, 'e15': 2, 'e16': 2, 'e17': 2, 'e18': 2, 'e19': 2, 'e20': 2, 'e21': 2}, down_state='u', up_state='s', p=1.0)
+
+    rules = {'s': [{'e3': 1, 'e9': 1, 'e14': 1, 'e17': 1}], 'f': []}
+    probs ={'e1': {0: 0.1163, 1: 0.0616, 2: 0.8221}, 'e2': {0: 0.1624, 1: 0.1224, 2: 0.7152}, 'e3': {0: 0.2014, 1: 0.09, 2: 0.7086}, 'e4': {0: 0.0689, 1: 0.1155, 2: 0.8156}, 'e5': {0: 0.1863, 1: 0.1366, 2: 0.6771}, 'e6': {0: 0.2244, 1: 0.0214, 2: 0.7542}, 'e7': {0: 0.222, 1: 0.1334, 2: 0.6446}, 'e8': {0: 0.1265, 1: 0.0762, 2: 0.7973}, 'e9': {0: 0.2993, 1: 0.0343, 2: 0.6664}, 'e10': {0: 0.3016, 1: 0.0813, 2: 0.6171}, 'e11': {0: 0.2385, 1: 0.0785, 2: 0.683}, 'e12': {0: 0.346, 1: 0.0269, 2: 0.6271}, 'e13': {0: 0.3512, 1: 0.0441, 2: 0.6047}, 'e14': {0: 0.0326, 1: 0.0182, 2: 0.9492}, 'e15': {0: 0.0231, 1: 0.1268, 2: 0.8501}, 'e16': {0: 0.0373, 1: 0.083, 2: 0.8797}, 'e17': {0: 0.0222, 1: 0.0192, 2: 0.9586}, 'e18': {0: 0.0052, 1: 0.0411, 2: 0.9537}, 'e19': {0: 0.3935, 1: 0.0625, 2: 0.544}, 'e20': {0: 0.0651, 1: 0.0457, 2: 0.8892}, 'e21': {0: 0.126, 1: 0.0495, 2: 0.8245}}
+
+    xd, xd_st = 'e3', 1
+
+    # up
+    br_new, cr_new = gen_bnb.get_br_new(br, rules, probs, xd, xd_st, up_flag=True)
+    assert br_new.down_state == 'u'
+    assert br_new.up_state == 'u'
+    assert br_new.p == pytest.approx(0.2014)
+    assert br_new.down == {f'e{i}': 0 for i in range(1, 22)}
+    assert br_new.up == {f'e{i}': 0 if i==3 else 2 for i in range(1, 22)}
+    assert cr_new['s'] == []
+    assert cr_new['f'] == []
+
+    # down
+    br_new, cr_new = gen_bnb.get_br_new(br, rules, probs, xd, xd_st, up_flag=False)
+    assert cr_new['s'] == [{'e9': 1, 'e14': 1, 'e17': 1}]
+    assert cr_new['f'] == []
+    assert br_new.down_state == 'u'
+    assert br_new.up_state == 's'
+    assert br_new.p == pytest.approx(0.7986)
+    assert br_new.up == {f'e{i}': 2 for i in range(1, 22)}
+    assert br_new.down == {f'e{i}': 1 if i==3 else 0 for i in range(1, 22)}
 
