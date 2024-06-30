@@ -216,7 +216,7 @@ def gmpe_cam03(Mw, Rrup):
         # epistemic standard deviation
         Mw_new = np.clip(Mw, min(std_eps_Mw), max(std_eps_Mw))
         r_new = np.clip(r, min(std_eps_rrup), max(std_eps_rrup))
-        std_ep[e] = interpolate.bisplev(Mw_new, r_new, std_ep_f)  
+        std_ep[e] = interpolate.bisplev(Mw_new, r_new, std_ep_f)
 
     # aleatory standard deviation (the same for all raods)
     if Mw < M1:
@@ -392,7 +392,6 @@ def run_MCS(file_cfg, eq_name, node):
         fout.write(f"cov: {cov:.4e} \n")
         fout.write(f"no_samples: {nsamp:d}")
         fout.write(f"time (sec): {end-start:.4e} \n")
-
 
 
 def process_node(cfg, node, comps_st_itc, st_br_to_cs, arcs, varis, probs, cpms):

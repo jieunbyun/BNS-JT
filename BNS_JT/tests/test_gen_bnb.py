@@ -842,7 +842,7 @@ def test_add_rule():
     assert result[1] == ['f', 's']
 
 
-def test_get_decomp_comp_using_probs_0():
+def test_get_decomp_comp_using_probs0():
 
     rules = {'s': [{'e2': 2, 'e5': 2}],
             'f': [{'e1': 0, 'e2': 0, 'e3': 0, 'e4': 0, 'e5': 0, 'e6': 0}]}
@@ -1261,10 +1261,106 @@ def test_inference2(setup_inference):
 
 @pytest.mark.skip('TODO')
 def test_run_brc():
+    """
+    varis
+    probs
+    sys_fun
+    max_sf
+    max_nb
+
+    run_brc(varis, probs, sys_fun, max_sf, max_nb)
+    """
+
     pass
 
+@pytest.mark.skip('TODO')
+def test_get_decomp_depth_first():
 
-def test_decomp_depth_first():
+    max_nb = 1000
+    probs = {'e1': 0.1, 'e2': 0.2, 'e3': 0.3}
+    varis = {}
+
+    for i in range(1, 4):
+        varis[f'e{i}'] = variable.Variable(name=f'e{i}', values=['Fail', 'Survive'])
+    varis['od1'] = variable.Variable(name='od1', values=['Fail', 'Survive'])
+
+    rules = {'s': [], 'f': []}
+
+    G = nx.Graph()
+    G.add_edge('n1', 'n2', capacity=1)
+    G.add_edge('n2', 'n3', 1)
+    G.add_edge('n2', 'n3', 1)
+
+
+def test_get_comp_st1():
+
+    probs = {'e1': {0: 0.1, 1: 0.9},
+             'e2': {0: 0.2, 1: 0.8},
+             'e3': {0: 0.3, 1: 0.7}}
+
+    varis = {}
+    for i in range(1, 4):
+        varis[f'e{i}'] = variable.Variable(name=f'e{i}', values=['Fail', 'Survive'])
+
+    brs = [branch.Branch(down={f'e{i}': 0 for i in range(1, 4)},
+                         up={f'e{i}': 1 for i in range(1, 4)},
+                                down_state = 'u',
+                         up_state = 'u',
+                         p = 1.0)]
+    st = gen_bnb.get_comp_st(brs)
+    assert st == {'e1': 1, 'e2': 1, 'e3': 1}
+
+    # surv_first = False
+    st = gen_bnb.get_comp_st(brs, surv_first=False, varis=varis, probs=probs)
+    assert st == {'e1': 1, 'e2': 1, 'e3': 1}
+
+
+def test_get_comp_st2():
+
+    probs = {'e1': {0: 0.1, 1: 0.9},
+             'e2': {0: 0.2, 1: 0.8},
+             'e3': {0: 0.3, 1: 0.7}}
+
+    brs = [branch.Branch(down={'e1': 1, 'e2': 0, 'e3': 0},
+                         up={'e1': 1, 'e2': 0, 'e3': 1},
+                         down_state = 'u',
+                         up_state = 'u',
+                         p = 0.18),
+           branch.Branch(down={'e1': 1, 'e2': 1, 'e3': 0},
+                         up={'e1': 1, 'e2': 1, 'e3': 1},
+                         down_state = 's',
+                         up_state = 's',
+                         p = 0.72),
+           branch.Branch(down={'e1': 0, 'e2': 0, 'e3': 0},
+                         up={'e1': 0, 'e2': 1, 'e3': 1},
+                         down_state = 'u',
+                         up_state = 'u',
+                         p = 0.1),
+           ]
+
+    st = gen_bnb.get_comp_st(brs)
+    assert st == {'e1': 1, 'e2': 0, 'e3': 1}
+
+
+def test_get_br_new2():
+
+    br = branch.Branch(down={'e1': 1, 'e2': 0, 'e3': 0},
+                       up={'e1': 1, 'e2': 1, 'e3': 1},
+                       down_state='u', up_state='s', p=0.9)
+    rules = {'s': [{'e1': 1, 'e2': 1}], 'f': []}
+
+    xd, xd_st = 'e2', 1
+
+    probs = {'e1': {0: 0.1, 1: 0.9},
+             'e2': {0: 0.2, 1: 0.8},
+             'e3': {0: 0.3, 1: 0.7}}
+
+    out = gen_bnb.get_br_new(br, rules, probs, xd, xd_st)
+    print(out)
+    out = gen_bnb.get_br_new(br, rules, probs, xd, xd_st, up_flag=False)
+    print(out)
+
+def test_get_br_new1():
 
     br = branch.Branch(down={'e1': 0, 'e2': 0, 'e3': 0, 'e4': 0, 'e5': 0, 'e6': 0, 'e7': 0, 'e8': 0, 'e9': 0, 'e10': 0, 'e11': 0, 'e12': 0, 'e13': 0, 'e14': 0, 'e15': 0, 'e16': 0, 'e17': 0, 'e18': 0, 'e19': 0, 'e20': 0, 'e21': 0}, up={'e1': 2, 'e2': 2, 'e3': 2, 'e4': 2, 'e5': 2, 'e6': 2, 'e7': 2, 'e8': 2, 'e9': 2, 'e10': 2, 'e11': 2, 'e12': 2, 'e13': 2, 'e14': 2, 'e15': 2, 'e16': 2, 'e17': 2, 'e18': 2, 'e19': 2, 'e20': 2, 'e21': 2}, down_state='u', up_state='s', p=1.0)
 
@@ -1292,4 +1388,46 @@ def test_decomp_depth_first():
     assert br_new.p == pytest.approx(0.7986)
     assert br_new.up == {f'e{i}': 2 for i in range(1, 22)}
     assert br_new.down == {f'e{i}': 1 if i==3 else 0 for i in range(1, 22)}
+
+
+def test_get_decomp_comp_using_probs1():
+
+    rules = {'s': [{'e1': 1, 'e2': 1}],
+            'f': []}
+    upper = {'e1': 1, 'e2': 1, 'e3': 1}
+    lower = {'e1': 0, 'e2': 0, 'e3': 0}
+
+    probs = {'e1': {0: 0.1,
+                    1: 0.9},
+             'e2': {0: 0.2,
+                    1: 0.8},
+             'e3': {0: 0.3,
+                    1: 0.7}}
+
+    result = gen_bnb.get_decomp_comp_using_probs(lower, upper, rules, probs)
+
+    assert result == ('e1', 1)
+
+@pytest.mark.skip('TODO')
+def test_run_sys_fn4():
+
+    x_star = {'e1': 1, 'e2': 0, 'e3': 1}
+    varis = {}
+    for i in range(1, 4):
+        varis[f'e{i}'] = variable.Variable(name=f'e{i}', values=['Fail', 'Survive'])
+
+    od_pair = ('n1', 'n3')
+    edges = {
+         'e1': {'origin': 'n1', 'destination': 'n2', 'link_capacity': None, 'weight': 1.0},
+         'e2': {'origin': 'n2', 'destination': 'n3', 'link_capacity': None, 'weight': 1.0},
+         'e3': {'origin': 'n2', 'destination': 'n3', 'link_capacity': None, 'weight': 1.0},
+         }
+    pdb.set_trace()
+    sys_fun = trans.sys_fun_wrap(od_pair, edges, varis)
+
+    sys_val, sys_st, comp_st_min = sys_fun(x_star)
+
+    assert sys_st == 's'
+    assert sys_val == None
+    assert comp_st_min == {'e1': 1, 'e3': 1}
 

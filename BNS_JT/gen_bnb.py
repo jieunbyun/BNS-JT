@@ -727,16 +727,20 @@ def run_sys_fn(comp, sys_fun, varis):
     """
 
     assert isinstance(comp, dict), f'comp should be a dict: {type(comp)}'
+
+    # S4-2: get system state given comp
     sys_val, sys_st, comp_st_min = sys_fun(comp)
+
     sys_res = pd.DataFrame({'sys_val': [sys_val], 'comp_st': [comp], 'comp_st_min': [comp_st_min]})
 
     if comp_st_min:
         rule = comp_st_min, sys_st
+
     else:
         if sys_st == 's':
-            rule = {k: v for k, v in comp.items() if v}, sys_st # the rule is the same as up_dict_i but includes only components whose state is greater than the worst one (i.e. 0)
+            rule = {k: v for k, v in comp.items() if v}, sys_st # the rule is the same as up_dict but includes only components whose state is greater than the worst one (i.e. 0)
         else:
-            rule = {k: v for k, v in comp.items() if v < len(varis[k].values) - 1}, sys_st # the rule is the same as up_dict_i but includes only components whose state is less than the best one
+            rule = {k: v for k, v in comp.items() if v < len(varis[k].values) - 1}, sys_st # the rule is the same as up_dict but includes only components whose state is less than the best one
 
     return rule, sys_res
 
@@ -768,9 +772,9 @@ def get_br_new(br, rules, probs, xd, xd_st, up_flag=True):
         if (~up_flag and down_st != 'u') or (up_flag and up_st != 'u'):
            cr_new = {'s':[], 'f':[]}
         else:
-           cr_new = get_compat_rules(br_new.down, br_new.up, rules)
+           cr_new = get_compat_rules(down, up, rules)
     else:
-        cr_new = get_compat_rules(br_new.down, br_new.up, rules)
+        cr_new = get_compat_rules(down, up, rules)
 
     return br_new, cr_new
 
@@ -789,24 +793,24 @@ def decomp_depth_first(varis, rules, probs, max_nb):
 
     go = True
     while go:
+        # D2: sort branches from higher to lower p 
+        sorted_brs = sorted(zip(brs, brs_cr), key=lambda x: x[0].p, reverse=True)
+        brs, brs_cr = [list(x) for x in zip(*sorted_brs)]
 
-        brs_crs = sorted(zip(brs, brs_cr), key=lambda x: x[0].p, reverse=True)
-        brs, brs_cr = zip(*brs_crs)
-        brs, brs_cr = list(brs), list(brs_cr)
-
-        for i, (br, c_rules) in enumerate(zip(brs, brs_cr)):
+        for i, (br, cr) in enumerate(sorted_brs, 1):
 
             if (br.down_state == br.up_state) and (br.down_state != 'u'):
                 brs_new.append(br)
                 brs_new_cr.append({'s':[], 'f':[]})
 
-            elif len(c_rules['f']) + len(c_rules['s']) < 1: # c_rules is empty                    
+            elif len(cr['f']) + len(cr['s']) < 1: # cr is empty
                 brs_new.append(br)
                 brs_new_cr.append({'s':[], 'f':[]})
 
             else:
-                xd, xd_st = get_decomp_comp_using_probs(br.down, br.up, c_rules, probs)
+                xd, xd_st = get_decomp_comp_using_probs(br.down, br.up, cr, probs)
 
+                # D3: evaluate sl and su
                 # for upper
                 br_new, cr_new = get_br_new(br, rules, probs, xd, xd_st)
                 brs_new.append(br_new)
@@ -817,37 +821,40 @@ def decomp_depth_first(varis, rules, probs, max_nb):
                 brs_new.append(br_new)
                 brs_new_cr.append(cr_new)
 
-                n_br = len(brs_new) + len(brs) - (i + 1) # the current number of branches
+                n_br = len(brs_new) + len(brs) - i # the current number of branches
+
                 if n_br >= max_nb:
                     go = False
 
                     try:
-                        brs_new = brs_new + brs[(i + 1):]
-                        brs_new_cr = brs_new_cr + brs_cr[(i + 1):]
+                        brs_new += brs[i:]
+                        brs_new_cr += brs_cr[i:]
                     except TypeError:
                         pass
-                    break
+                    else:
+                        break
 
         brs = copy.deepcopy(brs_new)
         brs_cr = copy.deepcopy(brs_new_cr)
         brs_new = []
         brs_new_cr = []
 
-        if go:
-            ncr = [len(cr['f']) + len(cr['s']) for cr in brs_cr]
-            if all(x==0 for x in ncr):
-                go = False
+        if go and sum([len(r['f']) + len(r['s']) for r in brs_cr]) == 0:
+           go = False
 
     return brs, brs_cr
 
 
-def get_st_decomp(brs, surv_first=True, varis=None, probs=None):
+def get_comp_st(brs, surv_first=True, varis=None, probs=None):
     """
+    get a component vector state from branches(brs)
     'brs' is a list of branches obtained by depth-first decomposition
     """
-    brs = sorted(brs, key=lambda x: x.p, reverse=True)
 
     if surv_first:
+
+        brs = sorted(brs, key=lambda x: x.p, reverse=True)
+
         x_star = None
         for b in brs: # look at up_state first
             if b.up_state == 'u':
@@ -861,6 +868,7 @@ def get_st_decomp(brs, surv_first=True, varis=None, probs=None):
                     break
 
     else:
+
         worst = {x: 0 for x in varis.keys()}
         best = {k: len(v.values) - 1 for k, v in varis.items()}
 
@@ -876,10 +884,8 @@ def get_st_decomp(brs, surv_first=True, varis=None, probs=None):
                 b_new = branch.Branch(worst, b.down, 'f', 'u', p_new)
                 brs_new.append(b_new)
 
-        if len(brs_new) < 1:
-            x_star = None
-
-        else:
+        x_star = None
+        if brs_new:
             brs_new = sorted(brs_new, key=lambda x: x.p, reverse=True)
             if brs_new[0].up_state == 'u':
                 x_star = brs_new[0].up
@@ -906,7 +912,6 @@ def run_brc(varis, probs, sys_fun, max_sf, max_nb, pf_bnd_wr=0.0, surv_first=Tru
     rules: provided if there are some known rules
     """
 
-
     if rules == None:
         rules = {'s': [], 'f': []}
 
@@ -918,8 +923,8 @@ def run_brc(varis, probs, sys_fun, max_sf, max_nb, pf_bnd_wr=0.0, surv_first=Tru
 
         start = time.time() # monitoring purpose
 
-        brs, _ = decomp_depth_first(varis, rules, probs, max_nb)
-        x_star = get_st_decomp(brs, surv_first, varis, probs)
+        brs, _ = decomp_depth_first(varis, rules, probs, max_nb)  # S2
+        x_star = get_comp_st(brs, surv_first, varis, probs)  # S4-1
 
         if x_star == None:
             monitor['out_flag'] = 'complete'
@@ -929,26 +934,27 @@ def run_brc(varis, probs, sys_fun, max_sf, max_nb, pf_bnd_wr=0.0, surv_first=Tru
             monitor['out_flag'] = 'max_nb'
             break
 
-        elif ctrl['pr_bu'] < ctrl['pf_low']*pf_bnd_wr:
+        elif ctrl['pr_bu'] < ctrl['pf_low'] * pf_bnd_wr:
             monitor['out_flag'] = 'pf_bnd'
             break
 
         else:
-            rule, sys_res_ = run_sys_fn(x_star, sys_fun, varis)
+            rule, sys_res_ = run_sys_fn(x_star, sys_fun, varis) # S4-2, S5
 
-            rules = update_rule_set(rules, rule)
+            rules = update_rule_set(rules, rule) # S6
             sys_res = pd.concat([sys_res, sys_res_], ignore_index=True)
             monitor['no_sf'] += 1
 
-            monitor, ctrl = update_monitor(monitor, brs, rules, start)
+            monitor, ctrl = update_monitor(monitor, brs, rules, start) # S7
 
             if ctrl['no_sf'] % 20 == 0:
                 print(f"[System function runs {ctrl['no_sf']}]..")
                 display_msg(monitor)
 
-        if not (ctrl['no_sf'] < max_sf):
+        if ctrl['no_sf'] == max_sf:
             monitor['out_flag'] = 'max_sf'
 
+    # NOTSURE???
     brs, _ = decomp_depth_first(varis, rules, probs, max_nb)
 
     try:
@@ -986,7 +992,7 @@ def run_MCS_indep_comps(probs, sys_fun, cov_t = 0.01):
                 std = np.sqrt( pf*(1-pf) / nsamp )
                 cov = std / pf
 
-        if nsamp%20000 == 0:
+        if nsamp % 20000 == 0:
             print(f'nsamp: {nsamp}, cov: {cov}, pf: {pf}')
 
     return pf, cov, nsamp
