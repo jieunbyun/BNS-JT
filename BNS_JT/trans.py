@@ -224,11 +224,12 @@ def get_time_and_path_given_comps(comps_st, od_pair, arcs, vari):
 
     return d_time, path
 
+
 def get_time_and_path_multi_dest(comps_st, origin, dests, arcs, varis):
     """
     Compute time and path given multiple destinations--NB: works only for bidirectional graph
     """
-
+    assert isinstance(dests, (list, tuple)), f'dests must be a list-like: {type(dests)}'
     assert isinstance(comps_st, dict)
     assert all([comps_st[k] < len(varis[k].values) for k in comps_st.keys()])
 

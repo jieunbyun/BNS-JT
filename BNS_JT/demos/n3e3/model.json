@@ -1,0 +1,105 @@
+{
+    "system_meta": {
+        "MODEL_NAME": "n3e3"
+        ,
+        "INFRASTRUCTURE_LEVEL": {
+            "value": "network",
+            "notes": null
+        },
+        "SYSTEM_CLASS": {
+            "value": "RailNetwork",
+            "notes": null
+        },
+        "SYSTEM_SUBCLASS": {
+            "value": "Regional Rail Network",
+            "notes": null
+        },
+        "SYSTEM_COMPONENT_LOCATION_CONF": {
+            "value": "defined",
+            "notes": null
+        },
+        "RESTORATION_TIME_UNIT": {
+            "value": "days",
+            "notes": null
+        },
+        "HAZARD_INTENSITY_MEASURE_PARAM": {
+            "value": "PGA",
+            "notes": null
+        },
+        "HAZARD_INTENSITY_MEASURE_UNIT": {
+            "value": "g",
+            "notes": null
+        }
+    },
+    "sysout_setup": {
+        "od1": {
+            "origin": "n1",
+            "destination": "n3",
+            "output_node_capacity": null,
+            "capacity_fraction": null,
+            "priority": null
+        }
+   },
+    "sysinp_setup": {
+        "passengers_in_CBR": {
+            "input_capacity": 1000,
+            "capacity_fraction": 1,
+            "commodity_type": "People"
+        }
+    },
+    "node_conn_df": {
+         "e1": {
+          "origin": "n1",
+          "destination": "n2",
+          "link_capacity": null,
+          "weight": 1.0
+         },
+         "e2": {
+          "origin": "n2",
+          "destination": "n3",
+          "link_capacity": null,
+          "weight": 1.0
+         },
+        "e3": {
+          "origin": "n2",
+          "destination": "n3",
+          "link_capacity": null,
+          "weight": 1.0
+        } 
+    },
+    "component_list": {
+     "n1": {
+      "component_type": null,
+      "component_class": null,
+      "cost_fraction": null,
+      "node_type": null,
+      "node_cluster": null,
+      "operating_capacity": null,
+      "pos_x": -2.0,
+      "pos_y": 0.0,
+      "damages_states_constructor": null
+     },
+     "n2": {
+      "component_type": null,
+      "component_class": null,
+      "cost_fraction": null,
+      "node_type": null,
+      "node_cluster": null,
+      "operating_capacity": null,
+      "pos_x": 0.0,
+      "pos_y": 0.0,
+      "damages_states_constructor": null
+     },
+     "n3": {
+      "component_type": null,
+      "component_class": null,
+      "cost_fraction": null,
+      "node_type": null,
+      "node_cluster": null,
+      "operating_capacity": null,
+      "pos_x": 2.0,
+      "pos_y": 0.0,
+      "damages_states_constructor": null
+    }
+ }
+}

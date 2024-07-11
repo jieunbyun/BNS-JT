@@ -14,6 +14,7 @@ HOME = Path(__file__).parent
 
 app = typer.Typer()
 
+
 def get_max_flow(comps_st, od_pair, edges, varis, target_flow, is_bi_dir):
 
     if is_bi_dir:

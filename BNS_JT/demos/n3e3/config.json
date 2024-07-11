@@ -1,0 +1,8 @@
+{
+	"CONFIGURATION_ID": "n3e3",
+    "MODEL_NAME": "model.json",
+    "MAX_BRANCHES": 100,
+    "MAX_SYS_FUN": 100,
+    "SCENARIO_NAME": "scenarios.json",
+    "OUTPUT_PATH": "./"
+}
