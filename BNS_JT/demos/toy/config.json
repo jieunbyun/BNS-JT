@@ -1,6 +1,7 @@
 {
 	"CONFIGURATION_ID": "toy",
-    "MODEL_NAME": "toy.json",
+    "MODEL_NAME": "model.json",
+    "MAX_BRANCHES": 100,
     "SCENARIO_NAME": "scenarios.json",
     "OUTPUT_PATH": "./",
 

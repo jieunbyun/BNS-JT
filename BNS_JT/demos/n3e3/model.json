@@ -31,6 +31,8 @@
             "notes": null
         }
     },
+    "graph_type": "MultiDiGraph",
+
     "sysout_setup": {
         "od1": {
             "origin": "n1",

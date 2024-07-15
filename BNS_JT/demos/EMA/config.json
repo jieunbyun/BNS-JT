@@ -4,6 +4,7 @@
     "SCENARIO_NAME": "scenarios.json",
     "OUTPUT_PATH": "./",
     "MAX_BRANCHES": 1000000,
+    "MAX_SYS_FUN": 1000000,
 
     "HAZARD_INPUT_METHOD": null,
     "HAZARD_TYPE": null,

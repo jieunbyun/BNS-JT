@@ -5,7 +5,7 @@ from pathlib import Path
 import copy
 import typer
 
-from BNS_JT import trans, branch, variable, cpm, gen_bnb, config
+from BNS_JT import trans, branch, variable, cpm, gen_bnb, config, operation
 
 HOME = Path(__file__).parent
 
@@ -99,10 +99,10 @@ def main():
                           C = np.array([0, 1]).T, p = [probs[k][0], probs[k][1]])
 
     #sys_fun = lambda comps_st : conn(comps_st, od_pair, arcs)
-    sys_fun = trans.sys_fun_wrap(od_pair, cfg.infra['edges'], varis)
+    sys_fun = trans.sys_fun_wrap(cfg.infra['G'], od_pair, varis)
 
     brs, rules, sys_res, monitor = gen_bnb.proposed_branch_and_bound_using_probs(
-            sys_fun, varis, probs, max_br=1000, output_path=HOME, key='routine')
+            sys_fun, varis, probs, max_sf=1000, output_path=HOME, key='routine')
 
 
     gen_bnb.plot_monitoring(monitor, HOME.joinpath('./monitor.png'))
@@ -117,10 +117,10 @@ def main():
 
     cpms_comps = {k: cpms[k] for k in cfg.infra['edges'].keys()}
 
-    cpms_new = cpm.prod_cpm_sys_and_comps(cpms['sys'], cpms_comps, varis)
+    cpms_new = operation.prod_Msys_and_Mcomps(cpms['sys'], list(cpms_comps.values()))
 
-    p_f = cpm.get_prob(cpms_new, ['sys'], [0])
-    p_s = cpm.get_prob(cpms_new, ['sys'], [1])
+    p_f = cpms_new.get_prob(['sys'], [0])
+    p_s = cpms_new.get_prob(['sys'], [1])
 
     print(f'failure prob: {p_f:.5f}, survival prob: {p_s:.5f}')
 

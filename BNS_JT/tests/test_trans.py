@@ -36,6 +36,7 @@ HOME = Path(__file__).absolute().parent
 def data_bridge():
     """
     system with 6 edges, 5 nodes
+    (see graph.png)
     """
 
     data = {}
@@ -104,6 +105,7 @@ def expected_probs():
 def setup_bridge(data_bridge):
     """
     system with 6 edges, 5 nodes
+    (see graph.png)
     """
     arcs = data_bridge['arcs']
     node_coords = data_bridge['node_coords']
@@ -126,10 +128,10 @@ def setup_bridge(data_bridge):
     # create a graph
     G = nx.Graph()
     for k, x in arcs.items():
-        G.add_edge(x[0], x[1], time=arc_times_h[k], label=k)
+        G.add_edge(x[0], x[1], weight=arc_times_h[k], label=k)
 
     for k, v in node_coords.items():
-        G.add_node(k, pos=v)
+        G.add_node(k, pos=v, label=k)
 
     # plot graph
     pos = nx.get_node_attributes(G, 'pos')
@@ -351,6 +353,8 @@ def setup_bridge_alt(data_bridge):
 
 @pytest.fixture
 def setup_multi_dest():
+    # see graph.png 
+
     arcs = {'e1': ['n1', 'n2'],
             'e2': ['n1', 'n5'],
             'e3': ['n2', 'n5'],
@@ -361,12 +365,19 @@ def setup_multi_dest():
     arc_times_h = {'e1': [np.inf, 0.15], 'e2': [np.inf, 0.0901], 'e3': [np.inf, 0.0901], 'e4': [np.inf, 0.1054],
                    'e5': [np.inf, 0.0943], 'e6': [np.inf, 0.0707]}
 
+    # create a graph
+    G = nx.Graph()
+    for k, x in arcs.items():
+        G.add_edge(x[0], x[1], weight=arc_times_h[k][1], label=k)
+
+    [G.add_node(f'n{k}') for k in range(1, 6)]
+
     varis = {k: variable.Variable(name=k, values=v) for k, v in arc_times_h.items()}
 
     origin = 'n1'
     dests = ['n3', 'n4']
 
-    return origin, dests, arcs, varis
+    return G, origin, dests, arcs, varis
 
 
 def test_prob_delay1(setup_bridge, expected_probs):
@@ -696,7 +707,7 @@ def test_get_all_paths_and_times():
 
     G = nx.Graph()
     for k, x in arcs.items():
-        G.add_edge(x[0], x[1], time=arc_times_h[k], label=k)
+        G.add_edge(x[0], x[1], weight=arc_times_h[k], label=k, key=k)
 
     ODs = [(5, 1), (5, 2), (5, 3), (5, 4)]
 
@@ -762,7 +773,7 @@ def test_eval_sys_state():
 
     G = nx.Graph()
     for k, x in arcs.items():
-        G.add_edge(x[0], x[1], time=arc_times_h[k], label=k)
+        G.add_edge(x[0], x[1], weight=arc_times_h[k], label=k)
 
     ODs = [('n5', 'n1'), ('n5', 'n2'), ('n5', 'n3'), ('n5', 'n4')]
 
@@ -776,7 +787,7 @@ def test_eval_sys_state():
     vars_od1 = variable.Variable(name='od1',
             values=[np.inf, 0.2401, 0.0901])
 
-    path_time = trans.get_all_paths_and_times([ODs[0]], G, 'time')[ODs[0]]
+    path_time = trans.get_all_paths_and_times([ODs[0]], G, 'weight')[ODs[0]]
     path_time.append(([], np.inf))
 
     # refering variable
@@ -820,95 +831,136 @@ def test_eval_sys_state():
 
 def test_get_connectivity_given_comps1(setup_sys_rbd):
 
-    varis, arcs = setup_sys_rbd
+    varis, arcs, G = setup_sys_rbd
 
     comps_st = {f'x{i}': 1 for i in range(1, 9)}
     #comps_st.update({'sink': 1, 'source': 1})
     od_pair = ('source', 'sink')
 
-    _varis = {k: varis[k] for k in comps_st.keys()}
-    path = trans.get_connectivity_given_comps(comps_st,  od_pair, arcs, _varis)
-    assert path == ['source', 'x1', 'x7', 'x8', 'sink']
+    #_varis = {k: varis[k] for k in comps_st.keys()}
+    path_edges, path_nodes = trans.get_connectivity_given_comps(comps_st,  G, od_pair)
+    assert path_nodes == ['source', 'x1', 'x7', 'x8', 'sink']
+    assert path_edges == ['e1', 'e10', 'e8', 'e9']
 
     # failure
     _comps_st = comps_st.copy()
     _comps_st['x7'] = 0
-    path = trans.get_connectivity_given_comps(_comps_st,  od_pair, arcs, _varis)
-    assert path == []
+    path_edges, path_nodes = trans.get_connectivity_given_comps(_comps_st,  G, od_pair)
+    assert path_edges == []
 
     # success
     _comps_st = comps_st.copy()
     _comps_st.update({'x2': 0, 'x3': 0, 'x1': 0})
-    path = trans.get_connectivity_given_comps(_comps_st,  od_pair, arcs, _varis)
-    assert path == ['source', 'x4', 'x5', 'x6', 'x7', 'x8', 'sink']
+    path_edges, path_nodes = trans.get_connectivity_given_comps(_comps_st, G, od_pair)
+    assert path_nodes == ['source', 'x4', 'x5', 'x6', 'x7', 'x8', 'sink']
+    assert path_edges == ['e4', 'e5', 'e6', 'e7', 'e8', 'e9']
 
     # failure
     _comps_st = comps_st.copy()
     _comps_st.update({'x4': 0, 'x2': 0, 'x1': 0, 'x3': 0})
-    path = trans.get_connectivity_given_comps(_comps_st,  od_pair, arcs, _varis)
-    assert path == []
+    path_edges, path_nodes = trans.get_connectivity_given_comps(_comps_st, G, od_pair)
+    assert path_edges == []
 
     # success
     _comps_st = comps_st.copy()
     _comps_st.update({'x1': 0, 'x2': 0, 'x3': 0})
     od_pair = ('x4', 'x6')
-    path = trans.get_connectivity_given_comps(_comps_st,  od_pair, arcs, _varis)
-    assert path == ['x4', 'x5', 'x6']
+    path_edges, path_nodes = trans.get_connectivity_given_comps(_comps_st, G, od_pair)
+    assert path_nodes == ['x4', 'x5', 'x6']
+    assert path_edges == ['e5', 'e6']
 
 
 def test_get_connectivity_given_comps2(setup_sys_rbd):
 
-    varis, arcs = setup_sys_rbd
+    varis, arcs, G = setup_sys_rbd
 
     comps_st = {f'e{i}': 1 for i in range(1, 13)}
     od_pair = ('source', 'sink')
-    _varis = {k: varis[k] for k in comps_st.keys()}
-    path = trans.get_connectivity_given_comps(comps_st,  od_pair, arcs, _varis)
-    assert path == ['source', 'x1', 'x7', 'x8', 'sink']
+    #_varis = {k: varis[k] for k in comps_st.keys()}
+    path_e, path_n = trans.get_connectivity_given_comps(comps_st,  G, od_pair)
+    assert path_n == ['source', 'x1', 'x7', 'x8', 'sink']
+    assert path_e == ['e1', 'e10', 'e8', 'e9']
 
     # failure
     _comps_st = comps_st.copy()
     _comps_st['e8'] = 0
-    path = trans.get_connectivity_given_comps(_comps_st,  od_pair, arcs, _varis)
-    assert path == []
+    path_e, path_n = trans.get_connectivity_given_comps(_comps_st,  G, od_pair)
+    assert path_n == []
 
     # failure from node and edge failure
     _comps_st = comps_st.copy()
     _comps_st['x7'] = 0
-    _varis.update({'x7': varis['x7']})
-    path = trans.get_connectivity_given_comps(_comps_st,  od_pair, arcs, _varis)
-    assert path == []
+    #_varis.update({'x7': varis['x7']})
+    path_e, path_n = trans.get_connectivity_given_comps(_comps_st,  G, od_pair)
+    assert path_n == []
+
+
+def test_get_connectivity_given_comps4():
+
+    x_star = {'e1': 1, 'e2': 0, 'e3': 1}
+
+    varis = {}
+    for i in range(1, 4):
+        varis[f'e{i}'] = variable.Variable(name=f'e{i}', values=['Fail', 'Survive'])
+
+    od_pair = ('n1', 'n3')
+    edges = {
+         'e1': {'origin': 'n1', 'destination': 'n2', 'link_capacity': None, 'weight': 1.0},
+         'e2': {'origin': 'n2', 'destination': 'n3', 'link_capacity': None, 'weight': 1.0},
+         'e3': {'origin': 'n2', 'destination': 'n3', 'link_capacity': None, 'weight': 1.0},
+         }
+
+    G = nx.MultiDiGraph()
+    G.add_edge('n1', 'n2', label='e1', key='e1', weight=1)
+    G.add_edge('n2', 'n3', label='e2', key='e2', weight=1)
+    G.add_edge('n2', 'n3', label='e3', key='e3', weight=1)
+    G.add_node('n1', key='n1', label='n1')
+    G.add_node('n2', key='n2', label='n2')
+    G.add_node('n3', key='n3', label='n3')
+
+    s_path_edges, s_path_nodes = trans.get_connectivity_given_comps(x_star, G, od_pair)
+
+    assert s_path_edges == ['e1', 'e3']
+    assert s_path_nodes == ['n1', 'n2', 'n3']
+
+    #sys_fun = trans.sys_fun_wrap(od_pair, edges, varis)
+
+    #sys_val, sys_st, comp_st_min = sys_fun(x_star)
+
+    #assert sys_st == 's'
+    #assert sys_val == None
+    #assert comp_st_min == {'e1': 1, 'e3': 1}
 
 
 def test_sf_min_path(setup_sys_rbd):
 
-    varis, arcs = setup_sys_rbd
+    varis, arcs, G = setup_sys_rbd
 
     # edges
     comps_st = {f'e{i}': 1 for i in range(1, 13)}
     od_pair = ('source', 'sink')
 
-    d_time, sys_st, min_comps_st = trans.sf_min_path(comps_st, od_pair, arcs, varis)
+    d_time, sys_st, min_comps_st = trans.sf_min_path(comps_st, G, od_pair)
     assert sys_st == 's'
     assert min_comps_st == {'e1': 1, 'e10': 1, 'e8': 1, 'e9':1}
 
     # nodes
     comps_st = {f'x{i}': 1 for i in range(1, 9)}
-    d_time, sys_st, min_comps_st = trans.sf_min_path(comps_st, od_pair, arcs, varis)
+    d_time, sys_st, min_comps_st = trans.sf_min_path(comps_st, G, od_pair)
     assert sys_st == 's'
     assert min_comps_st == {'x1': 1, 'x7': 1, 'x8': 1}
 
     # nodes: failure
     _comps_st = {f'x{i}': 1 for i in range(1, 9)}
     _comps_st['x7'] = 0
-    d_time, sys_st, min_comps_st = trans.sf_min_path(_comps_st, od_pair, arcs, varis)
+    d_time, sys_st, min_comps_st = trans.sf_min_path(_comps_st, G, od_pair)
     assert sys_st == 'f'
     assert min_comps_st == {}
 
 
 def test_get_time_and_path_multi_dest1(setup_multi_dest):
 
-    origin, dests, arcs, varis = setup_multi_dest
+    G, origin, dests, _, varis = setup_multi_dest
 
     arcs_state = {'e1': 1,
                   'e2': 0,
@@ -917,20 +969,21 @@ def test_get_time_and_path_multi_dest1(setup_multi_dest):
                   'e5': 1,
                   'e6': 0}
 
-    d_time1, path1 = trans.get_time_and_path_multi_dest(arcs_state, origin, dests, arcs, varis)
+    d_time1, path1, path1e = trans.get_time_and_path_multi_dest(arcs_state, G, origin, dests, varis)
 
     assert d_time1 == pytest.approx(0.3344, rel=1.0e-4)
     assert path1 == ['n1', 'n2', 'n5', 'n3']
-
+    assert path1e == ['e1', 'e3', 'e5']
 
     arcs_state['e3'] = 0 # no path available in this case
-    d_time2, path2 = trans.get_time_and_path_multi_dest(arcs_state, origin, dests, arcs, varis)
+    d_time2, path2, path2_e = trans.get_time_and_path_multi_dest(arcs_state, G, origin, dests, varis)
 
     assert d_time2 == np.inf
 
+
 def test_sys_fun_wrap1(setup_multi_dest):
 
-    origin, dests, arcs, varis = setup_multi_dest
+    G, origin, dests, arcs, varis = setup_multi_dest
 
     arcs_state = {'e1': 1,
                   'e2': 0,
@@ -940,7 +993,7 @@ def test_sys_fun_wrap1(setup_multi_dest):
                   'e6': 0}
 
     od_pair = {'origin': origin, 'dests': dests}
-    sys_fun = trans.sys_fun_wrap( od_pair, arcs, varis, thres = 0.5 )
+    sys_fun = trans.sys_fun_wrap(G, od_pair, varis=varis, thres=0.5)
     d_time1, sys_st1, min_comps_st1 = sys_fun(arcs_state)
 
     assert d_time1 == pytest.approx(0.3344, rel=1.0e-4)

@@ -42,7 +42,7 @@ def init_monitor():
                'no_rs': [], # number of rules-survival (r_s_ns)
                'no_rf': [], # number of rules-failure (r_f_ns)
                'no_ra': [], # number of rules (no_rs + no_rf)
-               'no_sf': 0, # number of system function runs (sf_ns)
+               'no_sf': [], # number of system function runs (sf_ns)
                'time': [], # time taken for each iteration (sec)
                'min_len_rf': [], # min. length of rules-failure
                'avg_len_rf': [], # avg. length of rules-failure
@@ -213,14 +213,13 @@ def proposed_branch_and_bound_using_probs(sys_fun, varis, probs, max_sf, output_
 
                     # run system function
                     rule, sys_res_ = run_sys_fn(x_star, sys_fun, varis)
-                    monitor['no_sf'] += 1
+                    monitor['no_sf'].append(ctrl['no_sf'] + 1)
 
                     rules = update_rule_set(rules, rule)
                     sys_res = pd.concat([sys_res, sys_res_], ignore_index=True)
 
                     ########## FOR MONITORING ##################
                     monitor, ctrl = update_monitor(monitor, brs, rules, start)
-                    #########################################
 
                     brs = init_branch(worst, best, rules)
                     brs_new = []
@@ -244,12 +243,14 @@ def proposed_branch_and_bound_using_probs(sys_fun, varis, probs, max_sf, output_
         if stop_br == False:
             brs = brs_new
             brs_new = []
+            monitor['no_sf'].append(ctrl['no_sf'])
             monitor, ctrl = update_monitor(monitor, brs, rules, start)
 
         if ctrl['no_sf'] >= max_sf:
             print(f'*** Terminated due to the # of system function runs: {no_sf} >= {max_sf}')
 
     ########## FOR MONITORING ##################
+    monitor['no_sf'].append(ctrl['no_sf'])
     monitor, ctrl = update_monitor(monitor, brs, rules, start)
     #########################################
 
@@ -943,8 +944,9 @@ def run_brc(varis, probs, sys_fun, max_sf, max_nb, pf_bnd_wr=0.0, surv_first=Tru
 
             rules = update_rule_set(rules, rule) # S6
             sys_res = pd.concat([sys_res, sys_res_], ignore_index=True)
-            monitor['no_sf'] += 1
+            ctrl['no_sf'] += 1
 
+            monitor['no_sf'].append(ctrl['no_sf'])
             monitor, ctrl = update_monitor(monitor, brs, rules, start) # S7
 
             if ctrl['no_sf'] % 20 == 0:

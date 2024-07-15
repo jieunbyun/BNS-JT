@@ -1,5 +1,6 @@
 import numpy as np
 import itertools
+import pdb
 #from dask.distributed import Variable
 
 from BNS_JT import variable, cpm, branch, trans, gen_bnb, operation
@@ -11,8 +12,8 @@ def setup_model(cfg):
 
     """
     # path_times by od 
-    path_times = trans.get_all_paths_and_times(cfg.infra['ODs'].values(), cfg.infra['G'], key='time')
 
+    path_times = trans.get_all_paths_and_times(cfg.infra['ODs'].values(), cfg.infra['G'], key='weight')
     branches = get_branches(cfg, path_times)
 
     # combination of multiple ODs and scenarios

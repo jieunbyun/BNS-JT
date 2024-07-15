@@ -511,7 +511,7 @@ def test_prod_cpm_sys_and_comps():
                           C = np.array([0, 1]).T, p = [probs[k][0], probs[k][1]])
 
     #sys_fun = lambda comps_st : conn(comps_st, od_pair, arcs)
-    sys_fun = trans.sys_fun_wrap(od_pair, cfg.infra['edges'], varis)
+    sys_fun = trans.sys_fun_wrap(cfg.infra['G'], od_pair, varis)
 
     brs, _, _, _ = gen_bnb.proposed_branch_and_bound_using_probs(
             sys_fun, varis, probs, max_sf=1000, output_path=HOME, key='routine')
