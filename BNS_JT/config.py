@@ -8,9 +8,10 @@ import configparser
 import pandas as pd
 import json
 import networkx as nx
-
+import graphviz as gv
 from pathlib import Path
-from BNS_JT.utils import read_nodes
+
+#from BNS_JT.utils import read_nodes
 
 
 template_nodes = {
@@ -31,6 +32,11 @@ template_edges = {
     "link_capacity": None,
     "weight": None,
     }
+
+graph_types = ['Graph',
+               'DiGraph',
+               'MultiGraph',
+               'MultiDiGraph']
 
 
 class Config(object):
@@ -100,12 +106,26 @@ def read_model_from_json(file_input):
         ODs[k] = (v['origin'], v['destination'])
 
     # create a graph
-    G = nx.Graph()
+    try:
+        gtype = model['graph_type']
+    except KeyError:
+        G = nx.Graph()
+    else:
+        assert gtype in graph_types, f'graph_type should be one of {graph_types}'
+        if gtype.lower() == 'graph':
+            G = nx.Graph()
+        elif gtype.lower() == 'digraph':
+            G = nx.DiGraph()
+        elif gtype.lower() == 'multigraph':
+            G = nx.MultiGraph()
+        elif gtype.lower() == 'multidigraph':
+            G = nx.MultiDiGraph()
+
     for k, v in edges.items():
-        G.add_edge(v['origin'], v['destination'], label=k, time=v['weight'])
+        G.add_edge(v['origin'], v['destination'], label=k, weight=v['weight'], key=k)
 
     for k, v in nodes.items():
-        G.add_node(k, pos=(v['pos_x'], v['pos_y']))
+        G.add_node(k, pos=(v['pos_x'], v['pos_y']), label=k, key=k)
 
     # create length attribute and time 
     return {'G': G, 'nodes': nodes, 'edges': edges, 'ODs': ODs}
@@ -160,6 +180,32 @@ def dict_to_json(dict_pf, damage_states, filename=None):
             json.dump({'damage_states': damage_states,
                        'scenarios': json_str}, w, indent=4)
             print(f'{filename} is written')
+
+
+def networkx_to_graphviz(g):
+    """Convert `networkx` graph `g` to `graphviz.Digraph`.
+
+    @type g: `networkx.Graph` or `networkx.DiGraph`
+    @rtype: `graphviz.Digraph`
+    """
+    if g.is_directed():
+        h = gv.Digraph()
+    else:
+        h = gv.Graph()
+    for u, d in g.nodes(data=True):
+        h.node(str(u), label=d['label'])
+    for u, v, d in g.edges(data=True):
+        h.edge(str(u), str(v), label=d['label'])
+    return h
+
+
+def plot_graphviz(G, outfile='graph'):
+
+    h = networkx_to_graphviz(G)
+    h.render(outfile, format='png', cleanup=True)
+    print(f'{outfile}.png is created')
+
+
 
 
 

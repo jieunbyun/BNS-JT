@@ -77,7 +77,7 @@ def test_get_branches(setup_bridge):
 
     cfg = config.Config(HOME.joinpath('../demos/road/test.json'))
 
-    path_times = trans.get_all_paths_and_times(cfg.infra['ODs'].values(), cfg.infra['G'], key='time')
+    path_times = trans.get_all_paths_and_times(cfg.infra['ODs'].values(), cfg.infra['G'], key='weight')
 
     branches = model.get_branches(cfg, path_times)
 
@@ -109,7 +109,7 @@ def test_model_given_od_scen(setup_bridge):
 
     cfg = config.Config(HOME.joinpath('../demos/road/test.json'))
 
-    path_times = trans.get_all_paths_and_times(cfg.infra['ODs'].values(), cfg.infra['G'], key='time')
+    path_times = trans.get_all_paths_and_times(cfg.infra['ODs'].values(), cfg.infra['G'], key='weight')
 
     branches = model.get_branches(cfg, path_times)
 

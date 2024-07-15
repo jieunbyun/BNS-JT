@@ -12,7 +12,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from pathlib import Path
 
-from BNS_JT import cpm, variable, branch, pipes_sys, gen_bnb
+from BNS_JT import cpm, config, variable, branch, pipes_sys, gen_bnb
 
 HOME = Path(__file__).parent
 
@@ -53,23 +53,6 @@ def nodes_edges():
     depots = [['n1', 'n3'], ['n6', 'n8', 'n9'], ['n10', 'n11']] # nodes that flows must stop by
 
     return node_coords, edges, depots
-
-
-def networkx_to_graphviz(g):
-    """Convert `networkx` graph `g` to `graphviz.Digraph`.
-
-    @type g: `networkx.Graph` or `networkx.DiGraph`
-    @rtype: `graphviz.Digraph`
-    """
-    if g.is_directed():
-        h = gv.Digraph()
-    else:
-        h = gv.Graph()
-    for u, d in g.nodes(data=True):
-        h.node(str(u), label=d['label'])
-    for u, v, d in g.edges(data=True):
-        h.edge(str(u), str(v), label=d['label'])
-    return h
 
 
 @pytest.fixture(scope='session')
@@ -124,7 +107,7 @@ def main_sys(nodes_edges):
     for k, v in node_coords.items():
         G.add_node(k, pos=v, label = k)
 
-    h = networkx_to_graphviz(G)
+    h = config.networkx_to_graphviz(G)
     outfile = HOME.joinpath('graph_pipes')
     h.render(outfile, format='png', cleanup=True)
     """

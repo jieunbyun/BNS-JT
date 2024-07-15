@@ -1,4 +1,6 @@
-{"sysout_setup": {
+{
+    "graph_type": "DiGraph",
+    "sysout_setup": {
         "od1": {
             "origin": "n10",
             "destination": "n12",
