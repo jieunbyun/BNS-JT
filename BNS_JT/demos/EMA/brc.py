@@ -62,10 +62,10 @@ def main():
     # branches by od_pair
     #for k, od_pair in cfg.infra['ODs'].items():
     comps_st_itc = {k: len(v.values) - 1 for k, v in varis.items()}
-    d_time_itc, path_itc = trans.get_time_and_path_given_comps(comps_st_itc, od_pair, cfg.infra['edges'], varis)
+    d_time_itc, _, path_itc = trans.get_time_and_path_given_comps(comps_st_itc, cfg.infra['G'], cfg.infra['ODs']['od2'], varis)
 
     # system function
-    sys_fun = trans.sys_fun_wrap(od_pair, cfg.infra['edges'], varis, thres * d_time_itc)
+    sys_fun = trans.sys_fun_wrap(cfg.infra['G'], cfg.infra['ODs']['od2'], varis, thres * d_time_itc)
 
 
     ### BRC algorithm ###

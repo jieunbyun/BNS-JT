@@ -357,6 +357,7 @@ def config_custom(file_cfg, eq_name):
     return cfg
 
 
+@app.command()
 def run_MCS(file_cfg, eq_name, node):
 
     cfg = config_custom(file_cfg, eq_name)
@@ -376,8 +377,8 @@ def run_MCS(file_cfg, eq_name, node):
     thres = cfg.infra['thres']
     comps_st_itc = {k: 1 for k in arcs.keys()}
 
-    d_time_itc, _ = trans.get_time_and_path_multi_dest(comps_st_itc, node, dests, arcs, varis)
-    sys_fun = trans.sys_fun_wrap({'origin': node, 'dests': dests}, arcs, varis, thres * d_time_itc)
+    d_time_itc, _, _ = trans.get_time_and_path_multi_dest(comps_st_itc, cfg.infra['G'], node, dests, varis)
+    sys_fun = trans.sys_fun_wrap(cfg.infra['G'], {'origin': node, 'dests': dests}, varis, thres * d_time_itc)
 
     pf, _, _, _ = cal_edge_dist_output(cfg, eq_name)
     probs = {k: {0:v, 1:1-v} for k,v in pf.items()}
@@ -401,17 +402,18 @@ def process_node(cfg, node, comps_st_itc, st_br_to_cs, arcs, varis, probs, cpms)
     dests = cfg.infra['origins']
     thres = cfg.infra['thres']
 
-    st_br_to_cs = {'f': 0, 's': 1, 'u': 2}
+    #st_br_to_cs = {'f': 0, 's': 1, 'u': 2}
 
     if node not in dests:
 
-        d_time_itc, _ = trans.get_time_and_path_multi_dest(comps_st_itc, node, dests, arcs, varis)
-        sys_fun = trans.sys_fun_wrap({'origin': node, 'dests': dests}, arcs, varis, thres * d_time_itc)
+        d_time_itc, _, _ = trans.get_time_and_path_multi_dest(comps_st_itc, cfg.infra['G'], node, dests, varis)
+        sys_fun = trans.sys_fun_wrap(cfg.infra['G'], {'origin': node, 'dests': dests}, varis, thres * d_time_itc)
 
         """brs, rules, sys_res1, monitor1 = gen_bnb.run_brc( {k: varis[k] for k in arcs.keys()}, probs, sys_fun, 0.01*cfg.max_sys_fun, 0.01*cfg.max_branches, cfg.sys_bnd_wr, surv_first=False)
         brs, rules, sys_res2, monitor2 = gen_bnb.run_brc( {k: varis[k] for k in arcs.keys()}, probs, sys_fun, cfg.max_sys_fun, cfg.max_branches, cfg.sys_bnd_wr, surv_first=True, rules=rules)
         monitor = {k: v + monitor2[k] for k, v in monitor1.items() if k != 'out_flag'}
         monitor['out_flag'] = [monitor1['out_flag'], monitor2['out_flag']]"""
+
         brs, rules, sys_res, monitor = gen_bnb.run_brc({k: varis[k] for k in arcs.keys()}, probs, sys_fun, cfg.max_sys_fun, cfg.max_branches, cfg.sys_bnd_wr, surv_first=True)
 
         csys, varis = gen_bnb.get_csys_from_brs(brs, varis, st_br_to_cs)
@@ -583,6 +585,42 @@ def main(file_cfg, eq_name):
         pickle.dump(varis, fout)
 
     print(f'-----All nodes completed. Results saved-----')
+
+
+@app.command()
+def run_single(file_cfg, eq_name, node):
+
+    cfg = config_custom(file_cfg, eq_name)
+
+    probs = {k: {0: v['pf'], 1: 1 - v['pf']} for k, v in cfg.infra['edges'].items()}
+
+    # arcs and nodes
+    arcs = {}
+    for k, v in cfg.infra['edges'].items():
+        arcs[k] = [v['origin'], v['destination']]
+
+    node_coords = {}
+    for k, v in cfg.infra['nodes'].items():
+        node_coords[k] = (v['pos_x'], v['pos_y'])
+
+    arc_len = trans.get_arcs_length(arcs, node_coords)
+    speed = 100.0 # (km/h) assume homogeneous speed for all roads
+    arc_time = {k: v/speed for k, v in arc_len.items()}
+
+    # variables
+    varis = {}
+    cpms = {}
+    comps_st_itc = {}
+    for k, v in cfg.infra['edges'].items():
+        varis[k] = variable.Variable(name=k, values = [np.inf, arc_time[k]])
+        cpms[k] = cpm.Cpm([varis[k]], 1, C=np.array([[0],[1]]), p = np.array([v['pf'], 1 - v['pf']]))
+        comps_st_itc[k] = len(varis[k].values) - 1
+
+    st_br_to_cs = {'f': 0, 's': 1, 'u': 2}
+
+    # Run the analysis for single node
+    _ = process_node(cfg, node, comps_st_itc, st_br_to_cs, arcs, varis, probs, cpms)
+
 
 @app.command()
 def batch_comp():

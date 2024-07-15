@@ -8,7 +8,7 @@ import numpy as np
 import typer
 
 
-from BNS_JT import model, config, trans, variable, gen_bnb, cpm
+from BNS_JT import model, config, trans, variable, gen_bnb, cpm, operation
 
 
 HOME = Path(__file__).parent
@@ -97,7 +97,7 @@ def main():
         cpms[k] = cpm.Cpm(variables = [varis[k]], no_child=1,
                           C = np.array([0, 1]).T, p = [0.1, 0.9])
 
-    sys_fun = trans.sys_fun_wrap(od_pair, cfg.infra['edges'], varis)
+    sys_fun = trans.sys_fun_wrap(cfg.infra['G'], od_pair, varis)
     brs, rules, sys_res = gen_bnb.proposed_branch_and_bound(sys_fun, varis, max_br=cfg.max_branches, output_path=cfg.output_path, key='rbd', flag=False)
 
     csys_by_od, varis_by_od = gen_bnb.get_csys_from_brs(brs, varis, st_br_to_cs)
@@ -125,7 +125,7 @@ def main():
     var_elim = nodes_except_const[:]
     var_elim.remove('x1')
     var_elim = [varis[k] for k in var_elim]
-    M_VE = cpm.variable_elim(M, var_elim)
+    M_VE = operation.variable_elim(M, var_elim)
 
     # compute P(x1=1|sys=1) = P(x1, sys) / P(sys)
     pf_sys1 = M_VE.p[M_VE.C[:, 0]==1].sum()

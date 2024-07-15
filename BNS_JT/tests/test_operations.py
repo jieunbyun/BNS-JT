@@ -2,6 +2,7 @@ from io import StringIO
 import importlib
 import numpy as np
 import pytest
+import networkx as nx
 
 from BNS_JT import variable, cpm, utils
 
@@ -76,7 +77,18 @@ def setup_sys_rbd():
     varis['sink']= variable.Variable(**{'name': 'sink', 'values': values})
     varis['sys']= variable.Variable(**{'name': 'sys', 'values': values})
 
-    return varis, arcs
+    G = nx.DiGraph()
+
+    # edges
+    for k, v in arcs.items():
+        G.add_edge(v[0], v[1], label=k, key=k, weight=1)
+
+    # nodes
+    [G.add_node(f'x{i}', key=f'x{i}', label=f'x{i}') for i in range(1, 9)]
+    G.add_node('source', key='source', label='source')
+    G.add_node('sink', key='sink', label='sink')
+
+    return varis, arcs, G
 
 
 def test_init(setup_sys_three_edges):

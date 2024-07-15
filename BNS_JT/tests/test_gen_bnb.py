@@ -36,6 +36,16 @@ def main_sys(data_bridge):
     arc_lens_km = trans.get_arcs_length(arcs, node_coords)
     arc_times_h = {k: v/arcs_avg_kmh[k] for k, v in arc_lens_km.items()}
 
+    G = nx.Graph()
+    for k, v in arcs.items():
+        G.add_edge(v[0], v[1], label=k, key=k, weight=arc_times_h[k])
+
+    [G.add_node(f'n{k}') for k in range(1, 6)]
+
+    # add weight
+    for n1, n2, e in G.edges(data=True):
+        G[n1][n2]['weight'] = arc_times_h[e['label']]
+
     # Component events
     #no_arc_st = 3 # number of component states 
     varis = {}
@@ -43,7 +53,7 @@ def main_sys(data_bridge):
     for k, v in arcs.items():
         varis[k] = variable.Variable(name=k, values = [arc_times_h[k]*np.float64(x) for x in delay_rat])
 
-    return od_pair, arcs, varis
+    return G, od_pair, arcs, varis
 
 
 @pytest.mark.skip('NYI')
@@ -128,18 +138,18 @@ def main_sys_bridge(data_bridge):
 @pytest.fixture(scope='package')
 def setup_brs(main_sys):
 
-    od_pair, arcs, d_varis = main_sys
+    G, od_pair, arcs, d_varis = main_sys
 
     varis = copy.deepcopy(d_varis)
 
     # Intact state of component vector: zero-based index 
     comps_st_itc = {k: len(v.values) - 1 for k, v in varis.items()} # intact state (i.e. the highest state)
-    d_time_itc, path_itc = trans.get_time_and_path_given_comps(comps_st_itc, od_pair, arcs, varis)
+    d_time_itc, path_n, path_itc = trans.get_time_and_path_given_comps(comps_st_itc, G, od_pair, varis)
 
     # defines the system failure event
     thres = 2
     # Given a system function, i.e. sf_min_path, it should be represented by a function that only has "comps_st" as input.
-    sys_fun = trans.sys_fun_wrap(od_pair, arcs, varis, thres * d_time_itc)
+    sys_fun = trans.sys_fun_wrap(G, od_pair, varis, thres * d_time_itc)
 
     file_brs = Path(__file__).parent.joinpath('brs_bridge.pk')
     if file_brs.exists():
@@ -160,7 +170,7 @@ def setup_brs(main_sys):
 @pytest.fixture(scope='package')
 def setup_inference(main_sys, setup_brs):
 
-    _, arcs, _ = main_sys
+    G, _, arcs, _ = main_sys
 
     d_varis, brs = setup_brs
     varis = copy.deepcopy(d_varis)
@@ -214,7 +224,7 @@ def setup_inference(main_sys, setup_brs):
 #@pytest.fixture(scope='session')
 def setup_inference_not_used(main_sys):
 
-    od_pair, arcs, d_varis = main_sys
+    G, od_pair, arcs, d_varis = main_sys
 
     varis = copy.deepcopy(d_varis)
 
@@ -323,12 +333,13 @@ def comps_st_dic():
 
 def test_get_time_and_path(main_sys, comps_st_dic):
 
-    od_pair, arcs, varis = main_sys
+    G, od_pair, arcs, varis = main_sys
 
     comps_st, expected = comps_st_dic
 
     for c in comps_st.keys():
-        d_time, path = trans.get_time_and_path_given_comps(comps_st[c], od_pair, arcs, varis)
+
+        d_time, path, path_e = trans.get_time_and_path_given_comps(comps_st[c], G, od_pair, varis)
 
         assert pytest.approx(d_time, 0.001) == expected[c][0]
         assert path == expected[c][3]
@@ -336,14 +347,15 @@ def test_get_time_and_path(main_sys, comps_st_dic):
 
 def test_sf_min_path(main_sys, comps_st_dic):
 
-    od_pair, arcs, varis = main_sys
+    G, od_pair, arcs, varis = main_sys
     comps_st, expected = comps_st_dic
     thres = 2*0.1844
+
     for c in comps_st.keys():
 
-        d_time, path = trans.get_time_and_path_given_comps(comps_st[c], od_pair, arcs, varis)
+        d_time, path_n, path_e = trans.get_time_and_path_given_comps(comps_st[c], G, od_pair, varis)
 
-        result = trans.sf_min_path(comps_st[c], od_pair, arcs, varis, thres)
+        result = trans.sf_min_path(comps_st[c], G, od_pair, varis, thres)
 
         assert pytest.approx(result[0], 0.001) == expected[c][0]
         assert result[1] == expected[c][1]
@@ -394,7 +406,7 @@ def test_init_branch1():
 @pytest.mark.skip('removed')
 def test_core1(main_sys):
 
-    _, _, varis = main_sys
+    G, _, _, varis = main_sys
     rules = []
     rules_st = []
     cst = []
@@ -413,7 +425,7 @@ def test_core1(main_sys):
 @pytest.mark.skip('removed')
 def test_core2(main_sys):
 
-    od_pair, arcs, varis = main_sys
+    G, od_pair, arcs, varis = main_sys
 
     cst = [2, 2, 2, 2, 2, 2]
     stop_br = True
@@ -433,7 +445,7 @@ def test_core2(main_sys):
 @pytest.mark.skip('removed')
 def test_core3(main_sys):
 
-    od_pair, arcs, varis = main_sys
+    G, od_pair, arcs, varis = main_sys
 
     cst = [0, 0, 0, 0, 0, 0]
     stop_br = True
@@ -453,7 +465,7 @@ def test_core3(main_sys):
 @pytest.mark.skip('removed')
 def test_core4(main_sys):
 
-    od_pair, arcs, varis = main_sys
+    G, od_pair, arcs, varis = main_sys
 
     cst = [2, 2, 2, 2, 1, 2]
     stop_br = True
@@ -473,7 +485,7 @@ def test_core4(main_sys):
 @pytest.mark.skip('removed')
 def test_do_gen_bnb2(main_sys):
     # no_iter: 10
-    od_pair, arcs, varis = main_sys
+    G, od_pair, arcs, varis = main_sys
 
     rules = [{'e2': 2, 'e6': 2, 'e4': 2}, {'e2': 1, 'e5': 2}, {'e1': 2, 'e3': 2, 'e5': 2}, {'e1': 0, 'e2': 1, 'e3': 0, 'e4': 0, 'e5': 0, 'e6': 0}, {'e2': 0, 'e3': 1}, {'e1': 0, 'e2': 0, 'e4': 0, 'e5': 0, 'e6': 0}]
     rules_st = ['s', 's', 's', 'f', 'f', 'f']
@@ -501,7 +513,7 @@ def test_do_gen_bnb2(main_sys):
 @pytest.mark.skip('removed')
 def test_do_gen_bnb1(main_sys):
     # iteration 11
-    od_pair, arcs, varis = main_sys
+    G, od_pair, arcs, varis = main_sys
 
     rules = [{'e2': 2, 'e6': 2, 'e4': 2}, {'e2': 1, 'e5': 2}, {'e1': 2, 'e3': 2, 'e5': 2}, {'e1': 0, 'e2': 1, 'e3': 0, 'e4': 0, 'e5': 0, 'e6': 0}, {'e2': 0, 'e3': 1}, {'e2': 0, 'e5': 1}]
     rules_st = ['s', 's', 's', 'f', 'f', 'f']
@@ -529,7 +541,7 @@ def test_do_gen_bnb1(main_sys):
 @pytest.mark.skip('removed')
 def test_do_gen_bnb3(main_sys):
     # iteration 21
-    od_pair, arcs, varis = main_sys
+    G, od_pair, arcs, varis = main_sys
 
     rules = [{'e1': 2, 'e3': 2, 'e5': 2}, {'e2': 0, 'e3': 1}, {'e2': 0, 'e5': 1}, {'e2': 1, 'e6': 2, 'e4': 2}, {'e2': 1, 'e5': 1}, {'e4': 1, 'e5': 0}, {'e1': 1, 'e2': 0}, {'e2': 2, 'e6': 1, 'e4': 2}, {'e5': 0, 'e6': 0}]
     rules_st = ['s', 'f', 'f', 's', 's', 'f', 'f', 's', 'f']
@@ -612,19 +624,19 @@ def test_approx_joint_prob_compat_rules():
 def test_proposed_branch_and_bound_using_probs(main_sys):
     # Branch and bound
 
-    od_pair, arcs, d_varis = main_sys
+    G, od_pair, arcs, d_varis = main_sys
 
     varis = copy.deepcopy(d_varis)
 
     # Intact state of component vector: zero-based index 
     comps_st_itc = {k: len(v.values) - 1 for k, v in varis.items()} # intact state (i.e. the highest state)
-    d_time_itc, path_itc = trans.get_time_and_path_given_comps(comps_st_itc, od_pair, arcs, varis)
+    d_time_itc, path_n, path_itc = trans.get_time_and_path_given_comps(comps_st_itc, G, od_pair, varis)
 
     # defines the system failure event
     thres = 2
 
     # Given a system function, i.e. sf_min_path, it should be represented by a function that only has "comps_st" as input.
-    sys_fun = trans.sys_fun_wrap(od_pair, arcs, varis, thres * d_time_itc)
+    sys_fun = trans.sys_fun_wrap(G, od_pair, varis, thres * d_time_itc)
 
     p = {0: 1/3, 1: 1/3, 2: 1/3}
     probs = {'e1': p, 'e2': p, 'e3': p,
@@ -1003,10 +1015,10 @@ def test_decomp_to_two_branches1():
 
 def test_run_sys_fn1(main_sys):
 
-    od_pair, arcs, varis = main_sys
+    G, od_pair, arcs, varis = main_sys
 
     thres = 2 * 0.1844
-    sys_fun = trans.sys_fun_wrap(od_pair, arcs, varis, thres)
+    sys_fun = trans.sys_fun_wrap(G, od_pair, varis, thres)
 
     cst = {f'e{i}': 2 for i in range(1, 7)}
     rules = []
@@ -1020,10 +1032,10 @@ def test_run_sys_fn1(main_sys):
 
 def test_run_sys_fn2(main_sys):
 
-    od_pair, arcs, varis = main_sys
+    G, od_pair, arcs, varis = main_sys
 
     thres = 2 * 0.1844
-    sys_fun = trans.sys_fun_wrap(od_pair, arcs, varis, thres)
+    sys_fun = trans.sys_fun_wrap(G, od_pair, varis, thres)
 
     cst = {f'e{i}': 0 for i in range(1, 7)}
     rules = [({'e2': 2, 'e5': 2}, 's')]
@@ -1038,10 +1050,10 @@ def test_run_sys_fn2(main_sys):
 
 def test_run_sys_fn3(main_sys):
 
-    od_pair, arcs, varis = main_sys
+    G, od_pair, arcs, varis = main_sys
 
     thres = 2 * 0.1844
-    sys_fun = trans.sys_fun_wrap(od_pair, arcs, varis, thres)
+    sys_fun = trans.sys_fun_wrap(G, od_pair, varis, thres)
 
     cst = {'e1': 2, 'e2': 2, 'e3': 2, 'e4': 2, 'e5': 1, 'e6': 2}
     rules = [({'e2': 2, 'e5': 2}, 's'), ({k: 0 for k in varis.keys()}, 'f')]
@@ -1066,7 +1078,7 @@ def test_get_composite_state1():
     assert result[1] == 5
 
 
-def test_get_composite_state2(main_sys):
+def test_get_composite_state2():
 
     #od_pair, arcs, varis = main_sys
     varis = {}
@@ -1081,7 +1093,7 @@ def test_get_composite_state2(main_sys):
     assert result[1] == 5
 
 
-def test_get_composite_state3(main_sys):
+def test_get_composite_state3():
 
     #od_pair, arcs, varis = main_sys
     varis = {}
@@ -1097,7 +1109,7 @@ def test_get_composite_state3(main_sys):
 
 def test_get_csys_from_brs3(main_sys):
 
-    od_pair, arcs, d_varis = main_sys
+    G, od_pair, arcs, d_varis = main_sys
 
     varis = copy.deepcopy(d_varis)
 
@@ -1111,13 +1123,13 @@ def test_get_csys_from_brs3(main_sys):
 
     # Intact state of component vector: zero-based index 
     comps_st_itc = {k: len(v.values) - 1 for k, v in varis.items()} # intact state (i.e. the highest state)
-    d_time_itc, path_itc = trans.get_time_and_path_given_comps(comps_st_itc, od_pair, arcs, varis)
+    d_time_itc, path_n, path_itc = trans.get_time_and_path_given_comps(comps_st_itc, G, od_pair, varis)
 
     # defines the system failure event
     thres = 2
 
     # Given a system function, i.e. sf_min_path, it should be represented by a function that only has "comps_st" as input.
-    sys_fun = trans.sys_fun_wrap(od_pair, arcs, varis, thres * d_time_itc)
+    sys_fun = trans.sys_fun_wrap(G, od_pair, varis, thres * d_time_itc)
 
     # Branch and bound
     output_path = Path(__file__).parent
@@ -1159,7 +1171,7 @@ def test_get_csys_from_brs3(main_sys):
 
 def test_get_c_from_br(main_sys):
 
-    _, _, d_varis = main_sys
+    G, _, _, d_varis = main_sys
 
     varis = copy.deepcopy(d_varis)
 
@@ -1282,11 +1294,12 @@ def test_get_decomp_depth_first():
 
     for i in range(1, 4):
         varis[f'e{i}'] = variable.Variable(name=f'e{i}', values=['Fail', 'Survive'])
+
     varis['od1'] = variable.Variable(name='od1', values=['Fail', 'Survive'])
 
     rules = {'s': [], 'f': []}
 
-    G = nx.Graph()
+    G = nx.MultiGraph()
     G.add_edge('n1', 'n2', capacity=1)
     G.add_edge('n2', 'n3', 1)
     G.add_edge('n2', 'n3', 1)
@@ -1408,8 +1421,8 @@ def test_get_decomp_comp_using_probs1():
 
     assert result == ('e1', 1)
 
-@pytest.mark.skip('TODO')
-def test_run_sys_fn4():
+
+def test_get_connectivity_given_comps4():
 
     x_star = {'e1': 1, 'e2': 0, 'e3': 1}
     varis = {}
@@ -1422,12 +1435,25 @@ def test_run_sys_fn4():
          'e2': {'origin': 'n2', 'destination': 'n3', 'link_capacity': None, 'weight': 1.0},
          'e3': {'origin': 'n2', 'destination': 'n3', 'link_capacity': None, 'weight': 1.0},
          }
-    pdb.set_trace()
-    sys_fun = trans.sys_fun_wrap(od_pair, edges, varis)
 
-    sys_val, sys_st, comp_st_min = sys_fun(x_star)
+    G = nx.MultiDiGraph()
+    G.add_edge('n1', 'n2', label='e1', key='e1', weight=1)
+    G.add_edge('n2', 'n3', label='e2', key='e2', weight=1)
+    G.add_edge('n2', 'n3', label='e3', key='e3', weight=1)
+    G.add_node('n1', key='n1', label='n1')
+    G.add_node('n2', key='n2', label='n2')
+    G.add_node('n3', key='n3', label='n3')
 
-    assert sys_st == 's'
-    assert sys_val == None
-    assert comp_st_min == {'e1': 1, 'e3': 1}
+    s_path_edges, s_path_nodes = trans.get_connectivity_given_comps(x_star, G, od_pair)
+
+    assert s_path_edges == ['e1', 'e3']
+    assert s_path_nodes == ['n1', 'n2', 'n3']
+
+    #sys_fun = trans.sys_fun_wrap(od_pair, edges, varis)
+
+    #sys_val, sys_st, comp_st_min = sys_fun(x_star)
+
+    #assert sys_st == 's'
+    #assert sys_val == None
+    #assert comp_st_min == {'e1': 1, 'e3': 1}
 

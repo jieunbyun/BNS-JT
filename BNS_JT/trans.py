@@ -4,6 +4,7 @@ import json
 import networkx as nx
 import socket
 import matplotlib
+import copy
 
 from BNS_JT import variable
 from scipy.stats import lognorm
@@ -52,153 +53,157 @@ system_meta = {'system_meta': {
         }
 
 
-def sys_fun_wrap(od_pair, arcs, varis, thres=None):
+def sys_fun_wrap(G, od_pair, varis=None, thres=None):
 
     def sys_fun2(comps_st):
-        return sf_min_path(comps_st, od_pair, arcs, varis, thres=thres)
+        return sf_min_path(comps_st, G, od_pair, varis=varis, thres=thres)
     return sys_fun2
 
 
-def sf_min_path(comps_st, od_pair, arcs, vari, thres=None):
+def sf_min_path(comps_st, G, od_pair, varis=None, thres=None):
     """
     comps_st:
+    G:
     od_pair:
-    arcs:
-    vari:
+    varis:
     thres:
     """
-    first = next(iter(arcs.items()))[1]
 
     if thres:
+
         if isinstance(od_pair, (list, tuple)):
-            d_time, path = get_time_and_path_given_comps(comps_st, od_pair, arcs, vari)
+            d_time, path_n, path_e = get_time_and_path_given_comps(comps_st, G, od_pair, varis)
+
         elif isinstance(od_pair, dict): # multiple destinations, e.g. {origin: n1, dests: [n2, n3, n4]}
-            d_time, path = get_time_and_path_multi_dest(comps_st, od_pair['origin'], od_pair['dests'], arcs, vari)
+            d_time, path_n, path_e = get_time_and_path_multi_dest(comps_st, G, od_pair['origin'], od_pair['dests'], varis)
 
-        min_comps_st = {}
-        if isinstance(first, list):
-            # fail, surv corresponds to 0 and 1
-            if d_time > thres:
-                sys_st = 'f'
-            else:
-                sys_st = 's'
-                for n0, n1 in zip(path[:-1], path[1:]):
-                    arc = next((k for k, v in arcs.items() if set(v) == set([n0, n1])), None)
-                    min_comps_st[arc] = comps_st[arc]
-
-        elif isinstance(first, dict):
-            # fail, surv corresponds to 0 and 1
-            if d_time > thres:
-                sys_st = 'f'
-            else:
-                sys_st = 's'
-                for n0, n1 in zip(path[:-1], path[1:]):
-                    arc = next((k for k, v in arcs.items() if set([v['origin'], v['destination']]) == set([n0, n1])), None)
-                    if arc:
-                        min_comps_st[arc] = comps_st.get(arc)
+        if d_time > thres:
+            sys_st = 'f'
+        else:
+            sys_st= 's'
 
     else:
         # no threshold, only check connectivity
+        # varis is not used; comps_st has the information (0: fail, 1: success)
         d_time = None
+
         # comps_st can be either node or edge, or combined
-        path = get_connectivity_given_comps(comps_st, od_pair, arcs, vari)
-        # path consists of node
+        path_e, path_n = get_connectivity_given_comps(comps_st, G, od_pair)
 
-        min_comps_st = {}
-        if isinstance(first, list):
-            # fail, surv corresponds to 0 and 1
-            if path:
-                sys_st = 's'
-                # check if there is any comp
-                min_comps_st.update({k: comps_st[k] for k in path if k in comps_st})
+        if path_n:
+            sys_st = 's'
+        else:
+            sys_st= 'f'
 
-                for n0, n1 in zip(path[:-1], path[1:]):
-                    arc = next((k for k, v in arcs.items() if set([v[0], v[1]]) == set([n0, n1])), None)
-                    if arc and (arc in comps_st):
-                            min_comps_st[arc] = comps_st[arc]
+    min_comps_st = {}
+    if sys_st == 's':
+        # edges
+        min_comps_st.update({k: comps_st[k] for k in path_e if k in comps_st})
 
-            else:
-                sys_st= 'f'
-
-        elif isinstance(first, dict):
-            # fail, surv corresponds to 0 and 1
-            if path:
-                sys_st = 's'
-                # check if there is any comp
-                min_comps_st.update({k: comps_st[k] for k in path if k in comps_st})
-
-                for n0, n1 in zip(path[:-1], path[1:]):
-                    arc = next((k for k, v in arcs.items() if set([v['origin'], v['destination']]) == set([n0, n1])), None)
-                    if arc and (arc in comps_st):
-                            min_comps_st[arc] = comps_st[arc]
-
-            else:
-                sys_st = 'f'
+        # nodes
+        min_comps_st.update({k: comps_st[k] for k in path_n if k in comps_st})
 
     return d_time, sys_st, min_comps_st
 
 
-def get_connectivity_given_comps(comps_st, od_pair, arcs, vari):
+def get_connectivity_given_comps(comps_st, G, od_pair):
     """
     return path on connectivity given od_pair including od_pair
     it works on either node or edge
     comps_st: starting from 0: (0: failure, 1: intact) only binary status
               comps_st can be for node, edge or combined
+    G: graph
     od_pair:
     arcs:
     vari:
     """
     assert isinstance(comps_st, dict)
-    assert all([v < len(vari[k].values) for k, v in comps_st.items()])
+    #assert all([v < len(vari[k].values) for k, v in comps_st.items()])
 
     # node of od_pair should be intact regardless of comps_st
-    _comps_st = comps_st.copy()
-    _comps_st.update({k: 1 for k in od_pair})
+    #_comps_st = comps_st.copy()
+    #_comps_st.update({k: 1 for k in od_pair})
 
-    G = nx.Graph()
-    first = next(iter(arcs.items()))[1]
+    H = update_G_given_comps_st(G, comps_st)
 
-    if isinstance(first, (list, tuple)):
-        for k, x in arcs.items():
-            check = False
-            try:
-                # node
-                check = _comps_st[x[0]] and _comps_st[x[1]]
-            except KeyError:
-                try:
-                    # edge
-                    check = _comps_st[k]
-                except KeyError:
-                    pass
-            finally:
-                if check:
-                    G.add_edge(x[0], x[1])
-
-    elif isinstance(first, dict):
-        for k, x in arcs.items():
-            check = False
-            try:
-                # node
-                check = _comps_st[x['origin']] and _comps_st[x['destination']]
-            except KeyError:
-                try:
-                    # edge
-                    check = _comps_st[k]
-                except KeyError:
-                    pass
-            finally:
-                if check:
-                    G.add_edge(x['origin'], x['destination'])
-
+    # shortest path in edges
     try:
-        path = nx.shortest_path(G, source = od_pair[0], target = od_pair[1])
+        # shortest path in nodes
+        s_path = nx.shortest_path(H, source = od_pair[0], target = od_pair[1])
+
     except (nx.NodeNotFound, nx.exception.NetworkXNoPath):
-        path = []
+        s_path, s_path_edge = [], []
 
-    return path
+    else:
+        s_path_edge = get_edge_from_nodes(H, s_path)
+
+    return s_path_edge, s_path
 
 
-def get_time_and_path_given_comps(comps_st, od_pair, arcs, vari):
+def get_edge_from_nodes(G, path_nodes):
+
+    # path in edges
+    path_edges = []
+    if isinstance(G, nx.MultiGraph):
+        for p in nx.utils.pairwise(path_nodes):
+            path_edges.extend(k for k, _ in G.get_edge_data(*p).items())
+    else:
+        for p in nx.utils.pairwise(path_nodes):
+            path_edges.append(G.get_edge_data(*p)['label'])
+
+    return path_edges
+
+
+def update_G_given_comps_st(G, comps_st, varis=None):
+
+    assert isinstance(G, nx.Graph), f'G must be an instance of networkx.Graph'
+
+    H = copy.deepcopy(G)
+
+    if varis:
+
+        attributes = {}
+        if isinstance(H, nx.MultiGraph):
+            for e in H.edges(data=True):
+                k = e[2]['label']
+                attributes[(e[0], e[1], 0)] = {'weight': varis[k].values[comps_st[k]]}
+        else:
+            for e in H.edges(data=True):
+                k = e[2]['label']
+                attributes[(e[0], e[1])] = {'weight': varis[k].values[comps_st[k]]}
+
+         # update H
+        nx.set_edge_attributes(H, attributes)
+
+    else:
+
+        # edge
+        for n1, n2, d in list(H.edges(data=True)):
+            try:
+                s = comps_st[d['label']]
+            except KeyError:
+                pass
+            else:
+                if not s:
+                    try:
+                        H.remove_edge(n1, n2, key=d['label'])
+                    except TypeError:
+                        H.remove_edge(n1, n2)
+
+        # node
+        for n0 in list(H.nodes):
+            try:
+                s = comps_st[n0]
+            except KeyError:
+                pass
+            else:
+                if not s:
+                    H.remove_node(n0)
+
+    return H
+
+
+def get_time_and_path_given_comps(comps_st, G, od_pair, varis):
     """
     comps_st: starting from 0
     od_pair:
@@ -206,26 +211,18 @@ def get_time_and_path_given_comps(comps_st, od_pair, arcs, vari):
     vari:
     """
     assert isinstance(comps_st, dict)
-    assert all([comps_st[k] < len(v.values) for k, v in vari.items()])
+    assert all([comps_st[k] < len(v.values) for k, v in varis.items()])
 
-    G = nx.Graph()
-    first = next(iter(arcs.items()))[1]
+    H = update_G_given_comps_st(G, comps_st, varis)
 
-    if isinstance(first, (list, tuple)):
-        for k, x in arcs.items():
-            G.add_edge(x[0], x[1], time=vari[k].values[comps_st[k]])
+    path = nx.shortest_path(H, source=od_pair[0], target=od_pair[1], weight='weight')
+    d_time = nx.shortest_path_length(H, source=od_pair[0], target=od_pair[1], weight='weight')
+    path_e = get_edge_from_nodes(H, path)
 
-    elif isinstance(first, dict):
-        for k, x in arcs.items():
-            G.add_edge(x['origin'], x['destination'], time=vari[k].values[comps_st[k]])
-
-    path = nx.shortest_path(G, source = od_pair[0], target = od_pair[1], weight = 'time')
-    d_time = nx.shortest_path_length(G, source = od_pair[0], target = od_pair[1], weight = 'time')
-
-    return d_time, path
+    return d_time, path, path_e
 
 
-def get_time_and_path_multi_dest(comps_st, origin, dests, arcs, varis):
+def get_time_and_path_multi_dest(comps_st, G, origin, dests, varis):
     """
     Compute time and path given multiple destinations--NB: works only for bidirectional graph
     """
@@ -233,24 +230,23 @@ def get_time_and_path_multi_dest(comps_st, origin, dests, arcs, varis):
     assert isinstance(comps_st, dict)
     assert all([comps_st[k] < len(varis[k].values) for k in comps_st.keys()])
 
-    G = nx.Graph()
-    first = next(iter(arcs.items()))[1]
+    # G must be a undirected (either Graph or MultiGraph)
+    assert not isinstance(G, (nx.DiGraph, nx.MultiDiGraph)), f'G must not be a directed graph'
 
-    if isinstance(first, (list, tuple)):
-        for k, x in arcs.items():
-            G.add_edge(x[0], x[1], time=varis[k].values[comps_st[k]])
+    H = update_G_given_comps_st(G, comps_st, varis)
 
-    elif isinstance(first, dict):
-        for k, x in arcs.items():
-            G.add_edge(x['origin'], x['destination'], time=varis[k].values[comps_st[k]])
+    try:
+        d_time, path_nodes = nx.multi_source_dijkstra(H, sources=dests, target=origin, weight='weight')
+    except nx.exception.NetworkXNoPath:
+        d_time, path_nodes, path_edges = np.inf, [], []
+    else:
+        path_nodes = path_nodes[::-1] # reverse as origin was used as the target
+        path_edges = get_edge_from_nodes(H, path_nodes)
 
-    d_time, path = nx.multi_source_dijkstra(G, sources = dests, target = origin, weight = 'time')
-    path = path[::-1]
-
-    return d_time, path
+    return d_time, path_nodes, path_edges
 
 
-def get_all_paths_and_times(ODs, G, key='time'):
+def get_all_paths_and_times(ODs, G, key='weight'):
     """
     ODs: list of OD pairs
     G: instance of networkx.Graph
