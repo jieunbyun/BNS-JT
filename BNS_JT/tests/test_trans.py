@@ -1007,3 +1007,23 @@ def test_sys_fun_wrap1(setup_multi_dest):
     assert sys_st2 == 'f'
     assert min_comps_st2 == {}
 
+
+def test_get_edge_from_nodes():
+
+    G = nx.MultiGraph()
+    G.add_edge('n1', 'n2', weight=1, label='e1')
+    G.add_edge('n2', 'n3', weight=1, label='e2')
+    G.add_edge('n2', 'n3', weight=1, label='e3')
+
+    G.add_node('n1', pos=(0, 0), label='n1')
+    G.add_node('n2', pos=(1, 0), label='n2')
+    G.add_node('n3', pos=(2, 0), label='n3')
+
+    comps_st = {'e1': 1, 'e2': 1, 'e3': 1}
+    od_pair = ('n1', 'n3')
+    path_nodes = ['n1', 'n2', 'n3']
+    path_edge = trans.get_edge_from_nodes(G, path_nodes)
+
+    assert path_edge == ['e1', 'e2']
+
+

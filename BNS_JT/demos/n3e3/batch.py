@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import networkx as nx
 import numpy as np
 
-from BNS_JT import model, config, cpm, variable, trans, gen_bnb
+from BNS_JT import model, config, cpm, variable, trans, brc, gen_bnb
 
 HOME = Path(__file__).parent
 
@@ -49,10 +49,10 @@ def main():
     #d_time_itc, _ = get_time_and_path_multi_dest(comps_st_itc, od_pair[0], [od_pair[1]], cfg.infra['edges'], varis)
     sys_fun = trans.sys_fun_wrap(cfg.infra['G'], od_pair)
 
-    brs, rules, sys_res, monitor = gen_bnb.run_brc(
+    brs, rules, sys_res, monitor = brc.run_brc(
         varis, probs, sys_fun, cfg.data['MAX_SYS_FUN'], cfg.max_branches)
 
-    csys, varis = gen_bnb.get_csys_from_brs(brs, varis, st_br_to_cs)
+    csys, varis = brc.get_csys_from_brs(brs, varis, st_br_to_cs)
     print(csys)
 
 if __name__=='__main__':

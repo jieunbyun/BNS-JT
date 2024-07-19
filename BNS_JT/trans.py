@@ -146,7 +146,9 @@ def get_edge_from_nodes(G, path_nodes):
     path_edges = []
     if isinstance(G, nx.MultiGraph):
         for p in nx.utils.pairwise(path_nodes):
-            path_edges.extend(k for k, _ in G.get_edge_data(*p).items())
+            edges = (G.get_edge_data(*p).items())
+            sorted_edges = sorted(edges, key=lambda x: x[1].get('weight'))
+            path_edges.append(sorted_edges[0][1]['label'])
     else:
         for p in nx.utils.pairwise(path_nodes):
             path_edges.append(G.get_edge_data(*p)['label'])
