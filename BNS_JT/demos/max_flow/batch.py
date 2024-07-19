@@ -8,7 +8,7 @@ import numpy as np
 import pickle
 import typer
 
-from BNS_JT import variable, gen_bnb, config
+from BNS_JT import variable, brc, config
 
 HOME = Path(__file__).parent
 
@@ -168,7 +168,7 @@ def main(cfg_fname, od_name):
         for k, v in monitor.items():
             monitor[k] += monitor2[k]"""
 
-    brs, rules, sys_res, monitor = gen_bnb.run_brc(varis, probs, sys_fun, max_sf=cfg.max_sys_fun, max_nb=cfg.max_branches, pf_bnd_wr= cfg.sys_bnd_wr, surv_first=True)
+    brs, rules, sys_res, monitor = brc.run_brc(varis, probs, sys_fun, max_sf=cfg.max_sys_fun, max_nb=cfg.max_branches, pf_bnd_wr= cfg.sys_bnd_wr, surv_first=True)
 
     # Store result
     ### Data Store ###

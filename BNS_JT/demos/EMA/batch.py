@@ -9,7 +9,7 @@ import numpy as np
 import typer
 from typing_extensions import Annotated
 
-from BNS_JT import model, config, trans, variable, gen_bnb, cpm
+from BNS_JT import model, config, trans, variable, brc, gen_bnb, cpm
 
 
 HOME = Path(__file__).parent
@@ -94,10 +94,10 @@ def main(key: Annotated[str, typer.Argument()] = 'od2',
     sys_fun = trans.sys_fun_wrap(cfg.infra['G'], od_pair, varis, thres * d_time_itc)
 
     #brs, rules, _ = gen_bnb.proposed_branch_and_bound(sys_fun, varis, max_br=cfg.max_branches, output_path=cfg.output_path, key=f'EMA_{od_pair}', flag=True)
-    brs1, rules1, sys_rules1, monitor1 = gen_bnb.run_brc(varis, probs, sys_fun, max_sf=max_sf, max_nb=10_000, surv_first=True)
-    brs2, rules2, sys_rules2, monitor2 = gen_bnb.run_brc(varis, probs, sys_fun, max_sf=max_sf, max_nb=50_000, surv_first=True, rules=rules1)
+    brs1, rules1, sys_rules1, monitor1 = brc.run_brc(varis, probs, sys_fun, max_sf=max_sf, max_nb=10_000, surv_first=True)
+    brs2, rules2, sys_rules2, monitor2 = brc.run_brc(varis, probs, sys_fun, max_sf=max_sf, max_nb=50_000, surv_first=True, rules=rules1)
 
-    csys, varis = gen_bnb.get_csys_from_brs(brs2, varis, st_br_to_cs)
+    csys, varis = brc.get_csys_from_brs(brs2, varis, st_br_to_cs)
 
     varis['sys'] = variable.Variable(name='sys', values=list(st_br_to_cs.keys()))
     cpms['sys'] = cpm.Cpm(variables = [varis['sys']] + [varis[k] for k in cfg.infra['edges'].keys()], no_child=1, C=csys, p=np.ones((len(csys),1), dtype=np.float32))

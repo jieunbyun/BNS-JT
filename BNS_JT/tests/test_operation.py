@@ -9,7 +9,7 @@ from pathlib import Path
 np.set_printoptions(precision=3)
 #pd.set_option.display_precision = 3
 
-from BNS_JT import cpm, variable, config, trans, gen_bnb, operation
+from BNS_JT import cpm, variable, config, trans, brc, gen_bnb, operation
 
 HOME = Path(__file__).parent
 
@@ -516,7 +516,7 @@ def test_prod_cpm_sys_and_comps():
     brs, _, _, _ = gen_bnb.proposed_branch_and_bound_using_probs(
             sys_fun, varis, probs, max_sf=1000, output_path=HOME, key='routine')
 
-    csys_by_od, varis_by_od = gen_bnb.get_csys_from_brs(brs, varis, st_br_to_cs)
+    csys_by_od, varis_by_od = brc.get_csys_from_brs(brs, varis, st_br_to_cs)
 
     varis['sys'] = variable.Variable(name='sys', values=['f', 's'])
     cpms['sys'] = cpm.Cpm(variables = [varis[k] for k in ['sys'] + list(cfg.infra['edges'].keys())],
