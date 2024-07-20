@@ -49,7 +49,7 @@ def main():
     #d_time_itc, _ = get_time_and_path_multi_dest(comps_st_itc, od_pair[0], [od_pair[1]], cfg.infra['edges'], varis)
     sys_fun = trans.sys_fun_wrap(cfg.infra['G'], od_pair)
 
-    brs, rules, sys_res, monitor = brc.run_brc(
+    brs, rules, sys_res, monitor = brc.run(
         varis, probs, sys_fun, cfg.data['MAX_SYS_FUN'], cfg.max_branches)
 
     csys, varis = brc.get_csys_from_brs(brs, varis, st_br_to_cs)

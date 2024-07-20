@@ -239,16 +239,17 @@ def test_approx_joint_prob_compat_rules():
 
     d = {f'e{i}': 0 for i in range(1, 7)}
     u = {f'e{i}': 2 for i in range(1, 7)}
+    br = branch.Branch(d, u, 's', 's', 1.0)
     rule = {'e2': 2, 'e5': 2}
     rule_st = 's'
 
-    result = brc.approx_joint_prob_compat_rule(d, u, rule, rule_st, p)
+    result = brc.approx_joint_prob_compat_rule(br, rule, rule_st, p)
     assert pytest.approx(result) == 0.8*0.9
 
     rule = {'e1': 0, 'e2': 0, 'e3': 0, 'e4': 0, 'e5': 0, 'e6': 0}
     rule_st = 'f'
 
-    result = brc.approx_joint_prob_compat_rule(d, u, rule, rule_st, p)
+    result = brc.approx_joint_prob_compat_rule(br, rule, rule_st, p)
     assert pytest.approx(result) == 0.05**3*0.01**3
 
 
@@ -269,34 +270,37 @@ def test_get_compat_rules():
 
     upper = {f'e{i}': 2 for i in range(1, 7)}
     lower = {f'e{i}': 0 for i in range(1, 7)}
+    br = branch.Branch(lower, upper, 's', 's', 1.0)
     rules = {'s': [], 'f': []}
-    result = brc.get_compat_rules(lower, upper, rules)
+    result = brc.get_compat_rules(br, rules)
     assert result == rules
 
     rules = {'s': [{'e2': 2, 'e5': 2}], 'f': []}
-    result = brc.get_compat_rules(lower, upper, rules)
+    result = brc.get_compat_rules(br, rules)
     assert result == {'s': [{'e2': 2, 'e5': 2}], 'f': []}
 
     rules = {'s': [{'e2': 1, 'e5': 2}], 'f': [{f'e{i}': 0 for i in range(1, 7)}]}
-    result = brc.get_compat_rules(lower, upper, rules)
+    result = brc.get_compat_rules(br, rules)
     assert result['s'] == rules['s']
     assert result['f'] == rules['f']
 
     upper = {'e1': 2, 'e2': 0, 'e3': 2, 'e4': 2, 'e5': 2, 'e6': 2}
     lower = {f'e{i}': 0 for i in range(1, 7)}
+    br = branch.Branch(lower, upper, 's', 's', 1.0)
     rules = {'s': [{'e2': 1, 'e5': 2}],
              'f': [{f'e{i}': 0 for i in range(1, 7)}]}
-    result = brc.get_compat_rules(lower, upper, rules)
+    result = brc.get_compat_rules(br, rules)
     assert result['s'] == []
     assert result['f'] == [{'e1': 0, 'e3': 0, 'e4': 0, 'e5': 0, 'e6': 0}]
 
     upper = {'e1': 2, 'e2': 2, 'e3': 2, 'e4': 2, 'e5': 2, 'e6': 2}
     lower = {'e1': 2, 'e2': 0, 'e3': 2, 'e4': 2, 'e5': 2, 'e6': 2}
+    br = branch.Branch(lower, upper, 's', 's', 1.0)
     rules = {'s': [{'e2': 1, 'e5': 2}, {'e1': 2, 'e3': 2, 'e5': 2},
                    {'e2': 2, 'e4': 2, 'e6': 2}],
              'f': [{f'e{i}': 0 for i in range(1, 7)}]}
 
-    result = brc.get_compat_rules(lower, upper, rules)
+    result = brc.get_compat_rules(br, rules)
     assert result['s'] == [{'e2': 1}, {'e2': 2}]
     assert result['f'] == []
 
@@ -690,7 +694,7 @@ def test_get_new_branch1():
 
     # up
     br_new = brc.get_new_branch(br, rules, probs, xd, xd_st, up_flag=True)
-    cr_new = brc.get_compat_rules(br_new.down, br_new.up, rules)
+    cr_new = brc.get_compat_rules(br_new, rules)
     assert br_new.down_state == 'u'
     assert br_new.up_state == 'u'
     assert br_new.p == pytest.approx(0.2014)
@@ -701,7 +705,7 @@ def test_get_new_branch1():
 
     # down
     br_new = brc.get_new_branch(br, rules, probs, xd, xd_st, up_flag=False)
-    cr_new = brc.get_compat_rules(br_new.down, br_new.up, rules)
+    cr_new = brc.get_compat_rules(br_new, rules)
     assert cr_new['s'] == [{'e9': 1, 'e14': 1, 'e17': 1}]
     assert cr_new['f'] == []
     assert br_new.down_state == 'u'
@@ -717,14 +721,14 @@ def test_get_decomp_comp_using_probs0():
             'f': [{'e1': 0, 'e2': 0, 'e3': 0, 'e4': 0, 'e5': 0, 'e6': 0}]}
     upper = {'e1': 2, 'e2': 2, 'e3': 2, 'e4': 2, 'e5': 2, 'e6': 2}
     lower = {'e1': 0, 'e2': 0, 'e3': 0, 'e4': 0, 'e5': 0, 'e6': 0}
-
+    br = branch.Branch(lower, upper, 's', 's', 1.0)
     p1 = {0: 0.05, 1: 0.15, 2: 0.80}
     p2 = {0: 0.01, 1: 0.09, 2: 0.90}
 
     probs = {'e1': p1, 'e2': p1, 'e3': p1,
              'e4': p2, 'e5': p2, 'e6': p2}
 
-    result = brc.get_decomp_comp_using_probs(lower, upper, rules, probs)
+    result = brc.get_decomp_comp_using_probs(br, rules, probs)
 
     assert result == ('e2', 2)
 
@@ -733,7 +737,8 @@ def test_get_decomp_comp_using_probs0():
             }
     upper = {'e1': 2, 'e2': 2, 'e3': 2, 'e4': 2, 'e5': 2, 'e6': 2}
     lower = {'e1': 0, 'e2': 0, 'e3': 0, 'e4': 0, 'e5': 0, 'e6': 0}
-    result = brc.get_decomp_comp_using_probs(lower, upper, rules, probs)
+    br = branch.Branch(lower, upper, 's', 's', 1.0)
+    result = brc.get_decomp_comp_using_probs(br, rules, probs)
 
     assert result == ('e5', 2)
 
@@ -742,7 +747,8 @@ def test_get_decomp_comp_using_probs0():
             }
     upper = {'e1': 2, 'e2': 2, 'e3': 2, 'e4': 2, 'e5': 2, 'e6': 2}
     lower = {'e1': 0, 'e2': 0, 'e3': 0, 'e4': 0, 'e5': 0, 'e6': 0}
-    result = brc.get_decomp_comp_using_probs(lower, upper, rules, probs)
+    br = branch.Branch(lower, upper, 's', 's', 1.0)
+    result = brc.get_decomp_comp_using_probs(br, rules, probs)
 
     assert result == ('e2', 2)
 
@@ -751,7 +757,8 @@ def test_get_decomp_comp_using_probs0():
             }
     upper = {'e1': 2, 'e2': 2, 'e3': 2, 'e4': 2, 'e5': 2, 'e6': 2}
     lower = {'e1': 0, 'e2': 0, 'e3': 0, 'e4': 0, 'e5': 0, 'e6': 0}
-    result = brc.get_decomp_comp_using_probs(lower, upper, rules, probs)
+    br = branch.Branch(lower, upper, 's', 's', 1.0)
+    result = brc.get_decomp_comp_using_probs(br, rules, probs)
 
     assert result == ('e1', 2)
 
@@ -762,6 +769,7 @@ def test_get_decomp_comp_using_probs1():
             'f': []}
     upper = {'e1': 1, 'e2': 1, 'e3': 1}
     lower = {'e1': 0, 'e2': 0, 'e3': 0}
+    br = branch.Branch(lower, upper, 's', 's', 1.0)
 
     probs = {'e1': {0: 0.1,
                     1: 0.9},
@@ -770,7 +778,7 @@ def test_get_decomp_comp_using_probs1():
              'e3': {0: 0.3,
                     1: 0.7}}
 
-    result = brc.get_decomp_comp_using_probs(lower, upper, rules, probs)
+    result = brc.get_decomp_comp_using_probs(br, rules, probs)
 
     assert result == ('e1', 1)
 
@@ -782,6 +790,7 @@ def test_get_decomp_comp_using_probs2():
     upper = {'e1': 1, 'e2': 1, 'e3': 1}
     lower = {'e1': 1, 'e2': 0, 'e3': 0}
 
+    br = branch.Branch(lower, upper, 's', 's', 1.0)
     probs = {'e1': {0: 0.1,
                     1: 0.9},
              'e2': {0: 0.2,
@@ -789,7 +798,7 @@ def test_get_decomp_comp_using_probs2():
              'e3': {0: 0.3,
                     1: 0.7}}
 
-    result = brc.get_decomp_comp_using_probs(lower, upper, rules, probs)
+    result = brc.get_decomp_comp_using_probs(br, rules, probs)
 
     assert result == ('e2', 1)
 
@@ -800,7 +809,7 @@ def test_get_decomp_comp_using_probs3():
              'f': []}
     upper = {'e1': 1, 'e2': 1, 'e3': 1}
     lower = {'e1': 0, 'e2': 0, 'e3': 0}
-
+    br = branch.Branch(lower, upper, 's', 's', 1.0)
     probs = {'e1': {0: 0.1,
                     1: 0.9},
              'e2': {0: 0.2,
@@ -808,7 +817,7 @@ def test_get_decomp_comp_using_probs3():
              'e3': {0: 0.3,
                     1: 0.7}}
 
-    result = brc.get_decomp_comp_using_probs(lower, upper, rules, probs)
+    result = brc.get_decomp_comp_using_probs(br, rules, probs)
 
     assert result == ('e1', 1)
 
@@ -819,6 +828,7 @@ def test_get_decomp_comp_using_probs4():
              'f': [{'e1': 0}]}
     upper = {'e1': 1, 'e2': 1, 'e3': 1}
     lower = {'e1': 0, 'e2': 0, 'e3': 0}
+    br = branch.Branch(lower, upper, 's', 's', 1.0)
 
     probs = {'e1': {0: 0.1,
                     1: 0.9},
@@ -827,7 +837,7 @@ def test_get_decomp_comp_using_probs4():
              'e3': {0: 0.3,
                     1: 0.7}}
 
-    result = brc.get_decomp_comp_using_probs(lower, upper, rules, probs)
+    result = brc.get_decomp_comp_using_probs(br, rules, probs)
 
     assert result == ('e1', 1)
 
@@ -838,6 +848,7 @@ def test_get_decomp_comp_using_probs5():
              'f': [{'e1': 0}]}
     upper = {'e1': 1, 'e2': 1, 'e3': 1}
     lower = {'e1': 1, 'e2': 0, 'e3': 0}
+    br = branch.Branch(lower, upper, 's', 's', 1.0)
 
     probs = {'e1': {0: 0.1,
                     1: 0.9},
@@ -845,7 +856,7 @@ def test_get_decomp_comp_using_probs5():
                     1: 0.8},
              'e3': {0: 0.3,
                     1: 0.7}}
-    result = brc.get_decomp_comp_using_probs(lower, upper, rules, probs)
+    result = brc.get_decomp_comp_using_probs(br, rules, probs)
 
     assert result == ('e2', 1)
 

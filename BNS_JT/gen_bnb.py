@@ -64,7 +64,7 @@ def proposed_branch_and_bound_using_probs(sys_fun, varis, probs, max_sf, output_
                 brs_new.append(br)
 
             else:
-                c_rules = brc.get_compat_rules(br.down, br.up, rules)
+                c_rules = brc.get_compat_rules(br, rules)
 
                 if (not c_rules['s']) or (not c_rules['f']):
                     if not c_rules['s']:
@@ -90,7 +90,7 @@ def proposed_branch_and_bound_using_probs(sys_fun, varis, probs, max_sf, output_
                     break
 
                 else:
-                    xd, xd_st = brc.get_decomp_comp_using_probs(br.down, br.up, c_rules, probs)
+                    xd, xd_st = brc.get_decomp_comp_using_probs(br, c_rules, probs)
 
                     # for upper
                     br_new, _ = get_br_new(br, rules, probs, xd, xd_st)
@@ -162,7 +162,7 @@ def proposed_branch_and_bound(sys_fun, varis, max_br, output_path=Path(sys.argv[
                 brs_new.append(br)
 
             else:
-                c_rules = get_compat_rules(br.down, br.up, rules)
+                c_rules = get_compat_rules(br, rules)
 
                 if (not c_rules['s']) or (not c_rules['f']):
                     if not c_rules['s']:
@@ -184,7 +184,7 @@ def proposed_branch_and_bound(sys_fun, varis, max_br, output_path=Path(sys.argv[
                     break
 
                 else:
-                    xd, xd_st = brc.get_decomp_comp(br.down, br.up, c_rules)
+                    xd, xd_st = brc.get_decomp_comp(br, c_rules)
 
                     # for upper
                     up = br.up.copy()
@@ -302,9 +302,9 @@ def get_br_new(br, rules, probs, xd, xd_st, up_flag=True):
         if (~up_flag and down_st != 'u') or (up_flag and up_st != 'u'):
            cr_new = {'s':[], 'f':[]}
         else:
-           cr_new = brc.get_compat_rules(down, up, rules)
+           cr_new = brc.get_compat_rules(br_new, rules)
     else:
-        cr_new = brc.get_compat_rules(down, up, rules)
+        cr_new = brc.get_compat_rules(br_new, rules)
 
     return br_new, cr_new
 
@@ -315,7 +315,7 @@ def get_init_brs_and_cr(varis, rules):
     best = {k: len(v.values) - 1 for k, v in varis.items()}
 
     brs = init_branch(worst, best, rules)
-    brs_cr = [get_compat_rules(brs[0].down, brs[0].up, rules)]
+    brs_cr = [get_compat_rules(brs[0], rules)]
 
     return brs, brs_cr
 
