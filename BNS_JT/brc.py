@@ -13,7 +13,7 @@ import time
 from BNS_JT import variable, branch
 
 
-def run_brc(varis, probs, sys_fun, max_sf, max_nb, pf_bnd_wr=0.0, surv_first=True, rules=None):
+def run(varis, probs, sys_fun, max_sf, max_nb, pf_bnd_wr=0.0, surv_first=True, rules=None):
 
     """
     INPUTS:
@@ -316,7 +316,7 @@ def get_state(comp, rules):
     return state
 
 
-def get_compat_rules(lower, upper, rules):
+def get_compat_rules(br, rules):
     """
     lower: lower bound on component vector state in dictionary
            e.g., {'x1': 0, 'x2': 0 ... }
@@ -326,20 +326,20 @@ def get_compat_rules(lower, upper, rules):
            e.g., {'s': [{'x1': 2, 'x2': 2}],
                   'f': [{'x1': 2, 'x2': 0}]}
     """
-    assert isinstance(lower, dict), f'lower should be a dict: {type(lower)}'
-    assert isinstance(upper, dict), f'upper should be a dict: {type(upper)}'
+    #assert isinstance(lower, dict), f'lower should be a dict: {type(lower)}'
+    #assert isinstance(upper, dict), f'upper should be a dict: {type(upper)}'
     assert isinstance(rules, dict), f'rules should be a dict: {type(rules)}'
 
     compat_rules = {'s': [], 'f': []}
     for rule in rules['s']:
-        if all([upper[k] >= v for k, v in rule.items()]):
-            c_rule = {k: v for k, v in rule.items() if v > lower[k]}
+        if all([br.up[k] >= v for k, v in rule.items()]):
+            c_rule = {k: v for k, v in rule.items() if v > br.down[k]}
             if c_rule:
                 compat_rules['s'].append(c_rule)
 
     for rule in rules['f']:
-        if all([lower[k] <= v for k, v in rule.items()]):
-            c_rule = {k: v for k, v in rule.items() if v < upper[k]}
+        if all([br.down[k] <= v for k, v in rule.items()]):
+            c_rule = {k: v for k, v in rule.items() if v < br.up[k]}
             if c_rule:
                 compat_rules['f'].append(c_rule)
 
@@ -347,39 +347,36 @@ def get_compat_rules(lower, upper, rules):
 
 
 
-def approx_joint_prob_compat_rule(lower, upper, rule, rule_st, probs):
+def approx_joint_prob_compat_rule(br, rule, rule_st, probs):
 
-    assert isinstance(lower, dict), f'lower should be a dict: {type(lower)}'
-    assert isinstance(upper, dict), f'upper should be a dict: {type(upper)}'
+    #assert isinstance(lower, dict), f'lower should be a dict: {type(lower)}'
+    #assert isinstance(upper, dict), f'upper should be a dict: {type(upper)}'
     assert isinstance(rule, dict), f'rules should be a dict: {type(rules)}'
 
     p = 1.0
     if rule_st == 's':
         for x, v in rule.items():
-            p *= sum([probs[x][i] for i in range(v, upper[x] + 1)])
+            p *= sum([probs[x][i] for i in range(v, br.up[x] + 1)])
 
     elif rule_st == 'f':
         for x, v in rule.items():
-            p *= sum([probs[x][i] for i in range(lower[x], v + 1)])
+            p *= sum([probs[x][i] for i in range(br.down[x], v + 1)])
 
     return p
 
 
-def approx_branch_prob(lower, upper, probs):
+def approx_branch_prob(down, up, probs):
     """
 
     """
     p = 1.0
-
-    #for dx, ux in zip(lower.items(), upper.items()):
-    for k, v in lower.items():
-        p *= sum([probs[k][x] for x in range(v, upper[k] + 1)])
-        #p *= sum([probs[dx[0]][x] for x in range(dx[1], ux[1] + 1)])
+    for k, v in down.items():
+        p *= sum([probs[k][x] for x in range(v, up[k] + 1)])
 
     return p
 
 
-def get_decomp_comp_using_probs(lower, upper, rules, probs):
+def get_decomp_comp_using_probs(br, rules, probs):
     """
     lower: lower bound on component vector state in dictionary
            e.g., {'x1': 0, 'x2': 0 ... }
@@ -389,8 +386,9 @@ def get_decomp_comp_using_probs(lower, upper, rules, probs):
            e.g., {'s': [{'x1': 2, 'x2': 2}], 'f': [{'x3': 0}]}
     probs: dict
     """
-    assert isinstance(lower, dict), f'lower should be a dict: {type(lower)}'
-    assert isinstance(upper, dict), f'upper should be a dict: {type(upper)}'
+    assert isinstance(br, branch.Branch), f'br should be an instance of Branch: {type(br)}'
+    #assert isinstance(br.lower, dict), f'lower should be a dict: {type(lower)}'
+    #assert isinstance(br.upper, dict), f'upper should be a dict: {type(upper)}'
     assert isinstance(rules, dict), f'rules should be a dict: {type(rules)}'
 
     # get an order of component by their frequency in rules
@@ -400,7 +398,7 @@ def get_decomp_comp_using_probs(lower, upper, rules, probs):
 
     # get an order R by P  (higher to lower)
     if len(rules_st) > 1:
-        rules_st = sorted(rules_st, key=lambda x: approx_joint_prob_compat_rule(lower, upper, x[1], x[0], probs), reverse=True)
+        rules_st = sorted(rules_st, key=lambda x: approx_joint_prob_compat_rule(br, x[1], x[0], probs), reverse=True)
 
     for st, rule in rules_st:
         for c in comps:
@@ -412,7 +410,7 @@ def get_decomp_comp_using_probs(lower, upper, rules, probs):
                 state = rule[c] + 1
 
             try:
-                if lower[c] < state and state <= upper[c]:
+                if br.down[c] < state and state <= br.up[c]:
                     return c, state
 
             except TypeError:
@@ -595,7 +593,7 @@ def decomp_depth_first(varis, rules, probs, max_nb):
     """
 
     brs = init_branch(varis, rules)  # D1
-    crules = [get_compat_rules(brs[0].down, brs[0].up, rules)]
+    crules = [get_compat_rules(brs[0], rules)]
 
     go = True
     while go:
@@ -609,18 +607,19 @@ def decomp_depth_first(varis, rules, probs, max_nb):
 
         for i, (br, cr) in enumerate(sorted_brs, 1):
 
+            # specified branch or no compatible rule exists
             if ((br.down_state == br.up_state) and (br.down_state != 'u')) or (len(cr['f']) + len(cr['s']) == 0):
                 brs_new.append(br)
                 crules_new.append({'s':[], 'f':[]})
 
             else:
                 # D6??
-                xd, xd_st = get_decomp_comp_using_probs(br.down, br.up, cr, probs)
+                xd, xd_st = get_decomp_comp_using_probs(br, cr, probs)
 
                 # D3: evaluate sl and su
                 for up_flag in [True, False]:
                     br_new = get_new_branch(br, rules, probs, xd, xd_st, up_flag)
-                    crule_new = get_compat_rules(br_new.down, br_new.up, rules)
+                    crule_new = get_compat_rules(br_new, rules)
                     brs_new.append(br_new)
                     crules_new.append(crule_new)
 

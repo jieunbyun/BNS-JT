@@ -698,41 +698,6 @@ def test_inference2(setup_inference):
     assert pf_sys == pytest.approx(0.334, rel=1.0e-3)
 
 
-@pytest.mark.skip('TODO')
-def test_run_brc():
-    """
-    varis
-    probs
-    sys_fun
-    max_sf
-    max_nb
-
-    run_brc(varis, probs, sys_fun, max_sf, max_nb)
-    """
-
-    pass
-
-@pytest.mark.skip('TODO')
-def test_get_decomp_depth_first():
-
-    max_nb = 1000
-    probs = {'e1': 0.1, 'e2': 0.2, 'e3': 0.3}
-    varis = {}
-
-    for i in range(1, 4):
-        varis[f'e{i}'] = variable.Variable(name=f'e{i}', values=['Fail', 'Survive'])
-
-    varis['od1'] = variable.Variable(name='od1', values=['Fail', 'Survive'])
-
-    rules = {'s': [], 'f': []}
-
-    G = nx.MultiGraph()
-    G.add_edge('n1', 'n2', capacity=1)
-    G.add_edge('n2', 'n3', 1)
-    G.add_edge('n2', 'n3', 1)
-
-
-
 def test_get_connectivity_given_comps4():
 
     x_star = {'e1': 1, 'e2': 0, 'e3': 1}

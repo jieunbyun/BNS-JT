@@ -409,12 +409,12 @@ def process_node(cfg, node, comps_st_itc, st_br_to_cs, arcs, varis, probs, cpms)
         d_time_itc, _, _ = trans.get_time_and_path_multi_dest(comps_st_itc, cfg.infra['G'], node, dests, varis)
         sys_fun = trans.sys_fun_wrap(cfg.infra['G'], {'origin': node, 'dests': dests}, varis, thres * d_time_itc)
 
-        """brs, rules, sys_res1, monitor1 = gen_bnb.run_brc( {k: varis[k] for k in arcs.keys()}, probs, sys_fun, 0.01*cfg.max_sys_fun, 0.01*cfg.max_branches, cfg.sys_bnd_wr, surv_first=False)
-        brs, rules, sys_res2, monitor2 = gen_bnb.run_brc( {k: varis[k] for k in arcs.keys()}, probs, sys_fun, cfg.max_sys_fun, cfg.max_branches, cfg.sys_bnd_wr, surv_first=True, rules=rules)
+        """brs, rules, sys_res1, monitor1 = gen_bnb.run( {k: varis[k] for k in arcs.keys()}, probs, sys_fun, 0.01*cfg.max_sys_fun, 0.01*cfg.max_branches, cfg.sys_bnd_wr, surv_first=False)
+        brs, rules, sys_res2, monitor2 = gen_bnb.run( {k: varis[k] for k in arcs.keys()}, probs, sys_fun, cfg.max_sys_fun, cfg.max_branches, cfg.sys_bnd_wr, surv_first=True, rules=rules)
         monitor = {k: v + monitor2[k] for k, v in monitor1.items() if k != 'out_flag'}
         monitor['out_flag'] = [monitor1['out_flag'], monitor2['out_flag']]"""
 
-        brs, rules, sys_res, monitor = gen_bnb.run_brc({k: varis[k] for k in arcs.keys()}, probs, sys_fun, cfg.max_sys_fun, cfg.max_branches, cfg.sys_bnd_wr, surv_first=True)
+        brs, rules, sys_res, monitor = gen_bnb.run({k: varis[k] for k in arcs.keys()}, probs, sys_fun, cfg.max_sys_fun, cfg.max_branches, cfg.sys_bnd_wr, surv_first=True)
 
         csys, varis = gen_bnb.get_csys_from_brs(brs, varis, st_br_to_cs)
         #varis[node] = variable.Variable(node, values = ['f', 's', 'u'])
