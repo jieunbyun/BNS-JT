@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import networkx as nx
 import numpy as np
 
-from BNS_JT import model, config, cpm, variable, trans, brc, gen_bnb
+from BNS_JT import model, config, cpm, variable, trans, brc, branch
 
 HOME = Path(__file__).parent
 

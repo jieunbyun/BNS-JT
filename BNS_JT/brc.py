@@ -88,23 +88,6 @@ def run(varis, probs, sys_fun, max_sf, max_nb, pf_bnd_wr=0.0, surv_first=True, r
 
     return brs, rules, sys_res, monitor
 
-'''
-def init_branch(down, up, rules):
-    """
-    returns initial branch based on given rules and states
-    Args:
-        down: (dict): all components in the worst state
-        up: (dict): all components in the best state
-        rules (list): rules list
-    Returns:
-        list: initial branch
-    """
-
-    down_state = get_state(down, rules)
-    up_state = get_state(up, rules)
-
-    return [branch.Branch(down, up, down_state, up_state, 1.0)]
-'''
 
 def init_monitor():
 
@@ -141,8 +124,8 @@ def update_monitor(monitor, brs, rules, start):
 
     end = time.time() # monitoring purpose
 
-    pr_bf = sum([b[4] for b in brs if b.up_state == 'f']) # prob. of failure branches
-    pr_bs = sum([b[4] for b in brs if b.down_state == 's']) # prob. of survival branches
+    pr_bf = sum([br.p for br in brs if br.up_state == 'f']) # prob. of failure branches
+    pr_bs = sum([br.p for br in brs if br.down_state == 's']) # prob. of survival branches
 
     monitor['pf_low'].append(pr_bf) # lower bound on pf
     monitor['pf_up'].append(1.0 - pr_bs)  # upper bound of pf
@@ -238,45 +221,14 @@ def plot_monitoring(monitor, output_file='monitor.png'):
 def get_csys_from_brs(brs, varis, st_br_to_cs):
     """
 
-
     """
     c_sys = np.empty(shape=(0, len(brs[0].up.keys()) + 1), dtype=int)
 
     for br in brs:
-        varis, c = get_c_from_br(br, varis, st_br_to_cs)
+        varis, c = br.get_c(varis, st_br_to_cs)
         c_sys = np.vstack([c_sys, c])
 
     return c_sys, varis
-
-
-def get_c_from_br(br, varis, st_br_to_cs):
-    """
-    return updated varis and state
-    br: a single branch
-    varis: a dictionary of variables
-    st_br_to_cs: a dictionary that maps state in br to state in C matrix of a system event
-    """
-    names = list(br.up.keys())
-    cst = np.zeros(len(names) + 1, dtype=int) # (system, compponents)
-
-    if br.down_state == br.up_state:
-        cst[0] = st_br_to_cs[br.down_state]
-    else:
-        cst[0] = st_br_to_cs['u']
-
-    for i, x in enumerate(names):
-        down = br.down[x]
-        up = br.up[x]
-
-        if up > down:
-            states = list(range(down, up + 1))
-            varis[x], st = variable.get_composite_state(varis[x], states)
-        else:
-            st = up
-
-        cst[i + 1] = st
-
-    return varis, cst
 
 
 def get_state(comp, rules):
@@ -314,161 +266,6 @@ def get_state(comp, rules):
         print(f"Conflicting rules found: {rules_s} vs. {rules_f}. The given system is not coherent.")
 
     return state
-
-
-def get_compat_rules(br, rules):
-    """
-    lower: lower bound on component vector state in dictionary
-           e.g., {'x1': 0, 'x2': 0 ... }
-    upper: upper bound on component vector state in dictionary
-           e.g., {'x1': 2, 'x2': 2 ... }
-    rules: dict of rules
-           e.g., {'s': [{'x1': 2, 'x2': 2}],
-                  'f': [{'x1': 2, 'x2': 0}]}
-    """
-    #assert isinstance(lower, dict), f'lower should be a dict: {type(lower)}'
-    #assert isinstance(upper, dict), f'upper should be a dict: {type(upper)}'
-    assert isinstance(rules, dict), f'rules should be a dict: {type(rules)}'
-
-    compat_rules = {'s': [], 'f': []}
-    for rule in rules['s']:
-        if all([br.up[k] >= v for k, v in rule.items()]):
-            c_rule = {k: v for k, v in rule.items() if v > br.down[k]}
-            if c_rule:
-                compat_rules['s'].append(c_rule)
-
-    for rule in rules['f']:
-        if all([br.down[k] <= v for k, v in rule.items()]):
-            c_rule = {k: v for k, v in rule.items() if v < br.up[k]}
-            if c_rule:
-                compat_rules['f'].append(c_rule)
-
-    return compat_rules
-
-
-
-def approx_joint_prob_compat_rule(br, rule, rule_st, probs):
-
-    #assert isinstance(lower, dict), f'lower should be a dict: {type(lower)}'
-    #assert isinstance(upper, dict), f'upper should be a dict: {type(upper)}'
-    assert isinstance(rule, dict), f'rules should be a dict: {type(rules)}'
-
-    p = 1.0
-    if rule_st == 's':
-        for x, v in rule.items():
-            p *= sum([probs[x][i] for i in range(v, br.up[x] + 1)])
-
-    elif rule_st == 'f':
-        for x, v in rule.items():
-            p *= sum([probs[x][i] for i in range(br.down[x], v + 1)])
-
-    return p
-
-
-def approx_branch_prob(down, up, probs):
-    """
-
-    """
-    p = 1.0
-    for k, v in down.items():
-        p *= sum([probs[k][x] for x in range(v, up[k] + 1)])
-
-    return p
-
-
-def get_decomp_comp_using_probs(br, rules, probs):
-    """
-    lower: lower bound on component vector state in dictionary
-           e.g., {'x1': 0, 'x2': 0 ... }
-    upper: upper bound on component vector state in dictionary
-           e.g., {'x1': 2, 'x2': 2 ... }
-    rules: dict of rules
-           e.g., {'s': [{'x1': 2, 'x2': 2}], 'f': [{'x3': 0}]}
-    probs: dict
-    """
-    assert isinstance(br, branch.Branch), f'br should be an instance of Branch: {type(br)}'
-    #assert isinstance(br.lower, dict), f'lower should be a dict: {type(lower)}'
-    #assert isinstance(br.upper, dict), f'upper should be a dict: {type(upper)}'
-    assert isinstance(rules, dict), f'rules should be a dict: {type(rules)}'
-
-    # get an order of component by their frequency in rules
-    rules_st = [(k, x) for k, rule in rules.items() for x in rule]
-    comps = Counter(chain.from_iterable([x[1] for x in rules_st]))
-    comps = [x[0] for x in comps.most_common()]
-
-    # get an order R by P  (higher to lower)
-    if len(rules_st) > 1:
-        rules_st = sorted(rules_st, key=lambda x: approx_joint_prob_compat_rule(br, x[1], x[0], probs), reverse=True)
-
-    for st, rule in rules_st:
-        for c in comps:
-            state = None
-            if c in rule and st == 's':
-                state = rule[c]
-
-            elif c in rule and st == 'f':
-                state = rule[c] + 1
-
-            try:
-                if br.down[c] < state and state <= br.up[c]:
-                    return c, state
-
-            except TypeError:
-                pass
-
-
-def get_decomp_comp_using_probs_old(lower, upper, rules, probs):
-    """
-    lower: lower bound on component vector state in dictionary
-           e.g., {'x1': 0, 'x2': 0 ... }
-    upper: upper bound on component vector state in dictionary
-           e.g., {'x1': 2, 'x2': 2 ... }
-    rules: dict of rules
-           e.g., {({'x1': 2, 'x2': 2}, 's')}
-    probs: dict
-    """
-    assert isinstance(lower, dict), f'lower should be a dict: {type(lower)}'
-    assert isinstance(upper, dict), f'upper should be a dict: {type(upper)}'
-    assert isinstance(rules, dict), f'rules should be a dict: {type(rules)}'
-    """
-    #amended rules
-    a_rules = []
-    for rule in rules:
-        if rule[1] == 'f':
-            a_rules.append(({k: v + 1 for k, v in rule[0].items()}, 'f'))
-        else:
-            a_rules.append(rule)
-    """
-    # get an order of x by their frequency in rules
-    _rules = [x for rule in rules.values() for x in rule]
-    _rules_st = [k for k, rule in rules.items() for x in rule]
-    comp = Counter(chain.from_iterable(_rules))
-    comp = [x[0] for x in comp.most_common()]
-
-    P = {}
-    for rule, rule_st in zip(_rules, _rules_st):
-
-        P[tuple(rule)] = approx_joint_prob_compat_rule(lower, upper, rule, rule_st, probs)
-
-    # get an order R by P  (higher to lower)
-    a_rules = sorted(_rules, key=lambda x: P[tuple(x)], reverse=True)
-
-    for rule in a_rules:
-        for c in comp:
-            if c in rule:
-                if rule in rules['s']:
-                    st = rule[c]
-                else:
-                    st = rule[c] + 1
-
-                if (lower[c] < st) and (st <= upper[c]):
-                    xd = c, st
-                    break
-        else:
-            continue
-        break
-
-    return xd
 
 
 def update_rule_set(rules, new_rule):
@@ -539,40 +336,6 @@ def run_sys_fn(comp, sys_fun, varis):
     return rule, sys_res
 
 
-def get_new_branch(br, rules, probs, xd, xd_st, up_flag=True):
-    """
-
-    """
-    if up_flag:
-        up = br.up.copy()
-        up[xd] = xd_st - 1
-        up_st = get_state(up, rules)
-
-        down = br.down
-        down_st = br.down_state
-
-    else:
-        up = br.up
-        up_st = br.up_state
-
-        down = br.down.copy()
-        down[xd] = xd_st
-        down_st = get_state(down, rules)
-
-    p = approx_branch_prob(down, up, probs)
-
-    return branch.Branch(down, up, down_st, up_st, p)
-    """
-    if down_st == up_st:
-        if (~up_flag and down_st != 'u') or (up_flag and up_st != 'u'):
-           cr_new = {'s':[], 'f':[]}
-        else:
-           cr_new = get_compat_rules(down, up, rules)
-    else:
-        cr_new = get_compat_rules(down, up, rules)
-    return br_new
-    """
-
 def init_branch(varis, rules):
     """
     initialise a branch set (x_min, x_max, s(x_min), s(x_max), 1)
@@ -593,7 +356,7 @@ def decomp_depth_first(varis, rules, probs, max_nb):
     """
 
     brs = init_branch(varis, rules)  # D1
-    crules = [get_compat_rules(brs[0], rules)]
+    crules = [brs[0].get_compat_rules(rules)]
 
     go = True
     while go:
@@ -614,12 +377,12 @@ def decomp_depth_first(varis, rules, probs, max_nb):
 
             else:
                 # D6??
-                xd, xd_st = get_decomp_comp_using_probs(br, cr, probs)
+                xd, xd_st = br.get_decomp_comp_using_probs(cr, probs)
 
                 # D3: evaluate sl and su
                 for up_flag in [True, False]:
-                    br_new = get_new_branch(br, rules, probs, xd, xd_st, up_flag)
-                    crule_new = get_compat_rules(br_new, rules)
+                    br_new = br.get_new_branch(rules, probs, xd, xd_st, up_flag)
+                    crule_new = br_new.get_compat_rules(rules)
                     brs_new.append(br_new)
                     crules_new.append(crule_new)
 
@@ -657,15 +420,15 @@ def get_comp_st(brs, surv_first=True, varis=None, probs=None):
         brs = sorted(brs, key=lambda x: x.p, reverse=True)
 
         x_star = None
-        for b in brs: # look at up_state first
-            if b.up_state == 'u':
-                x_star = b.up
+        for br in brs: # look at up_state first
+            if br.up_state == 'u':
+                x_star = br.up
                 break
 
         if x_star == None:
-            for b in brs: # if all up states are known then down states
-                if b.down_state == 'u':
-                    x_star = b.down
+            for br in brs: # if all up states are known then down states
+                if br.down_state == 'u':
+                    x_star = br.down
                     break
 
     else:
@@ -674,16 +437,16 @@ def get_comp_st(brs, surv_first=True, varis=None, probs=None):
         best = {k: len(v.values) - 1 for k, v in varis.items()}
 
         brs_new = []
-        for b in brs:
-            if b.up_state == 'u':
-                p_new = approx_branch_prob(b.up, best, probs)
-                b_new = branch.Branch(b.up, best, 'u', 's', p_new)
-                brs_new.append(b_new)
+        for br in brs:
+            if br.up_state == 'u':
+                p_new = branch.approx_prob_by_comps(br.up, best, probs)
+                br_new = branch.Branch(br.up, best, 'u', 's', p_new)
+                brs_new.append(br_new)
 
-            if b.down_state =='u':
-                p_new = approx_branch_prob(worst, b.down, probs)
-                b_new = branch.Branch(worst, b.down, 'f', 'u', p_new)
-                brs_new.append(b_new)
+            if br.down_state =='u':
+                p_new = branch.approx_prob_by_comps(worst, br.down, probs)
+                b_new = branch.Branch(worst, br.down, 'f', 'u', p_new)
+                brs_new.append(br_new)
 
         x_star = None
         if brs_new:

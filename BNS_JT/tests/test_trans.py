@@ -141,7 +141,7 @@ def setup_bridge(data_bridge):
     ax = fig.add_subplot()
     nx.draw(G, pos, with_labels=True, ax=ax)
     nx.draw_networkx_edge_labels(G, pos, edge_labels=edge_labels, ax=ax)
-    fig.savefig(HOME.joinpath('graph.png'), dpi=200)
+    fig.savefig(HOME.joinpath('graph_bridge.png'), dpi=100)
 
     # Arcs (components): P(X_i | GM = GM_ob ), i = 1 .. N (= nArc)
     cpms_arc = {}
@@ -220,6 +220,7 @@ def setup_bridge(data_bridge):
                            C = c10,
                            p = [1, 1, 1, 1],
                            )
+    #probs = {k: cpms_arc[k].p[:, 0].tolist() for k in arcs.keys()}
 
     return cpms_arc, vars_arc, arcs, var_ODs
 

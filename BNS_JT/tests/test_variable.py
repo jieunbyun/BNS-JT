@@ -4,8 +4,14 @@ from collections import namedtuple
 
 from BNS_JT import variable
 
+
 np.set_printoptions(precision=3)
 #pd.set_option.display_precision = 3
+
+def compare_list_of_sets(a, b):
+
+    return set([tuple(x) for x in a]) == set([tuple(x) for x in b])
+
 
 def test_init1():
     name = 'A'
@@ -136,3 +142,47 @@ def test_eq3():
     result = [B.index(x) if x in B else False for x in A]
 
     assert result == [0, 0, 0]
+
+
+def test_get_composite_state1():
+
+    varis = {}
+    varis['e1'] = variable.Variable(name='e1', values=[1.5, 0.3, 0.15])
+
+    states = [1, 2]
+    result = variable.get_composite_state(varis['e1'], states)
+    expected = [{0}, {1}, {2}, {0, 1}, {0, 2}, {1, 2}, {0, 1, 2}]
+    assert compare_list_of_sets(result[0].B, expected)
+    assert result[1] == 5
+
+
+def test_get_composite_state2():
+
+    #od_pair, arcs, varis = main_sys
+    varis = {}
+    varis['e1'] = variable.Variable(name='e1', values=[1.5, 0.3, 0.15])
+
+    states = [1, 2]
+    result = variable.get_composite_state(varis['e1'], states)
+
+    expected = [{0}, {1}, {2}, {0, 1}, {0, 2}, {1, 2}, {0, 1, 2}]
+    #expected = [{0}, {1}, {2}, {1, 2}]
+    assert compare_list_of_sets(result[0].B, expected)
+    assert result[1] == 5
+
+
+def test_get_composite_state3():
+
+    #od_pair, arcs, varis = main_sys
+    varis = {}
+    varis['e1'] = variable.Variable(name='e1', values=[1.5, 0.3, 0.15])
+    states = [0, 2]
+    result = variable.get_composite_state(varis['e1'], states)
+
+    expected = [{0}, {1}, {2}, {0, 1}, {0, 2}, {1, 2}, {0, 1, 2}]
+    #expected = [{0}, {1}, {2}, {0, 2}]
+    assert compare_list_of_sets(result[0].B, expected)
+    assert result[1] == 4
+
+
+
