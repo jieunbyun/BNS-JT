@@ -76,7 +76,7 @@ def setup_mcs_product():
     return M
 
 
-@pytest.fixture()
+@pytest.fixture
 def setup_Msys_Mcomps():
     varis, cpms = {}, {}
 
@@ -886,3 +886,48 @@ def test_get_inf_vars(setup_hybrid):
 
     result = operation.get_inf_vars(cpms, ['sys'], ve_ord=var_elim_order)
     assert result == ['haz', 'x0', 'x1', 'sys']
+
+@pytest.fixture()
+def sys_2comps_2haz():
+
+    varis, cpms = {}, {}
+
+    # Two hazard events
+    varis['h0'] = variable.Variable(name='h0', values=['low', 'high'])
+    cpms['h0'] = cpm.Cpm( [varis['h0']], 1, np.array([0, 1]), p = [0.9, 0.1] )
+
+    varis['h1'] = variable.Variable(name='h1', values=['low', 'high'])
+    cpms['h1'] = cpm.Cpm( [varis['h1']], 1, np.array([0, 1]), p = [0.8, 0.2] )
+
+
+    # Component events. x1 is a highly fragile component.
+    Cx = np.array([[0,0,0], [1,0,0], [0,1,0], [1,1,0],
+                    [0,0,1], [1,0,1], [0,1,1], [1,1,1]])
+    
+    varis['x0'] = variable.Variable(name='x0', values=['fail', 'surv'])
+    cpms['x0'] = cpm.Cpm( [varis['x0'], varis['h0'], varis['h1']], 1, Cx,
+                         p = [0.1, 0.9, 0.2, 0.8, 0.3, 0.7, 0.4, 0.6] )
+    
+    varis['x1'] = variable.Variable(name='x1', values=['fail', 'surv'])
+    cpms['x1'] = cpm.Cpm( [varis['x1'], varis['h0'], varis['h1']], 1, Cx,
+                         p = [0.5, 0.5, 0.6, 0.4, 0.7, 0.3, 0.8, 0.2] )
+
+
+    # This is parallel system
+    varis['sys'] = variable.Variable(name='sys', values=['fail', 'surv'])
+    cpms['sys'] = cpm.Cpm(variables=[varis['sys'], varis['x0'], varis['x1']], no_child=1,
+                          C=np.array([[1,1,2],[1,0,1],[0,0,0]]), p=np.array([1,1,1], dtype=float))
+
+    return varis, cpms
+
+
+def test_variable_elim_cond0(sys_2comps_2haz):
+
+    varis, cpms = sys_2comps_2haz
+
+    ve_order = ['x0', 'x1', 'sys']
+    cpms_ve = [cpms[k] for k in ve_order]
+    M = operation.variable_elim_cond(cpms_ve, ve_order, [cpms['h0'], cpms['h1']])
+
+    np.testing.assert_array_equal(M.C, [[0], [1]])
+    np.testing.assert_array_almost_equal(M.p, [0.9102, 0.0898], decimal=3)
