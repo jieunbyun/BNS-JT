@@ -6,7 +6,7 @@
 .ipynb_checkpoints
 *.coverage
 *.swp
-__pycache__
+__pycache__/
 # pycharm
 .idea
 .vscode

@@ -59,9 +59,9 @@ class Cpm(object):
         return self._no_child
 
     @no_child.setter
-    def no_child(self,value):
+    def no_child(self, value):
         assert isinstance(value, (int, np.int32, np.int64)), 'no_child must be a numeric scalar'
-        assert value <= len(self._variables), 'no_child must be less than or equal to the number of variables'
+        assert value <= len(self.variables), f'no_child must be less than or equal to the number of variables: {value}, {len(self.variables)}'
         self._no_child = value
 
     @property
@@ -189,7 +189,6 @@ class Cpm(object):
         _variable = [x.name for x in self.variables]
         return textwrap.dedent(f'''\
 {self.__class__.__name__}(variables={_variable}, no_child={self.no_child}, C={self.C}, p={self.p}''')
-
 
     def get_variables(self, item):
 

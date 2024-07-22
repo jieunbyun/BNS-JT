@@ -56,6 +56,39 @@ def main_sys(data_bridge):
     return G, od_pair, arcs, varis
 
 
+@pytest.fixture(scope='package')
+def setup_brs(main_sys):
+
+    G, od_pair, arcs, d_varis = main_sys
+
+    varis = copy.deepcopy(d_varis)
+
+    # Intact state of component vector: zero-based index 
+    comps_st_itc = {k: len(v.values) - 1 for k, v in varis.items()} # intact state (i.e. the highest state)
+    d_time_itc, path_n, path_itc = trans.get_time_and_path_given_comps(comps_st_itc, G, od_pair, varis)
+
+    # defines the system failure event
+    thres = 2
+    # Given a system function, i.e. sf_min_path, it should be represented by a function that only has "comps_st" as input.
+    sys_fun = trans.sys_fun_wrap(G, od_pair, varis, thres * d_time_itc)
+
+    p = [1/3, 1/3, 1/3]
+    probs = {k: p for k in varis.keys()}
+
+    file_brs = Path(__file__).parent.joinpath('brs_bridge.pk')
+    if file_brs.exists():
+        with open(file_brs, 'rb') as fi:
+            brs = pickle.load(fi)
+            print(f'{file_brs} loaded')
+    else:
+        # Branch and bound
+        output_path = Path(__file__).parent
+        #pdb.set_trace()
+        brs, rules, sys_res, monitor = brc.run(varis, probs, sys_fun, max_sf=1000, max_nb=100)
+
+    return varis, brs
+
+
 @pytest.mark.skip('NYI')
 @pytest.fixture()
 def main_sys_bridge(data_bridge):
@@ -196,61 +229,6 @@ def test_init_branch1():
     assert brs[0].up == {f'e{i}': 2 for i in range(1, 7)}
 
 
-def test_approx_branch_prob():
-
-    d = {f'e{i}': 0 for i in range(1, 7)}
-    u = {f'e{i}': 2 for i in range(1, 7)}
-
-    p1 = {0: 0.05, 1: 0.15, 2: 0.80}
-    p2 = {0: 0.01, 1: 0.09, 2: 0.90}
-
-    p = {'e1': p1, 'e2': p1, 'e3': p1,
-         'e4': p2, 'e5': p2, 'e6': p2}
-
-    result = brc.approx_branch_prob(d, u, p)
-    assert result == 1.0
-
-    d = {'e1': 2, 'e2': 0, 'e3': 2, 'e4': 2, 'e5': 2, 'e6': 2}
-    u = {f'e{i}': 2 for i in range(1, 7)}
-
-    result = brc.approx_branch_prob(d, u, p)
-    assert pytest.approx(result) == 0.80**2*0.90**3
-
-    d = {'e1': 0, 'e2': 1, 'e3': 0, 'e4': 0, 'e5': 0, 'e6': 0}
-    u = {f'e{i}': 2 for i in range(1, 7)}
-
-    result = brc.approx_branch_prob(d, u, p)
-    assert pytest.approx(result) == 0.95
-
-    d = {'e1': 0, 'e2': 0, 'e3': 0, 'e4': 0, 'e5': 0, 'e6': 0}
-    u = {'e1': 2, 'e2': 0, 'e3': 2, 'e4': 2, 'e5': 2, 'e6': 2}
-
-    result = brc.approx_branch_prob(d, u, p)
-    assert pytest.approx(result) == 0.05
-
-
-def test_approx_joint_prob_compat_rules():
-
-    p1 = {0: 0.05, 1: 0.15, 2: 0.80}
-    p2 = {0: 0.01, 1: 0.09, 2: 0.90}
-
-    p = {'e1': p1, 'e2': p1, 'e3': p1,
-         'e4': p2, 'e5': p2, 'e6': p2}
-
-    d = {f'e{i}': 0 for i in range(1, 7)}
-    u = {f'e{i}': 2 for i in range(1, 7)}
-    br = branch.Branch(d, u, 's', 's', 1.0)
-    rule = {'e2': 2, 'e5': 2}
-    rule_st = 's'
-
-    result = brc.approx_joint_prob_compat_rule(br, rule, rule_st, p)
-    assert pytest.approx(result) == 0.8*0.9
-
-    rule = {'e1': 0, 'e2': 0, 'e3': 0, 'e4': 0, 'e5': 0, 'e6': 0}
-    rule_st = 'f'
-
-    result = brc.approx_joint_prob_compat_rule(br, rule, rule_st, p)
-    assert pytest.approx(result) == 0.05**3*0.01**3
 
 
 def test_get_state0():
@@ -265,44 +243,6 @@ def test_get_state0():
     result = brc.get_state(cst, rules)
     assert result == 'u'
 
-
-def test_get_compat_rules():
-
-    upper = {f'e{i}': 2 for i in range(1, 7)}
-    lower = {f'e{i}': 0 for i in range(1, 7)}
-    br = branch.Branch(lower, upper, 's', 's', 1.0)
-    rules = {'s': [], 'f': []}
-    result = brc.get_compat_rules(br, rules)
-    assert result == rules
-
-    rules = {'s': [{'e2': 2, 'e5': 2}], 'f': []}
-    result = brc.get_compat_rules(br, rules)
-    assert result == {'s': [{'e2': 2, 'e5': 2}], 'f': []}
-
-    rules = {'s': [{'e2': 1, 'e5': 2}], 'f': [{f'e{i}': 0 for i in range(1, 7)}]}
-    result = brc.get_compat_rules(br, rules)
-    assert result['s'] == rules['s']
-    assert result['f'] == rules['f']
-
-    upper = {'e1': 2, 'e2': 0, 'e3': 2, 'e4': 2, 'e5': 2, 'e6': 2}
-    lower = {f'e{i}': 0 for i in range(1, 7)}
-    br = branch.Branch(lower, upper, 's', 's', 1.0)
-    rules = {'s': [{'e2': 1, 'e5': 2}],
-             'f': [{f'e{i}': 0 for i in range(1, 7)}]}
-    result = brc.get_compat_rules(br, rules)
-    assert result['s'] == []
-    assert result['f'] == [{'e1': 0, 'e3': 0, 'e4': 0, 'e5': 0, 'e6': 0}]
-
-    upper = {'e1': 2, 'e2': 2, 'e3': 2, 'e4': 2, 'e5': 2, 'e6': 2}
-    lower = {'e1': 2, 'e2': 0, 'e3': 2, 'e4': 2, 'e5': 2, 'e6': 2}
-    br = branch.Branch(lower, upper, 's', 's', 1.0)
-    rules = {'s': [{'e2': 1, 'e5': 2}, {'e1': 2, 'e3': 2, 'e5': 2},
-                   {'e2': 2, 'e4': 2, 'e6': 2}],
-             'f': [{f'e{i}': 0 for i in range(1, 7)}]}
-
-    result = brc.get_compat_rules(br, rules)
-    assert result['s'] == [{'e2': 1}, {'e2': 2}]
-    assert result['f'] == []
 
 
 def test_get_state1():
@@ -469,75 +409,6 @@ def test_get_composite_state3():
     assert result[1] == 4
 
 
-def test_get_c_from_br(main_sys):
-
-    G, _, _, d_varis = main_sys
-
-    varis = copy.deepcopy(d_varis)
-
-    st_br_to_cs = {'f': 0, 's': 1, 'u': 2}
-
-    # test1
-    br = branch.Branch({'e1': 1, 'e2': 0, 'e3': 0, 'e4': 0, 'e5': 0, 'e6': 0},
-                       {'e1': 2, 'e2': 0, 'e3': 1, 'e4': 2, 'e5': 2, 'e6': 2}, 'f', 'f')
-
-    varis, cst = brc.get_c_from_br(br, varis, st_br_to_cs)
-
-    assert cst.tolist() == [0, 5, 0, 3, 6, 6, 6]
-    """
-    assert compare_list_of_sets(varis['e1'].B, [{0}, {1}, {2}, {0, 1}, {0, 2}, {1, 2}, {0, 1, 2}])
-    assert compare_list_of_sets(varis['e2'].B, [{0}, {1}, {2}])
-    assert compare_list_of_sets(varis['e3'].B, [{0}, {1}, {2}, {0, 1}])
-    assert compare_list_of_sets(varis['e4'].B, [{0}, {1}, {2}, {0, 1, 2}])
-    assert compare_list_of_sets(varis['e5'].B, [{0}, {1}, {2}, {0, 1, 2}])
-    assert compare_list_of_sets(varis['e6'].B, [{0}, {1}, {2}, {0, 1, 2}])
-    """
-
-    # test2
-    # using the previous output as an input
-    br = branch.Branch({'e1': 0, 'e2': 0, 'e3': 2, 'e4': 0, 'e5': 0, 'e6': 0},
-                       {'e1': 2, 'e2': 0, 'e3': 2, 'e4': 2, 'e5': 1, 'e6': 2}, 'f', 'f')
-
-    varis, cst = brc.get_c_from_br(br, varis, st_br_to_cs)
-    assert cst.tolist() == [0, 6, 0, 2, 6, 3, 6]
-    """
-    assert compare_list_of_sets(varis['e1'].B, [{0}, {1}, {2}, {1, 2}, {0, 1, 2}])
-    assert compare_list_of_sets(varis['e2'].B, [{0}, {1}, {2}])
-    assert compare_list_of_sets(varis['e3'].B, [{0}, {1}, {2}, {0, 1}])
-    assert compare_list_of_sets(varis['e4'].B, [{0}, {1}, {2}, {0, 1, 2}])
-    assert compare_list_of_sets(varis['e5'].B, [{0}, {1}, {2}, {0, 1, 2}, {0, 1}])
-    assert compare_list_of_sets(varis['e6'].B, [{0}, {1}, {2}, {0, 1, 2}])
-    """
-
-def test_get_csys_from_brs(setup_brs):
-
-    varis, brs = setup_brs
-
-    st_br_to_cs = {'f': 0, 's': 1, 'u': 2}
-    csys, varis = brc.get_csys_from_brs(brs, varis, st_br_to_cs)
-
-    for i in range(1, 7):
-        assert compare_list_of_sets(varis[f'e{i}'].B, [{0}, {1}, {2}, {0, 1}, {0, 2}, {1, 2}, {0, 1, 2}])
-    #assert compare_list_of_sets(varis['e1'].B, [{0}, {1}, {2}, {0, 1}, {0, 1, 2}])
-    #assert compare_list_of_sets(varis['e2'].B, [{0}, {1}, {2}, {1, 2}])
-    #assert compare_list_of_sets(varis['e3'].B, [{0}, {1}, {2}, {0, 1}, {0, 1, 2}])
-    #assert compare_list_of_sets(varis['e4'].B, [{0}, {1}, {2}, {0, 1, 2}, {0, 1}])
-    #assert compare_list_of_sets(varis['e5'].B, [{0}, {1}, {2}, {0, 1, 2}, {0, 1}, {1, 2}])
-    #assert compare_list_of_sets(varis['e6'].B, [{0}, {1}, {2}, {0, 1, 2}, {0, 1}])
-
-    expected = np.array([[0, 3, 0, 6, 6, 6, 6],
-                         [0, 2, 0, 3, 6, 6, 6],
-                         [0, 2, 0, 2, 6, 3, 6],
-                         [0, 6, 5, 6, 3, 0, 6],
-                         [0, 6, 1, 6, 2, 0, 3],
-                         [0, 6, 2, 6, 2, 0, 0],
-                         [1, 2, 0, 2, 6, 2, 6],
-                         [1, 6, 2, 6, 2, 0, 1],
-                         [1, 6, 5, 6, 2, 0, 2],
-                         [1, 6, 5, 6, 6, 5, 6]])
-
-    assert compare_list_of_sets(csys, expected)
-
 
 def test_inference1(setup_inference):
 
@@ -655,210 +526,380 @@ def test_get_comp_st2():
     assert st == {'e1': 1, 'e2': 0, 'e3': 1}
 
 
-def test_get_new_branch2():
+def test_get_connectivity_given_comps4():
 
-    br = branch.Branch(down={'e1': 1, 'e2': 0, 'e3': 0},
-                       up={'e1': 1, 'e2': 1, 'e3': 1},
-                       down_state='u', up_state='s', p=0.9)
-    rules = {'s': [{'e1': 1, 'e2': 1}], 'f': []}
+    x_star = {'e1': 1, 'e2': 0, 'e3': 1}
+    varis = {}
+    for i in range(1, 4):
+        varis[f'e{i}'] = variable.Variable(name=f'e{i}', values=['Fail', 'Survive'])
 
-    xd, xd_st = 'e2', 1
+    od_pair = ('n1', 'n3')
+    edges = {
+         'e1': {'origin': 'n1', 'destination': 'n2', 'link_capacity': None, 'weight': 1.0},
+         'e2': {'origin': 'n2', 'destination': 'n3', 'link_capacity': None, 'weight': 1.0},
+         'e3': {'origin': 'n2', 'destination': 'n3', 'link_capacity': None, 'weight': 1.0},
+         }
 
-    probs = {'e1': {0: 0.1, 1: 0.9},
-             'e2': {0: 0.2, 1: 0.8},
-             'e3': {0: 0.3, 1: 0.7}}
+    G = nx.MultiDiGraph()
+    G.add_edge('n1', 'n2', label='e1', key='e1', weight=1)
+    G.add_edge('n2', 'n3', label='e2', key='e2', weight=1)
+    G.add_edge('n2', 'n3', label='e3', key='e3', weight=1)
+    G.add_node('n1', key='n1', label='n1')
+    G.add_node('n2', key='n2', label='n2')
+    G.add_node('n3', key='n3', label='n3')
 
-    out = brc.get_new_branch(br, rules, probs, xd, xd_st)
-    assert out.down == {'e1': 1, 'e2': 0, 'e3': 0}
-    assert out.up == {'e1': 1, 'e2': 0, 'e3': 1}
-    assert out.down_state == 'u'
-    assert out.up_state == 'u'
-    assert out.p == pytest.approx(0.9*0.2)
+    s_path_edges, s_path_nodes = trans.get_connectivity_given_comps(x_star, G, od_pair)
 
-    out = brc.get_new_branch(br, rules, probs, xd, xd_st, up_flag=False)
-    assert out.down == {'e1': 1, 'e2': 1, 'e3': 0}
-    assert out.up == {'e1': 1, 'e2': 1, 'e3': 1}
-    assert out.down_state == 's'
-    assert out.up_state == 's'
-    assert out.p == pytest.approx(0.9*0.8)
+    assert s_path_edges == ['e1', 'e3']
+    assert s_path_nodes == ['n1', 'n2', 'n3']
 
+    #sys_fun = trans.sys_fun_wrap(od_pair, edges, varis)
 
-def test_get_new_branch1():
+    #sys_val, sys_st, comp_st_min = sys_fun(x_star)
 
-    br = branch.Branch(down={'e1': 0, 'e2': 0, 'e3': 0, 'e4': 0, 'e5': 0, 'e6': 0, 'e7': 0, 'e8': 0, 'e9': 0, 'e10': 0, 'e11': 0, 'e12': 0, 'e13': 0, 'e14': 0, 'e15': 0, 'e16': 0, 'e17': 0, 'e18': 0, 'e19': 0, 'e20': 0, 'e21': 0}, up={'e1': 2, 'e2': 2, 'e3': 2, 'e4': 2, 'e5': 2, 'e6': 2, 'e7': 2, 'e8': 2, 'e9': 2, 'e10': 2, 'e11': 2, 'e12': 2, 'e13': 2, 'e14': 2, 'e15': 2, 'e16': 2, 'e17': 2, 'e18': 2, 'e19': 2, 'e20': 2, 'e21': 2}, down_state='u', up_state='s', p=1.0)
-
-    rules = {'s': [{'e3': 1, 'e9': 1, 'e14': 1, 'e17': 1}], 'f': []}
-    probs ={'e1': {0: 0.1163, 1: 0.0616, 2: 0.8221}, 'e2': {0: 0.1624, 1: 0.1224, 2: 0.7152}, 'e3': {0: 0.2014, 1: 0.09, 2: 0.7086}, 'e4': {0: 0.0689, 1: 0.1155, 2: 0.8156}, 'e5': {0: 0.1863, 1: 0.1366, 2: 0.6771}, 'e6': {0: 0.2244, 1: 0.0214, 2: 0.7542}, 'e7': {0: 0.222, 1: 0.1334, 2: 0.6446}, 'e8': {0: 0.1265, 1: 0.0762, 2: 0.7973}, 'e9': {0: 0.2993, 1: 0.0343, 2: 0.6664}, 'e10': {0: 0.3016, 1: 0.0813, 2: 0.6171}, 'e11': {0: 0.2385, 1: 0.0785, 2: 0.683}, 'e12': {0: 0.346, 1: 0.0269, 2: 0.6271}, 'e13': {0: 0.3512, 1: 0.0441, 2: 0.6047}, 'e14': {0: 0.0326, 1: 0.0182, 2: 0.9492}, 'e15': {0: 0.0231, 1: 0.1268, 2: 0.8501}, 'e16': {0: 0.0373, 1: 0.083, 2: 0.8797}, 'e17': {0: 0.0222, 1: 0.0192, 2: 0.9586}, 'e18': {0: 0.0052, 1: 0.0411, 2: 0.9537}, 'e19': {0: 0.3935, 1: 0.0625, 2: 0.544}, 'e20': {0: 0.0651, 1: 0.0457, 2: 0.8892}, 'e21': {0: 0.126, 1: 0.0495, 2: 0.8245}}
-
-    xd, xd_st = 'e3', 1
-
-    # up
-    br_new = brc.get_new_branch(br, rules, probs, xd, xd_st, up_flag=True)
-    cr_new = brc.get_compat_rules(br_new, rules)
-    assert br_new.down_state == 'u'
-    assert br_new.up_state == 'u'
-    assert br_new.p == pytest.approx(0.2014)
-    assert br_new.down == {f'e{i}': 0 for i in range(1, 22)}
-    assert br_new.up == {f'e{i}': 0 if i==3 else 2 for i in range(1, 22)}
-    assert cr_new['s'] == []
-    assert cr_new['f'] == []
-
-    # down
-    br_new = brc.get_new_branch(br, rules, probs, xd, xd_st, up_flag=False)
-    cr_new = brc.get_compat_rules(br_new, rules)
-    assert cr_new['s'] == [{'e9': 1, 'e14': 1, 'e17': 1}]
-    assert cr_new['f'] == []
-    assert br_new.down_state == 'u'
-    assert br_new.up_state == 's'
-    assert br_new.p == pytest.approx(0.7986)
-    assert br_new.up == {f'e{i}': 2 for i in range(1, 22)}
-    assert br_new.down == {f'e{i}': 1 if i==3 else 0 for i in range(1, 22)}
+    #assert sys_st == 's'
+    #assert sys_val == None
+    #assert comp_st_min == {'e1': 1, 'e3': 1}
 
 
-def test_get_decomp_comp_using_probs0():
+@pytest.mark.skip('NYI')
+def test_get_csys_from_brs2(main_sys_bridge):
 
-    rules = {'s': [{'e2': 2, 'e5': 2}],
-            'f': [{'e1': 0, 'e2': 0, 'e3': 0, 'e4': 0, 'e5': 0, 'e6': 0}]}
-    upper = {'e1': 2, 'e2': 2, 'e3': 2, 'e4': 2, 'e5': 2, 'e6': 2}
-    lower = {'e1': 0, 'e2': 0, 'e3': 0, 'e4': 0, 'e5': 0, 'e6': 0}
-    br = branch.Branch(lower, upper, 's', 's', 1.0)
+    od_pair, arcs, varis = main_sys_bridge
+    comps_name = list(arcs.keys())
+
+    # Intact state of component vector: zero-based index 
+    comps_st_itc = {k: len(v.values) - 1 for k, v in varis.items()} # intact state (i.e. the highest state)
+    d_time_itc, path_itc = trans.get_time_and_path_given_comps(comps_st_itc, od_pair, arcs, varis)
+
+    # defines the system failure event
+    thres = 2
+
+    # Given a system function, i.e. sf_min_path, it should be represented by a function that only has "comps_st" as input.
+    # can we define multi state for system here??
+    sys_fun = trans.sys_fun_wrap(od_pair, arcs, varis, thres * d_time_itc)
+
+    # Branch and bound
+    output_path = Path(__file__).parent
+    brs, rules, _, _ = brc.run(varis, probs, sys_fun, max_sf=1000, max_nb=1000),
+
+
+    st_br_to_cs = {'f': 0, 's': 1, 'u': 2}
+    #pdb.set_trace()
+    result = brc.get_csys_from_brs(brs, varis, st_br_to_cs)
+    #cmat = result[0]
+    cmat = result[0][np.argsort(result[0][:, 0])]
+    expected = np.array([[0, 4, 0, 4, 3, 3, 3],
+                         [0, 4, 0, 2, 3, 4, 3],
+                         [0, 3, 0, 2, 3, 2, 3],
+                         [0, 4, 3, 3, 4, 0, 3],
+                         [0, 4, 3, 3, 2, 0, 0],
+                         [0, 4, 1, 3, 2, 0, 1],
+                         [1, 2, 0, 2, 3, 2, 3],
+                         [1, 4, 2, 3, 2, 0, 1],
+                         [1, 4, 3, 3, 2, 0, 2],
+                         [1, 4, 3, 3, 3, 5, 3]])
+    #print(varis['e1'])
+    #print(varis['e3'])
+    # FIXME: not exactly matching
+    #np.testing.assert_array_equal(cmat, expected)
+    """
+    np.testing.assert_array_equal(result[1]['e1'].B, np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1], [1, 1, 0], [1, 1, 1]]))
+    np.testing.assert_array_equal(result[1]['e2'].B, np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1], [0, 1, 1]]))
+    np.testing.assert_array_equal(result[1]['e3'].B, np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1], [1, 1, 1], [1, 1, 0]]))
+    np.testing.assert_array_equal(result[1]['e4'].B, np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1], [1, 1, 1], [1, 1, 0]]))
+    np.testing.assert_array_equal(result[1]['e5'].B, np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1], [1, 1, 1], [1, 1, 0], [0, 1, 1]]))
+    np.testing.assert_array_equal(result[1]['e6'].B, np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1], [1, 1, 1], [1, 1, 0]]))
+    """
+
+
+@pytest.mark.skip('NYI')
+@pytest.fixture()
+def main_sys_bridge(data_bridge):
+
+    # Network
+    _, arcs, arc_times_h = info_bridge
+
+    # od_pair is different from setup_bridge in test_trans.py
+    od_pair = ('n5', 'n1')
+
+    #arc_lens_km = trans.get_arcs_length(arcs, node_coords)
+    #arc_times_h = {k: v/arcs_avg_kmh[k] for k, v in arc_lens_km.items()}
+
+    #comps_name = [k for k in arcs] # *FIXME* this is not necessary if branch's down and up are defined by dictionary (instead of list)
+
+    # Component events
+    #no_arc_st = 2 # number of component states 
+    #delay_rat = [10, 2, 1] # delay in travel time given each component state (ratio)
+    varis = {}
+    for k, v in arcs.items():
+        #varis[k] = variable.Variable(name=k, B=[{0}, {1}, {2}] , values = [arc_times_h[k]*np.float64(x) for x in delay_rat])
+        varis[k] = variable.Variable(name=k, values = [10.0*arc_times_h[k], arc_times_h[k]])
+
+    return od_pair, arcs, varis
+
+
+@pytest.fixture(scope='package')
+def setup_inference(main_sys, setup_brs):
+
+    G, _, arcs, _ = main_sys
+
+    d_varis, brs = setup_brs
+    varis = copy.deepcopy(d_varis)
+
+    # Component events
+    cpms = {}
+    for k, v in arcs.items():
+        cpms[k] = cpm.Cpm(variables=[varis[k]],
+                          no_child = 1,
+                          C = np.array([0, 1, 2]),
+                          p = [0.1, 0.2, 0.7])
+
+    st_br_to_cs = {'f': 0, 's': 1, 'u': 2}
+    csys, varis = brc.get_csys_from_brs(brs, varis, st_br_to_cs)
+
+    # Damage observation
+    C_o = np.array([[0, 0], [1, 0], [2, 0],
+                    [0, 1], [1, 1], [2, 1],
+                    [0, 2], [1, 2], [2, 2]])
+
+    p_o = np.array([0.95, 0.04, 0.01,
+                    0.3, 0.5, 0.2,
+                    0.01, 0.19, 0.8]).T
+
+    for i, k in enumerate(arcs, 1):
+        name = f'o{i}'
+        varis[name] = variable.Variable(name=name, values = [0, 1, 2])
+        cpms[name] = cpm.Cpm(variables=[varis[name], varis[k]], no_child=1, C=C_o, p=p_o)
+
+    # add observations
+    added = np.ones(shape=(csys.shape[0], len(arcs)), dtype=np.int8) * 6
+    csys = np.append(csys, added, axis=1)
+
+    # add sys
+    varis['sys'] = variable.Variable('sys', ['f', 's', 'u'])
+    cpm_sys_vname = [f'e{i}' for i in range(1, len(arcs) + 1)] + [f'o{i}' for i in range(1, len(arcs) + 1)] # observations first, components later
+    cpm_sys_vname.insert(0, 'sys')
+    cpms['sys'] = cpm.Cpm(
+        variables=[varis[k] for k in cpm_sys_vname],
+        no_child = 1,
+        C = csys,
+        p = np.ones((len(csys), 1), int))
+
+    var_elim_order_name = [f'o{i}' for i in range(1, len(arcs) + 1)] + [f'e{i}' for i in range(1, len(arcs) + 1)] # observations first, components later
+    var_elim_order = [varis[k] for k in var_elim_order_name]
+
+    return cpms, varis, var_elim_order, arcs
+
+
+@pytest.fixture()
+def comps_st_dic():
+
+    comps_st = {}
+    expected = {}
+
+    # 0, 1, 2 (higher, better)
+    # intact state (i.e. the highest state)
+    comps_st[0] = {'e1': 2, 'e2': 2, 'e3': 2, 'e4': 2, 'e5': 2, 'e6': 2}
+    expected[0] = (0.1844, 's', {'e2': 2, 'e5': 2}, ['n1', 'n5', 'n3'])
+
+    comps_st[1] = {'e1': 0, 'e2': 1, 'e3': 0, 'e4': 0, 'e5': 0, 'e6': 2}
+    expected[1] = (1.12308, 'f', {}, ['n1', 'n5', 'n3'])
+
+    comps_st[2] = {'e1': 2, 'e2': 0, 'e3': 2, 'e4': 2, 'e5': 2, 'e6': 2}
+    expected[2] = (0.3344, 's', {'e1': 2, 'e3': 2 , 'e5': 2}, ['n1', 'n2', 'n5', 'n3'])
+
+    comps_st[3] = {'e1': 0, 'e2': 2, 'e3': 1, 'e4': 2, 'e5': 1, 'e6': 1}
+    expected[3] = (0.2787, 's', {'e2': 2, 'e5': 1}, ['n1', 'n5', 'n3'])
+
+    comps_st[4] = {'e1': 2, 'e2': 2, 'e3': 0, 'e4': 1, 'e5': 1, 'e6': 2}
+    expected[4] = (0.2787, 's', {'e2': 2, 'e5': 1}, ['n1', 'n5', 'n3'])
+
+    comps_st[5] = {'e1':2, 'e2':1, 'e3':2, 'e4':2, 'e5':2, 'e6': 2}
+    expected[5] = (0.2746, 's', {'e2': 1, 'e5': 2}, ['n1', 'n5', 'n3'])
+
+    comps_st[6] = {'e1':2, 'e2':2, 'e3':2, 'e4':2, 'e5':1, 'e6': 2}
+    expected[6] = (0.26626, 's', {'e2': 2, 'e6': 2, 'e4':2}, ['n1', 'n5', 'n4', 'n3'])
+
+    comps_st[7] = {'e1':1, 'e2':0, 'e3':2, 'e4':2, 'e5':2, 'e6': 2}
+    expected[7] = (0.4844, 'f', {}, ['n1', 'n2', 'n5', 'n3'])
+
+    comps_st[7] = {'e1':2, 'e2':0, 'e3':1, 'e4':2, 'e5':2, 'e6': 2}
+    expected[7] = (0.4246, 'f', {}, ['n1', 'n2', 'n5', 'n3'])
+
+
+    return comps_st, expected
+
+
+def test_proposed_branch_and_bound_using_probs(main_sys):
+    # Branch and bound
+    G, od_pair, arcs, d_varis = main_sys
+
+    varis = copy.deepcopy(d_varis)
+
+    # Intact state of component vector: zero-based index 
+    comps_st_itc = {k: len(v.values) - 1 for k, v in varis.items()} # intact state (i.e. the highest state)
+    d_time_itc, path_n, path_itc = trans.get_time_and_path_given_comps(comps_st_itc, G, od_pair, varis)
+
+    # defines the system failure event
+    thres = 2
+
+    # Given a system function, i.e. sf_min_path, it should be represented by a function that only has "comps_st" as input.
+    sys_fun = trans.sys_fun_wrap(G, od_pair, varis, thres * d_time_itc)
+
+    p = [1/3, 1/3, 1/3]
+    probs = {'e1': p, 'e2': p, 'e3': p,
+             'e4': p, 'e5': p, 'e6': p}
+
+    # Branch and bound
+    output_path = Path(__file__).parent
+    #t1 = time.perf_counter()
+    brs, rules, _, monitor = brc.run(varis, probs, sys_fun, max_sf=100, max_nb=100)
+
+    st_br_to_cs = {'f': 0, 's': 1, 'u': 2}
+    csys, varis = brc.get_csys_from_brs(brs, varis, st_br_to_cs)
+
+    varis['sys'] = variable.Variable('sys', ['f', 's', 'u'])
+    cpm_sys_vname = list(brs[0].up.keys())
+    cpm_sys_vname.insert(0, 'sys')
+
+    # Component events
+    cpms = {}
+    for k, v in arcs.items():
+        cpms[k] = cpm.Cpm(variables=[varis[k]],
+                          no_child = 1,
+                          C = np.array([0, 1, 2]),
+                          p = [0.1, 0.2, 0.7])
+
+    cpms['sys'] = cpm.Cpm(
+        variables=[varis[k] for k in cpm_sys_vname],
+        no_child = 1,
+        C = csys,
+        p = np.ones((len(csys), 1), int))
+
+    var_elim_order = [varis[k] for k in arcs.keys()]
+    Msys = operation.variable_elim([cpms[v] for v in varis.keys()], var_elim_order )
+    np.testing.assert_array_almost_equal(Msys.C, np.array([[0, 1]]).T)
+    np.testing.assert_array_almost_equal(Msys.p, np.array([[0.1018, 0.8982]]).T)
+
+
+def test_get_csys_from_brs(setup_brs):
+
+    varis, brs = setup_brs
+
+    st_br_to_cs = {'f': 0, 's': 1, 'u': 2}
+    csys, varis = brc.get_csys_from_brs(brs, varis, st_br_to_cs)
+
+    for i in range(1, 7):
+        assert compare_list_of_sets(varis[f'e{i}'].B, [{0}, {1}, {2}, {0, 1}, {0, 2}, {1, 2}, {0, 1, 2}])
+    #assert compare_list_of_sets(varis['e1'].B, [{0}, {1}, {2}, {0, 1}, {0, 1, 2}])
+    #assert compare_list_of_sets(varis['e2'].B, [{0}, {1}, {2}, {1, 2}])
+    #assert compare_list_of_sets(varis['e3'].B, [{0}, {1}, {2}, {0, 1}, {0, 1, 2}])
+    #assert compare_list_of_sets(varis['e4'].B, [{0}, {1}, {2}, {0, 1, 2}, {0, 1}])
+    #assert compare_list_of_sets(varis['e5'].B, [{0}, {1}, {2}, {0, 1, 2}, {0, 1}, {1, 2}])
+    #assert compare_list_of_sets(varis['e6'].B, [{0}, {1}, {2}, {0, 1, 2}, {0, 1}])
+
+    expected = np.array([[0, 3, 0, 6, 6, 6, 6],
+                         [0, 2, 0, 3, 6, 6, 6],
+                         [0, 2, 0, 2, 6, 3, 6],
+                         [0, 6, 5, 6, 3, 0, 6],
+                         [0, 6, 1, 6, 2, 0, 3],
+                         [0, 6, 2, 6, 2, 0, 0],
+                         [1, 2, 0, 2, 6, 2, 6],
+                         [1, 6, 2, 6, 2, 0, 1],
+                         [1, 6, 5, 6, 2, 0, 2],
+                         [1, 6, 5, 6, 6, 5, 6]])
+
+    assert compare_list_of_sets(csys, expected)
+
+
+def test_get_csys_from_brs3(main_sys):
+
+    G, od_pair, arcs, d_varis = main_sys
+
+    varis = copy.deepcopy(d_varis)
+
     p1 = {0: 0.05, 1: 0.15, 2: 0.80}
     p2 = {0: 0.01, 1: 0.09, 2: 0.90}
 
     probs = {'e1': p1, 'e2': p1, 'e3': p1,
              'e4': p2, 'e5': p2, 'e6': p2}
 
-    result = brc.get_decomp_comp_using_probs(br, rules, probs)
+    #comps_name = list(arcs.keys())
 
-    assert result == ('e2', 2)
+    # Intact state of component vector: zero-based index 
+    comps_st_itc = {k: len(v.values) - 1 for k, v in varis.items()} # intact state (i.e. the highest state)
+    d_time_itc, path_n, path_itc = trans.get_time_and_path_given_comps(comps_st_itc, G, od_pair, varis)
 
-    rules = {'s': [{'e2': 2, 'e5': 2}, {'e1': 2, 'e3': 2, 'e5': 2}],
-            'f': [{'e1': 0, 'e2': 0, 'e3': 0, 'e4': 0, 'e5': 0, 'e6': 0}],
-            }
-    upper = {'e1': 2, 'e2': 2, 'e3': 2, 'e4': 2, 'e5': 2, 'e6': 2}
-    lower = {'e1': 0, 'e2': 0, 'e3': 0, 'e4': 0, 'e5': 0, 'e6': 0}
-    br = branch.Branch(lower, upper, 's', 's', 1.0)
-    result = brc.get_decomp_comp_using_probs(br, rules, probs)
+    # defines the system failure event
+    thres = 2
 
-    assert result == ('e5', 2)
+    # Given a system function, i.e. sf_min_path, it should be represented by a function that only has "comps_st" as input.
+    sys_fun = trans.sys_fun_wrap(G, od_pair, varis, thres * d_time_itc)
 
-    rules = {'s': [{'e2': 2, 'e5': 2}, {'e1': 2, 'e3': 2, 'e5': 2}, {'e2': 2, 'e4': 2, 'e6': 2}],
-            'f': [{'e1': 0, 'e2': 0, 'e3': 0, 'e4': 0, 'e5': 0, 'e6': 0}],
-            }
-    upper = {'e1': 2, 'e2': 2, 'e3': 2, 'e4': 2, 'e5': 2, 'e6': 2}
-    lower = {'e1': 0, 'e2': 0, 'e3': 0, 'e4': 0, 'e5': 0, 'e6': 0}
-    br = branch.Branch(lower, upper, 's', 's', 1.0)
-    result = brc.get_decomp_comp_using_probs(br, rules, probs)
+    # Branch and bound
+    output_path = Path(__file__).parent
+    #pdb.set_trace()
+    brs, rules, _, monitor = brc.run(varis, probs, sys_fun, max_sf=100, max_nb=100)
 
-    assert result == ('e2', 2)
+    st_br_to_cs = {'f': 0, 's': 1, 'u': 2}
+    #pdb.set_trace()
+    csys, varis = brc.get_csys_from_brs(brs, varis, st_br_to_cs)
 
-    rules = {'s': [{'e1': 2, 'e3': 2, 'e5': 2}],
-            'f': [{'e1': 0, 'e2': 0, 'e3': 0, 'e4': 0, 'e5': 0, 'e6': 0}],
-            }
-    upper = {'e1': 2, 'e2': 2, 'e3': 2, 'e4': 2, 'e5': 2, 'e6': 2}
-    lower = {'e1': 0, 'e2': 0, 'e3': 0, 'e4': 0, 'e5': 0, 'e6': 0}
-    br = branch.Branch(lower, upper, 's', 's', 1.0)
-    result = brc.get_decomp_comp_using_probs(br, rules, probs)
+    varis['sys'] = variable.Variable('sys', ['f', 's', 'u'])
+    cpm_sys_vname = list(brs[0].up.keys())
+    cpm_sys_vname.insert(0, 'sys')
 
-    assert result == ('e1', 2)
+    # Component events
+    cpms = {}
+    for k, v in arcs.items():
+        cpms[k] = cpm.Cpm(variables=[varis[k]],
+                          no_child = 1,
+                          C = np.array([0, 1, 2]),
+                          p = [0.1, 0.2, 0.7])
 
+    cpms['sys'] = cpm.Cpm(
+        variables=[varis[k] for k in cpm_sys_vname],
+        no_child = 1,
+        C = csys,
+        p = np.ones((len(csys), 1), int))
 
-def test_get_decomp_comp_using_probs1():
-
-    rules = {'s': [{'e1': 1, 'e2': 1}],
-            'f': []}
-    upper = {'e1': 1, 'e2': 1, 'e3': 1}
-    lower = {'e1': 0, 'e2': 0, 'e3': 0}
-    br = branch.Branch(lower, upper, 's', 's', 1.0)
-
-    probs = {'e1': {0: 0.1,
-                    1: 0.9},
-             'e2': {0: 0.2,
-                    1: 0.8},
-             'e3': {0: 0.3,
-                    1: 0.7}}
-
-    result = brc.get_decomp_comp_using_probs(br, rules, probs)
-
-    assert result == ('e1', 1)
+    var_elim_order = [varis[k] for k in arcs.keys()]
+    Msys = operation.variable_elim([cpms[v] for v in varis.keys()], var_elim_order )
+    np.testing.assert_array_almost_equal(Msys.C, np.array([[0, 1]]).T)
+    np.testing.assert_array_almost_equal(Msys.p, np.array([[0.1018, 0.8982]]).T)
 
 
-def test_get_decomp_comp_using_probs2():
+def test_inference1(setup_inference):
 
-    rules = {'s': [{'e2': 1}],
-            'f': []}
-    upper = {'e1': 1, 'e2': 1, 'e3': 1}
-    lower = {'e1': 1, 'e2': 0, 'e3': 0}
+    # case 1: no observatio
+    cpms, varis, var_elim_order, arcs = setup_inference
 
-    br = branch.Branch(lower, upper, 's', 's', 1.0)
-    probs = {'e1': {0: 0.1,
-                    1: 0.9},
-             'e2': {0: 0.2,
-                    1: 0.8},
-             'e3': {0: 0.3,
-                    1: 0.7}}
+    Msys = operation.variable_elim([cpms[v] for v in varis.keys()], var_elim_order )
+    np.testing.assert_array_almost_equal(Msys.C, np.array([[0, 1]]).T)
+    np.testing.assert_array_almost_equal(Msys.p, np.array([[0.1018, 0.8982]]).T)
 
-    result = brc.get_decomp_comp_using_probs(br, rules, probs)
-
-    assert result == ('e2', 1)
+    pf_sys = Msys.p[0]
+    assert pf_sys == pytest.approx(0.1018, rel=1.0e-3)
 
 
-def test_get_decomp_comp_using_probs3():
+def test_inference2(setup_inference):
 
-    rules = {'s': [{'e1': 1, 'e2': 1}, {'e1':1, 'e3': 1}],
-             'f': []}
-    upper = {'e1': 1, 'e2': 1, 'e3': 1}
-    lower = {'e1': 0, 'e2': 0, 'e3': 0}
-    br = branch.Branch(lower, upper, 's', 's', 1.0)
-    probs = {'e1': {0: 0.1,
-                    1: 0.9},
-             'e2': {0: 0.2,
-                    1: 0.8},
-             'e3': {0: 0.3,
-                    1: 0.7}}
+    # case 2: observation
+    cpms, varis, var_elim_order, arcs = setup_inference
 
-    result = brc.get_decomp_comp_using_probs(br, rules, probs)
+    cnd_vars = [f'o{i}' for i in range(1, len(arcs) + 1)]
+    cnd_states = [1, 1, 0, 1, 0, 1]  # observing e3, e5 failure
 
-    assert result == ('e1', 1)
+    Mobs = operation.condition([cpms[v] for v in varis.keys()], cnd_vars, cnd_states)
+    # P(sys, obs)
+    Msys_obs = operation.variable_elim(Mobs, var_elim_order)
 
-
-def test_get_decomp_comp_using_probs4():
-
-    rules = {'s': [{'e1': 1, 'e2': 1}, {'e1':1, 'e3': 1}],
-             'f': [{'e1': 0}]}
-    upper = {'e1': 1, 'e2': 1, 'e3': 1}
-    lower = {'e1': 0, 'e2': 0, 'e3': 0}
-    br = branch.Branch(lower, upper, 's', 's', 1.0)
-
-    probs = {'e1': {0: 0.1,
-                    1: 0.9},
-             'e2': {0: 0.2,
-                    1: 0.8},
-             'e3': {0: 0.3,
-                    1: 0.7}}
-
-    result = brc.get_decomp_comp_using_probs(br, rules, probs)
-
-    assert result == ('e1', 1)
-
-
-def test_get_decomp_comp_using_probs5():
-
-    rules = {'s': [{'e2': 1}, {'e3': 1}],
-             'f': [{'e1': 0}]}
-    upper = {'e1': 1, 'e2': 1, 'e3': 1}
-    lower = {'e1': 1, 'e2': 0, 'e3': 0}
-    br = branch.Branch(lower, upper, 's', 's', 1.0)
-
-    probs = {'e1': {0: 0.1,
-                    1: 0.9},
-             'e2': {0: 0.2,
-                    1: 0.8},
-             'e3': {0: 0.3,
-                    1: 0.7}}
-    result = brc.get_decomp_comp_using_probs(br, rules, probs)
-
-    assert result == ('e2', 1)
+    np.testing.assert_array_almost_equal(Msys_obs.C, np.array([[0, 1]]).T)
+    np.testing.assert_array_almost_equal(Msys_obs.p, np.array([[2.765e-5, 5.515e-5]]).T)
+    # P(sys=0|obs) = P(sys=0,obs) / P(obs) 
+    pf_sys = Msys_obs.p[0] / np.sum(Msys_obs.p)
+    assert pf_sys == pytest.approx(0.334, rel=1.0e-3)
 
 
 def test_get_connectivity_given_comps4():

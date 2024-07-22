@@ -4,6 +4,8 @@ import json
 import time
 import copy
 import gc
+from collections import Counter
+from itertools import chain
 import pdb
 import itertools
 from pathlib import Path
@@ -12,13 +14,193 @@ from collections import namedtuple
 #from dask.distributed import Client, worker_client, as_completed, get_client
 
 #import dask.bag as db
-from BNS_JT import cpm, variable, trans
+from BNS_JT import cpm, variable, trans, brc
 
 
-attr = ["down", "up", "down_state", "up_state", "p"]
-Branch = namedtuple("Branch", attr, defaults=(None,)*len(attr))
+#attr = ["down", "up", "down_state", "up_state", "p"]
+#Branch = namedtuple("Branch", attr, defaults=(None,)*len(attr))
 
 #Branch_p = namedtuple("Branch", ["down", "up", "down_state", "up_state", "p"])
+
+def approx_prob_by_comps(down, up, probs):
+    """
+
+    """
+    p = 1.0
+    for k, v in down.items():
+        p *= sum([probs[k][x] for x in range(v, up[k] + 1)])
+    return p
+
+
+class Branch(object):
+
+    def __init__(self, down, up, down_state=None, up_state=None, p=None):
+
+        assert isinstance(down, dict), 'down should be a dict'
+        assert isinstance(up, dict), 'down should be a dict'
+        assert len(down) == len(up), 'Vectors "down" and "up" must have the same length.'
+
+        self.down = down
+        self.up = up
+        self.down_state = down_state
+        self.up_state = up_state
+        self.p = p
+
+        #assert isinstance(is_complete, bool), '"is_complete" must be either true (or 1) or false (or 0)'
+
+    def __repr__(self):
+        return textwrap.dedent(f"""\
+{self.__class__.__name__}(down={self.down}, up={self.up}, down_state={self.down_state}, up_state={self.up_state}, p={self.p}""")
+
+    def __eq__(self, other):
+        """Overrides the default implementation"""
+        if isinstance(other, Branch):
+            return all([self.down == other.down,
+                        self.up == other.up,
+                        self.down_state == other.down_state,
+                        self.up_state == other.up_state,
+                        self.p == other.p])
+
+    def approx_prob(self, probs):
+        self.p = approx_prob_by_comps(self.down, self.up, probs)
+
+
+    def get_compat_rules(self, rules):
+
+        """
+        lower: lower bound on component vector state in dictionary
+               e.g., {'x1': 0, 'x2': 0 ... }
+        upper: upper bound on component vector state in dictionary
+               e.g., {'x1': 2, 'x2': 2 ... }
+        rules: dict of rules
+               e.g., {'s': [{'x1': 2, 'x2': 2}],
+                      'f': [{'x1': 2, 'x2': 0}]}
+        """
+        assert isinstance(rules, dict), f'rules should be a dict: {type(rules)}'
+
+        compat_rules = {'s': [], 'f': []}
+
+        for rule in rules['s']:
+            if all([self.up[k] >= v for k, v in rule.items()]):
+                c_rule = {k: v for k, v in rule.items() if v > self.down[k]}
+                if c_rule:
+                    compat_rules['s'].append(c_rule)
+
+        for rule in rules['f']:
+            if all([self.down[k] <= v for k, v in rule.items()]):
+                c_rule = {k: v for k, v in rule.items() if v < self.up[k]}
+                if c_rule:
+                    compat_rules['f'].append(c_rule)
+
+        return compat_rules
+
+
+    def approx_joint_prob_compat_rule(self, rule, rule_st, probs):
+        assert isinstance(rule, dict), f'rule should be a dict: {type(rule)}'
+        assert isinstance(rule_st, str), f'rule_st should be a string: {type(rule_st)}'
+        assert isinstance(probs, dict), f'probs should be a dict: {type(probs)}'
+        p = 1.0
+        if rule_st == 's':
+            for x, v in rule.items():
+                p *= sum([probs[x][i] for i in range(v, self.up[x] + 1)])
+
+        elif rule_st == 'f':
+            for x, v in rule.items():
+                p *= sum([probs[x][i] for i in range(self.down[x], v + 1)])
+
+        return p
+
+
+    def get_decomp_comp_using_probs(self, rules, probs):
+        """
+        rules: dict of rules
+               e.g., {'s': [{'x1': 2, 'x2': 2}], 'f': [{'x3': 0}]}
+        probs: dict
+        """
+        assert isinstance(rules, dict), f'rules should be a dict: {type(rules)}'
+        assert isinstance(probs, dict), f'probs should be a dict: {type(probs)}'
+
+        # get an order of component by their frequency in rules
+        rules_st = [(k, x) for k, rule in rules.items() for x in rule]
+        comps = Counter(chain.from_iterable([x[1] for x in rules_st]))
+        comps = [x[0] for x in comps.most_common()]
+
+        # get an order R by P  (higher to lower)
+        if len(rules_st) > 1:
+            rules_st = sorted(rules_st, key=lambda x: self.approx_joint_prob_compat_rule(x[1], x[0], probs), reverse=True)
+
+        for st, rule in rules_st:
+            for c in comps:
+                state = None
+                if c in rule and st == 's':
+                    state = rule[c]
+
+                elif c in rule and st == 'f':
+                    state = rule[c] + 1
+
+                try:
+                    if self.down[c] < state and state <= self.up[c]:
+                        return c, state
+
+                except TypeError:
+                    pass
+
+    def get_new_branch(self, rules, probs, xd, xd_st, up_flag=True):
+        """
+
+        """
+        if up_flag:
+            up = self.up.copy()
+            up[xd] = xd_st - 1
+            up_st = brc.get_state(up, rules)
+
+            down = self.down
+            down_st = self.down_state
+
+        else:
+            up = self.up
+            up_st = self.up_state
+
+            down = self.down.copy()
+            down[xd] = xd_st
+            down_st = brc.get_state(down, rules)
+
+        new_br = Branch(down=down, up=up, down_state=down_st, up_state=up_st)
+        new_br.approx_prob(probs)
+
+        return new_br
+
+    def get_c(self, varis, st_br_to_cs):
+        """
+        return updated varis and state
+        varis: a dictionary of variables
+        st_br_to_cs: a dictionary that maps state in br to state in C matrix of a system event
+        """
+        names = list(self.up.keys())
+        cst = np.zeros(len(names) + 1, dtype=int) # (system, compponents)
+
+        if self.down_state == self.up_state:
+            cst[0] = st_br_to_cs[self.down_state]
+        else:
+            cst[0] = st_br_to_cs['u']
+
+        for i, x in enumerate(names):
+            down = self.down[x]
+            up = self.up[x]
+
+            if up > down:
+                states = list(range(down, up + 1))
+                varis[x], st = variable.get_composite_state(varis[x], states)
+            else:
+                st = up
+
+            cst[i + 1] = st
+
+        return varis, cst
+
+
+
+
 
 
 class Branch_old(object):
@@ -509,4 +691,6 @@ def get_cmat_from_branches(branches, variables):
     C = C.astype(int)
 
     return C[C[:, 0].argsort()]
+
+
 

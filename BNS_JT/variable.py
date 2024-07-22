@@ -118,7 +118,6 @@ class Variable(object):
         assert value in [None, 'store', 'fly'], 'B_flag must be either None, store, or fly'
         self._B_flag = value
 
-
     def gen_B(self):
         n = len(self._values)
         B = [set(x) for x in chain.from_iterable(combinations(range(n), r) for r in range(1, n + 1))]
@@ -204,7 +203,10 @@ class Variable(object):
 
     def __eq__(self, other):
 
-        return self.name == other.name
+        try:
+            return self.name == other.name
+        except AttributeError:
+            return self.name == other
 
     def __repr__(self):
         return repr(f'Variable(name={self.name}, B={self.B}, values={self.values})')

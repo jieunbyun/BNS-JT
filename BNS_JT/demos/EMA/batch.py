@@ -9,7 +9,7 @@ import numpy as np
 import typer
 from typing_extensions import Annotated
 
-from BNS_JT import model, config, trans, variable, brc, gen_bnb, cpm
+from BNS_JT import model, config, trans, variable, brc, branch, cpm
 
 
 HOME = Path(__file__).parent
