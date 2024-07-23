@@ -3,11 +3,12 @@ import pandas as pd
 import json
 import typer
 import networkx as nx
+from typing_extensions import Annotated
 import matplotlib.pyplot as plt
 import pdb
 import numpy as np
 
-from BNS_JT import model, config, trans, variable, gen_bnb
+from BNS_JT import model, config, trans, variable, brc
 
 app = typer.Typer()
 
@@ -62,21 +63,23 @@ def plot():
 
 
 @app.command()
-def main():
+def main(max_sf: Annotated[int, typer.Argument()] = 100):
 
     cfg = config.Config(HOME.joinpath('./config.json'))
 
     # variables
+    probs = {}
     varis = {}
     for k, v in cfg.infra['edges'].items():
         varis[k] = variable.Variable(name=k, values = ['f', 's'])
+        probs[k] = [0.5, 0.5]
 
     od_pair = ('13', '2')
     sys_fun = trans.sys_fun_wrap(cfg.infra['G'], od_pair, varis)
-    brs, rules, sys_res = gen_bnb.proposed_branch_and_bound(sys_fun, varis, max_br=cfg.max_branches, output_path=cfg.output_path, key='SF', flag=True)
+    brs, rules, sys_res, _ = brc.run(varis, probs, sys_fun, max_sf=max_sf, max_nb=cfg.max_branches)
 
-    #st_br_to_cs = {'f': 0, 's': 1, 'u': 2}
-    #csys_by_od, varis_by_od = gen_bnb.get_csys_from_brs(brs, varis, st_br_to_cs)
+    st_br_to_cs = {'f': 0, 's': 1, 'u': 2}
+    csys_by_od, varis_by_od = brc.get_csys(brs, varis, st_br_to_cs)
 
 
     """
@@ -89,9 +92,9 @@ def main():
 
         # system function
         sys_fun = trans.sys_fun_wrap(od_pair, cfg.infra['edges'], varis, thres * d_time_itc)
-        brs, rules = gen_bnb.proposed_branch_and_bound(sys_fun, varis, max_br=cfg.max_branches, output_path=cfg.output_path, key=f'road_{k}', flag=True)
+        brs, rules = brc.run(sys_fun, varis, max_br=cfg.max_branches, output_path=cfg.output_path, key=f'road_{k}', flag=True)
 
-        csys_by_od[k], varis_by_od[k] = gen_bnb.get_csys_from_brs2(brs, varis, st_br_to_cs)
+        csys_by_od[k], varis_by_od[k] = brc.get_csys(brs, varis, st_br_to_cs)
     """
 
 

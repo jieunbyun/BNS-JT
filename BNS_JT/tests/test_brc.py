@@ -563,7 +563,7 @@ def test_get_connectivity_given_comps4():
 
 
 @pytest.mark.skip('NYI')
-def test_get_csys_from_brs2(main_sys_bridge):
+def test_get_csys2(main_sys_bridge):
 
     od_pair, arcs, varis = main_sys_bridge
     comps_name = list(arcs.keys())
@@ -586,7 +586,7 @@ def test_get_csys_from_brs2(main_sys_bridge):
 
     st_br_to_cs = {'f': 0, 's': 1, 'u': 2}
     #pdb.set_trace()
-    result = brc.get_csys_from_brs(brs, varis, st_br_to_cs)
+    result = brc.get_csys(brs, varis, st_br_to_cs)
     #cmat = result[0]
     cmat = result[0][np.argsort(result[0][:, 0])]
     expected = np.array([[0, 4, 0, 4, 3, 3, 3],
@@ -656,7 +656,7 @@ def setup_inference(main_sys, setup_brs):
                           p = [0.1, 0.2, 0.7])
 
     st_br_to_cs = {'f': 0, 's': 1, 'u': 2}
-    csys, varis = brc.get_csys_from_brs(brs, varis, st_br_to_cs)
+    csys, varis = brc.get_csys(brs, varis, st_br_to_cs)
 
     # Damage observation
     C_o = np.array([[0, 0], [1, 0], [2, 0],
@@ -757,7 +757,7 @@ def test_proposed_branch_and_bound_using_probs(main_sys):
     brs, rules, _, monitor = brc.run(varis, probs, sys_fun, max_sf=100, max_nb=100)
 
     st_br_to_cs = {'f': 0, 's': 1, 'u': 2}
-    csys, varis = brc.get_csys_from_brs(brs, varis, st_br_to_cs)
+    csys, varis = brc.get_csys(brs, varis, st_br_to_cs)
 
     varis['sys'] = variable.Variable('sys', ['f', 's', 'u'])
     cpm_sys_vname = list(brs[0].up.keys())
@@ -783,12 +783,12 @@ def test_proposed_branch_and_bound_using_probs(main_sys):
     np.testing.assert_array_almost_equal(Msys.p, np.array([[0.1018, 0.8982]]).T)
 
 
-def test_get_csys_from_brs(setup_brs):
+def test_get_csys(setup_brs):
 
     varis, brs = setup_brs
 
     st_br_to_cs = {'f': 0, 's': 1, 'u': 2}
-    csys, varis = brc.get_csys_from_brs(brs, varis, st_br_to_cs)
+    csys, varis = brc.get_csys(brs, varis, st_br_to_cs)
 
     for i in range(1, 7):
         assert compare_list_of_sets(varis[f'e{i}'].B, [{0}, {1}, {2}, {0, 1}, {0, 2}, {1, 2}, {0, 1, 2}])
@@ -813,7 +813,7 @@ def test_get_csys_from_brs(setup_brs):
     assert compare_list_of_sets(csys, expected)
 
 
-def test_get_csys_from_brs3(main_sys):
+def test_get_csys3(main_sys):
 
     G, od_pair, arcs, d_varis = main_sys
 
@@ -844,7 +844,7 @@ def test_get_csys_from_brs3(main_sys):
 
     st_br_to_cs = {'f': 0, 's': 1, 'u': 2}
     #pdb.set_trace()
-    csys, varis = brc.get_csys_from_brs(brs, varis, st_br_to_cs)
+    csys, varis = brc.get_csys(brs, varis, st_br_to_cs)
 
     varis['sys'] = variable.Variable('sys', ['f', 's', 'u'])
     cpm_sys_vname = list(brs[0].up.keys())

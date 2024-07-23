@@ -1,7 +1,7 @@
 {
 	"CONFIGURATION_ID": "road",
-    "MODEL_NAME": "model_road.json",
-    "SCENARIO_NAME": "scenarios_road.json",
+    "MODEL_NAME": "model.json",
+    "SCENARIO_NAME": "scenarios.json",
     "OUTPUT_PATH": "./",
     "MAX_BRANCHES": 100,
 

@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 import typer
 import json
 
-from BNS_JT import cpm, variable, quant
+from BNS_JT import cpm, variable, operation
 
 HOME = Path(__file__).parent
 
@@ -162,17 +162,17 @@ def quant_cpms(haz, pfs, rep_pri, lins):
         if len(sets) == 1:
             vars_h = [varis[f'c{x}'] for x in sets[0]]
 
-            cpms[h], varis[h] = quant.sys_max_val(h, vars_h)
+            cpms[h], varis[h] = operation.sys_max_val(h, vars_h)
 
         else:
             names_hs = [h+str(i) for i in range(len(sets))]
             for h_i, s_i in zip(names_hs, sets):
                 vars_h_i = [varis['c'+x] for x in s_i]
 
-                cpms[h_i], varis[h_i] = quant.sys_max_val( h_i, vars_h_i )
+                cpms[h_i], varis[h_i] = operation.sys_max_val( h_i, vars_h_i )
 
             vars_hs = [varis[n] for n in names_hs]
-            cpms[h], varis[h] = quant.sys_min_val( h, vars_hs )
+            cpms[h], varis[h] = operation.sys_min_val( h, vars_hs )
 
     return cpms, varis
 
@@ -357,7 +357,11 @@ def main(h_list, model_json, plot: bool=False, version=None):
     return Mhs, avg_cut_days
 
 
-"""if __name__ == "__main__":
-    app()"""
+app.command()
+def batch():
 
-Mhs, avg_cut_days = main(['h0'], "model.json", plot=True)
+    Mhs, avg_cut_days = main(['h0'], HOME.joinpath("model.json"), plot=True)
+
+if __name__ == "__main__":
+    app()
+

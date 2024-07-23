@@ -10,7 +10,7 @@ import typer
 
 
 from BNS_JT import config
-from BNS_JT import trans, branch, variable, cpm, gen_bnb
+from BNS_JT import trans, branch, variable, cpm
 
 HOME = Path(__file__).parent
 output_path = HOME.joinpath('./output')
@@ -69,11 +69,11 @@ def main():
 
 
     ### BRC algorithm ###
-    brs1, rules1, sys_res1, monitor1 = gen_bnb.run_brc(varis, probs, sys_fun, max_sf=100, max_nb=10000, surv_first=True)
-    brs2, rules2, sys_res2, monitor2 = gen_bnb.run_brc(varis, probs, sys_fun, max_sf=100, max_nb=50000, surv_first=False, rules=rules1)
+    brs1, rules1, sys_res1, monitor1 = brc.run(varis, probs, sys_fun, max_sf=100, max_nb=10000, surv_first=True)
+    brs2, rules2, sys_res2, monitor2 = brc.run(varis, probs, sys_fun, max_sf=100, max_nb=50000, surv_first=False, rules=rules1)
 
 
-    csys, varis = gen_bnb.get_csys_from_brs(brs2, varis, st_br_to_cs)
+    csys, varis = brc.get_csys(brs2, varis, st_br_to_cs)
 
     varis['sys'] = variable.Variable( name='sys', values=['f', 's', 'u'] )
     cpms['sys'] = cpm.Cpm(variables = [varis['sys']]+[varis['e'+str(i+1)] for i in range(n_edge)], no_child=1, C=csys, p=np.ones((len(csys),1), dtype=np.float32))

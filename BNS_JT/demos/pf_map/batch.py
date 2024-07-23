@@ -9,7 +9,7 @@ from multiprocessing import freeze_support
 from scipy.stats import beta
 import typer
 
-from BNS_JT import variable, cpm, gen_bnb, trans, config
+from BNS_JT import variable, cpm, trans, config, brc
 
 HOME = Path(__file__).parent
 
@@ -384,7 +384,7 @@ def run_MCS(file_cfg, eq_name, node):
     probs = {k: {0:v, 1:1-v} for k,v in pf.items()}
 
     start = time.time()
-    pf, cov, nsamp = gen_bnb.run_MCS_indep_comps(probs, sys_fun, cov_t=0.01)
+    pf, cov, nsamp = brc.run_MCS_indep_comps(probs, sys_fun, cov_t=0.01)
     end = time.time()
     print(f'pf: {pf:.4e}, cov: {cov:.4e}, nsamp: {nsamp:d}, time: {end-start:.2e}')
 
@@ -409,14 +409,14 @@ def process_node(cfg, node, comps_st_itc, st_br_to_cs, arcs, varis, probs, cpms)
         d_time_itc, _, _ = trans.get_time_and_path_multi_dest(comps_st_itc, cfg.infra['G'], node, dests, varis)
         sys_fun = trans.sys_fun_wrap(cfg.infra['G'], {'origin': node, 'dests': dests}, varis, thres * d_time_itc)
 
-        """brs, rules, sys_res1, monitor1 = gen_bnb.run( {k: varis[k] for k in arcs.keys()}, probs, sys_fun, 0.01*cfg.max_sys_fun, 0.01*cfg.max_branches, cfg.sys_bnd_wr, surv_first=False)
-        brs, rules, sys_res2, monitor2 = gen_bnb.run( {k: varis[k] for k in arcs.keys()}, probs, sys_fun, cfg.max_sys_fun, cfg.max_branches, cfg.sys_bnd_wr, surv_first=True, rules=rules)
+        """brs, rules, sys_res1, monitor1 = brc.run( {k: varis[k] for k in arcs.keys()}, probs, sys_fun, 0.01*cfg.max_sys_fun, 0.01*cfg.max_branches, cfg.sys_bnd_wr, surv_first=False)
+        brs, rules, sys_res2, monitor2 = brc.run( {k: varis[k] for k in arcs.keys()}, probs, sys_fun, cfg.max_sys_fun, cfg.max_branches, cfg.sys_bnd_wr, surv_first=True, rules=rules)
         monitor = {k: v + monitor2[k] for k, v in monitor1.items() if k != 'out_flag'}
         monitor['out_flag'] = [monitor1['out_flag'], monitor2['out_flag']]"""
 
-        brs, rules, sys_res, monitor = gen_bnb.run({k: varis[k] for k in arcs.keys()}, probs, sys_fun, cfg.max_sys_fun, cfg.max_branches, cfg.sys_bnd_wr, surv_first=True)
+        brs, rules, sys_res, monitor = brc.run({k: varis[k] for k in arcs.keys()}, probs, sys_fun, cfg.max_sys_fun, cfg.max_branches, cfg.sys_bnd_wr, surv_first=True)
 
-        csys, varis = gen_bnb.get_csys_from_brs(brs, varis, st_br_to_cs)
+        csys, varis = brc.get_csys(brs, varis, st_br_to_cs)
         #varis[node] = variable.Variable(node, values = ['f', 's', 'u'])
         vari_node = variable.Variable(node, values = ['f', 's', 'u'])
         cpms[node] = cpm.Cpm( [vari_node] + [varis[k] for k in arcs.keys()], 1, csys, np.ones((len(csys),1), dtype=float) )
@@ -491,6 +491,48 @@ def process_node(cfg, node, comps_st_itc, st_br_to_cs, arcs, varis, probs, cpms)
 
 
 @app.command()
+def debug():
+
+    file_cfg = HOME.joinpath('./input/config.json')
+    eq_name = 's1'
+    node =  'n1'
+
+    cfg = config_custom(file_cfg, eq_name)
+
+    # For debugging
+    cfg.max_branches = 100
+
+    probs = {k: {0: v['pf'], 1: 1 - v['pf']} for k, v in cfg.infra['edges'].items()}
+
+    # arcs and nodes
+    arcs = {}
+    for k, v in cfg.infra['edges'].items():
+        arcs[k] = [v['origin'], v['destination']]
+
+    node_coords = {}
+    for k, v in cfg.infra['nodes'].items():
+        node_coords[k] = (v['pos_x'], v['pos_y'])
+
+    arc_len = trans.get_arcs_length(arcs, node_coords)
+    speed = 100.0 # (km/h) assume homogeneous speed for all roads
+    arc_time = {k: v/speed for k, v in arc_len.items()}
+
+    # variables
+    varis = {}
+    cpms = {}
+    comps_st_itc = {}
+    for k, v in cfg.infra['edges'].items():
+        varis[k] = variable.Variable(name=k, values = [np.inf, arc_time[k]])
+        cpms[k] = cpm.Cpm([varis[k]], 1, C=np.array([[0],[1]]), p = np.array([v['pf'], 1 - v['pf']]))
+        comps_st_itc[k] = len(varis[k].values) - 1
+
+    st_br_to_cs = {'f': 0, 's': 1, 'u': 2}
+
+    # Run the analysis for single node
+    _ = process_node(cfg, node, comps_st_itc, st_br_to_cs, arcs, varis, probs, cpms)
+
+
+@app.command()
 def main(file_cfg, eq_name):
 
     cfg = config_custom(file_cfg, eq_name)
@@ -528,10 +570,6 @@ def main(file_cfg, eq_name):
         #for node in ['n15', 'n53']: # for test
             res1 = exec.submit(process_node, cfg, node, comps_st_itc, st_br_to_cs, arcs, varis, probs, cpms)
             futures.append(res1)
-
-    # For debugging
-    """cfg.max_branches = 100
-    node, vari_node, cpms, sys_pf_node, sys_nsamp_node, rules, monitor, result_mcs = process_node(cfg, 'n1', comps_st_itc, st_br_to_cs, arcs, varis, probs, cpms)"""
 
     # Collect the results
     sys_pfs_low, sys_pfs_up, sys_nsamps, covs = {}, {}, {}, {}

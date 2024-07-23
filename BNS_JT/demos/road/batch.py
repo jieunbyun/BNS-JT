@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import pdb
 import numpy as np
 
-from BNS_JT import model, config, trans, variable, gen_bnb
+from BNS_JT import model, config, trans, variable
 
 
 HOME = Path(__file__).parent
@@ -47,7 +47,7 @@ def create_model():
 
     ODs = {'od1': ('n1', 'n3')}
 
-    outfile = HOME.joinpath('./model_road.json')
+    outfile = HOME.joinpath('./model.json')
     dic_model = trans.create_model_json_for_tranportation_network(arcs, nodes_coords, arcs_avg_kmh, ODs, outfile)
 
     # scenarios
@@ -58,16 +58,16 @@ def create_model():
     for k in arcs.keys():
         s1['s1'][k] = [x * dic_model['node_conn_df'][k]['weight'] for x in delay_rate]
 
-    wfile = HOME.joinpath('./scenarios_road.json')
+    wfile = HOME.joinpath('./scenarios.json')
     _dic = trans.create_scenario_json_for_trans_network(damage_states, s1, wfile)
 
 
 def main():
 
-    cfg = config.Config(HOME.joinpath('./config_road.json'))
-
+    cfg = config.Config(HOME.joinpath('./config.json'))
     csys_by_od, varis_by_od = model.get_branches_by_od(cfg)
-
+    print(csys_by_od)
+    print(varis_by_od)
 
 if __name__=='__main__':
 

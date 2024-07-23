@@ -58,6 +58,8 @@ def create_model():
 def main(key: Annotated[str, typer.Argument()] = 'od2',
          max_sf: Annotated[int, typer.Argument()] = 100):
 
+    rnd_state = np.random.RandomState(1)
+
     cfg = config.Config(HOME.joinpath('./config.json'))
 
     od_pair = cfg.infra['ODs'][key]
@@ -67,7 +69,7 @@ def main(key: Annotated[str, typer.Argument()] = 'od2',
                  1: {0: 0.03, 1: 0.12, 2: 0.85},
                  2: {0: 0.06, 1: 0.24, 2: 0.70},
                  }
-    probs_key = np.random.choice(3, size=len(cfg.infra['edges']))
+    probs_key = rnd_state.choice(3, size=len(cfg.infra['edges']))
 
     probs = {k: probs_set[v] for k, v in zip(cfg.infra['edges'].keys(), probs_key)}
 
@@ -97,7 +99,7 @@ def main(key: Annotated[str, typer.Argument()] = 'od2',
     brs1, rules1, sys_rules1, monitor1 = brc.run(varis, probs, sys_fun, max_sf=max_sf, max_nb=10_000, surv_first=True)
     brs2, rules2, sys_rules2, monitor2 = brc.run(varis, probs, sys_fun, max_sf=max_sf, max_nb=50_000, surv_first=True, rules=rules1)
 
-    csys, varis = brc.get_csys_from_brs(brs2, varis, st_br_to_cs)
+    csys, varis = brc.get_csys(brs2, varis, st_br_to_cs)
 
     varis['sys'] = variable.Variable(name='sys', values=list(st_br_to_cs.keys()))
     cpms['sys'] = cpm.Cpm(variables = [varis['sys']] + [varis[k] for k in cfg.infra['edges'].keys()], no_child=1, C=csys, p=np.ones((len(csys),1), dtype=np.float32))
