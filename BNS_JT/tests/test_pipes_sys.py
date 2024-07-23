@@ -12,7 +12,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from pathlib import Path
 
-from BNS_JT import cpm, config, variable, branch, pipes_sys, gen_bnb
+from BNS_JT import cpm, config, variable, branch, pipes_sys
 
 HOME = Path(__file__).parent
 
@@ -497,12 +497,12 @@ def setup_inference(main_sys2, sub_sys):
             print(f'{file_brs} loaded')
     else:
         output_path = Path(__file__).parent
-        brs, rules, sys_res = gen_bnb.proposed_branch_and_bound(
+        brs, rules, sys_res = brc.run(
             sys_fun, varis, max_br=100_000, output_path=output_path, key='pipes2', flag=True)
 
     #pdb.set_trace()
     st_br_to_cs = {'f': 0, 's': 1, 'u': 2}
-    csys, varis = gen_bnb.get_csys_from_brs(brs, varis, st_br_to_cs)
+    csys, varis = brc.get_csys(brs, varis, st_br_to_cs)
 
     """
     # Damage observation
@@ -547,23 +547,6 @@ def setup_inference(main_sys2, sub_sys):
     return cpms, varis, var_elim_order
 
 
-@pytest.mark.skip('removed')
-def test_core_iter0(main_sys):
-
-    _, _, _, _, _, _, varis = main_sys
-
-    cst =[]
-    rules = []
-    stop_br = True
-    rules_st = []
-
-    brs = gen_bnb.init_branch_old(varis, rules, rules_st)
-
-    brs, cst, stop_br = gen_bnb.core(brs, rules, rules_st, cst, stop_br)
-    assert len(brs) == 1
-    assert cst ==  [1]*11 + [2]*10
-    assert stop_br == True
-
 
 @pytest.fixture()
 def setup_brs(main_sys, sub_sys):
@@ -584,7 +567,7 @@ def setup_brs(main_sys, sub_sys):
     #varis_comp = {k: varis[k] for k in _list}
 
     output_path = Path(__file__).parent
-    no_sf, rules, rules_st, brs, sys_res = gen_bnb.do_gen_bnb(sys_fun, varis, max_br=1000, output_path=output_path, key='pipes2', flag=True)
+    no_sf, rules, rules_st, brs, sys_res = brc.run(sys_fun, varis, max_br=1000, output_path=output_path, key='pipes2', flag=True)
 
     return no_sf, rules, rules_st, brs, sys_res
 

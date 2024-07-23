@@ -52,7 +52,7 @@ def main():
     brs, rules, sys_res, monitor = brc.run(
         varis, probs, sys_fun, cfg.data['MAX_SYS_FUN'], cfg.max_branches)
 
-    csys, varis = brc.get_csys_from_brs(brs, varis, st_br_to_cs)
+    csys, varis = brc.get_csys(brs, varis, st_br_to_cs)
     print(csys)
 
 if __name__=='__main__':

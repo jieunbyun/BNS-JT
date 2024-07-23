@@ -5,7 +5,7 @@ from pathlib import Path
 import copy
 import typer
 
-from BNS_JT import trans, branch, variable, cpm, gen_bnb, config, operation
+from BNS_JT import trans, branch, variable, cpm, config, operation, brc
 
 HOME = Path(__file__).parent
 
@@ -101,13 +101,12 @@ def main():
     #sys_fun = lambda comps_st : conn(comps_st, od_pair, arcs)
     sys_fun = trans.sys_fun_wrap(cfg.infra['G'], od_pair, varis)
 
-    brs, rules, sys_res, monitor = gen_bnb.proposed_branch_and_bound_using_probs(
-            sys_fun, varis, probs, max_sf=1000, output_path=HOME, key='routine')
+    brs, rules, sys_res, monitor = brc.run(varis, probs, sys_fun,
+            max_sf=1000, max_nb=100)
 
+    brc.plot_monitoring(monitor, HOME.joinpath('./monitor.png'))
 
-    gen_bnb.plot_monitoring(monitor, HOME.joinpath('./monitor.png'))
-
-    csys_by_od, varis_by_od = gen_bnb.get_csys_from_brs(brs, varis, st_br_to_cs)
+    csys_by_od, varis_by_od = brc.get_csys(brs, varis, st_br_to_cs)
 
     varis['sys'] = variable.Variable(name='sys', values=['f', 's', 'u'])
     cpms['sys'] = cpm.Cpm(variables = [varis[k] for k in ['sys'] + list(cfg.infra['edges'].keys())],
@@ -176,7 +175,7 @@ def dummy():
 
 
     st_br_to_cs = {'f': 0, 's': 1, 'u': 2}
-    result = gen_bnb.get_csys_from_brs(brs, varis, st_br_to_cs)
+    result = brc.get_csys(brs, varis, st_br_to_cs)
 
 
     # In[27]:
@@ -247,7 +246,6 @@ def dummy():
                 prob += M.p[i]
 
         return prob
-        
 
 
     # In[80]:
@@ -269,11 +267,11 @@ def dummy():
     varis_c = {e:varis[e] for e in arcs.keys()}
 
     # Incomplete B&B (by setting max_br=10)
-    brs2, rules2, sys_res2, _, _, _, _, _ = gen_bnb.proposed_branch_and_bound_using_probs(sys_fun, varis_c, probs, max_br=8,
+    brs2, rules2, sys_res2, _, _, _, _, _ = brc.run(sys_fun, varis_c, probs, max_br=8,
                                                                                           output_path=HOME, key='conn')
 
     st_br_to_cs = {'f': 0, 's': 1, 'u': 2}
-    result2 = gen_bnb.get_csys_from_brs(brs2, varis_c, st_br_to_cs)
+    result2 = brc.get_csys(brs2, varis_c, st_br_to_cs)
 
     varis['sys2'] = variable.Variable( name='sys2', values=['f', 's', 'u'] ) #FIXME When trying to define B here, an error occurs. Can we revise this to give users liberty to define this?
     cpms['sys2'] = cpm.Cpm( variables=[varis['sys2']] + [varis[e] for e in arcs.keys()], no_child = 1, C=result2[0], p=np.ones((len(result2[0]),1)) )

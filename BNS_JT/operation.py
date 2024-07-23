@@ -12,24 +12,25 @@ from BNS_JT import utils
 from BNS_JT import cpm
 
 
-def condition(M, cnd_vars, cnd_states, sample_idx=[]):
+def condition(cpms, cnd_vars, cnd_states):
     """
     Returns a list of instance of Cpm
 
     Parameters
     ----------
-    M: a dict or list of instances of Cpm
+    cpms: a dict or list of instances of Cpm
     cnd_vars: a list of variables to be conditioned
     cnd_states: a list of the states to be conditioned
     """
 
-    assert isinstance(M, (cpm.Cpm, list, dict)), 'invalid M'
+    assert isinstance(cpms, (cpm.Cpm, list, dict)), 'invalid cpms'
 
-    if isinstance(M, cpm.Cpm):
-        M = [M]
-    elif isinstance(M, dict):
-        keys = list(M.keys())
-        M = list(M.values())
+    keys = None
+    if isinstance(cpms, cpm.Cpm):
+        cpms = [cpms]
+    elif isinstance(cpms, dict):
+        keys = list(cpms.keys())
+        cpms = list(cpms.values())
 
     assert isinstance(cnd_vars, (list, np.ndarray)), 'invalid cnd_vars'
 
@@ -37,7 +38,7 @@ def condition(M, cnd_vars, cnd_states, sample_idx=[]):
         cnd_vars = cnd_vars.tolist()
 
     if cnd_vars and isinstance(cnd_vars[0], str):
-        cnd_vars = get_variables(M, cnd_vars)
+        cnd_vars = get_variables(cpms, cnd_vars)
 
     assert isinstance(cnd_states, (list, np.ndarray)), 'invalid cnd_vars'
 
@@ -47,73 +48,11 @@ def condition(M, cnd_vars, cnd_states, sample_idx=[]):
     if cnd_states and isinstance(cnd_states[0], str):
         cnd_states = [x.values.index(y) for x, y in zip(cnd_vars, cnd_states)]
 
-    Mc = copy.deepcopy(M)
-    for Mx in Mc:
+    Mc = [Mx.condition(cnd_vars, cnd_states) for Mx in cpms]
 
-        is_cmp = cpm.iscompatible(Mx.C, Mx.variables, cnd_vars, cnd_states)
-        # FIXME
-        #if any(sample_idx) and any(Mx.sample_idx):
-        #    is_cmp = is_cmp & ( M.sample_idx == sample_idx )
-        C = Mx.C[is_cmp, :].copy()
-        _, idx_cnd = cpm.ismember(cnd_vars, Mx.variables)
-        _, idx_vars = cpm.ismember(Mx.variables, cnd_vars)
-
-        Ccond = np.zeros_like(C)
-        not_idx_vars = cpm.flip(idx_vars)
-
-        if C.size:
-            Ccond[:, not_idx_vars] = cpm.get_value_given_condn(C, not_idx_vars)
-
-        cnd_vars_m = cpm.get_value_given_condn(cnd_vars, idx_cnd)
-        cnd_states_m = cpm.get_value_given_condn(cnd_states, idx_cnd)
-        idx_cnd = cpm.get_value_given_condn(idx_cnd, idx_cnd)
-
-        for cnd_var, state, idx in zip(cnd_vars_m, cnd_states_m, idx_cnd):
-            try:
-                B = cnd_var.B.copy()
-            except NameError:
-                print(f'{cnd_var} is not defined')
-            else:
-                C1 = C[:, idx].copy().astype(int)
-                #check = [bool(B[state].intersection(x)) for x in B[C1]]
-                check = [B[x].intersection(B[state]) for x in C1]
-                #B = add_new_states(check, B)
-                #cnd_var = Variable(name=cnd_var.name,
-                #                   #B=add_new_states(check, B),
-                #                   values=cnd_var.values)
-                Ccond[:, idx] = [x for x in cpm.ismember(check, B)[1]]
-
-        Mx.C = Ccond.copy()
-
-        if Mx.p.size:
-            Mx.p = Mx.p[is_cmp]
-
-        if Mx.Cs.size: # NB: ps is not properly updated if the corresponding instance is not in C.
-            _, res = cpm.ismember(Mx.variables, cnd_vars)
-            if any(not isinstance(r,bool) for r in res[:Mx.no_child]): # conditioned variables belong to child nodes
-                ps = []
-                for c, q in zip(Mx.Cs, Mx.q):
-                    var_states = [cnd_states[r] if not isinstance(r,bool) else c[i] for i,r in enumerate(res)]
-                    pr = Mx.get_prob(Mx.variables, var_states)
-                    ps.append(pr*q[0])
-
-                Mx.ps = ps # the conditioned variables' samples are removed.
-
-            elif all(isinstance(r,bool) and r==False for r in res): # conditioned variables are not in the scope.
-                Mx.ps = Mx.q.copy()
-
-            else: # conditioned variables are in parent nodes.
-                ps = []
-                for c in Mx.Cs:
-                    var_states = [cnd_states[r] if not isinstance(r,bool) else c[i] for i,r in enumerate(res)]
-                    pr = Mx.get_prob(Mx.variables, var_states)
-                    ps.append(pr)
-
-                Mx.ps = ps
-
-    try:
-        return {k: M for k,M in zip(keys,Mc)}
-    except NameError:
+    if keys:
+        return {k: M for k, M in zip(keys, Mc)}
+    else:
         return Mc
 
 
@@ -280,10 +219,8 @@ def single_sample(cpms, sample_order, sample_vars, var_add_order, sample_idx, is
         cnd_vars = [x for x, y in zip(sample_vars, sample) if y > 0]
         cnd_states = sample[sample > 0]
 
-        [M] = condition(
-                    M=M,
-                    cnd_vars=cnd_vars,
-                    cnd_states=cnd_states)
+        M = M.condition(cnd_vars=cnd_vars,
+                        cnd_states=cnd_states)
 
         #if (sample_idx == [1]) and any(M.p.sum(axis=0) != 1):
         #    print('Given probability vector does not sum to 1')
@@ -331,7 +268,7 @@ def rejection_sampling_sys(cpms, sys_name, sys_fun, nsamp_cov, sys_st_monitor = 
 
     OUTPUT:
     - cpms: a list;dictionary of cpms with samples added
-    - result: a dictionary including the summary of sampling result 
+    - result: a dictionary including the summary of sampling result
     """
     if rand_seed:
         random.seed(rand_seed)
@@ -362,7 +299,7 @@ def rejection_sampling_sys(cpms, sys_name, sys_fun, nsamp_cov, sys_st_monitor = 
     else:
         cpms_v_idxs_ = {k: get_var_ind(sample_vars, [y.name for y in x.variables[:x.no_child]])
             for k, x in cpms_no_sys.items()}
-        cpms_v_idxs = {k: [cpms_v_idxs_[y.name][0] 
+        cpms_v_idxs = {k: [cpms_v_idxs_[y.name][0]
             for y in x.variables] for k, x in cpms_no_sys.items()}
 
     nsamp_tot = 0 # total number of samples (including rejected ones)
@@ -513,12 +450,13 @@ def variable_elim(cpms, var_elim, prod=True):
 
     return cpms
 
+
 def variable_elim_cond(cpms_ve, ve_order, cpms_cond):
     """
     [INPUT]
     cpms_ve: list or dict of cpms for VE
     ve_order: a list of variables "names" to be eliminated by VE
-    cpms_cond: list or dict of cpms for conditioning 
+    cpms_cond: list or dict of cpms for conditioning
 
     [OUTPUT]
     M: a cpm with ve_order and variables of cpms_cond eliminated.

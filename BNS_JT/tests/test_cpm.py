@@ -9,7 +9,7 @@ from pathlib import Path
 np.set_printoptions(precision=3)
 #pd.set_option.display_precision = 3
 
-from BNS_JT import cpm, variable, config, trans, gen_bnb, operation
+from BNS_JT import cpm, variable, config, trans, operation
 
 HOME = Path(__file__).parent
 

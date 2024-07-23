@@ -8,7 +8,7 @@ import random
 import matplotlib.pyplot as plt
 from BNS_JT import config
 
-from BNS_JT import trans, branch, variable, cpm, gen_bnb
+from BNS_JT import trans, branch, variable, cpm
 
 od_pair, key = ('n1','n53'), 'ema2'
 

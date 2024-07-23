@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import pdb
 import numpy as np
 
-from BNS_JT import model, config, trans, variable, gen_bnb
+from BNS_JT import model, config, trans, variable
 
 
 HOME = Path(__file__).parent
@@ -65,7 +65,6 @@ def create_model():
 def main():
 
     cfg = config.Config(HOME.joinpath('./config_road.json'))
-
     csys_by_od, varis_by_od = model.get_branches_by_od(cfg)
 
 

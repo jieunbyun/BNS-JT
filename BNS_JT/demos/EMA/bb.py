@@ -13,7 +13,6 @@ from pathlib import Path
 
 from BNS_JT import cpm, variable
 from BNS_JT import pipes_sys
-from BNS_JT import gen_bnb
 
 HOME = Path(__file__).parent
 
@@ -144,7 +143,7 @@ def main_sys(nodes_edges):
 @pytest.fixture()
 def main_sys2(nodes_edges):
     """
-    based on gen_bnb_to_rel_deter_ind_pipe.ipynb
+    based on bnb_to_rel_deter_ind_pipe.ipynb
     return variables consisting of n1-n11, x1-x17
     e1-e17 for edges
     varis from n1 to n11, x1 to x17
@@ -497,29 +496,13 @@ def test_setup_brs(main_sys, sub_sys):
             print(f'{file_brs} loaded')
     else:
         output_path = Path(__file__).parent
-        no_sf, rules, _, brs, _ = gen_bnb.do_gen_bnb(sys_fun, varis, max_br=1000, output_path=output_path, key='pipes', flag=True)
+        no_sf, rules, _, brs, _ = brc.run(sys_fun, varis, max_br=1000, output_path=output_path, key='pipes', flag=True)
         assert no_sf == 1258
         assert len(rules) == 129
 
     assert len(brs) == 1082
     assert sum([not b.is_complete for b in brs]) == 144
 
-
-def test_core_iter0(main_sys):
-
-    _, _, _, _, _, _, varis = main_sys
-
-    cst =[]
-    rules = []
-    stop_br = True
-    rules_st = []
-
-    brs = gen_bnb.init_brs(varis, rules, rules_st)
-
-    brs, cst, stop_br = gen_bnb.core(brs, rules, rules_st, cst, stop_br)
-    assert len(brs) == 1
-    assert cst ==  [1]*11 + [2]*10
-    assert stop_br == True
 
 
 @pytest.fixture()
@@ -541,7 +524,7 @@ def setup_brs(main_sys, sub_sys):
     #varis_comp = {k: varis[k] for k in _list}
 
     output_path = Path(__file__).parent
-    no_sf, rules, rules_st, brs, sys_res = gen_bnb.do_gen_bnb(sys_fun, varis, max_br=1000, output_path=output_path, key='pipes2', flag=True)
+    no_sf, rules, rules_st, brs, sys_res = brc.run(sys_fun, varis, max_br=1000, output_path=output_path, key='pipes2', flag=True)
 
     return no_sf, rules, rules_st, brs, sys_res
 
@@ -596,7 +579,7 @@ def setup_inference(setup_comp_events, request):
 
     st_br_to_cs = {'fail': 0, 'surv': 1, 'unk': 2}
 
-    csys, varis = gen_bnb.get_csys_from_brs(brs, varis, st_br_to_cs)
+    csys, varis = brc.get_csys(brs, varis, st_br_to_cs)
     #pdb.set_trace()
     varis['sys'] = variable.Variable('sys', np.eye(3), ['fail', 'surv', 'unk'])
     cpm_sys_vname = brs[0].names[:]

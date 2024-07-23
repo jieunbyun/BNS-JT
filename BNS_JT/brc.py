@@ -218,7 +218,7 @@ def plot_monitoring(monitor, output_file='monitor.png'):
     print(f'{output_file} created')
 
 
-def get_csys_from_brs(brs, varis, st_br_to_cs):
+def get_csys(brs, varis, st_br_to_cs):
     """
 
     """
@@ -458,3 +458,31 @@ def get_comp_st(brs, surv_first=True, varis=None, probs=None):
 
     return x_star
 
+
+def run_MCS_indep_comps(probs, sys_fun, cov_t = 0.01):
+    nsamp, nfail = 0, 0
+    cov = 1.0
+    while cov > cov_t:
+
+        # generate samples
+        nsamp += 1
+        samp = {}
+        for k, v in probs.items():
+            st1 = np.random.choice(list(v.keys()), size=1, p=list(v.values()))
+            samp[k] = st1[0]
+
+        # run system function
+        _, sys_st, _ = sys_fun(samp)
+
+        if sys_st == 'f':
+            nfail += 1
+
+            pf = nfail / nsamp
+            if nfail > 5:
+                std = np.sqrt( pf*(1-pf) / nsamp )
+                cov = std / pf
+
+        if nsamp % 20000 == 0:
+            print(f'nsamp: {nsamp}, cov: {cov}, pf: {pf}')
+
+    return pf, cov, nsamp

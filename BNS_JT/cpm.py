@@ -623,7 +623,7 @@ class Cpm(object):
                 for c, q in zip(Mx.Cs, Mx.q):
 
                     var_states = [cnd_states[r] if not isinstance(r,bool) else c[i] for i,r in enumerate(res)]
-                    pr = get_prob(Mx, Mx.variables, var_states)
+                    pr = Mx.get_prob(Mx.variables, var_states)
                     ps.append(pr*q[0])
 
                 Mx.ps = ps # the conditioned variables' samples are removed.
@@ -756,7 +756,7 @@ class Cpm(object):
                 _csprod = np.concatenate((c2, c1_not_com), axis = 0 )
                 Csprod.append([_csprod])
 
-                qprod.append(get_prod(M.q[M_idx], self.q[i])) 
+                qprod.append(get_prod(M.q[M_idx], self.q[i]))
                 psprod.append(get_prod(M.ps[M_idx], self.ps[i]))
 
             Csprod = np.concatenate(Csprod, axis=0)
@@ -935,8 +935,8 @@ class Cpm(object):
                 a2, b2 = a2 + (nTrue2-nTrue1), b2 + (neff[0] - (nTrue2-nTrue1))
             except NameError:
                 prior = 0.01
-                a1, b1 = prior + nTrue1, prior + (neff[0] - nTrue1) 
-                a2, b2 = prior + (nTrue2-nTrue1), prior + (neff[0] - (nTrue2-nTrue1)) 
+                a1, b1 = prior + nTrue1, prior + (neff[0] - nTrue1)
+                a2, b2 = prior + (nTrue2-nTrue1), prior + (neff[0] - (nTrue2-nTrue1))
 
         prob_C = self.get_prob(var_inds, var_states)
         prob_C_c = self.get_prob(cvar_inds, cvar_states)

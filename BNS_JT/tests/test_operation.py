@@ -9,7 +9,7 @@ from pathlib import Path
 np.set_printoptions(precision=3)
 #pd.set_option.display_precision = 3
 
-from BNS_JT import cpm, variable, config, trans, brc, gen_bnb, operation
+from BNS_JT import cpm, variable, config, trans, brc, operation
 
 HOME = Path(__file__).parent
 
@@ -407,10 +407,54 @@ def test_condition(setup_mcs_product):
     cpms = setup_mcs_product
     v1, v2 = cpms[2].get_variables(['v1', 'v2'])
     condVars = [v1, v2]
-    condStates = np.array([1-1, 1-1])
-
+    condStates = np.array([0, 0])
+    """
+    M[3] = cpm.Cpm(variables=[v3, v1],
+                   no_child=1,
+                   C = np.array([[0, 0], [1, 0], [0, 1], [1, 1]]),
+                   p = np.array([0.95, 0.05, 0.85, 0.15]).T)
+    """
     [M]= operation.condition([cpms[3]], condVars, condStates)
-    np.testing.assert_array_equal(M.C, np.array([[1, 1], [2, 1]])-1)
+    np.testing.assert_array_equal(M.C, np.array([[0, 0], [1, 0]]))
+    np.testing.assert_array_equal(M.p, np.array([[0.95], [0.05]]))
+    np.testing.assert_array_equal([x.name for x in M.variables], ['v3', 'v1'])
+    assert M.q.any() == False
+    assert M.sample_idx.any() == False
+
+    # condvars = v1
+    condVars = [v1]
+    condStates = [0]
+    [M]= operation.condition([cpms[3]], condVars, condStates)
+    np.testing.assert_array_equal(M.C, np.array([[0, 0], [1, 0]]))
+    np.testing.assert_array_equal(M.p, np.array([[0.95], [0.05]]))
+    np.testing.assert_array_equal([x.name for x in M.variables], ['v3', 'v1'])
+    assert M.q.any() == False
+    assert M.sample_idx.any() == False
+
+    # using string for cond_vars -> not working as variable['v2'] does not exist in cpms
+    #condVars = ['v1', 'v2']
+
+    # using dict for cpms
+    M= operation.condition({0: cpms[3]}, condVars, condStates)
+    np.testing.assert_array_equal(M[0].C, np.array([[0, 0], [1, 0]]))
+    np.testing.assert_array_equal(M[0].p, np.array([[0.95], [0.05]]))
+    np.testing.assert_array_equal([x.name for x in M[0].variables], ['v3', 'v1'])
+    assert M[0].q.any() == False
+    assert M[0].sample_idx.any() == False
+
+    # using cpm for cpm
+    [M]= operation.condition(cpms[3], condVars, condStates)
+    np.testing.assert_array_equal(M.C, np.array([[0, 0], [1, 0]]))
+    np.testing.assert_array_equal(M.p, np.array([[0.95], [0.05]]))
+    np.testing.assert_array_equal([x.name for x in M.variables], ['v3', 'v1'])
+    assert M.q.any() == False
+    assert M.sample_idx.any() == False
+
+    # test cpm.method
+    M = cpms[3].condition(condVars, condStates)
+    np.testing.assert_array_equal(M.C, np.array([[0, 0], [1, 0]]))
+    np.testing.assert_array_equal(M.p, np.array([[0.95], [0.05]]))
+    np.testing.assert_array_equal([x.name for x in M.variables], ['v3', 'v1'])
     assert M.q.any() == False
     assert M.sample_idx.any() == False
 
@@ -513,10 +557,9 @@ def test_prod_cpm_sys_and_comps():
     #sys_fun = lambda comps_st : conn(comps_st, od_pair, arcs)
     sys_fun = trans.sys_fun_wrap(cfg.infra['G'], od_pair, varis)
 
-    brs, _, _, _ = gen_bnb.proposed_branch_and_bound_using_probs(
-            sys_fun, varis, probs, max_sf=1000, output_path=HOME, key='routine')
+    brs, _, _, _ = brc.run(varis, probs, sys_fun, max_sf=1000, max_nb=1000)
 
-    csys_by_od, varis_by_od = brc.get_csys_from_brs(brs, varis, st_br_to_cs)
+    csys_by_od, varis_by_od = brc.get_csys(brs, varis, st_br_to_cs)
 
     varis['sys'] = variable.Variable(name='sys', values=['f', 's'])
     cpms['sys'] = cpm.Cpm(variables = [varis[k] for k in ['sys'] + list(cfg.infra['edges'].keys())],
@@ -603,12 +646,24 @@ def test_get_variables_from_cpms4(setup_hybrid_no_samp):
 def test_condition6(setup_hybrid):
 
     varis, cpms = setup_hybrid
+    """
+    cpms['haz'] = cpm.Cpm(variables=[varis['haz']], no_child=1, C=np.array([0,1]), p=[0.7, 0.3])
+    cpms['x0'] = cpm.Cpm(variables=[varis['x0'], varis['haz']], no_child=1, C=np.array([[0,0],[1,0],[0,1],[1,1]]), p=[0.1,0.9,0.2,0.8])
+    cpms['x1'] = cpm.Cpm(variables=[varis['x1'], varis['haz']], no_child=1, C=np.array([[0,0],[1,0],[0,1],[1,1]]), p=[0.3,0.7,0.4,0.6])
+    cpms['sys'] = cpm.Cpm(variables=[varis['sys'], varis['x0'], varis['x1']], no_child=1, C=np.array([[0,0,0],[1,1,1]]), p=np.array([1.0,1.0])) # incomplete C (i.e. C does not include all samples)
+    """
     Mc = operation.condition(cpms, ['haz'], [0])
 
     np.testing.assert_array_almost_equal(Mc['haz'].C, np.array([[0]]))
     np.testing.assert_array_almost_equal(Mc['haz'].ps, cpms['haz'].q * 0.7)
+
+    np.testing.assert_array_almost_equal(Mc['x0'].C, np.array([[0, 0], [1, 0]]))
     np.testing.assert_array_almost_equal(Mc['x0'].ps, np.array([[0.1],[0.9],[0.9],[0.1],[0.9]]))
+
+    np.testing.assert_array_almost_equal(Mc['x1'].C, np.array([[0, 0], [1, 0]]))
     np.testing.assert_array_almost_equal(Mc['x1'].ps, np.array([[0.7],[0.3],[0.3],[0.7],[0.3]]))
+
+    np.testing.assert_array_almost_equal(Mc['sys'].C, np.array([[0, 0, 0], [1, 1, 1]]))
     np.testing.assert_array_almost_equal(Mc['sys'].ps, np.array([[1.0],[1.0],[1.0],[1.0],[1.0]]))
 
 
@@ -929,7 +984,7 @@ def test_variable_elim_cond0(sys_2comps_2haz):
 
     ve_order = ['x0', 'x1', 'sys']
     cpms_ve = [cpms[k] for k in ve_order]
-    pdb.set_trace()
+    #pdb.set_trace()
     M = operation.variable_elim_cond(cpms_ve, ve_order, [cpms['h0'], cpms['h1']])
 
     np.testing.assert_array_equal(M.C, [[0], [1]])

@@ -7,7 +7,7 @@ import pytest
 
 from pathlib import Path
 from numpy.random import choice
-from BNS_JT import cpm, variable, branch, gen_bnb, pipes_sys
+from BNS_JT import cpm, variable, branch, pipes_sys
 
 HOME = Path(__file__).parent
 

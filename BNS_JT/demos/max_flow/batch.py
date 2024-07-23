@@ -142,7 +142,7 @@ def run_MCS(cfg_fname, od_name):
         cfg, _, _, probs, sys_fun = init_prob(cfg_fname, od_name)
 
         key = cfg.infra['ODs'][od_name]['key']
-        pf, cov, nsamp = gen_bnb.run_MCS_indep_comps(probs, sys_fun, cov_t=0.01)
+        pf, cov, nsamp = brc.run_MCS_indep_comps(probs, sys_fun, cov_t=0.01)
         print(f'pf: {pf:.4e}, cov: {cov:.4e}, nsamp: {nsamp:d}')
 
         with open(output_path.joinpath(f'{key}_mcs.txt'), 'w') as fout:
@@ -160,10 +160,10 @@ def main(cfg_fname, od_name):
     cfg, varis, _, probs, sys_fun = init_prob(cfg_fname, od_name)
 
     # run BRC
-    """brs, rules, sys_res, monitor = gen_bnb.run(varis, probs, sys_fun, max_sf = cfg.max_sys_fun, max_nb = 0.01*cfg.max_branches, pf_bnd_wr = cfg.sys_bnd_wr, surv_first=False, rules=None)
+    """brs, rules, sys_res, monitor = brc.run(varis, probs, sys_fun, max_sf = cfg.max_sys_fun, max_nb = 0.01*cfg.max_branches, pf_bnd_wr = cfg.sys_bnd_wr, surv_first=False, rules=None)
 
     if monitor['pf_low'][-1] * cfg.sys_bnd_wr < monitor['pf_up'][-1] - monitor['pf_low'][-1]:
-        brs, rules, sys_res2, monitor2 = gen_bnb.run(varis, probs, sys_fun, max_sf = cfg.max_sys_fun, max_nb = cfg.max_branches, pf_bnd_wr = cfg.sys_bnd_wr, surv_first=True, rules=rules)
+        brs, rules, sys_res2, monitor2 = brc.run(varis, probs, sys_fun, max_sf = cfg.max_sys_fun, max_nb = cfg.max_branches, pf_bnd_wr = cfg.sys_bnd_wr, surv_first=True, rules=rules)
         sys_res = pd.concat([sys_res, sys_res2], ignore_index=True)
         for k, v in monitor.items():
             monitor[k] += monitor2[k]"""
@@ -190,6 +190,12 @@ def main(cfg_fname, od_name):
         pickle.dump(monitor, fout)
 
     print(f"{key} done. Output files saved")
+
+
+@app.command()
+def debug():
+
+    main(HOME.joinpath('./input/config.json'), 'od1')
 
 
 @app.command()
