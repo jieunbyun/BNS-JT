@@ -58,6 +58,8 @@ def create_model():
 def main(key: Annotated[str, typer.Argument()] = 'od2',
          max_sf: Annotated[int, typer.Argument()] = 100):
 
+    rnd_state = np.random.RandomState(1)
+
     cfg = config.Config(HOME.joinpath('./config.json'))
 
     od_pair = cfg.infra['ODs'][key]
@@ -67,7 +69,7 @@ def main(key: Annotated[str, typer.Argument()] = 'od2',
                  1: {0: 0.03, 1: 0.12, 2: 0.85},
                  2: {0: 0.06, 1: 0.24, 2: 0.70},
                  }
-    probs_key = np.random.choice(3, size=len(cfg.infra['edges']))
+    probs_key = rnd_state.choice(3, size=len(cfg.infra['edges']))
 
     probs = {k: probs_set[v] for k, v in zip(cfg.infra['edges'].keys(), probs_key)}
 
