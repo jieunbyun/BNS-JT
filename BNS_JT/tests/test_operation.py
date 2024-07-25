@@ -981,9 +981,9 @@ def test_variable_elim_cond0(sys_2comps_2haz):
 
     varis, cpms = sys_2comps_2haz
 
-    ve_order = ['x0', 'x1', 'sys']
-    cpms_ve = [cpms[k] for k in ve_order]
+    ve_order = ['x0', 'x1']
+    cpms_ve = [cpms[k] for k in ['sys', 'x0', 'x1']]
     M = operation.variable_elim_cond(cpms_ve, ve_order, [cpms['h0'], cpms['h1']])
 
     np.testing.assert_array_equal(M.C, [[0], [1]])
-    np.testing.assert_array_almost_equal(M.p, [0.9102, 0.0898], decimal=3)
+    np.testing.assert_array_almost_equal(M.p, [[0.0898], [0.9102]], decimal=3)

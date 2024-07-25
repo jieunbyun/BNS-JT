@@ -492,7 +492,7 @@ def variable_elim_cond(cpms, varis, cpms_cond):
             idv = [i for i in range(len(_cpm.variables)) if i not in idx]
         finally:
             if idv:
-                cpm2 = cpm.Cpm([_cpm.variables[v] for v in idv], _cpm.no_child-len(idv), _cpm.C[:, idv], _cpm.p)
+                cpm2 = cpm.Cpm([_cpm.variables[v] for v in idv], _cpm.no_child-len(idx), _cpm.C[:, idv], _cpm.p)
 
                 try:
                     M = M.merge(cpm2)
