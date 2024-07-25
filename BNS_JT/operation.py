@@ -451,56 +451,62 @@ def variable_elim(cpms, var_elim, prod=True):
     return cpms
 
 
-def variable_elim_cond(cpms_ve, ve_order, cpms_cond):
+def variable_elim_cond(cpms, varis, cpms_cond):
     """
     [INPUT]
-    cpms_ve: list or dict of cpms for VE
-    ve_order: a list of variables "names" to be eliminated by VE
+    cpms: list or dict of cpms for VE
+    varis: a list of variables "names" to be eliminated by VE
     cpms_cond: list or dict of cpms for conditioning
 
     [OUTPUT]
-    M: a cpm with ve_order and variables of cpms_cond eliminated.
+    M: a cpm with varis and variables of cpms_cond eliminated.
     """
-    if isinstance(cpms_ve, dict):
-        cpms_ve = list(cpms_ve.values())
+    if isinstance(cpms, dict):
+        cpms = list(cpms.values())
     else:
-        cpms_ve = copy.deepcopy(cpms_ve)
+        cpms = copy.deepcopy(cpms)
 
     if isinstance(cpms_cond, dict):
         cpms_cond = list(cpms_cond.values())
     else:
         cpms_cond = copy.deepcopy(cpms_cond)
 
-    assert isinstance(ve_order, list), 'var_elim_order should be a list of variable names'
+    assert isinstance(varis, list), 'varis should be a list of variable names'
 
-    c_names = []
-    for M_ in cpms_cond:
-        c_names += [v.name for v in M_.variables]
-    c_names = list(set(c_names))
+    c_names = list(set([v.name for x in cpms_cond for v in x.variables]))
 
-    cpms_cond1 = cpm.product(cpms_cond)
+    cpms_prod = cpm.product(cpms_cond)
 
+    for cx in cpms_prod.C:
 
-    for c in cpms_cond1.C:
+        _cpms_prod = cpms_prod.condition(cpms_prod.variables, cx)
+        _cpms_cond = condition(cpms, cpms_prod.variables, cx)
 
-        cpms_cond1_ = condition(cpms_cond1, cpms_cond1.variables, c)
-        cpms_ = condition(cpms_ve, cpms_cond1.variables, c)
+        _cpm = variable_elim(_cpms_cond, varis).product(_cpms_prod)
 
-        cpm_ = variable_elim(cpms_, ve_order)
-        cpm_ = cpm.product([cpm_] + cpms_cond1_)
-
-        if 'v_idx' not in globals():
-            v_idx_ = cpm_.get_col_ind(c_names)
-            v_idx = [i for i in range(len(cpm_.variables)) if i not in v_idx_]
-
-        cpm2_ = cpm.Cpm([cpm_.variables[v] for v in v_idx], cpm_.no_child-len(v_idx), cpm_.C[:,v_idx], cpm_.p)
+        idx = _cpm.get_col_ind(c_names)
 
         try:
-            M = M.merge(cpm2_)
+            idv
         except NameError:
-            M = copy.deepcopy(cpm2_)
+            idv = [i for i in range(len(_cpm.variables)) if i not in idx]
+        finally:
+            if idv:
+                cpm2 = cpm.Cpm([_cpm.variables[v] for v in idv], _cpm.no_child-len(idv), _cpm.C[:, idv], _cpm.p)
 
-    return M
+                try:
+                    M = M.merge(cpm2)
+                except NameError:
+                    M = copy.deepcopy(cpm2)
+            else:
+                del idv
+
+    try:
+        M
+    except NameError:
+        M = None
+    finally:
+        return M
 
 
 def get_variables(cpms, variables):
