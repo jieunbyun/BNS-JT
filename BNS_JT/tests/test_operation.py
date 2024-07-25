@@ -977,14 +977,12 @@ def sys_2comps_2haz():
     return varis, cpms
 
 
-@pytest.mark.skip('FIXME')
 def test_variable_elim_cond0(sys_2comps_2haz):
 
     varis, cpms = sys_2comps_2haz
 
     ve_order = ['x0', 'x1', 'sys']
     cpms_ve = [cpms[k] for k in ve_order]
-    #pdb.set_trace()
     M = operation.variable_elim_cond(cpms_ve, ve_order, [cpms['h0'], cpms['h1']])
 
     np.testing.assert_array_equal(M.C, [[0], [1]])

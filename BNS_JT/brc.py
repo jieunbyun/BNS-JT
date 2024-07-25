@@ -391,14 +391,9 @@ def decomp_depth_first(varis, rules, probs, max_nb):
                 if len(brs_new) + len(brs) > max_nb:
 
                     go = False
-
-                    try:
-                        brs_new += brs[i:]
-                        crules_new += crules[i:]
-                    except TypeError:
-                        pass
-                    else:
-                        break
+                    brs_new += brs[i:]
+                    crules_new += crules[i:]
+                    break
 
         brs = copy.deepcopy(brs_new)
         crules = copy.deepcopy(crules_new)
