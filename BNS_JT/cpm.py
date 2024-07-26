@@ -412,26 +412,25 @@ class Cpm(object):
     def merge(self, M):
 
         assert isinstance(M, Cpm), f'M should be an instance of Cpm'
-        assert self.variables == M.variables, 'must have the same scope'
+        assert self.variables == M.variables, 'must have the same scope and order'
 
-        M_new = copy.deepcopy(self)
+        new_cpm = copy.copy(self)
 
-        C1_list = self.C.tolist()
+        cs = self.C.tolist()
 
-        for c1, p1 in zip(M.C.tolist(), M.p.tolist()):
-            if c1 in C1_list:
-                idx = C1_list.index(c1)
-                M_new.p[idx] += p1
-            else:
-                M_new.C = np.vstack((M_new.C, c1))
-                M_new.p = np.vstack((M_new.p, p1))
+        for cx, px in zip(M.C.tolist(), M.p.tolist()):
+            try:
+                new_cpm.p[cs.index(cx)] += px
+            except IndexError:
+                new_cpm.C = np.vstack((new_cpm.C, cx))
+                new_cpm.p = np.vstack((new_cpm.p, px))
 
-        M_new.Cs = np.vstack((self.Cs, M.Cs))
-        M_new.q = np.vstack((self.q, M.q))
-        M_new.ps = np.vstack((self.ps, M.ps))
-        M_new.sample_idx = np.vstack((self.sample_idx, M.sample_idx))
+        new_cpm.Cs = np.vstack((self.Cs, M.Cs))
+        new_cpm.q = np.vstack((self.q, M.q))
+        new_cpm.ps = np.vstack((self.ps, M.ps))
+        new_cpm.sample_idx = np.vstack((self.sample_idx, M.sample_idx))
 
-        return M_new
+        return new_cpm
 
 
     def sum(self, variables, flag=True):

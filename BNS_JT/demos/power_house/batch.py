@@ -136,8 +136,6 @@ def quant_cpms(haz, pfs, rep_pri, lins):
 
         n_old = copy.deepcopy(name)
 
-    pdb.set_trace()
-
     ## Closure time
     for s in rep_pri:
         name = f'c{s}'
