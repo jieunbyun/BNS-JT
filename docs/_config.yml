@@ -11,8 +11,8 @@ highlighter:      rouge
 title:            MBNPy
 tagline:          'mbnpy'
 description:      'White-box risk assessment tool for complex, large-scale systems'
-domain:           mbnpy.github.io
-url:              "https://mbnpy.github.io/"
+domain:           jieunbyun.github.io/BNS-JT
+url:              "https://jieunbyun.github.io/BNS-JT"
 baseurl:          
 
 author:
