@@ -3,6 +3,7 @@ layout: post
 title: MBNPy's system catalogue
 usemathjax: true
 tags: [system_type, functionality]
+categories: user-guide
 ---
 
 <p>There is no free lunch and efficiency of MBNPy is no exception. While simulation-based methods like MCS are applicable to any general systems, MBNPy requires system-specific algorithms to quantify a system's probability distribution.</p>

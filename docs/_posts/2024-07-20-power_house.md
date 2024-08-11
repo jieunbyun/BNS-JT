@@ -1,8 +1,9 @@
 ---
 layout: post
-title: "[Example] Expected days of power cut"
+title: "Expected days of power cut"
 usemathjax: true
 tags: [example, max-min_system]
+categories: case-study
 ---
 
 <p>This article is based on the jupyter notebook script at <a href="https://github.com/jieunbyun/BNS-JT/blob/python/notebooks/power_house.ipynb">MBNPy GitHub respository</a>. </p>
@@ -35,7 +36,7 @@ from BNS_JT import cpm, variable, operation
 # Problem
 ## System
 <figure>
-<img src="/assets/img/house_power_prob.png" style="width:400px">
+<img src="{{site.baseurl}}/assets/img/house_power_prob.png" style="width:400px">
 </figure>
 
 The system consists of two power substations $S_0$ and $S_1$, eight transmission line poles $P_0$, ..., $P_7$, and seven houses $H_0$, ..., $H_6$. The substations and poles may fail being subjected to hazard scenarios $H$. Once a hazard event occurs, repair works will take place with priorities $S_0$ &rarr; $S_1$ &rarr; $P_0$ &rarr; $P_1$ &rarr; ... &rarr; $P_6$. The works are done only for failed components, and repairing a component takes a day.
@@ -45,7 +46,7 @@ Of interest is the expected number of days of power cut for each house. A house 
 ## Bayesian network (BN) graph
 The BN graph can be set up as below:
 <figure>
-<img src="/assets/img/power_house_bn.png" style="width:400px">
+<img src="{{site.baseurl}}/assets/img/power_house_bn.png" style="width:400px">
 </figure>
  
 The hazard node $H$ affects damage states of components, $S_0$, $S_1$, $P_0$, ..., $P_7$. Then, damage state of a component $X$ decides the rapair timing (i.e. how many days after a hazard occurrence) of a corresponding component, $T^X$. $T^X$ is also affected by the timing of the component right before in the repair priority, e.g. $T_1^S$ is dependent on $T^S_0$ as $S_0$ is right before $S_1$ in the repair priority. Then, actual closure time of each component, $C^X$ is decided by the corresponding damage state $X$ and $T^X$. That is, if $X$ has failed, then the closure time is the same as $T^X$, while if it is not, the closure time is zero. Finally, each house's duration of power cut, represneted by $H_0$, ..., $H_7$, is decided by the closure duration of components constituting their link-sets. For example, as aforementioned, teh first house has $S_0$ and $P_0$ in its link set, and therefore the node $H_0$ is connected to $C_0^S$ and $C^P_0$.
@@ -431,7 +432,7 @@ Then, if we want to obtain the marginal distribution of $H_n$, $P(H_n)$ by summi
 
 For example, in case of $H_0$, we have those relevant variables as marked blue in the figure below:
 <figure>
-<img src="/assets/img/power_house_bn_h0.png" style="width:400px">
+<img src="{{site.baseurl}}/assets/img/power_house_bn_h0.png" style="width:400px">
 </figure>
 
 The set of those relevant variables can be obtained using the function <span style="font-family:Consolas;">cpm.get_inf_vars</span>, as shown in the code below:
@@ -484,7 +485,7 @@ print(sum(Msys_h0.p))
 
 We now calculate $P(H_6)$, which takes much longer than $H_0$ (in my desktop, it takes 30 seconds). This is because we now have more variables to consider because $T_7^P$ is in the last priority of repair, and thus all $T_x$ becomes relevant. The variables in the inference scope are marked below in the figure below:
 <figure>
-<img src="/assets/img/power_house_bn_h6.png" style="width:400px">
+<img src="{{site.baseurl}}/assets/img/power_house_bn_h6.png" style="width:400px">
 </figure>
 
 One might consider applying sampling instead of the applied exact inference for faster calculation or a larger number of components (i.e. substations and poles).
@@ -575,20 +576,7 @@ for h in cut_lin.keys():
 print(avg_cut_days)
 ```
 
-
-    ---------------------------------------------------------------------------
-
-    AttributeError                            Traceback (most recent call last)
-
-    Cell In[20], line 3
-          1 avg_cut_days = {}
-          2 for h in cut_lin.keys():
-    ----> 3     days = cpm.get_means( Mhs[h], [h] )
-          4     avg_cut_days[h] = days[0]
-          6 print(avg_cut_days)
-    
-
-    AttributeError: module 'BNS_JT.cpm' has no attribute 'get_means'
+    {'h0': 0.07110250000000003, 'h1': 0.1549099875, 'h2': 0.08022550000000005, 'h3': 0.03758214298500002, 'h4': 0.16464348097007506, 'h5': 0.1408909975000001, 'h6': 0.26823448751250006}
 
 
 # Mapping
@@ -686,7 +674,7 @@ plt.show()
 ```
     
 <figure>
-<img src="/assets/img/power_house_map.png" style="width:600px">
+<img src="{{site.baseurl}}/assets/img/power_house_map.png" style="width:600px">
 </figure>
     
 

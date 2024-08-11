@@ -1,12 +1,12 @@
 ---
 layout: page
-title: User guide
-order: 2
+title: Case studies
+order: 3
 ---
 
 <ul>
     {% for post in site.posts %}
-    {% if post.categories contains 'user-guide' %}
+    {% if post.categories contains 'case-study' %}
       <li>
         <a href="{{ site.baseurl }}{{ post.url }}">{{ post.title }}</a>
       </li>
