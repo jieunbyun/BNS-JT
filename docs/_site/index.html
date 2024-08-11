@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en-us">
+
+  <head>
+  <link href="http://gmpg.org/xfn/11" rel="profile">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta http-equiv="content-type" content="text/html; charset=utf-8">
+
+  <!-- Enable responsiveness on mobile devices-->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+
+  <title>
+    
+      MBNPy &middot; mbnpy
+    
+  </title>
+
+  <!-- CSS -->
+  <link rel="stylesheet" href="/public/css/poole.css">
+  <link rel="stylesheet" href="/public/css/syntax.css">
+  <link rel="stylesheet" href="/public/css/hyde.css">
+  <link rel="stylesheet" href="http://fonts.googleapis.com/css?family=PT+Sans:400,400italic,700|Abril+Fatface">
+
+  <script type="text/javascript" async
+  src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-MML-AM_CHTML">
+  MathJax.Hub.Config({
+      tex2jax: {
+        inlineMath: [['$', '$'], ['\\(', '\\)']]
+      }
+    });
+</script>
+
+  <!-- Icons -->
+  <link rel="apple-touch-icon-precomposed" sizes="144x144" href="public/apple-touch-icon-144-precomposed.png">
+                                 <link rel="shortcut icon" href="public/favicon.ico">
+
+  <!-- RSS -->
+  <link rel="alternate" type="application/rss+xml" title="RSS" href="/atom.xml">
+
+  <style>
+    .footnote {
+      font-size: 0.9em;
+      color: #777;
+    }
+  </style>
+
+</head>
+
+
+  <body>
+
+    <div class="sidebar">
+  <div class="container sidebar-sticky">
+    <div class="sidebar-about">
+      <h1>
+        <a href="">
+          MBNPy
+        </a>
+      </h1>
+      <p class="lead">White-box risk assessment tool for complex, large-scale systems</p>
+    </div>
+
+    <nav class="sidebar-nav">
+      <a class="sidebar-nav-item" href="http://localhost:4000">Home</a>
+
+      
+
+      
+      
+        
+          
+        
+      
+        
+      
+        
+          
+            <a class="sidebar-nav-item" href="/user_guide.html">User guide</a>
+          
+        
+      
+        
+          
+        
+      
+    </nav>
+
+    <p>&copy; 2024. All rights reserved.</p>
+  </div>
+</div>
+
+
+    <div class="content container">
+      <h1>MBNPy</h1>
+
+<h3>A Python toolkit for white-box risk assessment of complex, large-scale systems</h3>
+<p class="message">As <b>a companion toolkit of <em>matrix-based Bayesian network</em> (MBN)</b>, MBNPy is a tool for <b>risk assessment of <em>large-scale,</em> discrete-state system events.</b><sup><b>1</b></sup> MBNPy boldly pursues an innovative pathway to deliver <b>power-saving, fast, and detailed risk solutions.</b></p>
+<p>With large-scale systems, the challenge arises from their giant probability distributions conditioned on numerous components.</p>
+<p class="message">MBNPy provides <b>quantification algorithms that encode those giant probability distributions</b> and <b>inference functions that handle encoded distributions.</b></p>
+
+<p>This is in contrast to recent trends in leveraging High Performance Computing (HPC) power such as Monte Carlo Simulation (MCS) using HPC or training Artificial Neural Network (ANN) to replace an expensive system performance function (i.e. system simulator).</p>
+  
+<p class="message"> Of course there is no free lunch and MBNPy is no exception. Unlike MCS being applicable to any general systems, MBNPy requires system-specific quantification algorithms. <b>Good news, many system events have already been explored</b> and more research is underway. Check out what system types are available here!</p>
+  
+
+<div class="footnote">
+<b>1.</b> For continuous-state events, advanced simulation methods (e.g. subset simulation and Hamiltonian Monte Carlo) have been successfully developed.
+</div>
+
+<h3>Recent posts</h3>
+<ul>
+  
+    <li>
+      <a href="/2024/07/20/power_house.html">[Example] Expected days of power cut</a>- July 20, 2024
+    </li>
+  
+    <li>
+      <a href="/2024/07/20/mbnpy_systems.html">MBNPy's system catalogue</a>- July 20, 2024
+    </li>
+  
+</ul>
+
+<h3>Related Citations:</h3>
+<p> If you use MBNPy in your research, please cite one of the papers below depending on your topic. For general usage can the first paper be cited.</p>
+<ul>
+  <li><b>Development:</b> Byun, J. E., Zwirglmaier, K., Straub, D. & Song, J. (2019). <a href="https://doi.org/10.1016/j.ress.2019.01.007">Matrix-based Bayesian Network for efficient memory storage and flexible inference.</a> <em>Reliability Engineering & System Safety</em>, 185, 533-545. <br></li>
+  <li><b>Multi-objective optimisation:</b> Byun, J. E. & Song, J. (2020). <a href="https://doi.org/10.1016/j.ress.2020.106899">Efficient probabilistic multi-objective optimization of complex systems using matrix-based Bayesian network.</a> <em>Reliability Engineering & System Safety</em>, 200, 106899.</li> 
+  <li><b>Extension to multi-state events:</b> Byun, J. E. & Song, J. (2021). <a href="https://doi.org/10.1016/j.ress.2021.107468">Generalized matrix-based Bayesian network for multi-state systems.</a> <em>Reliability Engineering & System Safety</em>, 211, 107468.</li>
+  <li><b>Integration with advanced BN inference techniques:</b> Byun, J. E. & Song, J. (2021). <a href="https://doi.org/10.1016/j.ress.2021.107952">A general framework of Bayesian network for system reliability analysis using junction tree.</a> <em>Reliability Engineering & System Safety</em>, 216, 107952.</li>
+</ul>
+
+<h3>Developers</h3>
+<ul>
+<li><a href=jieunbyun@github.io>Ji-Eun Byun</a>, PhD, University of Glasgow</li>
+<li>Hyeuk Ryu, PhD</li>
+</ul>
+
+    </div>
+
+  </body>
+</html>

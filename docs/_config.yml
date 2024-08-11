@@ -1,0 +1,37 @@
+# Dependencies
+markdown:         kramdown
+mathjax:          true
+highlighter:      rouge
+
+# Permalinks
+#permalink:        pretty
+#relative_permalinks: true
+
+# Setup
+title:            MBNPy
+tagline:          'mbnpy'
+description:      'White-box risk assessment tool for complex, large-scale systems'
+domain:           mbnpy.github.io
+url:              "https://mbnpy.github.io/"
+baseurl:          
+
+author:
+  name:           'Ji-Eun Byun'
+
+#paginate:         5
+
+
+
+# Paginate for jekyll v3.0
+pagination:
+  enabled: true
+  debug: false
+  collections: 'posts'
+  per_page: 5
+  permalink: '/page/:num/'
+
+# Plugins
+plugins: 
+  - jekyll-paginate-v2
+  - jekyll-gist
+
