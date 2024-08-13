@@ -67,7 +67,7 @@ def run(varis, probs, sys_fun, max_sf, max_nb, pf_bnd_wr=0.0, surv_first=True, r
             monitor['no_sf'].append(ctrl['no_sf'])
             monitor, ctrl = update_monitor(monitor, brs, rules, start) # S7
 
-            if ctrl['no_sf'] % 20 == 0:
+            if ctrl['no_sf'] % 200 == 0:
                 print(f"[System function runs {ctrl['no_sf']}]..")
                 display_msg(monitor)
 
