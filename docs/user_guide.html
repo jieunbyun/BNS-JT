@@ -1,0 +1,15 @@
+---
+layout: page
+title: User guide
+order: 2
+---
+
+<ul>
+    {% for post in site.posts %}
+    {% if post.categories contains 'user-guide' %}
+      <li>
+        <a href="{{ site.baseurl }}{{ post.url }}">{{ post.title }}</a>
+      </li>
+    {% endif %}
+    {% endfor %}
+</ul>
