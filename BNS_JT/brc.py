@@ -90,7 +90,9 @@ def run(varis, probs, sys_fun, max_sf, max_nb, pf_bnd_wr=0.0, surv_first=True, r
 
 
 def init_monitor():
-
+    """
+    pf: prob. of system failure
+    """
     monitor = {'pf_up': [], # upper bound on pf
                'pf_low': [], # lower bound on pf
                'pr_bu': [], # prob. of unknown branches
@@ -138,10 +140,10 @@ def update_monitor(monitor, brs, rules, start):
     monitor['no_rs'].append(no_rs)
     monitor['no_ra'].append(no_rs + no_rf)
 
-    no_br = len(brs)
-    no_bf = sum([b.up_state == 'f' for b in brs])
-    no_bs = sum([b.down_state == 's' for b in brs])
-    no_bu = no_br - no_bf - no_bs
+    no_br = len(brs)  # no. of branches
+    no_bf = sum([b.up_state == 'f' for b in brs]) # no. of branches-failure
+    no_bs = sum([b.down_state == 's' for b in brs]) # no. of branches-survival
+    no_bu = no_br - no_bf - no_bs  # no. of branches-unknown
 
     monitor['no_bf'].append(no_bf)
     monitor['no_bs'].append(no_bs)
@@ -455,16 +457,21 @@ def get_comp_st(brs, surv_first=True, varis=None, probs=None):
 
 
 def run_MCS_indep_comps(probs, sys_fun, cov_t = 0.01):
+    """
+    probs:
+    sys_fun:
+    cov_t: (default: 0.01)
+    """
     nsamp, nfail = 0, 0
     cov = 1.0
+
     while cov > cov_t:
 
         # generate samples
         nsamp += 1
         samp = {}
         for k, v in probs.items():
-            st1 = np.random.choice(list(v.keys()), size=1, p=list(v.values()))
-            samp[k] = st1[0]
+            sampe[k] = np.random.choice(list(v.keys()), size=1, p=list(v.values()))[0]
 
         # run system function
         _, sys_st, _ = sys_fun(samp)
@@ -474,7 +481,7 @@ def run_MCS_indep_comps(probs, sys_fun, cov_t = 0.01):
 
             pf = nfail / nsamp
             if nfail > 5:
-                std = np.sqrt( pf*(1-pf) / nsamp )
+                std = np.sqrt(pf * (1 - pf)/nsamp)
                 cov = std / pf
 
         if nsamp % 20000 == 0:

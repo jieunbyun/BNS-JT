@@ -392,6 +392,13 @@ def test_get_variables1(dict_cpm):
     assert A1x.values == ['s', 'f']
 
 
+def test_get_names1(dict_cpm):
+
+    a = cpm.Cpm(**dict_cpm)
+
+    assert a.get_names() == ['A3', 'A2', 'A1']
+
+
 def test_get_variables2(dict_cpm):
 
     a = cpm.Cpm(**dict_cpm)
