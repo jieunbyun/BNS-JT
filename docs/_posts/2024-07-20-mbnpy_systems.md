@@ -2,7 +2,7 @@
 layout: post
 title: MBNPy's system catalogue
 usemathjax: true
-tags: [system_type, functionality]
+tags: [system-type, functionality]
 categories: user-guide
 ---
 

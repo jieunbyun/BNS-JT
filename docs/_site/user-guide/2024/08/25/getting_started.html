@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="en-us">
+
+  <head>
+  <link href="http://gmpg.org/xfn/11" rel="profile">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta http-equiv="content-type" content="text/html; charset=utf-8">
+
+  <!-- Enable responsiveness on mobile devices-->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+
+  <title>
+    
+      Getting started &middot; mbnpy
+    
+  </title>
+
+  <!-- CSS -->
+  <link rel="stylesheet" href="/BNS-JT/public/css/poole.css">
+  <link rel="stylesheet" href="/BNS-JT/public/css/syntax.css">
+  <link rel="stylesheet" href="/BNS-JT/public/css/hyde.css">
+  <link rel="stylesheet" href="http://fonts.googleapis.com/css?family=PT+Sans:400,400italic,700|Abril+Fatface">
+
+  <script type="text/javascript" async
+  src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-MML-AM_CHTML">
+  MathJax.Hub.Config({
+      tex2jax: {
+        inlineMath: [['$', '$'], ['\\(', '\\)']]
+      }
+    });
+</script>
+
+  <!-- Icons -->
+  <link rel="apple-touch-icon-precomposed" sizes="144x144" href="/BNS-JT/public/apple-touch-icon-144-precomposed.png">
+                                 <link rel="shortcut icon" href="/BNS-JT/public/favicon.ico">
+
+  <!-- RSS -->
+  <link rel="alternate" type="application/rss+xml" title="RSS" href="/atom.xml">
+
+  <style>
+    .footnote {
+      font-size: 0.9em;
+      color: #777;
+    }
+  </style>
+
+</head>
+
+
+  <body>
+
+    <div class="sidebar">
+  <div class="container sidebar-sticky">
+    <div class="sidebar-about">
+      <h1>
+        <a href="/BNS-JT">
+          MBNPy
+        </a>
+      </h1>
+      <p class="lead">Risk-informed, white-box decision-making on complex systems</p>
+    </div>
+
+    <nav class="sidebar-nav">
+      <a class="sidebar-nav-item" href="/BNS-JT/">Home</a>
+
+      
+
+      
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+          
+        
+      
+        
+          
+            <a class="sidebar-nav-item" href="/BNS-JT/user_guide.html">User guide</a>
+          
+        
+      
+        
+          
+            <a class="sidebar-nav-item" href="/BNS-JT/case_study.html">Case studies</a>
+          
+        
+      
+        
+          
+            <a class="sidebar-nav-item" href="/BNS-JT/publications.html">Publications</a>
+          
+        
+      
+    </nav>
+
+    <p>&copy; 2024. All rights reserved.</p>
+  </div>
+</div>
+
+
+    <div class="content container">
+      <div class="post">
+  <h1 class="post-title">Getting started</h1>
+  <span class="post-date">25 Aug 2024</span>
+
+  <p>Tags:
+    
+      <a href="/BNS-JT/tag/general-tutorial">general-tutorial</a>
+    
+  </p>
+
+  <div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="n">np</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="n">plt</span>
+
+<span class="c1"># mbnpy toolkit
+</span><span class="kn">from</span> <span class="nn">BNS_JT</span> <span class="kn">import</span> <span class="n">cpm</span><span class="p">,</span> <span class="n">variable</span><span class="p">,</span> <span class="n">operation</span>
+</code></pre></div></div>
+
+<h1 id="objectives-introduction-to-using-mbnpy">Objectives: Introduction to using MBNPy</h1>
+
+<h1 id="example-problem">Example problem</h1>
+<p>We use the example reliability block diagram illustrated below, used in Byun et al. (2019).</p>
+
+<figure>
+<img src="/BNS-JT/assets/img/rbd_ex/rbd.jpg" style="width: 600px" />
+</figure>
+
+<p>The network consists of 8 components $X_1, \cdots, X_8$, which take a binary-state, 0 for failure and 1 for survival. <br />
+Their probability distributions are set to $P(X_i=0) = 0.1$ and $P(X_i=1) = 0.9$, $n=1,\cdots,8$. <br />
+The component probabilities are statistically independent.</p>
+
+<p>The system’s state is represented by a random variable $X_9$, whose failure is defined by the disconnection between the source and the sink. <br />
+This relationship leads to the BN graph below.</p>
+
+<figure> <img src="/BNS-JT/assets/img/rbd_ex/rbd_bn.jpg" style="width: 300px" /> </figure>
+
+<p>For decision-making, we are interested in (1) system failure probability and (2) component importance measure.</p>
+
+<p>For more technical details about Bayesian network, matrix-based Bayesian network, or the example, please refer to Byun et al. (2019) and/or Byun and Song (2021).</p>
+
+<p><small>Byun, J. E., Zwirglmaier, K., Straub, D. &amp; Song, J. (2019). Matrix-based Bayesian Network for efficient memory storage and flexible inference. <em>Reliability Engineering &amp; System Safety</em>, 185, 533-545. <br />
+Byun, J. E. &amp; Song, J. (2021). Generalized matrix-based Bayesian network for multi-state systems. <em>Reliability Engineering &amp; System Safety</em>, 211, 107468.</small></p>
+
+<h1 id="quantification-of-probability-distributions">Quantification of probability distributions</h1>
+
+<h2 id="variable">Variable</h2>
+
+<p>There are two essential classes to quantify a BN: (1) variables and (2) CPMs (conditional probability matrices).</p>
+
+<p>First, we need to define each variable by its name and the descriptions of its state.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">varis</span> <span class="o">=</span> <span class="p">{}</span>
+<span class="n">varis</span><span class="p">[</span><span class="s">'x1'</span><span class="p">]</span> <span class="o">=</span> <span class="n">variable</span><span class="p">.</span><span class="n">Variable</span><span class="p">(</span><span class="n">name</span> <span class="o">=</span> <span class="s">'x1'</span><span class="p">,</span> <span class="n">values</span><span class="o">=</span><span class="p">[</span><span class="s">'f'</span><span class="p">,</span> <span class="s">'s'</span><span class="p">])</span>
+</code></pre></div></div>
+
+<p>Above, we created a dictionary <em>varis</em> to store all varables of the model. <br />
+As a starter, we defined the first component $X_1$. <br />
+The values must be a list that contains the description of each corresponding state. <br />
+As Python starts index from 0, above means that state 0 corresponds to f(ailure) and 1 to s(urvival).</p>
+
+<p>The values list has two purposes. <br />
+First, MBNPy uses the list’s length to infer the total number of states to perform inferences. <br />
+Second, the descriptions serve as a reminder of what each state means for future reference or other users.</p>
+
+<p>As all component have the same values, we repeat the same process for other components below.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">n_comp</span> <span class="o">=</span> <span class="mi">8</span> <span class="c1"># number of components
+</span><span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">n_comp</span><span class="p">):</span>
+    <span class="n">varis</span><span class="p">[</span><span class="s">'x'</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">)]</span> <span class="o">=</span> <span class="n">variable</span><span class="p">.</span><span class="n">Variable</span><span class="p">(</span><span class="n">name</span> <span class="o">=</span> <span class="s">'x'</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">),</span> <span class="n">values</span><span class="o">=</span><span class="p">[</span><span class="s">'f'</span><span class="p">,</span> <span class="s">'s'</span><span class="p">])</span>
+
+<span class="k">print</span><span class="p">(</span><span class="n">varis</span><span class="p">[</span><span class="s">'x8'</span><span class="p">])</span>
+</code></pre></div></div>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>"Variable(name=x8, B=[{0}, {1}, {0, 1}], values=['f', 's'])"
+</code></pre></div></div>
+
+<p>For the system, the variable is also similar.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">varis</span><span class="p">[</span><span class="s">'x9'</span><span class="p">]</span> <span class="o">=</span> <span class="n">variable</span><span class="p">.</span><span class="n">Variable</span><span class="p">(</span><span class="n">name</span> <span class="o">=</span> <span class="s">'x9'</span><span class="p">,</span> <span class="n">values</span><span class="o">=</span><span class="p">[</span><span class="s">'f'</span><span class="p">,</span> <span class="s">'s'</span><span class="p">])</span>
+</code></pre></div></div>
+
+<h2 id="cpm">CPM</h2>
+
+<p>Now we define CPM (conditional probability matrix), which represents probability distribution. <br />
+We note that to quantify a BN, a probability distribution needs to be assigned to each node, being conditional on the corresponding node’s parent nodes. <br /></p>
+
+<h3 id="components">Components</h3>
+<p>The components do not have any parent node as presented in the BN above. <br />
+Thus, their distributions are defined as a marginal distribution $P(X_i)$, $i=1,\cdots,8$.</p>
+
+<p>We start from $X_1$.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">cpms</span> <span class="o">=</span> <span class="p">{}</span>
+<span class="n">cpms</span><span class="p">[</span><span class="s">'x1'</span><span class="p">]</span> <span class="o">=</span> <span class="n">cpm</span><span class="p">.</span><span class="n">Cpm</span><span class="p">(</span><span class="n">variables</span><span class="o">=</span><span class="p">[</span><span class="n">varis</span><span class="p">[</span><span class="s">'x1'</span><span class="p">]],</span> <span class="n">no_child</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="n">C</span><span class="o">=</span><span class="n">np</span><span class="p">.</span><span class="n">array</span><span class="p">([[</span><span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="mi">1</span><span class="p">]]),</span> <span class="n">p</span><span class="o">=</span><span class="n">np</span><span class="p">.</span><span class="n">array</span><span class="p">([</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.9</span><span class="p">]))</span>
+
+</code></pre></div></div>
+
+<p>Above, <em>variables</em> is a list of variables that constitute the distribution. In this case, there is only one variable involved.</p>
+
+<p><em>no_child</em> is the number of child nodes. <br />
+For instance, if there is a probability distribution $P(X_2,X_3 | X_1)$, one may set <em>variables</em>=[varis[‘x2’], varis[‘x3’], varis[‘x1]] and <em>no_child</em>=2. <br />
+In other words, <em>no_child</em> lets MBNPy know where to put the conditional bar.</p>
+
+<p>Event matrix <em>C</em> and probability vector <em>p</em> go together. <br />
+Each row of the two matrices refer to the same state, where <em>C</em> indicates what the state is and <em>p</em> indicates what the probability is. <br />
+In this case, they are defined as</p>
+<figure> <img src="/BNS-JT/assets/img/rbd_ex/rbd_comp_cpm.JPG" style="width:300px" /> </figure>
+<p>where the figure has been brought from Byun et al. (2019). <br />
+More information is referred to Byun et al. (2019) and/or Byun and Song (2021).</p>
+
+<p>We repeat the same quantification for other components.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">n_comp</span><span class="p">):</span>
+    <span class="n">cpms</span><span class="p">[</span><span class="s">'x'</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">)]</span> <span class="o">=</span> <span class="n">cpm</span><span class="p">.</span><span class="n">Cpm</span><span class="p">(</span><span class="n">variables</span><span class="o">=</span><span class="p">[</span><span class="n">varis</span><span class="p">[</span><span class="s">'x'</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">)]],</span> <span class="n">no_child</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="n">C</span><span class="o">=</span><span class="n">np</span><span class="p">.</span><span class="n">array</span><span class="p">([[</span><span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="mi">1</span><span class="p">]]),</span> <span class="n">p</span><span class="o">=</span><span class="n">np</span><span class="p">.</span><span class="n">array</span><span class="p">([</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.9</span><span class="p">]))</span>
+
+<span class="k">print</span><span class="p">(</span><span class="n">cpms</span><span class="p">[</span><span class="s">'x8'</span><span class="p">])</span>
+</code></pre></div></div>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Cpm(variables=['x8'], no_child=1, C=[[0]
+ [1]], p=[[0.1]
+ [0.9]]
+</code></pre></div></div>
+
+<h3 id="system">System</h3>
+
+<p>This is where MBNPy becomes different from other BN solutions. <br />
+MBNPy encodes a system’s distribution to reduce compuational cost. <br />
+Again, for more information, please refer to the references.</p>
+
+<p>In Byun et al. (2019), a branch and bound algorithm (a system reliability method) is run as below:</p>
+<figure> <img src="/BNS-JT/assets/img/rbd_ex/rbd_bnb.jpg" style="width:400px" /> </figure>
+
+<p>Then, each branch can be represented by a row of <em>C</em> and <em>p</em>. <br />
+For instance, the upper most branch indicates the system fails when $X_8=0$ regardless of other components’ states. <br />
+Then, the probability distribution $P(X_9 | X_1,\cdots,X_8)$ has a row as below.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">Csys</span> <span class="o">=</span> <span class="n">np</span><span class="p">.</span><span class="n">array</span><span class="p">([[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">]])</span>
+<span class="n">psys</span> <span class="o">=</span> <span class="n">np</span><span class="p">.</span><span class="n">array</span><span class="p">([[</span><span class="mf">1.0</span><span class="p">]])</span>
+</code></pre></div></div>
+
+<p>Above, each column of <em>Csys</em> represents $X_9$ and $X_1,\cdots,X_8$ in order. <br />
+Note that the last element that represents $X_8$ is set to 0.</p>
+
+<p>For other components, whose state does not matter in this instance, are set to a composite state 2 that can be either 0 or 1. <br />
+Given that there are two states 0 and 1 (from the <em>values</em> list of a Variable), MBNPy automoatically creates such composite state 2.</p>
+
+<p>If given three states 0, 1, and 2, MBNPy creates composite state as 3 for 0 and 1, 4 for 0 and 2, 5 for 1 and 2, and 6 for 0, 1, and 2. <br />
+We hope this provides an idea of the pattern that MBNPy creates composite states.</p>
+
+<p>The information about composite states is stored in <em>B</em> matrix (Byun and Song 2021). <br />
+For instance, let’s have a look at $X_1$’s <em>B</em> matrix:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">print</span><span class="p">(</span><span class="n">varis</span><span class="p">[</span><span class="s">'x1'</span><span class="p">].</span><span class="n">B</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>[{0}, {1}, {0, 1}]
+</code></pre></div></div>
+
+<p>Now, we can create the <em>C</em> matrix consisting of the nine branches as follows. <br />
+Note that the <em>p</em> matrix also needs to have nine rows, whose values are all 1 as the system definition is deterministic so all conditional events happen with a probability of 1.</p>
+
+<p>Note that while MBNPy needs only 9 rows, there are originally $2^{(8+1)}=512$ events to quantify.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">Csys</span> <span class="o">=</span> <span class="n">np</span><span class="p">.</span><span class="n">array</span><span class="p">([[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span>
+                 <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span>
+                 <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span>
+                 <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span>
+                 <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span>
+                 <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span>
+                 <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span>
+                 <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span>
+                 <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">]])</span>
+<span class="n">psys</span> <span class="o">=</span> <span class="n">np</span><span class="p">.</span><span class="n">array</span><span class="p">([[</span><span class="mf">1.0</span><span class="p">]</span><span class="o">*</span><span class="mi">9</span><span class="p">]).</span><span class="n">T</span>
+
+<span class="n">cpms</span><span class="p">[</span><span class="s">'x9'</span><span class="p">]</span> <span class="o">=</span> <span class="n">cpm</span><span class="p">.</span><span class="n">Cpm</span><span class="p">(</span><span class="n">variables</span><span class="o">=</span><span class="p">[</span><span class="n">varis</span><span class="p">[</span><span class="s">'x9'</span><span class="p">],</span> <span class="n">varis</span><span class="p">[</span><span class="s">'x1'</span><span class="p">],</span> <span class="n">varis</span><span class="p">[</span><span class="s">'x2'</span><span class="p">],</span> <span class="n">varis</span><span class="p">[</span><span class="s">'x3'</span><span class="p">],</span> <span class="n">varis</span><span class="p">[</span><span class="s">'x4'</span><span class="p">],</span>
+                                <span class="n">varis</span><span class="p">[</span><span class="s">'x5'</span><span class="p">],</span> <span class="n">varis</span><span class="p">[</span><span class="s">'x6'</span><span class="p">],</span> <span class="n">varis</span><span class="p">[</span><span class="s">'x7'</span><span class="p">],</span> <span class="n">varis</span><span class="p">[</span><span class="s">'x8'</span><span class="p">]],</span>
+                                <span class="n">no_child</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="n">C</span><span class="o">=</span><span class="n">Csys</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="n">psys</span><span class="p">)</span>
+
+<span class="k">print</span><span class="p">(</span><span class="n">cpms</span><span class="p">[</span><span class="s">'x9'</span><span class="p">])</span>
+</code></pre></div></div>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Cpm(variables=['x9', 'x1', 'x2', 'x3', 'x4', 'x5', 'x6', 'x7', 'x8'], no_child=1, C=[[0 2 2 2 2 2 2 2 0]
+ [0 2 2 2 2 2 2 0 1]
+ [1 1 2 2 2 2 2 1 1]
+ [1 0 1 2 2 2 2 1 1]
+ [1 0 0 1 2 2 2 1 1]
+ [0 0 0 0 0 2 2 1 1]
+ [0 0 0 0 1 0 2 1 1]
+ [0 0 0 0 1 1 0 1 1]
+ [1 0 0 0 1 1 1 1 1]], p=[[1.]
+ [1.]
+ [1.]
+ [1.]
+ [1.]
+ [1.]
+ [1.]
+ [1.]
+ [1.]]
+</code></pre></div></div>
+
+<h1 id="system-risk-assessment">System risk assessment</h1>
+
+<p>Now we are ready to perform analysis. We can compute the system’s marginal distribution $P(X_9)$ by eliminating components.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">cpm_sys</span> <span class="o">=</span> <span class="n">operation</span><span class="p">.</span><span class="n">variable_elim</span><span class="p">(</span><span class="n">cpms</span><span class="p">,</span> <span class="p">[</span><span class="n">varis</span><span class="p">[</span><span class="s">'x1'</span><span class="p">],</span> <span class="n">varis</span><span class="p">[</span><span class="s">'x2'</span><span class="p">],</span> <span class="n">varis</span><span class="p">[</span><span class="s">'x3'</span><span class="p">],</span> <span class="n">varis</span><span class="p">[</span><span class="s">'x4'</span><span class="p">],</span>
+                                         <span class="n">varis</span><span class="p">[</span><span class="s">'x5'</span><span class="p">],</span> <span class="n">varis</span><span class="p">[</span><span class="s">'x6'</span><span class="p">],</span> <span class="n">varis</span><span class="p">[</span><span class="s">'x7'</span><span class="p">],</span> <span class="n">varis</span><span class="p">[</span><span class="s">'x8'</span><span class="p">]])</span>
+
+<span class="k">print</span><span class="p">(</span><span class="n">cpm_sys</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="sa">f</span><span class="s">'System failure probability: </span><span class="si">{</span><span class="n">cpm_sys</span><span class="p">.</span><span class="n">p</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="si">:</span><span class="mf">1.2</span><span class="n">f</span><span class="si">}</span><span class="s">'</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Cpm(variables=['x9'], no_child=1, C=[[0]
+ [1]], p=[[0.19021951]
+ [0.80978049]]
+System failure probability: 0.19
+</code></pre></div></div>
+
+<p>
+We can also compute component importance measure $P(X_i=0|X_9=0) = P(X_i=0,X_9=0) / P(X_9=0)$.
+</p>
+
+<p>For instance, for $X_1$:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">cpm_sys_x1</span> <span class="o">=</span> <span class="n">operation</span><span class="p">.</span><span class="n">variable_elim</span><span class="p">(</span><span class="n">cpms</span><span class="p">,</span> <span class="p">[</span><span class="n">varis</span><span class="p">[</span><span class="s">'x2'</span><span class="p">],</span> <span class="n">varis</span><span class="p">[</span><span class="s">'x3'</span><span class="p">],</span> <span class="n">varis</span><span class="p">[</span><span class="s">'x4'</span><span class="p">],</span>
+                                            <span class="n">varis</span><span class="p">[</span><span class="s">'x5'</span><span class="p">],</span> <span class="n">varis</span><span class="p">[</span><span class="s">'x6'</span><span class="p">],</span> <span class="n">varis</span><span class="p">[</span><span class="s">'x7'</span><span class="p">],</span> <span class="n">varis</span><span class="p">[</span><span class="s">'x8'</span><span class="p">]])</span>
+
+<span class="k">print</span><span class="p">(</span><span class="n">cpm_sys_x1</span><span class="p">)</span>
+
+<span class="n">prob_s0_x0</span> <span class="o">=</span> <span class="n">cpm_sys_x1</span><span class="p">.</span><span class="n">get_prob</span><span class="p">([</span><span class="s">'x1'</span><span class="p">,</span> <span class="s">'x9'</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">])</span>
+<span class="k">print</span><span class="p">(</span><span class="sa">f</span><span class="s">'P(X1=0 | X9=0): </span><span class="si">{</span><span class="n">prob_s0_x0</span> <span class="o">/</span> <span class="n">cpm_sys</span><span class="p">.</span><span class="n">p</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="si">:</span><span class="mf">1.2</span><span class="n">f</span><span class="si">}</span><span class="s">'</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Cpm(variables=['x1', 'x9'], no_child=2, C=[[0 0]
+ [0 0]
+ [1 0]
+ [0 1]
+ [1 1]], p=[[2.195100e-04]
+ [1.900000e-02]
+ [1.710000e-01]
+ [8.078049e-02]
+ [7.290000e-01]]
+P(X1=0 | X9=0): 0.10
+</code></pre></div></div>
+
+<p>We can repeat the process for all components:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">CIMs</span> <span class="o">=</span> <span class="p">{}</span> <span class="c1"># component importance measures
+</span><span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_comp</span><span class="p">):</span>
+    <span class="n">varis_elim</span> <span class="o">=</span> <span class="p">[</span><span class="n">varis</span><span class="p">[</span><span class="s">'x'</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">j</span><span class="o">+</span><span class="mi">1</span><span class="p">)]</span> <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_comp</span><span class="p">)</span> <span class="k">if</span> <span class="n">j</span> <span class="o">!=</span> <span class="n">i</span><span class="p">]</span>
+    <span class="n">cpm_sys_xi</span> <span class="o">=</span> <span class="n">operation</span><span class="p">.</span><span class="n">variable_elim</span><span class="p">(</span><span class="n">cpms</span><span class="p">,</span> <span class="n">varis_elim</span><span class="p">)</span>
+
+    <span class="n">prob_s0_x0</span> <span class="o">=</span> <span class="n">cpm_sys_xi</span><span class="p">.</span><span class="n">get_prob</span><span class="p">([</span><span class="s">'x'</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">),</span> <span class="s">'x9'</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">])</span>
+    <span class="n">CIMs</span><span class="p">[</span><span class="s">'x'</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">)]</span> <span class="o">=</span> <span class="n">prob_s0_x0</span> <span class="o">/</span> <span class="n">cpm_sys</span><span class="p">.</span><span class="n">p</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+
+<span class="k">print</span><span class="p">(</span><span class="n">CIMs</span><span class="p">)</span>
+
+</code></pre></div></div>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>{'x1': 0.10103858431766545, 'x2': 0.10103858431766545, 'x3': 0.10103858431766545, 'x4': 0.10031042557096277, 'x5': 0.10031042557096279, 'x6': 0.10031042557096273, 'x7': 0.5257084302235875, 'x8': 0.5257084302235875}
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">%</span><span class="n">matplotlib</span> <span class="n">inline</span>
+
+<span class="n">plt</span><span class="p">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">6</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span>
+<span class="n">plt</span><span class="p">.</span><span class="n">bar</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">CIMs</span><span class="p">.</span><span class="n">keys</span><span class="p">()),</span> <span class="nb">list</span><span class="p">(</span><span class="n">CIMs</span><span class="p">.</span><span class="n">values</span><span class="p">()),</span> <span class="n">color</span><span class="o">=</span><span class="s">'skyblue'</span><span class="p">)</span>
+
+<span class="c1"># Add title and labels
+</span><span class="n">plt</span><span class="p">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s">'Components'</span><span class="p">)</span>
+<span class="n">plt</span><span class="p">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s">'CIMs'</span><span class="p">)</span>
+
+<span class="c1"># Show the plot
+</span><span class="n">plt</span><span class="p">.</span><span class="n">show</span><span class="p">()</span>
+</code></pre></div></div>
+
+<figure> <img src="/BNS-JT/assets/img/rbd_ex/cims.png" style="width: 500px" /> </figure>
+
+<p>The results above show that $X_7$ and $X_8$ most critically affect the system’s failure.</p>
+
+</div>
+    </div>
+
+  </body>
+</html>

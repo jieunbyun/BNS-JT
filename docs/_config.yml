@@ -35,3 +35,6 @@ plugins:
   - jekyll-paginate-v2
   - jekyll-gist
 
+#plugins_dir:
+  #_plugins
+
