@@ -16,9 +16,9 @@
   </title>
 
   <!-- CSS -->
-  <link rel="stylesheet" href="/BNS-JT//public/css/poole.css">
-  <link rel="stylesheet" href="/BNS-JT//public/css/syntax.css">
-  <link rel="stylesheet" href="/BNS-JT//public/css/hyde.css">
+  <link rel="stylesheet" href="/BNS-JT/public/css/poole.css">
+  <link rel="stylesheet" href="/BNS-JT/public/css/syntax.css">
+  <link rel="stylesheet" href="/BNS-JT/public/css/hyde.css">
   <link rel="stylesheet" href="http://fonts.googleapis.com/css?family=PT+Sans:400,400italic,700|Abril+Fatface">
 
   <script type="text/javascript" async
@@ -31,8 +31,8 @@
 </script>
 
   <!-- Icons -->
-  <link rel="apple-touch-icon-precomposed" sizes="144x144" href="/BNS-JT/public/apple-touch-icon-144-precomposed.png">
-                                 <link rel="shortcut icon" href="/BNS-JT/public/favicon.ico">
+  <link rel="apple-touch-icon-precomposed" sizes="144x144" href="/BNS-JTpublic/apple-touch-icon-144-precomposed.png">
+                                 <link rel="shortcut icon" href="/BNS-JTpublic/favicon.ico">
 
   <!-- RSS -->
   <link rel="alternate" type="application/rss+xml" title="RSS" href="/atom.xml">
@@ -53,7 +53,7 @@
   <div class="container sidebar-sticky">
     <div class="sidebar-about">
       <h1>
-        <a href="/BNS-JT/">
+        <a href="/BNS-JT">
           MBNPy
         </a>
       </h1>
@@ -61,7 +61,7 @@
     </div>
 
     <nav class="sidebar-nav">
-      <a class="sidebar-nav-item" href="/BNS-JT/">Home</a>
+      <a class="sidebar-nav-item" href="/BNS-JT">Home</a>
 
       
 
@@ -79,19 +79,19 @@
       
         
           
-            <a class="sidebar-nav-item" href="/BNS-JT//user_guide.html">User guide</a>
+            <a class="sidebar-nav-item" href="/BNS-JT/user_guide.html">User guide</a>
           
         
       
         
           
-            <a class="sidebar-nav-item" href="/BNS-JT//case_study.html">Case studies</a>
+            <a class="sidebar-nav-item" href="/BNS-JT/case_study.html">Case studies</a>
           
         
       
         
           
-            <a class="sidebar-nav-item" href="/BNS-JT//publications.html">Publications</a>
+            <a class="sidebar-nav-item" href="/BNS-JT/publications.html">Publications</a>
           
         
       
@@ -109,9 +109,9 @@
 
   <p>Tags:
     
-      <a href="/BNS-JT//tag/example">example</a>
+      <a href="/BNS-JT/tag/example">example</a>
     
-      <a href="/BNS-JT//tag/max-min-system">max-min_system</a>
+      <a href="/BNS-JT/tag/max-min-system">max-min_system</a>
     
   </p>
 
@@ -144,7 +144,7 @@ COMING SOON: Implementation to a full-scale system.
 <h1 id="problem">Problem</h1>
 <h2 id="system">System</h2>
 <figure>
-<img src="/BNS-JT//assets/img/house_power_prob.png" style="width:400px" />
+<img src="/BNS-JT/assets/img/house_power_prob.png" style="width:400px" />
 </figure>
 
 <p>The system consists of two power substations $S_0$ and $S_1$, eight transmission line poles $P_0$, …, $P_7$, and seven houses $H_0$, …, $H_6$. The substations and poles may fail being subjected to hazard scenarios $H$. Once a hazard event occurs, repair works will take place with priorities $S_0$ → $S_1$ → $P_0$ → $P_1$ → … → $P_6$. The works are done only for failed components, and repairing a component takes a day.</p>
@@ -154,7 +154,7 @@ COMING SOON: Implementation to a full-scale system.
 <h2 id="bayesian-network-bn-graph">Bayesian network (BN) graph</h2>
 <p>The BN graph can be set up as below:</p>
 <figure>
-<img src="/BNS-JT//assets/img/power_house_bn.png" style="width:400px" />
+<img src="/BNS-JT/assets/img/power_house_bn.png" style="width:400px" />
 </figure>
 
 <p>The hazard node $H$ affects damage states of components, $S_0$, $S_1$, $P_0$, …, $P_7$. Then, damage state of a component $X$ decides the rapair timing (i.e. how many days after a hazard occurrence) of a corresponding component, $T^X$. $T^X$ is also affected by the timing of the component right before in the repair priority, e.g. $T_1^S$ is dependent on $T^S_0$ as $S_0$ is right before $S_1$ in the repair priority. Then, actual closure time of each component, $C^X$ is decided by the corresponding damage state $X$ and $T^X$. That is, if $X$ has failed, then the closure time is the same as $T^X$, while if it is not, the closure time is zero. Finally, each house’s duration of power cut, represneted by $H_0$, …, $H_7$, is decided by the closure duration of components constituting their link-sets. For example, as aforementioned, teh first house has $S_0$ and $P_0$ in its link set, and therefore the node $H_0$ is connected to $C_0^S$ and $C^P_0$.</p>
@@ -520,7 +520,7 @@ Cpm(variables=['h30', 'cs0', 'cp2', 'cp3'], no_child=1, C=[[  0   0   0   0]
 
 <p>For example, in case of $H_0$, we have those relevant variables as marked blue in the figure below:</p>
 <figure>
-<img src="/BNS-JT//assets/img/power_house_bn_h0.png" style="width:400px" />
+<img src="/BNS-JT/assets/img/power_house_bn_h0.png" style="width:400px" />
 </figure>
 
 <p>The set of those relevant variables can be obtained using the function <span style="font-family:Consolas;">cpm.get_inf_vars</span>, as shown in the code below:</p>
@@ -569,7 +569,7 @@ Cpm(variables=['h30', 'cs0', 'cp2', 'cp3'], no_child=1, C=[[  0   0   0   0]
 
 <p>We now calculate $P(H_6)$, which takes much longer than $H_0$ (in my desktop, it takes 30 seconds). This is because we now have more variables to consider because $T_7^P$ is in the last priority of repair, and thus all $T_x$ becomes relevant. The variables in the inference scope are marked below in the figure below:</p>
 <figure>
-<img src="/BNS-JT//assets/img/power_house_bn_h6.png" style="width:400px" />
+<img src="/BNS-JT/assets/img/power_house_bn_h6.png" style="width:400px" />
 </figure>
 
 <p>One might consider applying sampling instead of the applied exact inference for faster calculation or a larger number of components (i.e. substations and poles).</p>
@@ -746,7 +746,7 @@ h6 Done. Took 39.84 sec.
 </code></pre></div></div>
 
 <figure>
-<img src="/BNS-JT//assets/img/power_house_map.png" style="width:600px" />
+<img src="/BNS-JT/assets/img/power_house_map.png" style="width:600px" />
 </figure>
 
 <p>The figure above shows how the convolution of hazard risks, structural performance, and repair priority decides risks faced by houses.</p>
