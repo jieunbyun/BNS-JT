@@ -24,5 +24,6 @@ Dir.glob('_posts/*.md') do |post|
             
             break
         end
+        
     end
 end

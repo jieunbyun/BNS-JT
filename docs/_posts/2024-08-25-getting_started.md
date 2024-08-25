@@ -2,7 +2,7 @@
 layout: post
 title: "Getting started"
 usemathjax: true
-tags: [general_tutorial]
+tags: [general-tutorial]
 categories: user-guide
 ---
 
