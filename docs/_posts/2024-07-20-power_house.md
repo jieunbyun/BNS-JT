@@ -2,7 +2,7 @@
 layout: post
 title: "Expected days of power cut"
 usemathjax: true
-tags: [example, max-min_system]
+tags: [example, max-min-system]
 categories: case-study
 ---
 
