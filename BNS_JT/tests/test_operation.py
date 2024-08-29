@@ -855,7 +855,6 @@ def test_rejection_sampling_sys(setup_hybrid_no_samp):
     varis, cpms, sys_fun = setup_hybrid_no_samp
     Msys = operation.cal_Msys_by_cond_VE(cpms, varis, ['haz'], var_elim_order, 'sys')
 
-    #pdb.set_trace()
     cpms2, result = operation.rejection_sampling_sys(cpms, 'sys', sys_fun, 0.05, sys_st_monitor = 0, known_prob = Msys.p.sum(), sys_st_prob = Msys.p[0], rand_seed = 1)
 
     var_elim_order = [varis['haz'], varis['x0'], varis['x1']]
@@ -980,7 +979,6 @@ def sys_2comps_2haz():
 def test_variable_elim_cond0(sys_2comps_2haz):
 
     varis, cpms = sys_2comps_2haz
-
     ve_order = ['x0', 'x1']
     cpms_ve = [cpms[k] for k in ['sys', 'x0', 'x1']]
     M = operation.variable_elim_cond(cpms_ve, ve_order, [cpms['h0'], cpms['h1']])

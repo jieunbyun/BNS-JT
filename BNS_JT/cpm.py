@@ -186,9 +186,8 @@ class Cpm(object):
         self._sample_idx = value
 
     def __repr__(self):
-        _variable = [x.name for x in self.variables]
         return textwrap.dedent(f'''\
-{self.__class__.__name__}(variables={_variable}, no_child={self.no_child}, C={self.C}, p={self.p}''')
+{self.__class__.__name__}(variables={self.get_names()}, no_child={self.no_child}, C={self.C}, p={self.p}''')
 
     def get_variables(self, item):
 
@@ -196,6 +195,10 @@ class Cpm(object):
             return [x for x in self.variables if x.name == item][0]
         elif isinstance(item, list):
             return [self.get_variables(y) for y in item]
+
+
+    def get_names(self):
+        return [x.name for x in self.variables]
 
 
     def get_subset(self, row_idx, flag=True, isC=True):
@@ -276,26 +279,11 @@ class Cpm(object):
         means: a list of means (the same order as names)
         """
         assert isinstance(names, list), 'names should be a list'
+        assert len(set(names))==len(names), f'names has duplicates: {names}'
 
-        means = []
+        idx = [self.get_names().index(x) for x in names]
 
-        for v in names:
-
-            idx = [i for i, x in enumerate(self.variables) if x.name == v]
-
-            if len(idx) != 1:
-                raise ValueError(f"{v} appears {len(idx)} times. It must appear exactly ONCE.")
-
-            # TBC
-            elif idx[0] < self.no_child - 1:
-                raise ValueError(f"{v} must not be a parent node.")
-
-            m = 0
-            for c, p in zip(self.C, self.p):
-                m += c[idx[0]] * p[0]
-            means.append(m)
-
-        return means
+        return [(self.C[:, i]*self.p[:, 0]).sum() for i in idx]
 
 
     def iscompatible(self, M, flag=True):
@@ -406,32 +394,31 @@ class Cpm(object):
 
         assert len(set(names)) == len(names), f'names has duplicates: {names}'
 
-        return [i for v in names for i, k in enumerate(self.variables) if k.name==v]
+        return [self.get_names().index(x) for x in names]
 
 
     def merge(self, M):
 
         assert isinstance(M, Cpm), f'M should be an instance of Cpm'
-        assert self.variables == M.variables, 'must have the same scope'
+        assert self.variables == M.variables, 'must have the same scope and order'
 
-        M_new = copy.deepcopy(self)
+        new_cpm = copy.copy(self)
 
-        C1_list = self.C.tolist()
+        cs = self.C.tolist()
 
-        for c1, p1 in zip(M.C.tolist(), M.p.tolist()):
-            if c1 in C1_list:
-                idx = C1_list.index(c1)
-                M_new.p[idx] += p1
-            else:
-                M_new.C = np.vstack((M_new.C, c1))
-                M_new.p = np.vstack((M_new.p, p1))
+        for cx, px in zip(M.C.tolist(), M.p.tolist()):
+            try:
+                new_cpm.p[cs.index(cx)] += px
+            except IndexError:
+                new_cpm.C = np.vstack((new_cpm.C, cx))
+                new_cpm.p = np.vstack((new_cpm.p, px))
 
-        M_new.Cs = np.vstack((self.Cs, M.Cs))
-        M_new.q = np.vstack((self.q, M.q))
-        M_new.ps = np.vstack((self.ps, M.ps))
-        M_new.sample_idx = np.vstack((self.sample_idx, M.sample_idx))
+        new_cpm.Cs = np.vstack((self.Cs, M.Cs))
+        new_cpm.q = np.vstack((self.q, M.q))
+        new_cpm.ps = np.vstack((self.ps, M.ps))
+        new_cpm.sample_idx = np.vstack((self.sample_idx, M.sample_idx))
 
-        return M_new
+        return new_cpm
 
 
     def sum(self, variables, flag=True):
@@ -1094,8 +1081,8 @@ def product(cpms):
     assert cpms, f'{cpms} is empty list'
 
     prod = cpms[0]
-    for c in cpms[1:]:
-        prod = prod.product(c)
+    for cx in cpms[1:]:
+        prod = prod.product(cx)
 
     return prod
 
@@ -1107,6 +1094,7 @@ def get_prod(A, B):
     """
     if len(A.shape) < 2:
         A = np.reshape(A, (A.shape[0], 1))
+
     if len(B.shape) < 1:
         B=np.reshape(B,(1,))
 
@@ -1114,5 +1102,6 @@ def get_prod(A, B):
 
     prod_sign = np.sign(A * B)
     prod_val = np.exp(np.log(np.abs(A)) + np.log(np.abs(B)))
+
     return prod_sign * prod_val
 

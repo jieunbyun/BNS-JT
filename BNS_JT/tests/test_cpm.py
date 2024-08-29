@@ -392,6 +392,13 @@ def test_get_variables1(dict_cpm):
     assert A1x.values == ['s', 'f']
 
 
+def test_get_names1(dict_cpm):
+
+    a = cpm.Cpm(**dict_cpm)
+
+    assert a.get_names() == ['A3', 'A2', 'A1']
+
+
 def test_get_variables2(dict_cpm):
 
     a = cpm.Cpm(**dict_cpm)
@@ -1573,7 +1580,6 @@ def test_merge1(setup_product):
 
     M = setup_product
 
-
     with pytest.raises(AssertionError):
         M_new = M[2].merge(M[3])
 
@@ -1588,9 +1594,22 @@ def test_merge2(setup_iscompatible):
 
     M_new = M1.merge(M2)
 
+    assert [x.name for x in M_new.variables] == ['2', '1']
     np.testing.assert_array_equal(M_new.C, np.array([[0, 0], [1, 0], [0, 1], [1, 1]]))
     np.testing.assert_array_equal(M_new.p, np.array([[1.88, 0.12, 1.6, 0.4]]).T)
     np.testing.assert_array_equal(M_new.Cs, np.empty(shape=(2,0)))
+
+
+def test_merge3(setup_iscompatible):
+
+    _, v = setup_iscompatible
+
+    M1 = cpm.Cpm(variables=[v[2], v[1]], no_child=1, C = np.array([[0, 0], [1, 0], [0, 1], [1, 1]]), p = np.array([0.99, 0.01, 0.9, 0.1]).T)
+
+    M2 = cpm.Cpm(variables=[v[1], v[2]], no_child=1, C = np.array([[0, 0], [1, 0], [0, 1], [1, 1]]), p = np.array([0.89, 0.7, 0.11, 0.3]).T)
+
+    with pytest.raises(AssertionError):
+        M_new = M1.merge(M2)
 
 
 def test_flip():

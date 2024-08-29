@@ -94,7 +94,6 @@ def main(key: Annotated[str, typer.Argument()] = 'od2',
 
     # system function
     sys_fun = trans.sys_fun_wrap(cfg.infra['G'], od_pair, varis, thres * d_time_itc)
-    pdb.set_trace()
     #brs, rules, _ = gen_bnb.proposed_branch_and_bound(sys_fun, varis, max_br=cfg.max_branches, output_path=cfg.output_path, key=f'EMA_{od_pair}', flag=True)
     brs1, rules1, sys_rules1, monitor1 = brc.run(varis, probs, sys_fun, max_sf=max_sf, max_nb=10_000, surv_first=True)
     brs2, rules2, sys_rules2, monitor2 = brc.run(varis, probs, sys_fun, max_sf=max_sf, max_nb=50_000, surv_first=True, rules=rules1)
