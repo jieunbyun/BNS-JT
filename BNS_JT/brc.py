@@ -279,11 +279,11 @@ def update_rule_set(rules, new_rule):
     add_rule = True
 
     n_rule, n_state = new_rule
-    rules_old = copy.deepcopy(rules)
+    #rules_old = copy.deepcopy(rules)
 
     if n_state == 's':
 
-        for rule in rules_old['s']:
+        for rule in rules['s'][:]:
 
             if set(n_rule).issubset(rule) and all([rule[k] >= v for k, v in n_rule.items()]):
                 rules['s'].remove(rule)
@@ -294,7 +294,7 @@ def update_rule_set(rules, new_rule):
 
     elif n_state == 'f':
 
-        for rule in rules_old['f']:
+        for rule in rules['f'][:]:
 
             if set(n_rule).issubset(rule) and all([rule[k] <= v for k, v in n_rule.items()]):
                 rules['f'].remove(rule)

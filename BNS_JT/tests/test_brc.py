@@ -314,6 +314,21 @@ def test_update_rule_set2():
     assert result == expected
 
 
+def test_update_rule_set3():
+
+    rules = {'s': [{'e2':2, 'e5':2}, {'e2':3, 'e5':2}], 'u': [], 'f':[{'e2': 1, 'e5': 1}, {'e2': 0, 'e5': 1}]}
+    rule_new = {'e2': 1, 'e5': 2}, 's'
+    result = brc.update_rule_set(rules, rule_new)
+    expected = {'s': [{'e2':1, 'e5':2}], 'u': [], 'f':[{'e2': 1, 'e5': 1}, {'e2': 0, 'e5': 1}]}
+    assert result == expected
+
+    rule_new = {'e2': 1, 'e5': 0}, 'f'
+
+    result = brc.update_rule_set(rules, rule_new)
+    expected = {'s': [{'e2':1, 'e5':2}], 'u': [], 'f':[{'e2': 1, 'e5': 1}, {'e2': 0, 'e5': 1}]}
+    assert result == expected
+
+
 
 def test_run_sys_fn1(main_sys):
 
