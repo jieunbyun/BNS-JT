@@ -5,6 +5,8 @@ import collections
 import warnings
 import random
 from scipy.stats import norm, beta
+import networkx as nx
+from networkx.algorithms.flow import shortest_augmenting_path
 
 #from BNS_JT.utils import all_equal
 from BNS_JT import variable
@@ -880,3 +882,60 @@ def sys_min_val(name, vars_p, B_flag='store'):
                       C=C_new, p=np.ones(shape=(len(C_new), 1), dtype='float64') )
 
     return cpm_new, var_new
+
+def max_flow(comps_st, target_flow, od_pair, edges, varis): # maximum flow analysis
+
+    """
+    INPUT:
+    comps_st: a dictionary of component states
+    target_flow: an integer 
+    od_pair: a tuple
+    edges: a dictionary of edge connectivities
+    varis: a dictionary of BNS_JT.variable
+
+    OUTPUT:
+    f_val: any quantity that indicates a level of system performance (for user information's sake)
+    sys_st: either 's' or 'f'
+    min_comps_st: a dictionary of minimal survival rules in case 's', None in case of 'f'
+
+    Example:
+    nodes = {'n1': (0, 0),
+         'n2': (1, 1),
+         'n3': (1, -1),
+         'n4': (2, 0)}
+
+    edges = {'e1': ['n1', 'n2'],
+            'e2': ['n1', 'n3'],
+            'e3': ['n2', 'n3'],
+            'e4': ['n2', 'n4'],
+            'e5': ['n3', 'n4']}
+
+    od_pair=('n1','n4')
+
+    varis = {}
+    for k, v in edges.items():
+        varis[k] = variable.Variable( name=k, values = [0, 1, 2]) # values: edge flow capacity
+    """   
+
+    G = nx.Graph()
+    for k,x in comps_st.items():
+        G.add_edge(edges[k][0], edges[k][1], capacity=varis[k].values[x])
+    G.add_edge(od_pair[1], 'new_t', capacity=target_flow)
+
+    f_val, f_dict = nx.maximum_flow(G,od_pair[0], 'new_t', capacity='capacity', flow_func=shortest_augmenting_path)
+
+    if f_val >= target_flow:
+        sys_st = 's'
+
+        min_comps_st = {}
+        for k, x in comps_st.items():
+            k_flow = max([f_dict[edges[k][0]][edges[k][1]], f_dict[edges[k][1]][edges[k][0]]])
+            if k_flow > 0: # the edge plays a role in an associated survival rule
+                index = next((i for i,x in enumerate(varis[k].values) if x >= k_flow), None)
+                min_comps_st[k] = index
+
+    else:
+        sys_st = 'f'
+        min_comps_st = None
+
+    return f_val, sys_st, min_comps_st

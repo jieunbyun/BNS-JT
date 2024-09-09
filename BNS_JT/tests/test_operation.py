@@ -985,3 +985,58 @@ def test_variable_elim_cond0(sys_2comps_2haz):
 
     np.testing.assert_array_equal(M.C, [[0], [1]])
     np.testing.assert_array_almost_equal(M.p, [[0.0898], [0.9102]], decimal=3)
+
+
+@pytest.fixture()
+def max_flow_net_5_edge():
+    nodes = {'n1': (0, 0),
+            'n2': (1, 1),
+            'n3': (1, -1),
+            'n4': (2, 0)}
+
+    edges = {'e1': ['n1', 'n2'],
+            'e2': ['n1', 'n3'],
+            'e3': ['n2', 'n3'],
+            'e4': ['n2', 'n4'],
+            'e5': ['n3', 'n4']}
+
+    od_pair=('n1','n4')
+
+    varis = {}
+    for k, v in edges.items():
+        varis[k] = variable.Variable( name=k, values = [0, 1, 2]) # values: edge flow capacity
+
+    return od_pair, edges, varis
+
+def test_max_flow1(max_flow_net_5_edge):
+
+    od_pair, edges, varis = max_flow_net_5_edge
+
+    comps_st = {'e1': 2, 'e2': 2, 'e3': 2, 'e4': 2, 'e5': 2}
+    f_val, sys_st, min_comps_st = operation.max_flow(comps_st, 1, od_pair, edges, varis)
+
+    assert f_val == 1
+    assert sys_st == 's'
+    assert min_comps_st == {'e1': 1, 'e4': 1}
+    
+def test_max_flow2(max_flow_net_5_edge):
+
+    od_pair, edges, varis = max_flow_net_5_edge
+
+    comps_st = {'e1': 0, 'e2': 2, 'e3': 2, 'e4': 2, 'e5': 2}
+    f_val, sys_st, min_comps_st = operation.max_flow(comps_st, 1, od_pair, edges, varis)
+
+    assert f_val == 1
+    assert sys_st == 's'
+    assert min_comps_st == {'e2': 1, 'e5': 1}
+
+def test_max_flow3(max_flow_net_5_edge):
+
+    od_pair, edges, varis = max_flow_net_5_edge
+
+    comps_st = {'e1': 0, 'e2': 0, 'e3': 2, 'e4': 2, 'e5': 2}
+    f_val, sys_st, min_comps_st = operation.max_flow(comps_st, 1, od_pair, edges, varis)
+
+    assert f_val == 0
+    assert sys_st == 'f'
+    assert min_comps_st == None
