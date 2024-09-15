@@ -16,7 +16,7 @@ The figure below illustrates how the BRC algorithm works.
 
 # Code demonstration
 
-The jupyter notebook can be found at <a ref="https://github.com/jieunbyun/BNS-JT/blob/python/notebooks/tutorial_brc.ipynb">this BNS-JT GitHub repo</a>. 
+The jupyter notebook can be found at <a href="https://github.com/jieunbyun/BNS-JT/blob/python/notebooks/tutorial_brc.ipynb">this BNS-JT GitHub repo</a>. 
 
 ## MBNPy version
 
@@ -83,10 +83,10 @@ nx.draw_networkx_edge_labels(G, pos, edge_labels=edge_labels)
 plt.show()
 ```
 
+<figure>
+<img src = "{{site.baseurl}}/assets/img/brc_tutorial/network.png" style="width: 500px">
+</figure>
 
-
-![png]({{site.baseurl}}/assets/img/brc_tutorial/network.png)
-    
 
 
 #### Component events
@@ -371,7 +371,8 @@ plt.show()
     
 
 
-    
-![png]({{site.baseurl}}/assets/img/brc_tutorial/cims.png)
+<figure>
+<img src = "{{site.baseurl}}/assets/img/brc_tutorial/cims.png" style = "width:500px;">
+</figure>
     
 
