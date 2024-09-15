@@ -1,6 +1,6 @@
 # Getting started 
 ```
-# Down loading 
+# Downloading files
 git clone git@github.com:jieunbyun/BNS-JT.git
 cd <BNS-JT dir>
 
