@@ -49,8 +49,14 @@ class Branch(object):
         #assert isinstance(is_complete, bool), '"is_complete" must be either true (or 1) or false (or 0)'
 
     def __repr__(self):
-        return textwrap.dedent(f"""\
-{self.__class__.__name__}(down={self.down}, up={self.up}, down_state={self.down_state}, up_state={self.up_state}, p={self.p}""")
+        #return textwrap.dedent(f"""\{self.__class__.__name__}(down={self.down}, up={self.up}, down_state={self.down_state}, up_state={self.up_state}, p={self.p}""")
+        return (f"Branch(\n"
+                f"  down={self.down},\n"
+                f"  up={self.up},\n"
+                f"  down_state='{self.down_state}',\n"
+                f"  up_state='{self.up_state}',\n"
+                f"  p={self.p}\n"
+                f")")
 
     def __eq__(self, other):
         """Overrides the default implementation"""
@@ -199,7 +205,12 @@ class Branch(object):
         return varis, cst
 
 
+    def to_dict(self):
+        return {'down': down, 'up': up, 'down_state': down_state, 'up_state': up_state, 'p': p}
 
+    @staticmethod
+    def from_dict(data):
+        return Branch( down = data['down'], up = data['up'], down_state = data['down_state'], up_state = data['up_state'], p = data['p'] )
 
 
 
