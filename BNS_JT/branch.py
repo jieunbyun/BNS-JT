@@ -206,7 +206,7 @@ class Branch(object):
 
 
     def to_dict(self):
-        return {'down': down, 'up': up, 'down_state': down_state, 'up_state': up_state, 'p': p}
+        return {'down': self.down, 'up': self.up, 'down_state': self.down_state, 'up_state': self.up_state, 'p': self.p}
 
     @staticmethod
     def from_dict(data):
