@@ -8,12 +8,12 @@ import warnings
 import sys
 import pickle
 import numpy as np
-import time
+import time, editdistance
 
 from BNS_JT import variable, branch
 
 
-def run(varis, probs, sys_fun, max_sf, max_nb, pf_bnd_wr=0.0, surv_first=True, rules=None, display_freq = 200):
+def run(varis, probs, sys_fun, max_sf, max_nb, pf_bnd_wr=0.0, surv_first=True, rules=None, brs = None, display_freq = 200, active_decomp = True):
 
     """
     INPUTS:
@@ -42,7 +42,35 @@ def run(varis, probs, sys_fun, max_sf, max_nb, pf_bnd_wr=0.0, surv_first=True, r
 
         start = time.time() # monitoring purpose
 
-        brs, _ = decomp_depth_first(varis, rules, probs, max_nb)  # S2
+        if active_decomp:
+            brs, _ = decomp_depth_first(varis, rules, probs, max_nb)  # S2
+        else:
+
+            if brs is None:
+                brs = []
+            brs, _ = decomp_depth_first(varis, rules, probs, max_nb, brs) # existing branches are not reassessed.
+            
+            # Give up below (where I tried to update the dcomposition result when the components importance becomes quite different from the beginning) as the two lists always become different
+            """if brs is None:
+                brs = []
+                comps_freq = {x: 0 for x in probs.keys()} # decomposition order (roughly by their frequencies)
+                comps_ord = sorted( comps_freq, key=comps_freq.get )
+
+            # As a proxy of components' importance, we count the number.
+            comps_ord_old = copy.deepcopy( comps_ord )
+            comps_freq = {x: 0 for x in probs.keys()}
+            for r in rules['s'] + rules['f']:
+                for x in probs.keys():
+                    if x in r.keys():
+                        comps_freq[x] += 1
+            comps_ord = sorted( comps_freq, key=comps_freq.get )
+            
+            comps_ord_dist = editdistance.eval(comps_ord, comps_ord_old)
+            if comps_ord_dist < int(0.05*len(probs)):
+                brs, _ = decomp_depth_first(varis, rules, probs, max_nb, brs) # use previous brs
+            else:
+                brs, _ = decomp_depth_first(varis, rules, probs, max_nb, brs=[])"""
+
         x_star = get_comp_st(brs, surv_first, varis, probs)  # S4-1
 
         if x_star == None:
@@ -87,6 +115,7 @@ def run(varis, probs, sys_fun, max_sf, max_nb, pf_bnd_wr=0.0, surv_first=True, r
         print(f'***Analysis terminated without any evaluation***')
 
     return brs, rules, sys_res, monitor
+
 
 
 def init_monitor():
@@ -351,13 +380,15 @@ def init_branch(varis, rules):
     return [branch.Branch(down, up, down_state, up_state, 1.0)]
 
 
-def decomp_depth_first(varis, rules, probs, max_nb):
+def decomp_depth_first(varis, rules, probs, max_nb, brs = []):
     """
     depth-first decomposition of event space using given rules
     """
 
-    brs = init_branch(varis, rules)  # D1
-    crules = [brs[0].get_compat_rules(rules)]
+    if len(brs) < 1:
+        brs = init_branch(varis, rules)  # D1
+    #crules = [brs[0].get_compat_rules(rules)]
+    crules = [br.get_compat_rules(rules) for br in brs]
 
     go = True
     while go:
@@ -370,6 +401,8 @@ def decomp_depth_first(varis, rules, probs, max_nb):
         crules_new = []
 
         for i, (br, cr) in enumerate(sorted_brs, 1):
+
+            br.eval_state(rules)
 
             # specified branch or no compatible rule exists
             if ((br.down_state == br.up_state) and (br.down_state != 'u')) or (len(cr['f']) + len(cr['s']) == 0):

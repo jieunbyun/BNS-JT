@@ -99,6 +99,49 @@ class Branch(object):
                     compat_rules['f'].append(c_rule)
 
         return compat_rules
+    
+    def eval_state( self, rules ):
+
+        """
+        lower: lower bound on component vector state in dictionary
+               e.g., {'x1': 0, 'x2': 0 ... }
+        upper: upper bound on component vector state in dictionary
+               e.g., {'x1': 2, 'x2': 2 ... }
+        rules: dict of rules
+               e.g., {'s': [{'x1': 2, 'x2': 2}],
+                      'f': [{'x1': 2, 'x2': 0}]}
+        """
+        assert isinstance(rules, dict), f'rules should be a dict: {type(rules)}'
+
+        for rule in rules['s']:
+            if self.up_state != 'u':
+                break
+
+            if all([self.up[k] >= v for k, v in rule.items()]):
+                self.up_state = 's'
+
+
+        for rule in rules['s']:
+            if self.down_state != 'u':
+                break
+
+            if all([self.down[k] >= v for k, v in rule.items()]):
+                self.down_state = 's'
+
+        for rule in rules['f']:
+            if self.up_state != 'u':
+                break
+
+            if all([self.up[k] <= v for k, v in rule.items()]):
+                self.up_state = 'f'
+
+
+        for rule in rules['f']:
+            if self.down_state != 'u':
+                break
+
+            if all([self.down[k] <= v for k, v in rule.items()]):
+                self.down_state = 'f'
 
 
     def approx_joint_prob_compat_rule(self, rule, rule_st, probs):
