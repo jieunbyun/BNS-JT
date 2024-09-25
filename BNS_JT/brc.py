@@ -13,7 +13,7 @@ import time, editdistance
 from BNS_JT import variable, branch
 
 
-def run(varis, probs, sys_fun, max_sf, max_nb, pf_bnd_wr=0.0, surv_first=True, rules=None, brs = None, display_freq = 200, active_decomp = True):
+def run(varis, probs, sys_fun, max_sf, max_nb, pf_bnd_wr=0.0, max_rules = np.inf, surv_first=True, rules=None, brs = None, display_freq = 200, active_decomp = True):
 
     """
     INPUTS:
@@ -24,6 +24,7 @@ def run(varis, probs, sys_fun, max_sf, max_nb, pf_bnd_wr=0.0, surv_first=True, r
     max_sf: maximum number of system function runs
     max_nb: maximum number of branches
     pf_bnd_wr: bound of system failure probability in ratio (width / lower bound)
+    max_rules: the max number of rules
     surv_first: True if survival branches are considered first
     ************************************
     rules: provided if there are some known rules
@@ -83,6 +84,10 @@ def run(varis, probs, sys_fun, max_sf, max_nb, pf_bnd_wr=0.0, surv_first=True, r
 
         elif ctrl['pr_bu'] < ctrl['pf_low'] * pf_bnd_wr:
             monitor['out_flag'] = 'pf_bnd'
+            break
+
+        elif len(rules['s']+rules['s']) >= max_rules:
+            monitor['out_flag'] = 'max_rules'
             break
 
         else:
