@@ -86,7 +86,7 @@ def run(varis, probs, sys_fun, max_sf, max_nb, pf_bnd_wr=0.0, max_rules = np.inf
             monitor['out_flag'] = 'pf_bnd'
             break
 
-        elif len(rules['s']+rules['s']) >= max_rules:
+        elif len(rules['s']+rules['f']) >= max_rules:
             monitor['out_flag'] = 'max_rules'
             break
 
