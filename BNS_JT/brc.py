@@ -8,7 +8,8 @@ import warnings
 import sys
 import pickle
 import numpy as np
-import time, editdistance
+import time
+#import editdistance
 
 from BNS_JT import variable, branch
 
