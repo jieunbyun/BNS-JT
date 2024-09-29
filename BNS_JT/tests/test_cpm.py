@@ -1617,3 +1617,18 @@ def test_flip():
     idx = [1, 0, 2, True]
 
     assert cpm.flip(idx) == [False, False, False, False]
+
+def test_get_col1():
+
+    vars = {}
+    vars['x1'] = variable.Variable( name='x1', values=[0,1,2] )
+    vars['x2'] = variable.Variable( name='x2', values=[0,1,2] )
+    vars['x3'] = variable.Variable( name='x3', values=[0,1,2] )
+    vars['sys'] = variable.Variable( name='sys', values=['f', 's'] )
+
+    M1 = cpm.Cpm( [vars['sys'], vars['x1'], vars['x2'], vars['x3']], no_child=1,
+                C=np.array([[0,4,7,7],[0,3,0,4],[1,3,0,2],[1,3,1,6],[0,3,1,0],[1,3,2,7]]), p = np.array([1.0]*6) )
+
+    C = M1.get_col( [vars['sys'], vars['x1']] )
+
+    np.testing.assert_array_equal( C, np.array([[0,4],[0,3],[1,3],[1,3],[0,3],[1,3]]) )

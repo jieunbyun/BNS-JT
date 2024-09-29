@@ -395,6 +395,21 @@ class Cpm(object):
         assert len(set(names)) == len(names), f'names has duplicates: {names}'
 
         return [self.get_names().index(x) for x in names]
+    
+    def get_col(self, names):
+
+        assert isinstance(names, list), f'names should be a list'
+
+        assert len(set(names)) == len(names), f'names has duplicates: {names}'
+
+        inds = [self.get_names().index(x) for x in names]
+
+        C = np.zeros((len(self.C), len(names)), dtype=int)
+        for i, col_ind in enumerate(inds):
+            C[:,i] = self.C[:,col_ind]
+
+        return C
+
 
 
     def merge(self, M):
