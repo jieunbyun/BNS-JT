@@ -164,6 +164,7 @@ class Variable(object):
                 return st_idx
 
 
+    """
     def update_B(self, val=None):
         if val:
             self.B = val
@@ -172,6 +173,7 @@ class Variable(object):
                 self.B = self.gen_B()
             else:
                 self.B = None
+    """
 
 
     """
