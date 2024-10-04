@@ -204,6 +204,48 @@ class Variable(object):
             state += idx_in_group
 
         return state
+    
+    def get_set(self, state):
+        """
+        Finds the set of basic states corresponding to a given basic/composite state.
+
+        The sets are ordered as follows:
+        [{0}, {1}, ..., {n-1}, {0, 1}, {0, 2}, ..., {n-2, n-1}, {0, 1, 2}, ..., {0, 1, ..., n-1}]
+
+        Parameters:
+        state (int): The state for which to find the corresponding set.
+
+        Returns:
+        set: The set corresponding to the given state.
+        """
+
+        if self.B is not None:
+            return self.B[state]
+        
+        else:
+            # the number of states
+            n = len(self.values)
+
+            # Initialize the state tracker
+            current_state = 0
+
+            # Iterate through the group sizes (1-element sets, 2-element sets, etc.)
+            for k in range(1, n + 1):
+                # Count the number of sets of size k
+                comb_count = len(list(combinations(range(n), k)))
+
+                # Check if the index falls within this group
+                if current_state + comb_count > state:
+                    # If it falls within this group, calculate the exact set
+                    combinations_list = list(combinations(range(n), k))
+                    set_tuple = combinations_list[state - current_state]
+                    return set(set_tuple)
+                
+                # Otherwise, move to the next group
+                current_state += comb_count
+
+            # If the index is out of bounds, raise an error
+            raise IndexError("Index out of bounds for the given set size.")
 
 
     """
