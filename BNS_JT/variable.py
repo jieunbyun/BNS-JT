@@ -124,44 +124,6 @@ class Variable(object):
         #for n in range(1, len(self._values) + 1):
         #    [B.append(set(x)) for x in itertools.combinations(range(len(self._values)), n)]
         return B
-
-    """def B_fly(self, st=None):
-
-        if st == None:
-            return self.gen_B()
-
-        else:
-            assert isinstance(st, int) or isinstance(st, np.integer) or isinstance(st, set), 'Given state must be an integer or a set'
-
-            n = len(self._values)
-
-            nst_len = [math.comb(n,r) for r in range(1,n+1)]  # number of states in each length from 1 to n
-            nst_len_cum = np.cumsum(nst_len)
-
-            #FIXME: still not passing tests
-            if isinstance(st, int) or isinstance(st, np.integer):
-
-                st_len = np.argmax(~(nst_len_cum<=st)) + 1 # length of the state
-
-                st_to_go = st - sum([math.comb(n,k) for k in range(1,st_len)]) 
-                st_idx = 0
-                for x in combinations(range(n), st_len):
-                    if st_idx==st_to_go:
-                        break
-                    st_idx += 1
-                return set(x)
-
-            else:
-
-                #FIXME: still not passing tests
-                st_len = len(st)
-                nst_len_cum = np.concatenate(([0], nst_len_cum))
-                st_idx = nst_len_cum[st_len-1]
-                for x in combinations(range(n), st_len):
-                    if set(x)==st:
-                        break
-                    st_idx += 1
-                return st_idx"""
             
     def get_state( self, set ):
         """
@@ -248,7 +210,6 @@ class Variable(object):
             raise IndexError("Index out of bounds for the given set size.")
 
 
-    """
     def update_B(self, val=None):
         if val:
             self.B = val
@@ -257,7 +218,6 @@ class Variable(object):
                 self.B = self.gen_B()
             else:
                 self.B = None
-    """
 
 
     """
@@ -297,28 +257,5 @@ class Variable(object):
     def __repr__(self):
         return repr(f'Variable(name={self.name}, B={self.B}, values={self.values})')
 
-#FIXME: seems obsolete
-def get_composite_state(vari, states):
-    """
-    # Input: vari-one Variable object, st_list: list of states (starting from zero)
-    # TODO: states start from 0 in Cpm and from 1 in B&B -- will be fixed later so that all start from 0
 
-    b = [x in states for x in range(len(vari.B[0]))]
-
-    comp_st = np.where((vari.B == b).all(axis=1))[0]
-
-    if len(comp_st):
-        cst = comp_st[0]
-
-    else:
-        vari.B = np.vstack((vari.B, b))
-        cst = len(vari.B) - 1 # zero-based index
-    """
-    added = set(states)
-    if added not in vari.B:
-        vari.B.append(added)
-
-    cst = vari.B.index(added)
-
-    return vari, cst
 

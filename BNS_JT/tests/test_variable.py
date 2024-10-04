@@ -39,43 +39,6 @@ def test_init2():
     np.testing.assert_array_equal(a.B, [{0}, {1}, {0, 1}])
     np.testing.assert_array_equal(a.values, value)
 
-@pytest.mark.skip('FIXME: what this is meant')
-def test_init3():
-
-    name = 'A'
-    a = variable.Variable(name)
-    value = ['survival', 'fail']
-    B = [{0}, {1},  {0, 1}]
-
-    # should define value first
-    with pytest.raises(AttributeError):
-        a.B = B
-
-@pytest.mark.skip('FIXME: what this is meant')
-def test_init4():
-
-    name = 'A'
-    a = variable.Variable(name)
-    value = ['survival', 'fail']
-    B = [{0}, {1}, {0, 2}] # should be {0, 1}
-    a.values = value
-
-    with pytest.raises(AttributeError):
-        a.B = B
-
-
-@pytest.mark.skip('FIXME: what this is meant')
-def test_init5():
-
-    name = 'A'
-    a = variable.Variable(name)
-    value = ['survival', 'fail']
-    B = [{0}, {1}, {0, 1}, {0, 1}] #  max. len of B == 3
-    a.values = value
-
-    with pytest.raises(AttributeError):
-        a.B = B
-
 
 def test_B1():
 
@@ -143,46 +106,6 @@ def test_eq3():
 
     assert result == [0, 0, 0]
 
-
-def test_get_composite_state1():
-
-    varis = {}
-    varis['e1'] = variable.Variable(name='e1', values=[1.5, 0.3, 0.15])
-
-    states = [1, 2]
-    result = variable.get_composite_state(varis['e1'], states)
-    expected = [{0}, {1}, {2}, {0, 1}, {0, 2}, {1, 2}, {0, 1, 2}]
-    assert compare_list_of_sets(result[0].B, expected)
-    assert result[1] == 5
-
-
-def test_get_composite_state2():
-
-    #od_pair, arcs, varis = main_sys
-    varis = {}
-    varis['e1'] = variable.Variable(name='e1', values=[1.5, 0.3, 0.15])
-
-    states = [1, 2]
-    result = variable.get_composite_state(varis['e1'], states)
-
-    expected = [{0}, {1}, {2}, {0, 1}, {0, 2}, {1, 2}, {0, 1, 2}]
-    #expected = [{0}, {1}, {2}, {1, 2}]
-    assert compare_list_of_sets(result[0].B, expected)
-    assert result[1] == 5
-
-
-def test_get_composite_state3():
-
-    #od_pair, arcs, varis = main_sys
-    varis = {}
-    varis['e1'] = variable.Variable(name='e1', values=[1.5, 0.3, 0.15])
-    states = [0, 2]
-    result = variable.get_composite_state(varis['e1'], states)
-
-    expected = [{0}, {1}, {2}, {0, 1}, {0, 2}, {1, 2}, {0, 1, 2}]
-    #expected = [{0}, {1}, {2}, {0, 2}]
-    assert compare_list_of_sets(result[0].B, expected)
-    assert result[1] == 4
 
 
 def test_get_state1():
