@@ -125,7 +125,7 @@ class Variable(object):
         #    [B.append(set(x)) for x in itertools.combinations(range(len(self._values)), n)]
         return B
 
-    def B_fly(self, st=None):
+    """def B_fly(self, st=None):
 
         if st == None:
             return self.gen_B()
@@ -161,7 +161,49 @@ class Variable(object):
                     if set(x)==st:
                         break
                     st_idx += 1
-                return st_idx
+                return st_idx"""
+            
+    def get_state( self, set ):
+        """
+        Finds the state of a given set of basic states.
+
+        The sets are ordered as follows:
+        [{0}, {1}, ..., {n-1}, {0, 1}, {0, 2}, ..., {n-2, n-1}, {0, 1, 2}, ..., {0, 1, ..., n-1}]
+
+        Parameters:
+        set (set): The set of basic states for which to find the state.
+
+        Returns:
+        state: The state of the given set in the custom order.
+        """
+        if self.B is not None:
+            state = self.B.index(set)
+
+        else:
+            n = len(self.values)
+            # The number of elements in the target set
+            num_elements = len(set)
+            
+            # Initialize the state
+            state = 0
+
+            # Add the number of sets with fewer elements
+            for k in range(1, num_elements):
+                state += len(list(combinations(range(n), k)))
+
+            # Now, find where the target set is in the group with 'num_elements' elements
+            combinations_list = list(combinations(range(n), num_elements))
+            
+            # Convert target_set to a sorted tuple to match the combinations
+            target_tuple = tuple(sorted(set))
+            
+            # Find the index within the group
+            idx_in_group = combinations_list.index(target_tuple)
+
+            # Add the position within the group to the state
+            state += idx_in_group
+
+        return state
 
 
     """

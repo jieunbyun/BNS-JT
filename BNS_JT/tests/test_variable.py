@@ -185,4 +185,13 @@ def test_get_composite_state3():
     assert result[1] == 4
 
 
+def test_get_state1():
+
+    varis = {'x1': variable.Variable( 'x1', values=[0,1]),
+             'x2': variable.Variable( 'x2', [0,1,2,3]),
+             'x3': variable.Variable( 'x3', np.arange(20).tolist())}
+    
+    assert varis['x1'].get_state( {0,1} ) == 2
+    assert varis['x2'].get_state( {0,1,2} ) == 10
+    assert varis['x3'].get_state( {3,4,5} ) == 670
 
