@@ -258,4 +258,24 @@ class Variable(object):
         return repr(f'Variable(name={self.name}, B={self.B}, values={self.values})')
 
 
+def get_composite_state(vari, states):
+    """
+    # Input: vari-one Variable object, st_list: list of states (starting from zero)
+    # TODO: states start from 0 in Cpm and from 1 in B&B -- will be fixed later so that all start from 0
+    b = [x in states for x in range(len(vari.B[0]))]
+    comp_st = np.where((vari.B == b).all(axis=1))[0]
+    if len(comp_st):
+        cst = comp_st[0]
+    else:
+        vari.B = np.vstack((vari.B, b))
+        cst = len(vari.B) - 1 # zero-based index
+    """
+    added = set(states)
+    if added not in vari.B:
+        vari.B.append(added)
+
+    cst = vari.B.index(added)
+
+    return vari, cst
+
 
