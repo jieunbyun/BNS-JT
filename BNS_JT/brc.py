@@ -521,3 +521,29 @@ def run_MCS_indep_comps(probs, sys_fun, cov_t = 0.01):
             print(f'nsamp: {nsamp}, cov: {cov}, pf: {pf}')
 
     return pf, cov, nsamp
+
+def eval_rules_prob( rules_list, s_or_f, probs ):
+    
+    probs_list = []
+
+    if s_or_f == 'f': # rules_list contain failure rules
+        for r in rules_list:
+            p = 1.0
+            for k, v in r.items():
+                p *= sum([probs[k][x] for x in range(v)])
+
+            probs_list.append(p)
+
+    elif s_or_f == 's':
+        max_st = {k: max(probs[k].keys()) for k in probs.keys()}
+
+        for r in rules_list:
+            p = 1.0
+            for k, v in r.items():
+                p *= sum([probs[k][x] for x in range(v, max_st[k]+1)])
+
+            probs_list.append(p)
+    else:
+        raise ValueError('s_or_f input variable must be a string either "s" or "f".')
+    
+    return probs_list

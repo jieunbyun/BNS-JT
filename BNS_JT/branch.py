@@ -10,6 +10,7 @@ import pdb
 import itertools
 from pathlib import Path
 from collections import namedtuple
+from scipy.stats import beta
 #import dask
 #from dask.distributed import Client, worker_client, as_completed, get_client
 
@@ -67,7 +68,7 @@ class Branch(object):
                         self.up_state == other.up_state,
                         self.p == other.p])
 
-    def approx_prob(self, probs):
+    def approx_prob(self, probs): # TODO: the naming is wrong, It should be "get_indep_prob" (the probability is not approximate when components are independent.)
         self.p = approx_prob_by_comps(self.down, self.up, probs)
 
 
@@ -747,7 +748,7 @@ def get_cmat_from_branches(branches, variables):
     return C[C[:, 0].argsort()]
 
 
-def mcs_unknown(brs, probs, sys_fun, cpms, sys_name, cov_t, rand_seed=None):
+def mcs_unknown_using_cpms(brs, probs, sys_fun, cpms, sys_name, cov_t, rand_seed=None):
     """
     Perform Monte Carlo simulation for the unknown state.
 
@@ -790,7 +791,7 @@ def mcs_unknown(brs, probs, sys_fun, cpms, sys_name, cov_t, rand_seed=None):
         s_prob1 = {}
 
         # select a branch
-        br_id = np.random.choice(range(len(brs_u)), p=brs_u_probs / brs_u_prob)
+        br_id = np.random.choice(range(len(brs_u)), p=[p / brs_u_prob for p in brs_u_probs])
         br = brs_u[br_id]
 
         for e in br.down.keys():
@@ -806,11 +807,14 @@ def mcs_unknown(brs, probs, sys_fun, cpms, sys_name, cov_t, rand_seed=None):
             s_prob1[e] = probs[e][st]
 
         # system function run
-        val, sys_st = sys_fun_rs(sample1)
+        val, sys_st, _ = sys_fun(sample1)
 
         samples.append(sample1)
         sample_probs.append(s_prob1)
-        samples_sys = np.vstack((samples_sys, [sys_st]))
+        if sys_st == 'f':
+            samples_sys = np.vstack((samples_sys, [0]))
+        else: # sys_st == 's'
+            samples_sys = np.vstack((samples_sys, [1]))
 
         if sys_st == 'f':
             nfail += 1
@@ -854,3 +858,84 @@ def mcs_unknown(brs, probs, sys_fun, cpms, sys_name, cov_t, rand_seed=None):
     result = {'pf': pf, 'cov': cov, 'nsamp': nsamp, 'cint_low': cint[0], 'cint_up': cint[1]}
 
     return cpms, result
+
+def mcs_unknown_simple(brs, probs, sys_fun, cov_t, rand_seed=None):
+    """
+    Perform Monte Carlo simulation for the unknown state WITHOUT involving CPMs.
+    (used when re-use of MCS samples is not considered)
+
+    INPUTS:
+    brs_u: Unspecified branches (list)
+    probs: a dictionary of failure probabilities for each component
+    sys_fun: System function
+    cov_t: a target c.o.v.
+    rand_seed: Random seed
+
+    OUTPUTS:
+    cpms: cpms with samples added
+    result: Results of the Monte Carlo simulation
+    """
+
+    brs_u = [b for b in brs if b.down_state == 'u' or b.up_state == 'u']
+    pf_low = sum(b.p for b in brs if b.up_state == 'f')
+
+    # Set the random seed
+    if rand_seed:
+        np.random.seed(rand_seed)
+
+    brs_u_probs = [b.p for b in brs_u]
+    brs_u_prob = sum(brs_u_probs)
+
+    nsamp, nfail = 0, 0
+    pf, cov = 0.0, 1.0
+
+    while cov > cov_t:
+
+        nsamp += 1
+        sample1 = {}
+
+        # select a branch
+        br_id = np.random.choice(range(len(brs_u)), p=[p / brs_u_prob for p in brs_u_probs])
+        br = brs_u[br_id]
+
+        for e in br.down.keys():
+            d = br.down[e]
+            u = br.up[e]
+
+            if d < u: # (fail, surv)
+                st = np.random.choice(range(d, u + 1), p=[probs[e][d], probs[e][u]])
+            else:
+                st = d
+
+            sample1[e] = st
+
+        # system function run
+        val, sys_st, _ = sys_fun(sample1)
+
+        if sys_st == 'f':
+            nfail += 1
+
+        if nsamp > 9:
+            prior = 0.01
+            a, b = prior + nfail, prior + (nsamp-nfail) # Bayesian estimation assuming beta conjucate distribution
+
+            pf_s = a / (a+b)
+            var_s = a*b / (a+b)**2 / (a+b+1)
+            std_s = np.sqrt(var_s)
+
+            pf = pf_low + brs_u_prob *pf_s
+            std = brs_u_prob * std_s
+            cov = std/pf
+
+            conf_p = 0.95 # confidence interval
+            low = beta.ppf(0.5*(1-conf_p), a, b)
+            up = beta.ppf(1 - 0.5*(1-conf_p), a, b)
+            cint = pf_low + brs_u_prob * np.array([low, up])
+
+        if nsamp % 1000 == 0:
+            print(f'nsamp: {nsamp}, pf: {pf:.4e}, cov: {cov:.4e}')
+
+
+    result = {'pf': pf, 'cov': cov, 'nsamp': nsamp, 'cint_low': cint[0], 'cint_up': cint[1]}
+
+    return result
