@@ -127,3 +127,63 @@ def test_get_set1():
     assert varis['x1'].get_set( 2 ) == {0,1}
     assert varis['x2'].get_set( 10 ) == {0,1,2}
     assert varis['x3'].get_set( 670 ) == {3,4,5}
+
+def test_find_state_from_vector1():
+
+    varis = {'x1': variable.Variable( 'x1', [0,1]),
+             'x2': variable.Variable( 'x2', [0,1,2] )}
+    
+
+    assert varis['x1'].find_state_from_vector([1,0]) == 0
+    assert varis['x1'].find_state_from_vector([0,1]) == 1
+    assert varis['x1'].find_state_from_vector([1,1]) == 2
+
+    assert varis['x2'].find_state_from_vector([1,1,0]) == 3
+    assert varis['x2'].find_state_from_vector([1,1,1]) == 6
+    assert varis['x2'].find_state_from_vector([0,0,0]) == -1
+
+def test_get_Bst_from_Bvec1():
+
+    varis = {'x1': variable.Variable( 'x1', [0,1,2])}
+
+    Bvec = np.array([[[1, 0, 0],
+                      [1, 0, 0],
+                      [1, 0, 0],
+                      [0, 0, 0],
+                      [0, 0, 0],
+                      [0, 0, 0]],
+                        
+                     [[1, 0, 0],
+                      [1, 0, 0],
+                      [1, 0, 0],
+                      [0, 0, 0],
+                      [0, 0, 0],
+                      [0, 0, 0]],
+                        
+                     [[0, 1, 1],
+                      [0, 0, 0],
+                      [0, 0, 0],
+                      [0, 1, 0],
+                      [0, 1, 0],
+                      [0, 0, 1]],
+                      
+                     [[0, 1, 1],
+                      [0, 0, 0],
+                      [0, 0, 0],
+                      [0, 1, 0],
+                      [0, 1, 0],
+                      [0, 0, 1]],
+
+                     [[0, 1, 1],
+                      [0, 0, 0],
+                      [0, 0, 0],
+                      [0, 1, 0],
+                      [0, 1, 0],
+                      [0, 0, 1]]])
+    
+    Bst = varis['x1'].get_Bst_from_Bvec( Bvec )
+    np.testing.assert_array_equal(Bst, np.array([[0, 0, 0, -1, -1, -1],
+                                                 [0, 0, 0, -1, -1, -1],
+                                                 [5, -1, -1, 1, 1, 2],
+                                                 [5, -1, -1, 1, 1, 2],
+                                                 [5, -1, -1, 1, 1, 2]]))

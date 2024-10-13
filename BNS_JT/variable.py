@@ -208,6 +208,65 @@ class Variable(object):
 
             # If the index is out of bounds, raise an error
             raise IndexError("Index out of bounds for the given set size.")
+        
+    
+    def find_state_from_vector(self, vector):
+        """
+        Finds the state of a given binary vector.
+
+        Parameters:
+        vector (list): The binary vector indicating the basic states involved, for which to find the state.
+
+        Returns:
+        state: The state of the given vector in the custom order. Returns -1 if the vector is all zeros.
+        """
+        # Count the number of 1's in the vector
+        n = len(vector)
+        num_ones = sum(vector)
+
+        # Return -1 if the vector is all zeros
+        if num_ones == 0:
+            return -1
+        
+        # Initialize the state
+        state = 0
+        
+        # Add the number of vectors with fewer 1's
+        for k in range(1, num_ones):
+            state += len(list(combinations(range(n), k)))
+        
+        # Find where this vector is in the group with 'num_ones' ones
+        one_positions = [i for i, val in enumerate(vector) if val == 1]
+        
+        # Find the position of this specific combination in the group
+        combs = list(combinations(range(n), num_ones))
+        idx_in_group = combs.index(tuple(one_positions))
+        
+        # Add the position within the group to the state
+        state += idx_in_group
+        
+        return state
+    
+    def get_Bst_from_Bvec( self, Bvec ):
+
+        """
+        Converts a binary vector (Bvec) into its corresponding state representation (Bst)
+        by applying the 'find_state_from_vector' function along the last axis of the Bvec array.
+
+        Parameters:
+        ----------
+        Bvec : np.ndarray
+            A (x*y*z) numpy array where z is the number of basic states.
+
+        Returns:
+        -------
+        Bst : np.ndarray
+            A (x*y) numpy array containing the state representation of each binary vector 
+            in the original Bvec array.
+        """
+
+        Bst = np.apply_along_axis(self.find_state_from_vector, -1, Bvec)
+        return Bst
 
 
     def update_B(self, val=None):
