@@ -5,6 +5,9 @@
     "OUTPUT_PATH": "./",
     "MAX_BRANCHES": 1000000,
     "MAX_SYS_FUN": 1000000,
+    "THRESHOLD": 2.0,
+    "NO_PATHS": 5,
+    "DIRECTION_RESULT": "./directions_result_all.json",
 
     "HAZARD_INPUT_METHOD": null,
     "HAZARD_TYPE": null,

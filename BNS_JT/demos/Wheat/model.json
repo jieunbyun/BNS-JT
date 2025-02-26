@@ -158,6 +158,12 @@
             "link_capacity": null,
             "weight": 2688
         },
+        "1100": {
+            "origin": "0284",
+            "destination": "Meckering",
+            "link_capacity": null,
+            "weight": 1440
+        },
         "12": {
             "origin": "Meckering",
             "destination": "Cunderdin",
@@ -237,678 +243,678 @@
             "weight": 322
         },
         "25": {
-            "origin": "1469",
-            "destination": "0612",
-            "link_capacity": null,
-            "weight": 257
-        },
-        "26": {
             "origin": "Cunderdin",
             "destination": "Kellerberrin",
             "link_capacity": null,
             "weight": 1785
         },
-        "27": {
+        "26": {
             "origin": "Kellerberrin",
             "destination": "1006",
             "link_capacity": null,
             "weight": 1269
         },
-        "28": {
+        "27": {
             "origin": "1006",
             "destination": "1007",
             "link_capacity": null,
             "weight": 7
         },
-        "29": {
+        "28": {
             "origin": "1007",
             "destination": "1050",
             "link_capacity": null,
             "weight": 282
         },
-        "30": {
+        "29": {
             "origin": "1050",
             "destination": "0627",
             "link_capacity": null,
             "weight": 337
         },
-        "31": {
+        "30": {
             "origin": "0627",
             "destination": "Merredin",
             "link_capacity": null,
             "weight": 261
         },
-        "32": {
+        "31": {
             "origin": "Northam",
             "destination": "0613",
             "link_capacity": null,
             "weight": 275
         },
-        "33": {
+        "32": {
             "origin": "0613",
             "destination": "1149",
             "link_capacity": null,
             "weight": 257
         },
-        "34": {
+        "33": {
             "origin": "0305",
             "destination": "0729",
             "link_capacity": null,
             "weight": 505
         },
-        "35": {
+        "34": {
             "origin": "0729",
             "destination": "0730",
             "link_capacity": null,
             "weight": 464
         },
-        "36": {
+        "35": {
             "origin": "0730",
             "destination": "0714",
             "link_capacity": null,
             "weight": 1793
         },
-        "37": {
+        "36": {
             "origin": "0717",
             "destination": "0596",
             "link_capacity": null,
             "weight": 805
         },
-        "38": {
+        "37": {
             "origin": "0596",
             "destination": "Kellerberrin",
             "link_capacity": null,
             "weight": 1938
         },
-        "39": {
+        "38": {
             "origin": "Kellerberrin",
             "destination": "0641",
             "link_capacity": null,
             "weight": 283
         },
-        "40": {
+        "39": {
             "origin": "0641",
             "destination": "Merredin",
             "link_capacity": null,
             "weight": 2449
         },
-        "41": {
+        "40": {
             "origin": "York",
             "destination": "0291",
             "link_capacity": null,
             "weight": 326
         },
-        "42": {
+        "41": {
             "origin": "York",
             "destination": "4184",
             "link_capacity": null,
             "weight": 333
         },
-        "43": {
+        "410": {
+            "origin": "York",
+            "destination": "4156",
+            "link_capacity": null,
+            "weight": 333
+        },
+        "42": {
             "origin": "4184",
             "destination": "0289",
             "link_capacity": null,
             "weight": 250
         },
-        "44": {
+        "43": {
             "origin": "0287",
             "destination": "4556A",
             "link_capacity": null,
             "weight": 27
         },
-        "45": {
+        "44": {
             "origin": "4556A",
             "destination": "4151",
             "link_capacity": null,
             "weight": 1011
         },
-        "46": {
+        "45": {
             "origin": "4151",
             "destination": "Kellerberrin",
             "link_capacity": null,
             "weight": 2760
         },
-        "47": {
+        "46": {
             "origin": "0288",
             "destination": "4556A",
             "link_capacity": null,
             "weight": 32
         },
-        "48": {
+        "47": {
             "origin": "0361",
             "destination": "0612",
             "link_capacity": null,
             "weight": 589
         },
-        "49": {
+        "48": {
             "origin": "0612",
             "destination": "0752",
             "link_capacity": null,
             "weight": 55
         },
-        "50": {
+        "49": {
             "origin": "0752",
             "destination": "0753",
             "link_capacity": null,
             "weight": 250
         },
-        "51": {
+        "50": {
             "origin": "0753",
             "destination": "0754",
             "link_capacity": null,
             "weight": 8
         },
-        "52": {
+        "51": {
             "origin": "0754",
             "destination": "0761",
             "link_capacity": null,
             "weight": 540
         },
-        "53": {
+        "52": {
             "origin": "0761",
             "destination": "0762",
             "link_capacity": null,
             "weight": 124
         },
-        "54": {
+        "53": {
             "origin": "0762",
             "destination": "0763A",
             "link_capacity": null,
             "weight": 158
         },
-        "55": {
+        "54": {
             "origin": "0763A",
             "destination": "0765",
             "link_capacity": null,
             "weight": 636
         },
-        "56": {
+        "55": {
             "origin": "0290",
             "destination": "0289",
             "link_capacity": null,
             "weight": 241
         },
-        "57": {
+        "56": {
             "origin": "0289",
             "destination": "0288",
             "link_capacity": null,
             "weight": 28
         },
-        "58": {
+        "57": {
             "origin": "0288",
             "destination": "0287",
             "link_capacity": null,
             "weight": 27
         },
-        "59": {
+        "58": {
             "origin": "0287",
             "destination": "0286",
             "link_capacity": null,
             "weight": 116
         },
-        "60": {
+        "59": {
             "origin": "0286",
             "destination": "0285",
             "link_capacity": null,
             "weight": 20
         },
-        "61": {
+        "60": {
             "origin": "0285",
             "destination": "0284",
             "link_capacity": null,
             "weight": 73
         },
-        "62": {
+        "61": {
             "origin": "0284",
             "destination": "0283",
             "link_capacity": null,
             "weight": 21
         },
-        "63": {
+        "62": {
             "origin": "0283",
             "destination": "0282",
             "link_capacity": null,
             "weight": 94
         },
-        "64": {
+        "63": {
             "origin": "0282",
             "destination": "0281",
             "link_capacity": null,
             "weight": 63
         },
-        "65": {
+        "64": {
             "origin": "0281",
             "destination": "0280",
             "link_capacity": null,
             "weight": 132
         },
-        "66": {
+        "65": {
             "origin": "0280",
             "destination": "0279",
             "link_capacity": null,
             "weight": 54
         },
-        "67": {
+        "66": {
             "origin": "0279",
             "destination": "0278",
             "link_capacity": null,
             "weight": 78
         },
-        "68": {
+        "67": {
             "origin": "0278",
             "destination": "0277",
             "link_capacity": null,
             "weight": 159
         },
-        "69": {
+        "68": {
             "origin": "0277",
             "destination": "0752",
             "link_capacity": null,
             "weight": 324
         },
-        "70": {
+        "69": {
             "origin": "0694",
             "destination": "0361",
             "link_capacity": null,
             "weight": 477
         },
-        "71": {
+        "70": {
             "origin": "0361",
             "destination": "0638",
             "link_capacity": null,
             "weight": 558
         },
-        "72": {
+        "71": {
             "origin": "0638",
             "destination": "Northam",
             "link_capacity": null,
             "weight": 150
         },
-        "73": {
+        "72": {
             "origin": "Northam",
             "destination": "0277",
             "link_capacity": null,
             "weight": 388
         },
-        "74": {
+        "73": {
             "origin": "0576",
             "destination": "0291",
             "link_capacity": null,
             "weight": 482
         },
-        "75": {
+        "74": {
             "origin": "0291",
             "destination": "0299",
             "link_capacity": null,
             "weight": 338
         },
-        "76": {
+        "75": {
             "origin": "0299",
             "destination": "0300",
             "link_capacity": null,
             "weight": 70
         },
-        "77": {
+        "76": {
             "origin": "0300",
             "destination": "0301",
             "link_capacity": null,
             "weight": 152
         },
-        "78": {
+        "77": {
             "origin": "0301",
             "destination": "0302",
             "link_capacity": null,
             "weight": 102
         },
-        "79": {
+        "78": {
             "origin": "0302",
             "destination": "0303",
             "link_capacity": null,
             "weight": 68
         },
-        "80": {
+        "79": {
             "origin": "0303",
             "destination": "0304",
             "link_capacity": null,
             "weight": 6
         },
-        "81": {
+        "80": {
             "origin": "0304",
             "destination": "0305",
             "link_capacity": null,
             "weight": 110
         },
-        "82": {
+        "81": {
             "origin": "0305",
             "destination": "5093",
             "link_capacity": null,
             "weight": 6126
         },
-        "83": {
+        "82": {
             "origin": "5093",
             "destination": "5281",
             "link_capacity": null,
             "weight": 268
         },
-        "84": {
+        "83": {
             "origin": "5281",
             "destination": "5099A",
             "link_capacity": null,
             "weight": 169
         },
-        "85": {
+        "84": {
             "origin": "5099A",
             "destination": "6223A",
             "link_capacity": null,
             "weight": 340
         },
-        "86": {
+        "85": {
             "origin": "6223A",
             "destination": "5100A",
             "link_capacity": null,
             "weight": 3
         },
-        "87": {
+        "86": {
             "origin": "5100A",
             "destination": "Merredin",
             "link_capacity": null,
             "weight": 2420
         },
-        "88": {
+        "87": {
             "origin": "Northam",
             "destination": "0612",
             "link_capacity": null,
             "weight": 135
         },
-        "89": {
+        "88": {
             "origin": "0612",
             "destination": "9186",
             "link_capacity": null,
             "weight": 305
         },
-        "90": {
+        "89": {
             "origin": "Wooroloo",
             "destination": "4527",
             "link_capacity": null,
             "weight": 197
         },
-        "91": {
+        "90": {
             "origin": "4527",
             "destination": "0369",
             "link_capacity": null,
             "weight": 1053
         },
-        "92": {
+        "91": {
             "origin": "0369",
             "destination": "0692",
             "link_capacity": null,
             "weight": 303
         },
-        "93": {
+        "92": {
             "origin": "0692",
             "destination": "0693",
             "link_capacity": null,
             "weight": 77
         },
-        "94": {
+        "93": {
             "origin": "0693",
             "destination": "0694",
             "link_capacity": null,
             "weight": 11
         },
-        "95": {
+        "94": {
             "origin": "0694",
             "destination": "0631A",
             "link_capacity": null,
             "weight": 169
         },
-        "96": {
+        "95": {
             "origin": "0631A",
             "destination": "0632A",
             "link_capacity": null,
             "weight": 77
         },
-        "97": {
+        "96": {
             "origin": "0632A",
             "destination": "0633A",
             "link_capacity": null,
             "weight": 112
         },
-        "98": {
+        "97": {
             "origin": "0633A",
             "destination": "0634",
             "link_capacity": null,
             "weight": 482
         },
-        "99": {
+        "98": {
             "origin": "0634",
             "destination": "0637",
             "link_capacity": null,
             "weight": 762
         },
-        "100": {
+        "99": {
             "origin": "0637",
             "destination": "0765",
             "link_capacity": null,
             "weight": 433
         },
-        "101": {
+        "100": {
             "origin": "0765",
             "destination": "0639",
             "link_capacity": null,
             "weight": 863
         },
-        "102": {
+        "101": {
             "origin": "0639",
             "destination": "Merredin",
             "link_capacity": null,
             "weight": 5816
         },
-        "103": {
+        "102": {
             "origin": "Wooroloo",
             "destination": "0574",
             "link_capacity": null,
             "weight": 1160
         },
-        "104": {
+        "103": {
             "origin": "0574",
             "destination": "0576",
             "link_capacity": null,
             "weight": 621
         },
-        "105": {
+        "104": {
             "origin": "0576",
             "destination": "York",
             "link_capacity": null,
             "weight": 623
         },
-        "106": {
+        "105": {
             "origin": "York",
             "destination": "0290",
             "link_capacity": null,
             "weight": 319
         },
-        "107": {
+        "106": {
             "origin": "0290",
             "destination": "0579",
             "link_capacity": null,
             "weight": 88
         },
-        "108": {
+        "107": {
             "origin": "0579",
             "destination": "0580",
             "link_capacity": null,
             "weight": 50
         },
-        "109": {
+        "108": {
             "origin": "0580",
             "destination": "0897",
             "link_capacity": null,
             "weight": 586
         },
-        "110": {
+        "109": {
             "origin": "0897",
             "destination": "0898",
             "link_capacity": null,
             "weight": 115
         },
-        "111": {
+        "110": {
             "origin": "0898",
             "destination": "0589",
             "link_capacity": null,
             "weight": 203
         },
-        "112": {
+        "111": {
             "origin": "0589",
             "destination": "0592",
             "link_capacity": null,
             "weight": 297
         },
-        "113": {
+        "112": {
             "origin": "0592",
             "destination": "0596",
             "link_capacity": null,
             "weight": 1596
         },
-        "114": {
+        "113": {
             "origin": "0596",
             "destination": "0597",
             "link_capacity": null,
             "weight": 369
         },
-        "115": {
+        "114": {
             "origin": "0597",
             "destination": "0598",
             "link_capacity": null,
             "weight": 46
         },
-        "116": {
+        "115": {
             "origin": "0598",
             "destination": "0602",
             "link_capacity": null,
             "weight": 1063
         },
-        "117": {
+        "116": {
             "origin": "0602",
             "destination": "Merredin",
             "link_capacity": null,
             "weight": 2872
         },
-        "118": {
+        "117": {
             "origin": "Wooroloo",
             "destination": "0606",
             "link_capacity": null,
             "weight": 531
         },
-        "119": {
+        "118": {
             "origin": "0606",
             "destination": "9306",
             "link_capacity": null,
             "weight": 547
         },
-        "120": {
+        "119": {
             "origin": "9306",
             "destination": "1046",
             "link_capacity": null,
             "weight": 20
         },
-        "121": {
+        "120": {
             "origin": "1046",
             "destination": "1047",
             "link_capacity": null,
             "weight": 192
         },
-        "122": {
+        "121": {
             "origin": "1047",
             "destination": "9186",
             "link_capacity": null,
             "weight": 294
         },
-        "123": {
+        "122": {
             "origin": "9186",
-            "destination": "1468",
+            "destination": "1469",
             "link_capacity": null,
-            "weight": 69
+            "weight": 46
         },
-        "124": {
+        "123": {
             "origin": "1469",
             "destination": "1468",
             "link_capacity": null,
             "weight": 23
         },
-        "125": {
+        "124": {
             "origin": "1468",
             "destination": "1504",
             "link_capacity": null,
             "weight": 9
         },
-        "126": {
+        "125": {
             "origin": "1504",
             "destination": "1467",
             "link_capacity": null,
             "weight": 5
         },
-        "127": {
+        "126": {
             "origin": "1467",
             "destination": "1466",
             "link_capacity": null,
             "weight": 59
         },
-        "128": {
+        "127": {
             "origin": "1466",
             "destination": "1465",
             "link_capacity": null,
             "weight": 78
         },
-        "129": {
+        "128": {
             "origin": "1465",
             "destination": "1464",
             "link_capacity": null,
             "weight": 5
         },
-        "130": {
+        "129": {
             "origin": "1464",
             "destination": "1463",
             "link_capacity": null,
             "weight": 18
         },
-        "131": {
+        "130": {
             "origin": "1463",
             "destination": "9187",
             "link_capacity": null,
             "weight": 49
         },
-        "132": {
+        "131": {
             "origin": "9187",
             "destination": "1149",
             "link_capacity": null,
             "weight": 223
         },
-        "133": {
+        "132": {
             "origin": "1149",
             "destination": "1150",
             "link_capacity": null,
             "weight": 131
         },
-        "134": {
+        "133": {
             "origin": "1150",
             "destination": "1153",
             "link_capacity": null,
             "weight": 78
         },
-        "135": {
+        "134": {
             "origin": "1153",
             "destination": "1154",
             "link_capacity": null,
             "weight": 174
         },
-        "136": {
+        "135": {
             "origin": "1154",
             "destination": "0617",
             "link_capacity": null,
             "weight": 439
         },
-        "137": {
+        "136": {
             "origin": "0617",
             "destination": "Meckering",
             "link_capacity": null,
@@ -923,8 +929,8 @@
             "node_type": null,
             "node_cluster": null,
             "operation_capacity": null,
-            "pos_x": 468387.33130913676,
-            "pos_y": 6497696.806287232,
+            "pos_x": 116.6665577,
+            "pos_y": -31.65553079999999,
             "damages_states_constructor": null
         },
         "4815": {
@@ -934,8 +940,8 @@
             "node_type": null,
             "node_cluster": null,
             "operation_capacity": null,
-            "pos_x": 467667.34186985163,
-            "pos_y": 6490293.053084008,
+            "pos_x": 116.6587192,
+            "pos_y": -31.7223081,
             "damages_states_constructor": null
         },
         "0277": {
@@ -945,8 +951,8 @@
             "node_type": null,
             "node_cluster": null,
             "operation_capacity": null,
-            "pos_x": 474204.9798037542,
-            "pos_y": 6495852.393634617,
+            "pos_x": 116.7278716,
+            "pos_y": -31.672317,
             "damages_states_constructor": null
         },
         "0597": {
@@ -956,8 +962,8 @@
             "node_type": null,
             "node_cluster": null,
             "operation_capacity": null,
-            "pos_x": 556342.5630664246,
-            "pos_y": 6463559.727831831,
+            "pos_x": 117.5962525,
+            "pos_y": -31.9625538,
             "damages_states_constructor": null
         },
         "Kellerberrin": {
@@ -967,8 +973,8 @@
             "node_type": null,
             "node_cluster": null,
             "operation_capacity": null,
-            "pos_x": 568596.2300079693,
-            "pos_y": 6499983.155570275,
+            "pos_x": 117.7233563,
+            "pos_y": -31.6332891,
             "damages_states_constructor": null
         },
         "0286": {
@@ -978,8 +984,8 @@
             "node_type": null,
             "node_cluster": null,
             "operation_capacity": null,
-            "pos_x": 482260.59409034066,
-            "pos_y": 6478574.143029479,
+            "pos_x": 116.8125412,
+            "pos_y": -31.8283564,
             "damages_states_constructor": null
         },
         "4166A": {
@@ -989,8 +995,8 @@
             "node_type": null,
             "node_cluster": null,
             "operation_capacity": null,
-            "pos_x": 481467.13188304886,
-            "pos_y": 6477685.290366206,
+            "pos_x": 116.8041395,
+            "pos_y": -31.836363,
             "damages_states_constructor": null
         },
         "York": {
@@ -1000,8 +1006,8 @@
             "node_type": null,
             "node_cluster": null,
             "operation_capacity": null,
-            "pos_x": 477169.6060143331,
-            "pos_y": 6473482.134237029,
+            "pos_x": 116.7586236,
+            "pos_y": -31.8742056,
             "damages_states_constructor": null
         },
         "0752": {
@@ -1011,8 +1017,8 @@
             "node_type": null,
             "node_cluster": null,
             "operation_capacity": null,
-            "pos_x": 469180.7870369104,
-            "pos_y": 6498666.539345905,
+            "pos_x": 116.6749572,
+            "pos_y": -31.6468033,
             "damages_states_constructor": null
         },
         "Northam": {
@@ -1022,8 +1028,8 @@
             "node_type": null,
             "node_cluster": null,
             "operation_capacity": null,
-            "pos_x": 468962.19253422477,
-            "pos_y": 6497927.515744827,
+            "pos_x": 116.6726284,
+            "pos_y": -31.653465,
             "damages_states_constructor": null
         },
         "4154": {
@@ -1033,8 +1039,8 @@
             "node_type": null,
             "node_cluster": null,
             "operation_capacity": null,
-            "pos_x": 471877.22168510477,
-            "pos_y": 6484913.08128798,
+            "pos_x": 116.7030003,
+            "pos_y": -31.7709577,
             "damages_states_constructor": null
         },
         "4156": {
@@ -1044,8 +1050,8 @@
             "node_type": null,
             "node_cluster": null,
             "operation_capacity": null,
-            "pos_x": 480364.58975276764,
-            "pos_y": 6480629.638830824,
+            "pos_x": 116.792547,
+            "pos_y": -31.8097806,
             "damages_states_constructor": null
         },
         "0283": {
@@ -1055,8 +1061,8 @@
             "node_type": null,
             "node_cluster": null,
             "operation_capacity": null,
-            "pos_x": 480908.39226217964,
-            "pos_y": 6481258.226015843,
+            "pos_x": 116.7983047,
+            "pos_y": -31.8041187,
             "damages_states_constructor": null
         },
         "0639": {
@@ -1066,8 +1072,8 @@
             "node_type": null,
             "node_cluster": null,
             "operation_capacity": null,
-            "pos_x": 502683.9952156338,
-            "pos_y": 6548428.612364334,
+            "pos_x": 117.0281731,
+            "pos_y": -31.1982292,
             "damages_states_constructor": null
         },
         "Meckering": {
@@ -1077,8 +1083,8 @@
             "node_type": null,
             "node_cluster": null,
             "operation_capacity": null,
-            "pos_x": 500863.23478436895,
-            "pos_y": 6500590.777904436,
+            "pos_x": 117.0091027,
+            "pos_y": -31.6298557,
             "damages_states_constructor": null
         },
         "Cunderdin": {
@@ -1088,8 +1094,8 @@
             "node_type": null,
             "node_cluster": null,
             "operation_capacity": null,
-            "pos_x": 523060.1946143232,
-            "pos_y": 6498229.82271472,
+            "pos_x": 117.2432213,
+            "pos_y": -31.6509256,
             "damages_states_constructor": null
         },
         "1065": {
@@ -1099,8 +1105,8 @@
             "node_type": null,
             "node_cluster": null,
             "operation_capacity": null,
-            "pos_x": 523889.97605328145,
-            "pos_y": 6493958.159524922,
+            "pos_x": 117.2520772,
+            "pos_y": -31.6894484,
             "damages_states_constructor": null
         },
         "0714": {
@@ -1110,8 +1116,8 @@
             "node_type": null,
             "node_cluster": null,
             "operation_capacity": null,
-            "pos_x": 540192.1498636405,
-            "pos_y": 6453090.931615828,
+            "pos_x": 117.4257799,
+            "pos_y": -32.0576862,
             "damages_states_constructor": null
         },
         "0715": {
@@ -1121,8 +1127,8 @@
             "node_type": null,
             "node_cluster": null,
             "operation_capacity": null,
-            "pos_x": 540414.5687385376,
-            "pos_y": 6452944.853945959,
+            "pos_x": 117.4281422,
+            "pos_y": -32.0589961,
             "damages_states_constructor": null
         },
         "0717": {
@@ -1132,8 +1138,8 @@
             "node_type": null,
             "node_cluster": null,
             "operation_capacity": null,
-            "pos_x": 550932.2235677529,
-            "pos_y": 6451160.999321689,
+            "pos_x": 117.5396544,
+            "pos_y": -32.0746635,
             "damages_states_constructor": null
         },
         "5093": {
@@ -1143,8 +1149,8 @@
             "node_type": null,
             "node_cluster": null,
             "operation_capacity": null,
-            "pos_x": 603965.541744883,
-            "pos_y": 6440785.783953972,
+            "pos_x": 118.1026294,
+            "pos_y": -32.1646092,
             "damages_states_constructor": null
         },
         "0612": {
@@ -1154,8 +1160,8 @@
             "node_type": null,
             "node_cluster": null,
             "operation_capacity": null,
-            "pos_x": 468863.9666859636,
-            "pos_y": 6498451.55192556,
+            "pos_x": 116.671609,
+            "pos_y": -31.6487344,
             "damages_states_constructor": null
         },
         "0613": {
@@ -1165,8 +1171,8 @@
             "node_type": null,
             "node_cluster": null,
             "operation_capacity": null,
-            "pos_x": 471272.18008569925,
-            "pos_y": 6499105.873774659,
+            "pos_x": 116.6970272,
+            "pos_y": -31.6428938,
             "damages_states_constructor": null
         },
         "0576": {
@@ -1176,8 +1182,8 @@
             "node_type": null,
             "node_cluster": null,
             "operation_capacity": null,
-            "pos_x": 468341.2542881758,
-            "pos_y": 6469480.5167067405,
+            "pos_x": 116.6651556,
+            "pos_y": -31.910096,
             "damages_states_constructor": null
         },
         "0290": {
@@ -1187,8 +1193,8 @@
             "node_type": null,
             "node_cluster": null,
             "operation_capacity": null,
-            "pos_x": 478411.06158428534,
-            "pos_y": 6471513.231380264,
+            "pos_x": 116.7717051,
+            "pos_y": -31.8919931,
             "damages_states_constructor": null
         },
         "0291": {
@@ -1198,8 +1204,8 @@
             "node_type": null,
             "node_cluster": null,
             "operation_capacity": null,
-            "pos_x": 478248.1178202653,
-            "pos_y": 6471020.928149443,
+            "pos_x": 116.769971,
+            "pos_y": -31.8964315,
             "damages_states_constructor": null
         },
         "1047": {
@@ -1209,19 +1215,8 @@
             "node_type": null,
             "node_cluster": null,
             "operation_capacity": null,
-            "pos_x": 459275.6522934579,
-            "pos_y": 6493233.807733725,
-            "damages_states_constructor": null
-        },
-        "1469": {
-            "component_type": null,
-            "component_class": null,
-            "cost_fraction": null,
-            "node_type": null,
-            "node_cluster": null,
-            "operation_capacity": null,
-            "pos_x": 465927.27175634186,
-            "pos_y": 6499141.782928394,
+            "pos_x": 116.5702667,
+            "pos_y": -31.6955088,
             "damages_states_constructor": null
         },
         "1006": {
@@ -1231,8 +1226,8 @@
             "node_type": null,
             "node_cluster": null,
             "operation_capacity": null,
-            "pos_x": 601344.5534642416,
-            "pos_y": 6510050.942397247,
+            "pos_x": 118.0676127,
+            "pos_y": -31.5400461,
             "damages_states_constructor": null
         },
         "1007": {
@@ -1242,8 +1237,8 @@
             "node_type": null,
             "node_cluster": null,
             "operation_capacity": null,
-            "pos_x": 601528.5304423878,
-            "pos_y": 6510124.0069178585,
+            "pos_x": 118.069543,
+            "pos_y": -31.5393708,
             "damages_states_constructor": null
         },
         "1050": {
@@ -1253,8 +1248,8 @@
             "node_type": null,
             "node_cluster": null,
             "operation_capacity": null,
-            "pos_x": 608920.4754425513,
-            "pos_y": 6511793.2765586665,
+            "pos_x": 118.1472158,
+            "pos_y": -31.523638,
             "damages_states_constructor": null
         },
         "0627": {
@@ -1264,8 +1259,8 @@
             "node_type": null,
             "node_cluster": null,
             "operation_capacity": null,
-            "pos_x": 617807.61414111,
-            "pos_y": 6515234.901183562,
+            "pos_x": 118.2403924,
+            "pos_y": -31.4917196,
             "damages_states_constructor": null
         },
         "Merredin": {
@@ -1275,8 +1270,8 @@
             "node_type": null,
             "node_cluster": null,
             "operation_capacity": null,
-            "pos_x": 621897.9748742048,
-            "pos_y": 6516130.643176826,
+            "pos_x": 118.2833403,
+            "pos_y": -31.4832152,
             "damages_states_constructor": null
         },
         "1149": {
@@ -1286,8 +1281,8 @@
             "node_type": null,
             "node_cluster": null,
             "operation_capacity": null,
-            "pos_x": 477004.71186935005,
-            "pos_y": 6499669.632139808,
+            "pos_x": 116.757497,
+            "pos_y": -31.6379366,
             "damages_states_constructor": null
         },
         "0305": {
@@ -1297,8 +1292,8 @@
             "node_type": null,
             "node_cluster": null,
             "operation_capacity": null,
-            "pos_x": 484323.1626469759,
-            "pos_y": 6451241.400422139,
+            "pos_x": 116.8338939,
+            "pos_y": -32.0749784,
             "damages_states_constructor": null
         },
         "0729": {
@@ -1308,8 +1303,8 @@
             "node_type": null,
             "node_cluster": null,
             "operation_capacity": null,
-            "pos_x": 493370.1885980356,
-            "pos_y": 6447676.530784137,
+            "pos_x": 116.9297282,
+            "pos_y": -32.1072289,
             "damages_states_constructor": null
         },
         "0730": {
@@ -1319,8 +1314,8 @@
             "node_type": null,
             "node_cluster": null,
             "operation_capacity": null,
-            "pos_x": 500881.9728319609,
-            "pos_y": 6454493.130461452,
+            "pos_x": 117.0093421,
+            "pos_y": -32.0457507,
             "damages_states_constructor": null
         },
         "0596": {
@@ -1330,8 +1325,8 @@
             "node_type": null,
             "node_cluster": null,
             "operation_capacity": null,
-            "pos_x": 546091.463903012,
-            "pos_y": 6462049.488500776,
+            "pos_x": 117.4878447,
+            "pos_y": -31.9766416,
             "damages_states_constructor": null
         },
         "0641": {
@@ -1341,8 +1336,8 @@
             "node_type": null,
             "node_cluster": null,
             "operation_capacity": null,
-            "pos_x": 568015.8116225933,
-            "pos_y": 6504355.59453035,
+            "pos_x": 117.7169337,
+            "pos_y": -31.593877,
             "damages_states_constructor": null
         },
         "4184": {
@@ -1352,8 +1347,8 @@
             "node_type": null,
             "node_cluster": null,
             "operation_capacity": null,
-            "pos_x": 478342.87423603504,
-            "pos_y": 6471869.298708131,
+            "pos_x": 116.770992,
+            "pos_y": -31.8887794,
             "damages_states_constructor": null
         },
         "0289": {
@@ -1363,8 +1358,8 @@
             "node_type": null,
             "node_cluster": null,
             "operation_capacity": null,
-            "pos_x": 481097.466665067,
-            "pos_y": 6474384.949912855,
+            "pos_x": 116.8001686,
+            "pos_y": -31.8661325,
             "damages_states_constructor": null
         },
         "0287": {
@@ -1374,8 +1369,8 @@
             "node_type": null,
             "node_cluster": null,
             "operation_capacity": null,
-            "pos_x": 482225.3586096342,
-            "pos_y": 6475360.455887992,
+            "pos_x": 116.8121101,
+            "pos_y": -31.8573497,
             "damages_states_constructor": null
         },
         "4556A": {
@@ -1385,8 +1380,8 @@
             "node_type": null,
             "node_cluster": null,
             "operation_capacity": null,
-            "pos_x": 482317.46527874324,
-            "pos_y": 6475023.969884792,
+            "pos_x": 116.8130776,
+            "pos_y": -31.86038689999999,
             "damages_states_constructor": null
         },
         "4151": {
@@ -1396,8 +1391,8 @@
             "node_type": null,
             "node_cluster": null,
             "operation_capacity": null,
-            "pos_x": 507926.96701543935,
-            "pos_y": 6479104.078503216,
+            "pos_x": 117.083763,
+            "pos_y": -31.8236858,
             "damages_states_constructor": null
         },
         "0288": {
@@ -1407,8 +1402,8 @@
             "node_type": null,
             "node_cluster": null,
             "operation_capacity": null,
-            "pos_x": 481770.06211746344,
-            "pos_y": 6474772.557059695,
+            "pos_x": 116.8072863,
+            "pos_y": -31.8626465,
             "damages_states_constructor": null
         },
         "0361": {
@@ -1418,8 +1413,8 @@
             "node_type": null,
             "node_cluster": null,
             "operation_capacity": null,
-            "pos_x": 458573.6275669092,
-            "pos_y": 6501154.685497398,
+            "pos_x": 116.5631934,
+            "pos_y": -31.6240212,
             "damages_states_constructor": null
         },
         "0753": {
@@ -1429,8 +1424,8 @@
             "node_type": null,
             "node_cluster": null,
             "operation_capacity": null,
-            "pos_x": 470643.388371891,
-            "pos_y": 6502860.461589067,
+            "pos_x": 116.690508,
+            "pos_y": -31.6090032,
             "damages_states_constructor": null
         },
         "0754": {
@@ -1440,8 +1435,8 @@
             "node_type": null,
             "node_cluster": null,
             "operation_capacity": null,
-            "pos_x": 470770.3527663873,
-            "pos_y": 6502967.966624518,
+            "pos_x": 116.6918497,
+            "pos_y": -31.6080365,
             "damages_states_constructor": null
         },
         "0761": {
@@ -1451,8 +1446,8 @@
             "node_type": null,
             "node_cluster": null,
             "operation_capacity": null,
-            "pos_x": 476618.0119700192,
-            "pos_y": 6515833.429178557,
+            "pos_x": 116.7538024,
+            "pos_y": -31.4920934,
             "damages_states_constructor": null
         },
         "0762": {
@@ -1462,8 +1457,8 @@
             "node_type": null,
             "node_cluster": null,
             "operation_capacity": null,
-            "pos_x": 478654.5249708214,
-            "pos_y": 6518585.770367192,
+            "pos_x": 116.7753048,
+            "pos_y": -31.4672999,
             "damages_states_constructor": null
         },
         "0763A": {
@@ -1473,8 +1468,8 @@
             "node_type": null,
             "node_cluster": null,
             "operation_capacity": null,
-            "pos_x": 480517.6871751,
-            "pos_y": 6522445.784225481,
+            "pos_x": 116.7949933,
+            "pos_y": -31.4325057,
             "damages_states_constructor": null
         },
         "0765": {
@@ -1484,8 +1479,8 @@
             "node_type": null,
             "node_cluster": null,
             "operation_capacity": null,
-            "pos_x": 483891.23483970185,
-            "pos_y": 6537643.303758258,
+            "pos_x": 116.8307379,
+            "pos_y": -31.2954353,
             "damages_states_constructor": null
         },
         "0285": {
@@ -1495,8 +1490,8 @@
             "node_type": null,
             "node_cluster": null,
             "operation_capacity": null,
-            "pos_x": 482282.3816259995,
-            "pos_y": 6479126.851042693,
+            "pos_x": 116.8127815,
+            "pos_y": -31.8233702,
             "damages_states_constructor": null
         },
         "0284": {
@@ -1506,8 +1501,8 @@
             "node_type": null,
             "node_cluster": null,
             "operation_capacity": null,
-            "pos_x": 481316.2468799244,
-            "pos_y": 6480851.561019359,
+            "pos_x": 116.8026057,
+            "pos_y": -31.8077944,
             "damages_states_constructor": null
         },
         "0282": {
@@ -1517,8 +1512,8 @@
             "node_type": null,
             "node_cluster": null,
             "operation_capacity": null,
-            "pos_x": 479060.85850927467,
-            "pos_y": 6483149.858651105,
+            "pos_x": 116.778827,
+            "pos_y": -31.78701989999999,
             "damages_states_constructor": null
         },
         "0281": {
@@ -1528,8 +1523,8 @@
             "node_type": null,
             "node_cluster": null,
             "operation_capacity": null,
-            "pos_x": 478048.8875047108,
-            "pos_y": 6484497.344492393,
+            "pos_x": 116.7681683,
+            "pos_y": -31.7748438,
             "damages_states_constructor": null
         },
         "0280": {
@@ -1539,8 +1534,8 @@
             "node_type": null,
             "node_cluster": null,
             "operation_capacity": null,
-            "pos_x": 476886.76427788945,
-            "pos_y": 6488020.37787896,
+            "pos_x": 116.7559783,
+            "pos_y": -31.7430358,
             "damages_states_constructor": null
         },
         "0279": {
@@ -1550,8 +1545,8 @@
             "node_type": null,
             "node_cluster": null,
             "operation_capacity": null,
-            "pos_x": 476197.31319140276,
-            "pos_y": 6489425.943432049,
+            "pos_x": 116.7487336,
+            "pos_y": -31.7303405,
             "damages_states_constructor": null
         },
         "0278": {
@@ -1561,8 +1556,8 @@
             "node_type": null,
             "node_cluster": null,
             "operation_capacity": null,
-            "pos_x": 475374.45129649655,
-            "pos_y": 6491524.572930541,
+            "pos_x": 116.7401002,
+            "pos_y": -31.711389,
             "damages_states_constructor": null
         },
         "0694": {
@@ -1572,8 +1567,8 @@
             "node_type": null,
             "node_cluster": null,
             "operation_capacity": null,
-            "pos_x": 450682.9987422172,
-            "pos_y": 6506796.367338471,
+            "pos_x": 116.4802787,
+            "pos_y": -31.5728102,
             "damages_states_constructor": null
         },
         "0299": {
@@ -1583,8 +1578,8 @@
             "node_type": null,
             "node_cluster": null,
             "operation_capacity": null,
-            "pos_x": 481809.9928583275,
-            "pos_y": 6463533.769585213,
+            "pos_x": 116.8074974,
+            "pos_y": -31.96404219999999,
             "damages_states_constructor": null
         },
         "0300": {
@@ -1594,8 +1589,8 @@
             "node_type": null,
             "node_cluster": null,
             "operation_capacity": null,
-            "pos_x": 481584.34591666603,
-            "pos_y": 6461854.244427405,
+            "pos_x": 116.8050774,
+            "pos_y": -31.9791909,
             "damages_states_constructor": null
         },
         "0301": {
@@ -1605,8 +1600,8 @@
             "node_type": null,
             "node_cluster": null,
             "operation_capacity": null,
-            "pos_x": 481326.7256193032,
-            "pos_y": 6457937.7581427,
+            "pos_x": 116.8022748,
+            "pos_y": -32.0145203,
             "damages_states_constructor": null
         },
         "0302": {
@@ -1616,8 +1611,8 @@
             "node_type": null,
             "node_cluster": null,
             "operation_capacity": null,
-            "pos_x": 481791.6427431846,
-            "pos_y": 6455200.784475468,
+            "pos_x": 116.8071459,
+            "pos_y": -32.0392201,
             "damages_states_constructor": null
         },
         "0303": {
@@ -1627,8 +1622,8 @@
             "node_type": null,
             "node_cluster": null,
             "operation_capacity": null,
-            "pos_x": 482580.4031255557,
-            "pos_y": 6453514.054894226,
+            "pos_x": 116.8154695,
+            "pos_y": -32.0544497,
             "damages_states_constructor": null
         },
         "0304": {
@@ -1638,8 +1633,8 @@
             "node_type": null,
             "node_cluster": null,
             "operation_capacity": null,
-            "pos_x": 482616.9754683943,
-            "pos_y": 6453341.444564918,
+            "pos_x": 116.8158538,
+            "pos_y": -32.0560075,
             "damages_states_constructor": null
         },
         "5281": {
@@ -1649,8 +1644,8 @@
             "node_type": null,
             "node_cluster": null,
             "operation_capacity": null,
-            "pos_x": 604753.9237420418,
-            "pos_y": 6448579.422073929,
+            "pos_x": 118.1101377,
+            "pos_y": -32.094238,
             "damages_states_constructor": null
         },
         "5099A": {
@@ -1660,8 +1655,8 @@
             "node_type": null,
             "node_cluster": null,
             "operation_capacity": null,
-            "pos_x": 604312.9647040588,
-            "pos_y": 6453565.46728712,
+            "pos_x": 118.1049243,
+            "pos_y": -32.0493046,
             "damages_states_constructor": null
         },
         "6223A": {
@@ -1671,8 +1666,8 @@
             "node_type": null,
             "node_cluster": null,
             "operation_capacity": null,
-            "pos_x": 603539.3928587859,
-            "pos_y": 6463486.393758925,
+            "pos_x": 118.0956666,
+            "pos_y": -31.9598875,
             "damages_states_constructor": null
         },
         "5100A": {
@@ -1682,8 +1677,8 @@
             "node_type": null,
             "node_cluster": null,
             "operation_capacity": null,
-            "pos_x": 603540.2418496666,
-            "pos_y": 6463576.793196008,
+            "pos_x": 118.0956659,
+            "pos_y": -31.959072,
             "damages_states_constructor": null
         },
         "9186": {
@@ -1693,8 +1688,8 @@
             "node_type": null,
             "node_cluster": null,
             "operation_capacity": null,
-            "pos_x": 465624.59503129515,
-            "pos_y": 6497903.902066881,
+            "pos_x": 116.6374248,
+            "pos_y": -31.6535829,
             "damages_states_constructor": null
         },
         "Wooroloo": {
@@ -1704,8 +1699,8 @@
             "node_type": null,
             "node_cluster": null,
             "operation_capacity": null,
-            "pos_x": 435038.86133935605,
-            "pos_y": 6481124.455854116,
+            "pos_x": 116.3137215,
+            "pos_y": -31.8036355,
             "damages_states_constructor": null
         },
         "4527": {
@@ -1715,8 +1710,8 @@
             "node_type": null,
             "node_cluster": null,
             "operation_capacity": null,
-            "pos_x": 434259.4922872507,
-            "pos_y": 6484276.793230044,
+            "pos_x": 116.305701,
+            "pos_y": -31.7751522,
             "damages_states_constructor": null
         },
         "0369": {
@@ -1726,8 +1721,8 @@
             "node_type": null,
             "node_cluster": null,
             "operation_capacity": null,
-            "pos_x": 444572.97907127405,
-            "pos_y": 6501829.714998744,
+            "pos_x": 116.415612,
+            "pos_y": -31.6173409,
             "damages_states_constructor": null
         },
         "0692": {
@@ -1737,8 +1732,8 @@
             "node_type": null,
             "node_cluster": null,
             "operation_capacity": null,
-            "pos_x": 450266.22822567075,
-            "pos_y": 6504670.10092779,
+            "pos_x": 116.4757794,
+            "pos_y": -31.5919755,
             "damages_states_constructor": null
         },
         "0693": {
@@ -1748,8 +1743,8 @@
             "node_type": null,
             "node_cluster": null,
             "operation_capacity": null,
-            "pos_x": 450720.6098878397,
-            "pos_y": 6506539.5088726245,
+            "pos_x": 116.4806622,
+            "pos_y": -31.5751292,
             "damages_states_constructor": null
         },
         "0631A": {
@@ -1759,8 +1754,8 @@
             "node_type": null,
             "node_cluster": null,
             "operation_capacity": null,
-            "pos_x": 450467.60062976356,
-            "pos_y": 6508875.521684436,
+            "pos_x": 116.4781133,
+            "pos_y": -31.5540427,
             "damages_states_constructor": null
         },
         "0632A": {
@@ -1770,8 +1765,8 @@
             "node_type": null,
             "node_cluster": null,
             "operation_capacity": null,
-            "pos_x": 451901.6691133758,
-            "pos_y": 6509676.996111532,
+            "pos_x": 116.4932616,
+            "pos_y": -31.5468725,
             "damages_states_constructor": null
         },
         "0633A": {
@@ -1781,8 +1776,8 @@
             "node_type": null,
             "node_cluster": null,
             "operation_capacity": null,
-            "pos_x": 453787.2996711239,
-            "pos_y": 6511704.505643878,
+            "pos_x": 116.5132219,
+            "pos_y": -31.5286572,
             "damages_states_constructor": null
         },
         "0634": {
@@ -1792,8 +1787,8 @@
             "node_type": null,
             "node_cluster": null,
             "operation_capacity": null,
-            "pos_x": 463829.3451943928,
-            "pos_y": 6516709.363015222,
+            "pos_x": 116.6191799,
+            "pos_y": -31.4838606,
             "damages_states_constructor": null
         },
         "0637": {
@@ -1803,8 +1798,8 @@
             "node_type": null,
             "node_cluster": null,
             "operation_capacity": null,
-            "pos_x": 477750.25114738167,
-            "pos_y": 6531357.318293443,
+            "pos_x": 116.766072,
+            "pos_y": -31.3520506,
             "damages_states_constructor": null
         },
         "0574": {
@@ -1814,8 +1809,8 @@
             "node_type": null,
             "node_cluster": null,
             "operation_capacity": null,
-            "pos_x": 453742.5413390392,
-            "pos_y": 6472453.962708866,
+            "pos_x": 116.5108956,
+            "pos_y": -31.88277,
             "damages_states_constructor": null
         },
         "0579": {
@@ -1825,8 +1820,8 @@
             "node_type": null,
             "node_cluster": null,
             "operation_capacity": null,
-            "pos_x": 479246.6639823553,
-            "pos_y": 6471058.84392566,
+            "pos_x": 116.7805315,
+            "pos_y": -31.8961081,
             "damages_states_constructor": null
         },
         "0580": {
@@ -1836,8 +1831,8 @@
             "node_type": null,
             "node_cluster": null,
             "operation_capacity": null,
-            "pos_x": 479941.88341991254,
-            "pos_y": 6470325.736514274,
+            "pos_x": 116.7878683,
+            "pos_y": -31.9027346,
             "damages_states_constructor": null
         },
         "0897": {
@@ -1847,8 +1842,8 @@
             "node_type": null,
             "node_cluster": null,
             "operation_capacity": null,
-            "pos_x": 492593.25737508066,
-            "pos_y": 6467268.439622538,
+            "pos_x": 116.9216438,
+            "pos_y": -31.9304702,
             "damages_states_constructor": null
         },
         "0898": {
@@ -1858,8 +1853,8 @@
             "node_type": null,
             "node_cluster": null,
             "operation_capacity": null,
-            "pos_x": 495203.259931699,
-            "pos_y": 6465836.061843814,
+            "pos_x": 116.949248,
+            "pos_y": -31.943407,
             "damages_states_constructor": null
         },
         "0589": {
@@ -1869,8 +1864,8 @@
             "node_type": null,
             "node_cluster": null,
             "operation_capacity": null,
-            "pos_x": 500948.47445017163,
-            "pos_y": 6465584.844512296,
+            "pos_x": 117.0100356,
+            "pos_y": -31.9456832,
             "damages_states_constructor": null
         },
         "0592": {
@@ -1880,8 +1875,8 @@
             "node_type": null,
             "node_cluster": null,
             "operation_capacity": null,
-            "pos_x": 508036.8610788743,
-            "pos_y": 6461907.977229316,
+            "pos_x": 117.0850668,
+            "pos_y": -31.9788273,
             "damages_states_constructor": null
         },
         "0598": {
@@ -1891,8 +1886,8 @@
             "node_type": null,
             "node_cluster": null,
             "operation_capacity": null,
-            "pos_x": 557561.2216757557,
-            "pos_y": 6463601.637103807,
+            "pos_x": 117.609146,
+            "pos_y": -31.9621145,
             "damages_states_constructor": null
         },
         "0602": {
@@ -1902,8 +1897,8 @@
             "node_type": null,
             "node_cluster": null,
             "operation_capacity": null,
-            "pos_x": 583466.6794496097,
-            "pos_y": 6468522.093789497,
+            "pos_x": 117.8828445,
+            "pos_y": -31.9161167,
             "damages_states_constructor": null
         },
         "0606": {
@@ -1913,8 +1908,8 @@
             "node_type": null,
             "node_cluster": null,
             "operation_capacity": null,
-            "pos_x": 443059.0893697778,
-            "pos_y": 6484341.159725025,
+            "pos_x": 116.3986344,
+            "pos_y": -31.7750442,
             "damages_states_constructor": null
         },
         "9306": {
@@ -1924,8 +1919,8 @@
             "node_type": null,
             "node_cluster": null,
             "operation_capacity": null,
-            "pos_x": 454455.2102502626,
-            "pos_y": 6490458.162153961,
+            "pos_x": 116.5192725,
+            "pos_y": -31.7203689,
             "damages_states_constructor": null
         },
         "1046": {
@@ -1935,8 +1930,19 @@
             "node_type": null,
             "node_cluster": null,
             "operation_capacity": null,
-            "pos_x": 454989.41866246663,
-            "pos_y": 6490609.642076714,
+            "pos_x": 116.5249179,
+            "pos_y": -31.7190234,
+            "damages_states_constructor": null
+        },
+        "1469": {
+            "component_type": null,
+            "component_class": null,
+            "cost_fraction": null,
+            "node_type": null,
+            "node_cluster": null,
+            "operation_capacity": null,
+            "pos_x": 116.6406602,
+            "pos_y": -31.6424236,
             "damages_states_constructor": null
         },
         "1468": {
@@ -1946,8 +1952,8 @@
             "node_type": null,
             "node_cluster": null,
             "operation_capacity": null,
-            "pos_x": 466314.57016458444,
-            "pos_y": 6499626.260735109,
+            "pos_x": 116.6447613,
+            "pos_y": -31.638064,
             "damages_states_constructor": null
         },
         "1504": {
@@ -1957,8 +1963,8 @@
             "node_type": null,
             "node_cluster": null,
             "operation_capacity": null,
-            "pos_x": 466494.20586309343,
-            "pos_y": 6499776.7743040435,
+            "pos_x": 116.6466608,
+            "pos_y": -31.6367113,
             "damages_states_constructor": null
         },
         "1467": {
@@ -1968,8 +1974,8 @@
             "node_type": null,
             "node_cluster": null,
             "operation_capacity": null,
-            "pos_x": 466600.44561802584,
-            "pos_y": 6499869.545409579,
+            "pos_x": 116.6477843,
+            "pos_y": -31.63587739999999,
             "damages_states_constructor": null
         },
         "1466": {
@@ -1979,8 +1985,8 @@
             "node_type": null,
             "node_cluster": null,
             "operation_capacity": null,
-            "pos_x": 467865.84226850554,
-            "pos_y": 6500940.7627468575,
+            "pos_x": 116.6611634,
+            "pos_y": -31.6262488,
             "damages_states_constructor": null
         },
         "1465": {
@@ -1990,8 +1996,8 @@
             "node_type": null,
             "node_cluster": null,
             "operation_capacity": null,
-            "pos_x": 469627.32965518173,
-            "pos_y": 6501719.433945997,
+            "pos_x": 116.6797611,
+            "pos_y": -31.6192714,
             "damages_states_constructor": null
         },
         "1464": {
@@ -2001,8 +2007,8 @@
             "node_type": null,
             "node_cluster": null,
             "operation_capacity": null,
-            "pos_x": 469769.2088277423,
-            "pos_y": 6501686.752634736,
+            "pos_x": 116.681256,
+            "pos_y": -31.61957,
             "damages_states_constructor": null
         },
         "1463": {
@@ -2012,8 +2018,8 @@
             "node_type": null,
             "node_cluster": null,
             "operation_capacity": null,
-            "pos_x": 470259.5686303064,
-            "pos_y": 6501573.254927197,
+            "pos_x": 116.6864227,
+            "pos_y": -31.6206068,
             "damages_states_constructor": null
         },
         "9187": {
@@ -2023,8 +2029,8 @@
             "node_type": null,
             "node_cluster": null,
             "operation_capacity": null,
-            "pos_x": 471480.5962196999,
-            "pos_y": 6501007.292712456,
+            "pos_x": 116.6992804,
+            "pos_y": -31.62574399999999,
             "damages_states_constructor": null
         },
         "1150": {
@@ -2034,8 +2040,8 @@
             "node_type": null,
             "node_cluster": null,
             "operation_capacity": null,
-            "pos_x": 480600.78136935446,
-            "pos_y": 6500166.169976121,
+            "pos_x": 116.7954299,
+            "pos_y": -31.6335231,
             "damages_states_constructor": null
         },
         "1153": {
@@ -2045,8 +2051,8 @@
             "node_type": null,
             "node_cluster": null,
             "operation_capacity": null,
-            "pos_x": 482696.0285309392,
-            "pos_y": 6500089.148319041,
+            "pos_x": 116.8175234,
+            "pos_y": -31.6342515,
             "damages_states_constructor": null
         },
         "1154": {
@@ -2056,8 +2062,8 @@
             "node_type": null,
             "node_cluster": null,
             "operation_capacity": null,
-            "pos_x": 487153.5630550617,
-            "pos_y": 6499831.268247316,
+            "pos_x": 116.8645262,
+            "pos_y": -31.63663669999999,
             "damages_states_constructor": null
         },
         "0617": {
@@ -2067,8 +2073,8 @@
             "node_type": null,
             "node_cluster": null,
             "operation_capacity": null,
-            "pos_x": 499141.5122605385,
-            "pos_y": 6498237.792559758,
+            "pos_x": 116.9909453,
+            "pos_y": -31.6510851,
             "damages_states_constructor": null
         }
     }

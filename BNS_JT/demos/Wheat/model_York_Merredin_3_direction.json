@@ -1,0 +1,2937 @@
+[
+    {
+        "bounds": {
+            "northeast": {
+                "lat": -31.48164599999999,
+                "lng": 118.2833494
+            },
+            "southwest": {
+                "lat": -31.8931501,
+                "lng": 116.7525911
+            }
+        },
+        "copyrights": "Map data \u00a92025",
+        "legs": [
+            {
+                "distance": {
+                    "text": "3.7 km",
+                    "value": 3723
+                },
+                "duration": {
+                    "text": "6 mins",
+                    "value": 333
+                },
+                "end_address": "7 Glebe St, York WA 6302, Australia",
+                "end_location": {
+                    "lat": -31.8887794,
+                    "lng": 116.770992
+                },
+                "start_address": "28 Osnaburg Rd, York WA 6302, Australia",
+                "start_location": {
+                    "lat": -31.8742056,
+                    "lng": 116.7586236
+                },
+                "steps": [
+                    {
+                        "distance": {
+                            "text": "0.2 km",
+                            "value": 157
+                        },
+                        "duration": {
+                            "text": "1 min",
+                            "value": 15
+                        },
+                        "end_location": {
+                            "lat": -31.87509619999999,
+                            "lng": 116.7573623
+                        },
+                        "html_instructions": "Head <b>southwest</b> toward <b>Eleventh Rd</b><div style=\"font-size:0.9em\">Restricted usage road</div>",
+                        "polyline": {
+                            "points": "xlpaEklsgUZRn@r@Xb@DHLVd@fAPd@"
+                        },
+                        "start_location": {
+                            "lat": -31.8742056,
+                            "lng": 116.7586236
+                        },
+                        "travel_mode": "DRIVING"
+                    },
+                    {
+                        "distance": {
+                            "text": "0.1 km",
+                            "value": 124
+                        },
+                        "duration": {
+                            "text": "1 min",
+                            "value": 22
+                        },
+                        "end_location": {
+                            "lat": -31.8760833,
+                            "lng": 116.7579619
+                        },
+                        "html_instructions": "Turn <b>left</b> onto <b>Eleventh Rd</b>",
+                        "maneuver": "turn-left",
+                        "polyline": {
+                            "points": "jrpaEodsgUjDiBVM"
+                        },
+                        "start_location": {
+                            "lat": -31.87509619999999,
+                            "lng": 116.7573623
+                        },
+                        "travel_mode": "DRIVING"
+                    },
+                    {
+                        "distance": {
+                            "text": "0.6 km",
+                            "value": 572
+                        },
+                        "duration": {
+                            "text": "1 min",
+                            "value": 56
+                        },
+                        "end_location": {
+                            "lat": -31.8784708,
+                            "lng": 116.7525911
+                        },
+                        "html_instructions": "Turn <b>right</b> at the 1st cross street onto <b>Osnaburg Rd</b>",
+                        "maneuver": "turn-right",
+                        "polyline": {
+                            "points": "nxpaEghsgUdBfFzBvGlAnDhBlFNb@Vt@Zx@"
+                        },
+                        "start_location": {
+                            "lat": -31.8760833,
+                            "lng": 116.7579619
+                        },
+                        "travel_mode": "DRIVING"
+                    },
+                    {
+                        "distance": {
+                            "text": "1.8 km",
+                            "value": 1824
+                        },
+                        "duration": {
+                            "text": "2 mins",
+                            "value": 126
+                        },
+                        "end_location": {
+                            "lat": -31.8931501,
+                            "lng": 116.7611896
+                        },
+                        "html_instructions": "Turn <b>left</b> onto <b>Ulster Rd</b>",
+                        "maneuver": "turn-left",
+                        "polyline": {
+                            "points": "lgqaEufrgUrDgB^Q~@g@^S~@e@~DoB~DsBnAm@~@e@XOdB{@lBcA~Aw@b@UhAk@vAq@`G}C^Q~@g@~@e@~Ay@jBaAh@YpBeAn@YjCqApDkBjEmBzCgA"
+                        },
+                        "start_location": {
+                            "lat": -31.8784708,
+                            "lng": 116.7525911
+                        },
+                        "travel_mode": "DRIVING"
+                    },
+                    {
+                        "distance": {
+                            "text": "1.0 km",
+                            "value": 1046
+                        },
+                        "duration": {
+                            "text": "2 mins",
+                            "value": 114
+                        },
+                        "end_location": {
+                            "lat": -31.8887794,
+                            "lng": 116.770992
+                        },
+                        "html_instructions": "Turn <b>left</b> onto <b>South St</b>",
+                        "maneuver": "turn-left",
+                        "polyline": {
+                            "points": "dctaEm|sgU_AqCa@eAoAcEoAwDm@kBeA{CM[?A_@cAISsAyD}BgH{AgEk@}AaBmE"
+                        },
+                        "start_location": {
+                            "lat": -31.8931501,
+                            "lng": 116.7611896
+                        },
+                        "travel_mode": "DRIVING"
+                    }
+                ],
+                "traffic_speed_entry": [],
+                "via_waypoint": []
+            },
+            {
+                "distance": {
+                    "text": "4.3 km",
+                    "value": 4260
+                },
+                "duration": {
+                    "text": "4 mins",
+                    "value": 250
+                },
+                "end_address": "State Route 120, Malebelling WA 6302, Australia",
+                "end_location": {
+                    "lat": -31.8661325,
+                    "lng": 116.8001686
+                },
+                "start_address": "7 Glebe St, York WA 6302, Australia",
+                "start_location": {
+                    "lat": -31.8887794,
+                    "lng": 116.770992
+                },
+                "steps": [
+                    {
+                        "distance": {
+                            "text": "0.3 km",
+                            "value": 274
+                        },
+                        "duration": {
+                            "text": "1 min",
+                            "value": 25
+                        },
+                        "end_location": {
+                            "lat": -31.8876462,
+                            "lng": 116.773567
+                        },
+                        "html_instructions": "Head <b>east</b> on <b>Glebe St</b> toward <b>Janet Millett Ln</b>",
+                        "polyline": {
+                            "points": "zgsaEuyugUMg@aAiCMg@cCiH"
+                        },
+                        "start_location": {
+                            "lat": -31.8887794,
+                            "lng": 116.770992
+                        },
+                        "travel_mode": "DRIVING"
+                    },
+                    {
+                        "distance": {
+                            "text": "0.1 km",
+                            "value": 112
+                        },
+                        "duration": {
+                            "text": "1 min",
+                            "value": 12
+                        },
+                        "end_location": {
+                            "lat": -31.8867378,
+                            "lng": 116.7730504
+                        },
+                        "html_instructions": "Turn <b>left</b> onto <b>Suburban Rd</b>",
+                        "maneuver": "turn-left",
+                        "polyline": {
+                            "points": "x`saEyivgUuDfB"
+                        },
+                        "start_location": {
+                            "lat": -31.8876462,
+                            "lng": 116.773567
+                        },
+                        "travel_mode": "DRIVING"
+                    },
+                    {
+                        "distance": {
+                            "text": "0.3 km",
+                            "value": 336
+                        },
+                        "duration": {
+                            "text": "1 min",
+                            "value": 34
+                        },
+                        "end_location": {
+                            "lat": -31.8867843,
+                            "lng": 116.7766098
+                        },
+                        "html_instructions": "Turn <b>right</b> at the 1st cross street onto <b>Pool St</b>",
+                        "maneuver": "turn-right",
+                        "polyline": {
+                            "points": "b{raEqfvgUHoNAwE"
+                        },
+                        "start_location": {
+                            "lat": -31.8867378,
+                            "lng": 116.7730504
+                        },
+                        "travel_mode": "DRIVING"
+                    },
+                    {
+                        "distance": {
+                            "text": "3.5 km",
+                            "value": 3538
+                        },
+                        "duration": {
+                            "text": "3 mins",
+                            "value": 179
+                        },
+                        "end_location": {
+                            "lat": -31.8661325,
+                            "lng": 116.8001686
+                        },
+                        "html_instructions": "Turn <b>left</b> at the 1st cross street onto <b>Northam Cranbrook</b>/<wbr/><b>Panmure Rd</b>/<wbr/><b>State Route 120</b><div style=\"font-size:0.9em\">Continue to follow Northam Cranbrook/<wbr/>State Route 120</div><div style=\"font-size:0.9em\">Destination will be on the left</div>",
+                        "maneuver": "turn-left",
+                        "polyline": {
+                            "points": "j{raEy|vgUiFQgAIu@Cs@Ak@AMASAe@Ge@?UAS?a@?WA_@EkBKg@C_@?g@?c@Aa@AeAGe@AWAKCGA_ASYO]Sm@]KIsAaA_EoCgAu@_Am@eDaCoA{@{@m@]UA?eLaIaAk@{DsCyB_B]WECe@YCAi@a@w@q@_@]IKKSc@m@W_@IQg@aAGOEI]w@M]ACMa@ACa@kA{@sBSk@GOCGO]AAACAEOi@I]CGUuA?ACOMcAm@qFCQ?CGi@?EEa@AGy@cIGm@MqAg@}EKaAMy@Gk@Kq@Ig@Qq@?CKc@GSMc@K_@i@gBmC_Jk@oB_BmF"
+                        },
+                        "start_location": {
+                            "lat": -31.8867843,
+                            "lng": 116.7766098
+                        },
+                        "travel_mode": "DRIVING"
+                    }
+                ],
+                "traffic_speed_entry": [],
+                "via_waypoint": []
+            },
+            {
+                "distance": {
+                    "text": "0.8 km",
+                    "value": 782
+                },
+                "duration": {
+                    "text": "1 min",
+                    "value": 28
+                },
+                "end_address": "State Route 120, Malebelling WA 6302, Australia",
+                "end_location": {
+                    "lat": -31.8626465,
+                    "lng": 116.8072863
+                },
+                "start_address": "State Route 120, Malebelling WA 6302, Australia",
+                "start_location": {
+                    "lat": -31.8661325,
+                    "lng": 116.8001686
+                },
+                "steps": [
+                    {
+                        "distance": {
+                            "text": "0.8 km",
+                            "value": 782
+                        },
+                        "duration": {
+                            "text": "1 min",
+                            "value": 28
+                        },
+                        "end_location": {
+                            "lat": -31.8626465,
+                            "lng": 116.8072863
+                        },
+                        "html_instructions": "Head <b>northeast</b> on <b>Northam Cranbrook</b>/<wbr/><b>Northam-York Rd</b>/<wbr/><b>State Route 120</b>",
+                        "polyline": {
+                            "points": "hznaEap{gUCMOe@q@{Bu@cCy@kCK]U_A}AmFCIK[Oe@y@cC[}@Sc@]u@Sa@IMe@s@i@y@]a@_@c@m@w@"
+                        },
+                        "start_location": {
+                            "lat": -31.8661325,
+                            "lng": 116.8001686
+                        },
+                        "travel_mode": "DRIVING"
+                    }
+                ],
+                "traffic_speed_entry": [],
+                "via_waypoint": []
+            },
+            {
+                "distance": {
+                    "text": "0.7 km",
+                    "value": 714
+                },
+                "duration": {
+                    "text": "1 min",
+                    "value": 32
+                },
+                "end_address": "122 Goldfields Rd, Malebelling WA 6302, Australia",
+                "end_location": {
+                    "lat": -31.86038689999999,
+                    "lng": 116.8130776
+                },
+                "start_address": "State Route 120, Malebelling WA 6302, Australia",
+                "start_location": {
+                    "lat": -31.8626465,
+                    "lng": 116.8072863
+                },
+                "steps": [
+                    {
+                        "distance": {
+                            "text": "0.4 km",
+                            "value": 446
+                        },
+                        "duration": {
+                            "text": "1 min",
+                            "value": 16
+                        },
+                        "end_location": {
+                            "lat": -31.8596707,
+                            "lng": 116.8104244
+                        },
+                        "html_instructions": "Head <b>northeast</b> on <b>Northam Cranbrook</b>/<wbr/><b>Northam-York Rd</b>/<wbr/><b>State Route 120</b> toward <b>Goldfields Rd</b>/<wbr/><b>York-Tammin Rd</b>",
+                        "polyline": {
+                            "points": "pdnaEq||gUEEUYCCmBiCcByBMOQYMOQSa@c@_A}@MKi@c@mA_Ay@i@"
+                        },
+                        "start_location": {
+                            "lat": -31.8626465,
+                            "lng": 116.8072863
+                        },
+                        "travel_mode": "DRIVING"
+                    },
+                    {
+                        "distance": {
+                            "text": "0.3 km",
+                            "value": 268
+                        },
+                        "duration": {
+                            "text": "1 min",
+                            "value": 16
+                        },
+                        "end_location": {
+                            "lat": -31.86038689999999,
+                            "lng": 116.8130776
+                        },
+                        "html_instructions": "Turn <b>right</b> onto <b>Goldfields Rd</b>/<wbr/><b>York-Tammin Rd</b><div style=\"font-size:0.9em\">Destination will be on the left</div>",
+                        "maneuver": "turn-right",
+                        "polyline": {
+                            "points": "|qmaEcp}gUt@gC\\wAJc@@ABM\\uADWBKF[?A@Y?YAWE["
+                        },
+                        "start_location": {
+                            "lat": -31.8596707,
+                            "lng": 116.8104244
+                        },
+                        "travel_mode": "DRIVING"
+                    }
+                ],
+                "traffic_speed_entry": [],
+                "via_waypoint": []
+            },
+            {
+                "distance": {
+                    "text": "27.3 km",
+                    "value": 27287
+                },
+                "duration": {
+                    "text": "17 mins",
+                    "value": 1011
+                },
+                "end_address": "York-Tammin Rd, Narraloggan WA 6302, Australia",
+                "end_location": {
+                    "lat": -31.8236858,
+                    "lng": 117.083763
+                },
+                "start_address": "122 Goldfields Rd, Malebelling WA 6302, Australia",
+                "start_location": {
+                    "lat": -31.86038689999999,
+                    "lng": 116.8130776
+                },
+                "steps": [
+                    {
+                        "distance": {
+                            "text": "27.3 km",
+                            "value": 27287
+                        },
+                        "duration": {
+                            "text": "17 mins",
+                            "value": 1011
+                        },
+                        "end_location": {
+                            "lat": -31.8236858,
+                            "lng": 117.083763
+                        },
+                        "html_instructions": "Head <b>east</b> on <b>Goldfields Rd</b>/<wbr/><b>York-Tammin Rd</b> toward <b>Marwick Rd</b>",
+                        "polyline": {
+                            "points": "lvmaEw`~gUCI?CCOEW?EGc@o@kEMcAGcAAiAAe@A[AQ?CCa@Gq@Eg@Iq@Ko@K_@u@oCAA[iAuBqHCEm@uBcCsIqDmMOg@eBgG_@qAm@qB?AOe@e@aBW}@Ia@AGG_@?AIg@EYs@oHIcAg@qEMiAEe@?CGe@c@iE]iD?AGg@MsAMqA?AGg@c@mE?Ak@wFe@cFGi@MqAC_@e@yEGi@a@kEAASoBGe@COG]CI}@eEKg@Kg@WoAKg@Kg@e@wBKe@e@{Bo@{CKg@c@wBgDePe@_CKg@Kg@UoAKg@EMQaAKe@Kg@YoAc@wBKg@Kg@Kg@Kg@o@_DKg@Kg@Kg@Kg@WmAsAwG{@gEc@wBKg@Kg@Kg@iDmPkDwOuCyMyCcNUeAKg@Kg@iAmFKg@WoAKg@Kg@CMGYMg@Kg@Kg@gAmFKg@Os@wBoK]kBKg@Kg@UmAcE_SScAKi@Ke@Mg@Kg@Kg@kBgJKg@oAgG[}AgAoFKg@o@_DKg@Mm@eAiFGg@?A}AcHeCcLYoAKg@i@eC_@gBe@wBKe@g@wBIg@AEIa@w@gEKg@UqAKa@{D_SKg@Mo@_@oBKg@Q{@kAcGuFmYIg@_CwLi@oCi@gCKe@s@yDUkAi@iC?AEOEWaCwLm@}CAAS}@Qm@Oi@W{@GS?AOe@Me@EMY}@g@aB[eASs@I_@I_@Km@Gm@Iu@Ew@Ac@A_ABoA@u@B_@Hs@@OJu@V}Ad@wC@IHg@BIBUJg@Jq@`AgGV{AHg@Lw@NaALq@`@kCV}AHi@Lq@Jo@N_ARoA@IHg@BIBUJg@Jq@XeBx@_FNeAh@aDHi@DQBUTqAHg@\\uB~@uF@IF]@IRqAF]Hi@Jg@Jo@Fa@Hg@Hg@^yB^yBTyAToABQZgBHg@Nu@PaAJg@b@{BTkAJg@VoA@CHc@b@wBpAiGBM`B}HJg@hAmFhAmFJe@Jk@Je@Lg@Jg@Jg@|@eEd@wBXmAb@wBXoAlAyFJe@|CgOJg@Nu@pAgGfBiI^iBLg@`B{Hp@aDJg@Je@Lg@Jg@t@mDj@oCJg@p@_DJg@P{@DQJg@d@wBJg@bA}Et@oDJg@Ns@|AqHLg@Jg@DWj@kCVwAx@sDx@}DP{@Je@^wAf@eBf@gAdA{CvAgElBwFdAaDxAiEtAaEfA_DJ]h@_Bf@{APe@DOJUPe@N[Zq@\\q@n@eA?ADGPWLU\\e@@CVa@R_@BCTe@L_@Ne@Ja@BILs@BUD]?KBe@?C@_A?w@?k@?G?yA?[?uA?W?oB@iA?E?c@?E?IA_C@mC?_B?q@?oDAcEEeAKeBMgBK{AMqBSoCKuAEi@IqAAIC_@?GEa@AG?IO{AIi@Qu@GSEQCEOe@g@_A_@m@U]aDyCEG[Y[[w@s@u@u@WW}@iAMWUa@MQGOMYiAiD}AeFMe@Oe@?AOc@o@qBqA}DeFoOq@cCe@sAMc@AAg@wAiAmD?AOa@?AAA]iAa@iA?AOc@IYSs@Oe@Oe@Oe@Oc@EK[_AOe@y@eCgAeDQe@Oe@Y}@_AuCaA{CmAyDEMQe@mBwFmAoEGOAE{@iCw@gCUm@Ma@AAEKMe@Mi@Ki@Ig@U_B_@sBc@eC?Ae@mCEQSmAO_ACS?ASoAAG]mBcA_GQcAAAIi@g@sCsAiIWuAe@yC}@wEc@}B_AsFIg@uCuPIg@_@yBkAyGIi@iAyG_@yBk@_DKi@SoAKg@_@yBIg@aBkJGYkA}G_E{Uy@uEKi@Ig@Kg@_@yBIg@CKE[Ig@g@cDu@iEKg@Ig@_CeNUoASqA_@wBKg@SqAKg@Ig@_AsFCMEYKg@sA}Hq@_EgAeGoAmH[gBCQUoAKg@UqAUsAIc@E]Im@E{@?}@"
+                        },
+                        "start_location": {
+                            "lat": -31.86038689999999,
+                            "lng": 116.8130776
+                        },
+                        "travel_mode": "DRIVING"
+                    }
+                ],
+                "traffic_speed_entry": [],
+                "via_waypoint": []
+            },
+            {
+                "distance": {
+                    "text": "71.1 km",
+                    "value": 71145
+                },
+                "duration": {
+                    "text": "46 mins",
+                    "value": 2760
+                },
+                "end_address": "124 Massingham St, Kellerberrin WA 6410, Australia",
+                "end_location": {
+                    "lat": -31.6332838,
+                    "lng": 117.7234114
+                },
+                "start_address": "York-Tammin Rd, Narraloggan WA 6302, Australia",
+                "start_location": {
+                    "lat": -31.8236858,
+                    "lng": 117.083763
+                },
+                "steps": [
+                    {
+                        "distance": {
+                            "text": "24.4 km",
+                            "value": 24410
+                        },
+                        "duration": {
+                            "text": "15 mins",
+                            "value": 922
+                        },
+                        "end_location": {
+                            "lat": -31.7908872,
+                            "lng": 117.3252267
+                        },
+                        "html_instructions": "Head <b>east</b> on <b>Goldfields Rd</b>/<wbr/><b>York-Tammin Rd</b> toward <b>Moore Rd</b><div style=\"font-size:0.9em\">Continue to follow Goldfields Rd</div>",
+                        "polyline": {
+                            "points": "`qfaEo|riUAI?gBBiD?WDeGBaDDoENeV?U@A?i@?i@DqI@qAP}V@g@?A@sA?i@?ID}GDyG?k@E_BKiDM_EKuCM_EMeEG_Bo@_Sm@{Qe@yOAe@DuE@kABq@LkGB}@VyJ?AB[Fc@ZqADMLe@d@cBpAoENg@?AnDaMlAgENg@l@qBLg@hBkGNe@fCyILe@Lc@^oALe@Lg@~CyKjBsG|@_DNe@Le@jA_EfFoQhA_ENe@Po@dDyLNe@?Az@}Ch@oBNe@fAaEJ]|B_I\\iAJe@Je@Fe@BS?ED_AD_CH_JNwO@k@N_QHaJ?i@TgUJcK?k@XcXH}IRkR@i@?i@HaHBoDJgL@i@@sAFoGJ_M@sAFgHPyUFoC?U?SF_GB{BBwD@eA@i@BuA@y@FiJRcR?W@k@FuH@[?i@FqF?K?i@BsBD_B@uBDkD?EAi@?SCg@C[EQESM_@_@oAs@aCg@kBi@gBe@_BeBgGmAgEW{@g@kBw@mCmAkECG}@yC?Ak@qBk@sBiAcEk@oBmAeEiAyDMg@}@wCgBeGe@eBg@eBmAgE{ByH{AsFq@{B{CsK_EsNOe@eAwDa@uAOe@iAyDsBkH_BsFMe@Uw@W{@Oe@Mg@Oe@]kAm@sBuAyEQq@Mg@Me@Mg@Oe@Me@yBsHMa@ACMe@s@gCcAoDqAoEw@kCy@sCMg@Mc@AAk@mB}@{Cm@aB{@}BYw@y@}Bo@cBa@gA_@y@_AgCqAgDoAaD{@yB?AAEO]iB{E]_Ag@sAQc@c@iAA?Qc@Wq@oAeDs@mBy@qBwBoFWw@Qc@iB_FeAmC?AQc@gAoCyAyDQc@?AM[iB}EqCoHgBqEgAwCm@{AO]EMAIGMCIKYO_@Si@MYO[CE?AMQWWs@o@i@c@e@_@mCyBIGuAiAgBwAmAcAeA{@q@i@q@k@sAgAyCeC]WAC[Ws@u@GGi@u@CCQ[Q[CEQa@]w@Sq@I]EOKg@ACGc@Go@Gq@Ek@Au@?]BcABYFaD?EF_BBcAFgD@ODqBFyBBqADwA@_@?e@@UAS?SAUCMAIAOEOCOGSOi@K]CGCGI]k@sB_AcDu@eCCG]mAs@cCu@gCU}@Uu@]iA]oAa@qAk@uB[eAmA_EGSEQiBoGMc@{@wC]oA_@qAkAeE[kAOe@iAaEEOGUOe@a@uA[aAQe@CIc@aByCiK}AsFg@eBMe@Oe@u@kCy@sCe@aB{@wCe@aBI]EWE]Go@Go@GqA?EEg@Em@OcCOkBI{ACc@Eo@Ci@Cc@QkCIqAO_CQ}C?MC[M{BYsECi@AQCW[cFMyBIcAEi@AMYiFSeDGyA"
+                        },
+                        "start_location": {
+                            "lat": -31.8236858,
+                            "lng": 117.083763
+                        },
+                        "travel_mode": "DRIVING"
+                    },
+                    {
+                        "distance": {
+                            "text": "0.4 km",
+                            "value": 437
+                        },
+                        "duration": {
+                            "text": "1 min",
+                            "value": 22
+                        },
+                        "end_location": {
+                            "lat": -31.78851,
+                            "lng": 117.328565
+                        },
+                        "html_instructions": "Continue onto <b>Yilgarn Rd</b>",
+                        "polyline": {
+                            "points": "`d`aEuabkUCYEi@Ec@Ee@Gg@?CIWQg@Yq@_@y@CEUa@OWEIW_@IOe@m@UQQKCCYMm@Yo@Yi@Ua@Q"
+                        },
+                        "start_location": {
+                            "lat": -31.7908872,
+                            "lng": 117.3252267
+                        },
+                        "travel_mode": "DRIVING"
+                    },
+                    {
+                        "distance": {
+                            "text": "21.3 km",
+                            "value": 21334
+                        },
+                        "duration": {
+                            "text": "13 mins",
+                            "value": 775
+                        },
+                        "end_location": {
+                            "lat": -31.6651603,
+                            "lng": 117.4960018
+                        },
+                        "html_instructions": "Continue onto <b>Goldfields Rd</b>",
+                        "polyline": {
+                            "points": "du_aEovbkUKGk@Y_Bq@mAk@s@[kAi@QIoCkA{BaAkB{@{Ao@mAi@KE_@QKGeAg@w@]e@Ui@WOIWOAA[UIImAcAeAgAaA}@GESSiBgBiCeCw@y@CCYYm@m@IG[[[YsAoAY[[YAAYYQSIGYYAAYYo@o@GEmAkACEYY][o@o@yAuA[[eDaDiBiB[[]]oAmA[YGGSS[Y[[YYMMkCgCuAyA]c@QWGIEEOWQ]Ym@Us@Sk@W{@qAkEEOOg@q@aCy@iCc@wAk@mBK]So@oAiDq@sBa@gASg@g@gA?ASa@Q]aAiBUa@?Ag@eA}@eBSc@S]i@gAi@eAo@mAMYiAwBq@mAe@}@k@}@c@m@OWs@aAu@eAU]}@qAU_@OYSa@MWoAuC_AqBc@cASk@]u@Oc@Qa@mAmCaA{B_@y@GOg@mAaEcJSc@Sa@oD_IQc@?AaIaRQc@uLyXsBsEmAmCQc@{C{GCIgFsLwAcDSc@Qc@mDaIQc@cI}Q{@mBQc@EKqCsGSc@gJiTSc@yCaHkD}HkAkCuC}GSc@O]{CcHSc@oEcK{CcHQa@a@_A{B_F{AqDcFmLYo@sCcH}AiDGMiFyLqBiE?AUa@a@u@QUu@w@kAeAwAgAeG}E]WkEmD{E{DoHcGwAiA[W]Y_IoGuEsD{@q@[WaDgCqHcG[WqC{B{JaI[Yy@q@uBaB]Y[WaRiO]W]YgA}@iVsR[W]W]YoCyBgG_Fe[cWy@o@aKgIiIwG_BqA]Yy@q@[W]Ys@k@}@y@ACWY[g@_@s@uD}HqAsCcEaJoBkEyGwNSc@eDiHsCkGSa@Sc@mAmCSc@}AcDEKQc@Sa@Sc@g@gAuBsEe@eASc@Sc@y@iBSc@gKcUm@qAmGcN}Tmf@Uc@o@yASc@uBsEi@iAyEgK}AiD{@iBSa@q@yAkBaEe@gAaBoDwEgKyAaDiCkFmB{CmAqBy@sAU_@cAcBU_@yAcCk@aAcAcBgBoCU_@GIqBqCMQY]W_@cDiEsAeBkA{AW]qE}Fy@cAg@a@gAo@q@Ws@OqAG"
+                        },
+                        "start_location": {
+                            "lat": -31.78851,
+                            "lng": 117.328565
+                        },
+                        "travel_mode": "DRIVING"
+                    },
+                    {
+                        "distance": {
+                            "text": "0.6 km",
+                            "value": 600
+                        },
+                        "duration": {
+                            "text": "1 min",
+                            "value": 28
+                        },
+                        "end_location": {
+                            "lat": -31.6600763,
+                            "lng": 117.4941183
+                        },
+                        "html_instructions": "Continue onto <b>Hunt Rd</b>/<wbr/><b>York-Tammin Rd</b>",
+                        "polyline": {
+                            "points": "frg`E_mclU]?yADmAF[@iAJm@Ly@P{@V{@ZmBt@SJiJdE"
+                        },
+                        "start_location": {
+                            "lat": -31.6651603,
+                            "lng": 117.4960018
+                        },
+                        "travel_mode": "DRIVING"
+                    },
+                    {
+                        "distance": {
+                            "text": "2.2 km",
+                            "value": 2194
+                        },
+                        "duration": {
+                            "text": "2 mins",
+                            "value": 117
+                        },
+                        "end_location": {
+                            "lat": -31.6418132,
+                            "lng": 117.4985741
+                        },
+                        "html_instructions": "Slight <b>right</b> onto <b>York</b>/<wbr/><b>York-Tammin Rd</b>",
+                        "maneuver": "turn-slight-right",
+                        "polyline": {
+                            "points": "nrf`EgaclUEAC?E@E@eC^iADaABgAC}@Gk@Ew@Oq@OSGk@Qu@YcAe@SKUQw@k@UQ]Ya@_@_AiAiAgB{@_BiAkBg@m@w@u@c@]y@k@UIgAg@q@Sq@M}@KaBIyCHaBFoCJsADiCHi@@sELC?qGRK@{FRy@Ae@?{AK}@MYG}Be@c@Ic@A"
+                        },
+                        "start_location": {
+                            "lat": -31.6600763,
+                            "lng": 117.4941183
+                        },
+                        "travel_mode": "DRIVING"
+                    },
+                    {
+                        "distance": {
+                            "text": "0.2 km",
+                            "value": 171
+                        },
+                        "duration": {
+                            "text": "1 min",
+                            "value": 54
+                        },
+                        "end_location": {
+                            "lat": -31.6403117,
+                            "lng": 117.4986526
+                        },
+                        "html_instructions": "Turn <b>right</b> onto <b>Little Underwood Rd</b>",
+                        "maneuver": "turn-right",
+                        "polyline": {
+                            "points": "h`c`Ea}clUKKYMu@CE?c@DeDF"
+                        },
+                        "start_location": {
+                            "lat": -31.6418132,
+                            "lng": 117.4985741
+                        },
+                        "travel_mode": "DRIVING"
+                    },
+                    {
+                        "distance": {
+                            "text": "22.0 km",
+                            "value": 21999
+                        },
+                        "duration": {
+                            "text": "14 mins",
+                            "value": 842
+                        },
+                        "end_location": {
+                            "lat": -31.6332838,
+                            "lng": 117.7234114
+                        },
+                        "html_instructions": "Turn <b>right</b> onto <b>National Highway 94</b><div style=\"font-size:0.9em\">Destination will be on the left</div>",
+                        "maneuver": "turn-right",
+                        "polyline": {
+                            "points": "|vb`Eq}clUC}A?{C@O?GFg@F{@ZwBL{@Ha@Hq@Hu@Hu@HmA@WB_BIcEg@kXa@wSWiKUuLEaEc@sQI_EKmFE_BO_EQgCSqBWoB[{BSgAgAeF}B}Ju@_DKg@I]i@_CKe@[wAoAoFm@qCqCgMc@oBoCoLyAoGyBcJkByIaBmHaBaH_BiHeBeI{C}Mq@uCs@{CeByHwAmGCIKe@Kg@u@aDgAaFs@eDCGc@mBYqAqAsFy@yDu@}COo@e@iBOq@c@sBSkAUoAU_BUmB?AEi@ImA[iF[qGAMc@eJQmDCi@Ca@_@qH[qGCw@_C}d@MeC[{GO{CEs@_@yGMwCMyBSsECYQsDI{AC[UsEY{FWcFS{DOyCCk@UkFAI}@eQQ_DCi@K}BQgDa@_IwAsYqAaWq@aOiAkTY_G]oGEy@e@yIGoAEsACiA?eA?s@?{@Bk@H_CR_DHs@BW@OFi@D_@\\cCHg@BS|@aGl@}DZ_C`@gCL}@L_AnAoIt@oFXmBHi@Hg@Hg@DYx@oFL{@Hi@ViB`AyGVcBb@sCx@oF@EnBsNz@{FHi@PqABKXmBRoAVsAFW@KXqAVeA^uAHYPo@HWPm@Rk@X{@FMjB{EFQHQz@{BnB_FHQ`GiOxEqLt@mBPc@\\{@nGcPhBuE^_Av@_CTq@Ne@DOFUn@_C`@}Ah@iCh@_Dd@kDdCcTXcCh@sEFg@@GjBoOv@}GZoCJ{@DWXuBVmCV_CT{CJ_DJuE?eDCuAKaD?IGaA?QEi@MoCAW_By[kAyTAOGqA[}FS}D}AqZm@eLUqEW}EIsAASKoBOuCKoB?Gy@uO]mHCi@EoAGkAA_AEs@?EI}@S{Cq@yJk@kMGaCCaAA{@McC"
+                        },
+                        "start_location": {
+                            "lat": -31.6403117,
+                            "lng": 117.4986526
+                        },
+                        "travel_mode": "DRIVING"
+                    }
+                ],
+                "traffic_speed_entry": [],
+                "via_waypoint": []
+            },
+            {
+                "distance": {
+                    "text": "35.4 km",
+                    "value": 35385
+                },
+                "duration": {
+                    "text": "21 mins",
+                    "value": 1269
+                },
+                "end_address": "National Highway 94, Hines Hill WA 6413, Australia",
+                "end_location": {
+                    "lat": -31.5400461,
+                    "lng": 118.0676127
+                },
+                "start_address": "124 Massingham St, Kellerberrin WA 6410, Australia",
+                "start_location": {
+                    "lat": -31.6332838,
+                    "lng": 117.7234114
+                },
+                "steps": [
+                    {
+                        "distance": {
+                            "text": "35.4 km",
+                            "value": 35385
+                        },
+                        "duration": {
+                            "text": "21 mins",
+                            "value": 1269
+                        },
+                        "end_location": {
+                            "lat": -31.5400461,
+                            "lng": 118.0676127
+                        },
+                        "html_instructions": "Head <b>east</b> on <b>National Highway 94</b> toward <b>Mitchell St</b><div style=\"font-size:0.9em\">Destination will be on the left</div>",
+                        "polyline": {
+                            "points": "~ja`EizomUKsCQ{BO}B_@gGM{BAWOgCO{C?MOaCKwBCYAWeB}[M{B?M{@sPsAiVo@mMSiEAKWaFIyA_@{Ga@cIW}E]wGgB{\\kAoUCi@C]Eu@IsACi@Ci@aCkd@yBua@iBq]wEw|@eEa{@c@}PScHYcHc@}GW_DQgBMkAc@aFe@gHq@sJs@eNYeFCi@Ci@Ei@Ci@OyCa@qHCi@u@sNcAwREi@M}BOwCGmAi@_K_AiQGmBCmC?cBBaB@m@?GJsCLwCXcIb@kK@c@PaF@cDA_@CeBGgAOsBI{@SeBAGIo@Ow@Os@Mo@Os@c@cB[wAU{@e@sBm@cCS{@_@_BMe@kAaFw@eDuA{FwB_JwAaGMg@qBsIcCcKmAcFa@gBMe@Mg@Mi@YoAKa@Mg@Mg@WgAo@kCmAiFgBmHcAkEOg@uBaJOk@_CyJm@gCCM]yAMo@i@sCe@eCKs@aA}FACIc@Ks@SiAKg@?AOs@Mq@[sA[uAc@_BUy@I[KYWy@aA}CsA_E]iAY_AY{@Me@c@}AEIUeAs@qCm@eC_@}Aw@cD}@wD_ByGg@uBOm@Ke@Sw@o@kC]yAq@qCKg@Oo@WeA_@yAUaAi@wBe@oB}@yDg@uBg@sBo@iCe@qBcAeE[oAYcAWw@Y{@AEUo@Sg@KYKW]{@g@gA]y@]{@KWQe@Oc@a@mASo@Om@a@wAQo@S{@Mg@GSSy@[iAwCiLk@yBa@}AaD}LWcAuBgIKa@cCoJ}AeG]uAGWMg@Me@[oAiAyEcAgEsAwFYmAMe@o@mCmAeFw@aDeAmEs@{CK]Su@oDkO{AkGcAgEMk@aAyD{@wDg@qBOi@Ka@_@oAY_A{AgEaEyKSi@sGmQoCwHcD_JqD{Jy@yBmAgDm@cBqCyHoCsHeB_FYaA]mAq@qCu@{DSgAMiAUoBS{AKgACUOmBG}AGmBGyB?CCwA?e@@sA?A@g@?i@@uAHoI\\wUFgHD}BJyJh@gb@J}KToQ@cABcBJwKBcBJeHNcMLsDFgFAkFFkC@y@\\uV?E@e@Bi@@i@PeHLuF?G?i@?aBCqCGsCEgACi@AWEa@Eo@KkAE_@E]E]Eo@G_@AME_@G_@AOCMIk@CSO}@W{AE]SkAW{Au@yEeAqGq@{DIg@e@iCo@yCAEaB}F]cAu@oBc@cACGSc@Q_@i@eA_A_Bw@oA_AsAw@aAwAaBKM[Ya@c@yAqAcAw@cBoAaDaCoAiAeAgAe@e@e@m@g@o@{@iAa@q@k@aAg@aA]u@]s@gAiCcAcCEMsCsGsC{G}CqHsC{G}AsDSc@e@gA{AsDw@kBwE_LqEsKiDaISc@c@gAoBuEo@wAy@qBq@_B]y@a@u@k@iAs@oAk@}@c@m@c@o@e@o@oA}Aa@g@WYc@g@_@]sDmDyAuACCaByAuCkCiDaDm@g@cGoFoDcDw@s@WWkAeAiAeAaByAsAoAUS}@y@a@_@kE}Dy@w@qDcDaDuCmJsI[Yc@a@i@g@u@q@i@g@_@]UUSSSUIIIKOQCCSWQUSWQWQWc@q@IOEGOWYi@OYYq@Qc@a@_A_@iAe@aBq@mCu@wCc@gBwH}Z"
+                        },
+                        "start_location": {
+                            "lat": -31.6332838,
+                            "lng": 117.7234114
+                        },
+                        "travel_mode": "DRIVING"
+                    }
+                ],
+                "traffic_speed_entry": [],
+                "via_waypoint": []
+            },
+            {
+                "distance": {
+                    "text": "0.2 km",
+                    "value": 198
+                },
+                "duration": {
+                    "text": "1 min",
+                    "value": 7
+                },
+                "end_address": "National Highway 94, Hines Hill WA 6413, Australia",
+                "end_location": {
+                    "lat": -31.5393708,
+                    "lng": 118.069543
+                },
+                "start_address": "National Highway 94, Hines Hill WA 6413, Australia",
+                "start_location": {
+                    "lat": -31.5400461,
+                    "lng": 118.0676127
+                },
+                "steps": [
+                    {
+                        "distance": {
+                            "text": "0.2 km",
+                            "value": 198
+                        },
+                        "duration": {
+                            "text": "1 min",
+                            "value": 7
+                        },
+                        "end_location": {
+                            "lat": -31.5393708,
+                            "lng": 118.069543
+                        },
+                        "html_instructions": "Head <b>east</b> on <b>National Highway 94</b>",
+                        "polyline": {
+                            "points": "hdo_EqasoUgCaK"
+                        },
+                        "start_location": {
+                            "lat": -31.5400461,
+                            "lng": 118.0676127
+                        },
+                        "travel_mode": "DRIVING"
+                    }
+                ],
+                "traffic_speed_entry": [],
+                "via_waypoint": []
+            },
+            {
+                "distance": {
+                    "text": "7.8 km",
+                    "value": 7762
+                },
+                "duration": {
+                    "text": "5 mins",
+                    "value": 282
+                },
+                "end_address": "National Highway 94, Nangeenan WA 6414, Australia",
+                "end_location": {
+                    "lat": -31.523638,
+                    "lng": 118.1472158
+                },
+                "start_address": "National Highway 94, Hines Hill WA 6413, Australia",
+                "start_location": {
+                    "lat": -31.5393708,
+                    "lng": 118.069543
+                },
+                "steps": [
+                    {
+                        "distance": {
+                            "text": "7.8 km",
+                            "value": 7762
+                        },
+                        "duration": {
+                            "text": "5 mins",
+                            "value": 282
+                        },
+                        "end_location": {
+                            "lat": -31.523638,
+                            "lng": 118.1472158
+                        },
+                        "html_instructions": "Head <b>east</b> on <b>National Highway 94</b> toward <b>Hines Hill Rd</b>",
+                        "polyline": {
+                            "points": "``o_EsmsoUaDoMI]CKUu@o@kBi@yAiBaE_@_Ag@wAm@mBgAsEsByIa@_Ba@}BScBSqBGg@OmA[mBUyA]cBeAiEkAaFoHe[e@qBi@yBMe@eOao@IWcCiKcEkQi@yBYkAgIu]U_ACMsDwOuBaJK_@e@eC[qBEWCQGg@Ga@Im@YmCQiCOaCIeCEaCAcC@a@@cB?Y@WBqAJ_ClBeXz@cLn@oInBqVr@_Jl@{HL{CDyB?cA?SAyBGcBEqAK{AM}ASiBWcBUuA[{A[sAa@eBi@yBGUEOMg@_@{AwA_GCM"
+                        },
+                        "start_location": {
+                            "lat": -31.5393708,
+                            "lng": 118.069543
+                        },
+                        "travel_mode": "DRIVING"
+                    }
+                ],
+                "traffic_speed_entry": [],
+                "via_waypoint": []
+            },
+            {
+                "distance": {
+                    "text": "9.5 km",
+                    "value": 9525
+                },
+                "duration": {
+                    "text": "6 mins",
+                    "value": 337
+                },
+                "end_address": "Cnr Great Eastern Highway and, Combes Dr, Merredin WA 6415, Australia",
+                "end_location": {
+                    "lat": -31.4917196,
+                    "lng": 118.2403924
+                },
+                "start_address": "National Highway 94, Nangeenan WA 6414, Australia",
+                "start_location": {
+                    "lat": -31.523638,
+                    "lng": 118.1472158
+                },
+                "steps": [
+                    {
+                        "distance": {
+                            "text": "9.5 km",
+                            "value": 9525
+                        },
+                        "duration": {
+                            "text": "6 mins",
+                            "value": 337
+                        },
+                        "end_location": {
+                            "lat": -31.4917196,
+                            "lng": 118.2403924
+                        },
+                        "html_instructions": "Head <b>east</b> on <b>National Highway 94</b> toward <b>Snell Rd</b>",
+                        "polyline": {
+                            "points": "v}k_EcsbpU]yA_FeSU}@uFmUmCgLeCgKgE}Q_AqEGUQ{@iBoKKu@c@iCc@aC{@sEYqASaAsDqNqEgPgBsG}BkIcCqI{CgLaBgIyAoGo@iCoBmIuLgh@Ok@?E_GmVaAaEg@wByCcMGWyCkMw@aDq@sCOm@YmAc@iBGUAEEOm@aC_@_BMk@Qs@qAwFSaAsEwRwAwFq@oCWiAI][qA]{A]uA]wA_@cBkAcF{@uDeAsEy@uDw@gD]qAyC}MOq@iB{HI[kCeLeGoVgAsEmA_FK_@aAaE{AsFOa@Yu@e@sAmCiHuA{D"
+                        },
+                        "start_location": {
+                            "lat": -31.523638,
+                            "lng": 118.1472158
+                        },
+                        "travel_mode": "DRIVING"
+                    }
+                ],
+                "traffic_speed_entry": [],
+                "via_waypoint": []
+            },
+            {
+                "distance": {
+                    "text": "4.8 km",
+                    "value": 4786
+                },
+                "duration": {
+                    "text": "4 mins",
+                    "value": 261
+                },
+                "end_address": "145 Great Eastern Hwy, Merredin WA 6415, Australia",
+                "end_location": {
+                    "lat": -31.4832152,
+                    "lng": 118.2833403
+                },
+                "start_address": "Cnr Great Eastern Highway and, Combes Dr, Merredin WA 6415, Australia",
+                "start_location": {
+                    "lat": -31.4917196,
+                    "lng": 118.2403924
+                },
+                "steps": [
+                    {
+                        "distance": {
+                            "text": "4.3 km",
+                            "value": 4349
+                        },
+                        "duration": {
+                            "text": "4 mins",
+                            "value": 214
+                        },
+                        "end_location": {
+                            "lat": -31.4837432,
+                            "lng": 118.2831578
+                        },
+                        "html_instructions": "Head <b>northeast</b> on <b>National Highway 94</b> toward <b>Combes Dr</b>",
+                        "polyline": {
+                            "points": "fve_EmytpUEM{@_CYo@CIgB{E_@eAEKwCiIcDyIWu@qDwJ{CqI_@eAQc@cAiCeA}CkAaDGOaByEO_@qCyH}BeGEMOa@cCwGGS}BmGK[EM[cAYgAYmASeBASGo@GsACu@AyAB}@@g@FeAPoBJ{@?EPsBBSHkALkAR}BHcALqAN{A@MLyA?MHkADo@ZoFBo@LsCHsABy@DcA@WFcBF_B?GNiEBm@@[VgHF{BD}@FmB@UHoCHaC@W\\kKB_@?Q@S@m@D_A@g@"
+                        },
+                        "start_location": {
+                            "lat": -31.4917196,
+                            "lng": 118.2403924
+                        },
+                        "travel_mode": "DRIVING"
+                    },
+                    {
+                        "distance": {
+                            "text": "0.2 km",
+                            "value": 211
+                        },
+                        "duration": {
+                            "text": "1 min",
+                            "value": 22
+                        },
+                        "end_location": {
+                            "lat": -31.48186299999999,
+                            "lng": 118.2832269
+                        },
+                        "html_instructions": "Turn <b>left</b> onto <b>Mary St</b>",
+                        "maneuver": "turn-left",
+                        "polyline": {
+                            "points": "jdd_Ewd}pUeAIa@EIAyBKk@AY@SBq@J"
+                        },
+                        "start_location": {
+                            "lat": -31.4837432,
+                            "lng": 118.2831578
+                        },
+                        "travel_mode": "DRIVING"
+                    },
+                    {
+                        "distance": {
+                            "text": "0.2 km",
+                            "value": 226
+                        },
+                        "duration": {
+                            "text": "1 min",
+                            "value": 25
+                        },
+                        "end_location": {
+                            "lat": -31.4832152,
+                            "lng": 118.2833403
+                        },
+                        "html_instructions": "At the roundabout, take the <b>4th</b> exit and stay on <b>Mary St</b>",
+                        "maneuver": "roundabout-left",
+                        "polyline": {
+                            "points": "rxc_Eee}pU?B?@?@?@?@A@?@A@?@A??@A@A@A??@A?A?A??@A?A?A?A?AAA?A?AAAAAAAA?AAA?AAA?A?A?A?A?A?A?A?A?A?A@A?A@A?A@??A@??A@A@??A@?@?@A@?@?@?@??@@?@?@??@@??@@?p@EPA`@Ex@?lBJH?"
+                        },
+                        "start_location": {
+                            "lat": -31.48186299999999,
+                            "lng": 118.2832269
+                        },
+                        "travel_mode": "DRIVING"
+                    }
+                ],
+                "traffic_speed_entry": [],
+                "via_waypoint": []
+            }
+        ],
+        "overview_polyline": {
+            "points": "xlpaEklsgUjBtBr@~APd@jDiB|BxEhEfMlD`KbYmNrQaJvSsK~M}GfJuDaBwEsGcSw@uByOod@cCiHuDfBFgU{Ka@eFOyI[oCO_Cy@kU{O_WeQiIiGqC{EkFuNeFwd@uA{IiJk[uHgWwD_KyOsSeEmDy@i@t@gCh@{Bh@}BLcAUiCuAuOiBqK{N{g@oHoXuFgj@mGgn@cPaw@mg@cbCc^efBu]mdB}Ya{A_G{Sa@sLdBaM|Ggb@zOeaAf\\i_Bhc@stB|GuZpRqj@bDgJlDgGpBwE`@gF@q\\GkNs@{K{@uL_AyFmBqD_FwE}FgHcF{OsS_o@e\\scAa[ahB{b@kfC}Nc{@gBmK@sTx@cnAEa\\aEqpAr@_a@bEaPn\\ojAzZggA~DuO`Ao`AnCuuCxAa_BZwZG{L{Sot@wz@gxCcSur@kGoRiMo\\yQoe@qW{q@yFuNw^oZmDmEiBiGGaNf@_T@_Gu@}CmOai@kf@edBcImqAo@kHsC}FsEaDqLmFcZ}MqUuT}g@cg@oEiGuGkTgHaTmE}IaIuOwHuLyHqOkG{Nql@ctAkr@i_Bkr@a_BeSsd@iBcCgMcK_k@md@qb@e]ibBksAq^{YsB_CkNgZmYqn@oIyQoaAuvBgTie@iQuZoKaPgTmXyBgAeCWaFNmFbAgPbHoJf@sEm@yDyAwB{AiEkFeFoH{D{BcGw@_Nb@_^`AkL_ByBKeDFC}A@kDj@cFj@eEX{FkBq_A}Ba`A{AeLgGkXoKue@yY}pA{YoqA_FyUcCwa@mJ_mByGmsAeKmsBs@iXxAiQrEa[fNi_ApGic@`CsJle@_mAdHsSzCsPpEc`@dG}g@dAqSOgLkEi{@{FihAkFibAaFedAkMucCmF_dAiJ}fB}KyxBw@aZgBiYiCi]qC_i@sEc|@kAi\\PkHlAk[LkOaBaOaUc`AsWugAsJoa@iEqV{CsMuGsSkQgt@iQmt@{I}UcYogAuV_dA{Nqm@oLy]aa@ahAmHcTiC_NaB}U@_KlE_nDr@en@T__@uAqPkBmLwDoUyDgPkGiNkLeNyKsIyDkEqD_GgEwJwVkl@o[wu@gJqR{HsJgq@an@oi@yf@mGyJ}P{o@wH{ZyE}L}DyMkE{SgAuIeEiRef@gsB{UccA_CgPq@sO@cHnKuyA`AuSOcIeAgKoBkJ_FkSo_@g_ByHub@kRyr@{Mqi@o]yyAcUi`AiZupAuWchAwFuT}EuMcIqTwWws@c[i|@w@wFIaHfAsNjDsh@jCsw@FsBFgBgBOiEMeARAJEFQDOg@ZM|G@"
+        },
+        "summary": "Ulster Rd and South St",
+        "warnings": [],
+        "waypoint_order": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9
+        ]
+    },
+    {
+        "bounds": {
+            "northeast": {
+                "lat": -31.4816608,
+                "lng": 118.2833403
+            },
+            "southwest": {
+                "lat": -31.8750075,
+                "lng": 116.756187
+            }
+        },
+        "copyrights": "Map data \u00a92025",
+        "legs": [
+            {
+                "distance": {
+                    "text": "11.0 km",
+                    "value": 11017
+                },
+                "duration": {
+                    "text": "10 mins",
+                    "value": 572
+                },
+                "end_address": "100 Burges Siding Rd, Burges WA 6302, Australia",
+                "end_location": {
+                    "lat": -31.8097806,
+                    "lng": 116.792547
+                },
+                "start_address": "28 Osnaburg Rd, York WA 6302, Australia",
+                "start_location": {
+                    "lat": -31.8742056,
+                    "lng": 116.7586236
+                },
+                "steps": [
+                    {
+                        "distance": {
+                            "text": "0.2 km",
+                            "value": 157
+                        },
+                        "duration": {
+                            "text": "1 min",
+                            "value": 15
+                        },
+                        "end_location": {
+                            "lat": -31.87509619999999,
+                            "lng": 116.7573623
+                        },
+                        "html_instructions": "Head <b>southwest</b> toward <b>Eleventh Rd</b><div style=\"font-size:0.9em\">Restricted usage road</div>",
+                        "polyline": {
+                            "points": "xlpaEklsgUZRn@r@Xb@DHLVd@fAPd@"
+                        },
+                        "start_location": {
+                            "lat": -31.8742056,
+                            "lng": 116.7586236
+                        },
+                        "travel_mode": "DRIVING"
+                    },
+                    {
+                        "distance": {
+                            "text": "0.2 km",
+                            "value": 239
+                        },
+                        "duration": {
+                            "text": "1 min",
+                            "value": 31
+                        },
+                        "end_location": {
+                            "lat": -31.8731962,
+                            "lng": 116.756187
+                        },
+                        "html_instructions": "Turn <b>right</b> onto <b>Eleventh Rd</b>",
+                        "maneuver": "turn-right",
+                        "polyline": {
+                            "points": "jrpaEodsgUuE`Ck@XyBlA"
+                        },
+                        "start_location": {
+                            "lat": -31.87509619999999,
+                            "lng": 116.7573623
+                        },
+                        "travel_mode": "DRIVING"
+                    },
+                    {
+                        "distance": {
+                            "text": "1.5 km",
+                            "value": 1497
+                        },
+                        "duration": {
+                            "text": "2 mins",
+                            "value": 121
+                        },
+                        "end_location": {
+                            "lat": -31.8671839,
+                            "lng": 116.7703117
+                        },
+                        "html_instructions": "Turn <b>right</b> onto <b>Bland Rd</b>",
+                        "maneuver": "turn-right",
+                        "polyline": {
+                            "points": "nfpaEe}rgUuBiGSm@Uo@cEgMK]i@aBK_@Yk@sCoIa@oA}E_OqCeIq@qBOc@Sq@}AwEYy@CY?YBW"
+                        },
+                        "start_location": {
+                            "lat": -31.8731962,
+                            "lng": 116.756187
+                        },
+                        "travel_mode": "DRIVING"
+                    },
+                    {
+                        "distance": {
+                            "text": "8.4 km",
+                            "value": 8394
+                        },
+                        "duration": {
+                            "text": "6 mins",
+                            "value": 359
+                        },
+                        "end_location": {
+                            "lat": -31.8107314,
+                            "lng": 116.7850728
+                        },
+                        "html_instructions": "Turn <b>left</b> onto <b>Spencers Brook-York Rd</b>",
+                        "maneuver": "turn-left",
+                        "polyline": {
+                            "points": "z`oaEmuugUq@_@}EqCEAUM[S]SeBcA_BkAyAmAgAeAgAkAcAoAgCmDU[o@aAe@s@i@_AEIMYEIQ_@ACmAqC_@iAsAyDOc@cBaFeDsKYcAMs@MeAKsA]aGc@gHCg@AA?ECa@UoE_@kFUwDCm@?ACg@?AEo@A]WuECy@IyASoCM{@Kw@AGKi@AEIa@Ss@Wy@c@kAg@iAe@aAW_@c@o@k@w@k@q@g@g@q@i@i@_@[U?A_@Q?AgEsByC{AwImEiCmAsB}@cBi@mAWc@Kg@KcFi@uBI{@Ea@DS@MBGBGFGLG\\GRCNIHEBODSBgEG}FCa@?A?eCEyCAkBH]Fi@FcALuARi@F{@Hy@?C?_DC{ACkKI}@AyDCU?iCCmIKsADQ?QB_BNcALc@JaAV}@ZmAj@EBeAl@mFhDA?]T]T}@j@yD`C}@l@cAn@GBUPGBqBpA}EzC[PABoIjF}CpBcOnJkAv@sIpF]TQJMH{A`A]T_@Ts@b@iCbBw@f@]T_BbA{BvAw@j@aC`B}BfBA?e@^eDnC"
+                        },
+                        "start_location": {
+                            "lat": -31.8671839,
+                            "lng": 116.7703117
+                        },
+                        "travel_mode": "DRIVING"
+                    },
+                    {
+                        "distance": {
+                            "text": "0.7 km",
+                            "value": 730
+                        },
+                        "duration": {
+                            "text": "1 min",
+                            "value": 46
+                        },
+                        "end_location": {
+                            "lat": -31.8097806,
+                            "lng": 116.792547
+                        },
+                        "html_instructions": "Turn <b>right</b> onto <b>Burges Siding Rd</b><div style=\"font-size:0.9em\">Destination will be on the left</div>",
+                        "maneuver": "turn-right",
+                        "polyline": {
+                            "points": "``daEuqxgUS[MUI_@C_@GgCEqBOkIAi@?IK}GAyAGqDGw@Kc@Sa@o@cA"
+                        },
+                        "start_location": {
+                            "lat": -31.8107314,
+                            "lng": 116.7850728
+                        },
+                        "travel_mode": "DRIVING"
+                    }
+                ],
+                "traffic_speed_entry": [],
+                "via_waypoint": []
+            },
+            {
+                "distance": {
+                    "text": "0.9 km",
+                    "value": 875
+                },
+                "duration": {
+                    "text": "1 min",
+                    "value": 53
+                },
+                "end_address": "Northam-York Rd, Quellington WA 6302, Australia",
+                "end_location": {
+                    "lat": -31.8041187,
+                    "lng": 116.7983047
+                },
+                "start_address": "100 Burges Siding Rd, Burges WA 6302, Australia",
+                "start_location": {
+                    "lat": -31.8097806,
+                    "lng": 116.792547
+                },
+                "steps": [
+                    {
+                        "distance": {
+                            "text": "0.8 km",
+                            "value": 840
+                        },
+                        "duration": {
+                            "text": "1 min",
+                            "value": 44
+                        },
+                        "end_location": {
+                            "lat": -31.8038974,
+                            "lng": 116.7980436
+                        },
+                        "html_instructions": "Head <b>northeast</b> on <b>Burges Siding Rd</b> toward <b>Northam Cranbrook</b>/<wbr/><b>Northam-York Rd</b>/<wbr/><b>State Route 120</b>",
+                        "polyline": {
+                            "points": "bzcaEm`zgUiAaBeAmAMOe@m@eAcAcAu@cC}AkE{CqE_DSSUU}F}G"
+                        },
+                        "start_location": {
+                            "lat": -31.8097806,
+                            "lng": 116.792547
+                        },
+                        "travel_mode": "DRIVING"
+                    },
+                    {
+                        "distance": {
+                            "text": "35 m",
+                            "value": 35
+                        },
+                        "duration": {
+                            "text": "1 min",
+                            "value": 9
+                        },
+                        "end_location": {
+                            "lat": -31.8041187,
+                            "lng": 116.7983047
+                        },
+                        "html_instructions": "Turn <b>right</b> onto <b>Northam Cranbrook</b>/<wbr/><b>Northam-York Rd</b>/<wbr/><b>State Route 120</b>",
+                        "maneuver": "turn-right",
+                        "polyline": {
+                            "points": "jubaEwb{gUj@s@"
+                        },
+                        "start_location": {
+                            "lat": -31.8038974,
+                            "lng": 116.7980436
+                        },
+                        "travel_mode": "DRIVING"
+                    }
+                ],
+                "traffic_speed_entry": [],
+                "via_waypoint": []
+            },
+            {
+                "distance": {
+                    "text": "0.6 km",
+                    "value": 576
+                },
+                "duration": {
+                    "text": "1 min",
+                    "value": 21
+                },
+                "end_address": "Northam-York Rd, Quellington WA 6302, Australia",
+                "end_location": {
+                    "lat": -31.8077944,
+                    "lng": 116.8026057
+                },
+                "start_address": "Northam-York Rd, Quellington WA 6302, Australia",
+                "start_location": {
+                    "lat": -31.8041187,
+                    "lng": 116.7983047
+                },
+                "steps": [
+                    {
+                        "distance": {
+                            "text": "0.6 km",
+                            "value": 576
+                        },
+                        "duration": {
+                            "text": "1 min",
+                            "value": 21
+                        },
+                        "end_location": {
+                            "lat": -31.8077944,
+                            "lng": 116.8026057
+                        },
+                        "html_instructions": "Head <b>southeast</b> on <b>Northam Cranbrook</b>/<wbr/><b>Northam-York Rd</b>/<wbr/><b>State Route 120</b>",
+                        "polyline": {
+                            "points": "vvbaEkd{gUBEBC`BwBrCiDrDwERUrDqEbAkA^e@"
+                        },
+                        "start_location": {
+                            "lat": -31.8041187,
+                            "lng": 116.7983047
+                        },
+                        "travel_mode": "DRIVING"
+                    }
+                ],
+                "traffic_speed_entry": [],
+                "via_waypoint": []
+            },
+            {
+                "distance": {
+                    "text": "33.5 km",
+                    "value": 33506
+                },
+                "duration": {
+                    "text": "26 mins",
+                    "value": 1540
+                },
+                "end_address": "22 Byfield St, Meckering WA 6405, Australia",
+                "end_location": {
+                    "lat": -31.6298557,
+                    "lng": 117.0091027
+                },
+                "start_address": "Northam-York Rd, Quellington WA 6302, Australia",
+                "start_location": {
+                    "lat": -31.8077944,
+                    "lng": 116.8026057
+                },
+                "steps": [
+                    {
+                        "distance": {
+                            "text": "0.6 km",
+                            "value": 568
+                        },
+                        "duration": {
+                            "text": "1 min",
+                            "value": 21
+                        },
+                        "end_location": {
+                            "lat": -31.8123629,
+                            "lng": 116.8052684
+                        },
+                        "html_instructions": "Head <b>southeast</b> on <b>Northam Cranbrook</b>/<wbr/><b>Northam-York Rd</b>/<wbr/><b>State Route 120</b> toward <b>Quellington Rd</b>",
+                        "polyline": {
+                            "points": "tmcaEi_|gUBATUZWVSZS@At@c@vAs@jF}Bb@Q\\O`@QbEeBbCiA"
+                        },
+                        "start_location": {
+                            "lat": -31.8077944,
+                            "lng": 116.8026057
+                        },
+                        "travel_mode": "DRIVING"
+                    },
+                    {
+                        "distance": {
+                            "text": "30.9 km",
+                            "value": 30872
+                        },
+                        "duration": {
+                            "text": "21 mins",
+                            "value": 1269
+                        },
+                        "end_location": {
+                            "lat": -31.6452472,
+                            "lng": 117.0025444
+                        },
+                        "html_instructions": "Turn <b>left</b> onto <b>Quellington Rd</b>",
+                        "maneuver": "turn-left",
+                        "polyline": {
+                            "points": "fjdaE}o|gUIcL?AAk@?c@?EGiHIgL?i@Ai@CqD?Q?OCsAA}BAk@IqIAi@CiDAi@A}BIgHAoACmDAi@IeIAmBEqAAUCYEc@y@{EIg@Kg@sAcIIg@?AUsAKc@EYI[IWACGQEOEIOYOYMSU[a@i@[_@YWSO[QYMg@Q_Be@_@Ma@Oa@OECkC{@yBu@A?i@Qk@W]Q[S[U[WiImHmCaC[YA?sAmAuAmAcCwB}AuAsBgBkAcAGG]Y?A}AwAm@g@]YQOiCaCMK[Y[YmBcBCCoBgB[YA?[Y?AsAmACAWUA?w@s@y@q@w@u@[Y[YGESS]YIGe@_@[UWSiAm@o@Yi@OKCUEMCa@Gm@Iq@E{@Au@@i@Bs@H{@LeAJ[Do@By@DYAw@Cu@IQEWGICa@KGCYKa@OEAYO[QAA_Ak@]Sq@c@gAu@_@U]U]W]U_@U]U]U_@U]SYQc@[]U}@k@]W]UQKKI]W]WCCYQ_@U]UMKOI}@m@]U[SUOiAu@{@m@a@[[Ya@_@KMUUCE}@iAUc@]o@}@_CQe@k@eBgA_D_@kA?AM_@ACm@_B[y@_A}AEESWWY]_@a@_@_@YSMAA[UA?]W]Sy@g@k@e@g@c@]_@QUc@i@_@m@U_@Qc@Yq@Sk@?AEGI[?AyAiEeAwCQ]IO]i@m@_AgAuAq@s@w@q@aAq@aAi@eAg@_@OMGsAe@oAk@o@Yu@c@u@i@}AsAKIQQ_@e@QO]a@m@w@]o@a@kAMc@Qc@CKk@eBOe@Oe@Oe@a@iAOe@Oe@aDyJa@kAe@wAY}@Oe@Qe@o@oBOe@Oe@Qe@Y_A{B{Ge@mAo@eA_@i@o@o@WWg@a@_Bs@_Bc@{AYmGEcHEQAI?C?_@@g@?c@AC?O?m@Ek@GmAY_A_@aAa@UMkA_AmAmA]i@AAQ_@_@u@iD{IiByEQe@Qc@A?a@iA_@}@kFcNACOe@Ys@cBkEQc@EKKYkB{EcBcEkAqCEK?AQc@y@qBw@cByB_FiAaCQ]?EAAOc@Ua@Qc@i@kAg@_AQc@KUuA}Cq@oBkAoCc@eA?AGIKW?AkAqCeB{Fs@}BMg@Me@m@qBOg@_DyJOe@qBgGiF}PsCsIqBgG_CkHOe@_G}QOe@Oe@Oe@Oe@_CoHOc@aBcFOe@_BcFOe@Oe@_BaFcA}COe@?A]iAOg@}@uC_@kAOe@aAwC]kA?Aq@mB_EgMOe@_@kAOe@O_@?CqGeSMc@_@kAA?]mAQc@Me@Oe@oBiGOe@qCsIMe@CIM[_AwC_AuCqEaNsAqEgC_I_@kAOe@_@kAa@qAsC}IiAqDaB}EgEoNOe@Me@A?_AwCSa@kBkGOe@wIwWOc@Og@iEoNaAsCAEMa@Oe@qEiNQe@?AsAiEyFkQ?A]kA_@kAMe@Oe@M]AGoA}DQc@a@kAmDaLOc@?Aq@mBOg@Oc@?AmBgG?AMc@m@qBqA}DQe@Me@A?eAeDyCiJoA_EOc@?AOc@Qc@kDaL_@kAs@sBq@oBQa@Ua@U_@W]e@k@g@a@YS_Ai@u@[CAA?_@KSEg@G]E[Ag@Am@@k@BmB\\yEfCa@N_@R{@d@C@c[xO_KhFa@NaAZ[@i@?_@Gi@Ma@_@]QOQAAGGMWIIUe@Mc@mBsF?AOe@aBaFcEcMwBqGcBgFQc@AIaEyL[eAa@sACGK[CIK]a@iACGK[_@kAEKMa@_AmCUs@yBuGw@aCK]Sm@}@mCOe@CGK[CIu@yBWs@M[e@k@e@_@KISIWGQE[Ec@Ca@B[@QHIBIDMDYDKDeBx@c@ZkBdAsAn@_@P_@PA@a@Jc@N[PaGxCeDjBaEnBoAp@]FI@i@Hg@Am@Ok@QQIa@WY_@[a@c@gAk@cBg@}AUm@i@aBCIK[AEO_@s@uBK_@CEIWo@iBMYUc@e@o@wB{AmDaCKIs@k@wF_E[WwDeC]W]UqEcDA?[WWa@wQuMoEcD[WCAYUcOmKoCqB]WmDiCy@o@mC{ASOWGa@IgAM{@Go@BiA?QVwOvHcAj@kAn@kCnAMF_@RiDbBwCvAgOlHcClA_Ab@_Ad@kHvDuCpAa@P_Ab@i@XgAn@i@^]VWRu@n@s@z@{@`A_AvA"
+                        },
+                        "start_location": {
+                            "lat": -31.8123629,
+                            "lng": 116.8052684
+                        },
+                        "travel_mode": "DRIVING"
+                    },
+                    {
+                        "distance": {
+                            "text": "1.4 km",
+                            "value": 1439
+                        },
+                        "duration": {
+                            "text": "2 mins",
+                            "value": 115
+                        },
+                        "end_location": {
+                            "lat": -31.6328597,
+                            "lng": 117.0064753
+                        },
+                        "html_instructions": "Turn <b>right</b> onto <b>National Highway 94</b>",
+                        "maneuver": "turn-right",
+                        "polyline": {
+                            "points": "xuc`E{`ciUuEkDwAs@?AqAe@_Bi@gAS{Bg@gAUqAWmFu@m@KeAOsEo@uJwAuDi@eC[oAOoBSy@OiAOMCu@O"
+                        },
+                        "start_location": {
+                            "lat": -31.6452472,
+                            "lng": 117.0025444
+                        },
+                        "travel_mode": "DRIVING"
+                    },
+                    {
+                        "distance": {
+                            "text": "89 m",
+                            "value": 89
+                        },
+                        "duration": {
+                            "text": "1 min",
+                            "value": 63
+                        },
+                        "end_location": {
+                            "lat": -31.6329255,
+                            "lng": 117.007404
+                        },
+                        "html_instructions": "Turn <b>right</b> onto <b>Gabbedy Pl</b>",
+                        "maneuver": "turn-right",
+                        "polyline": {
+                            "points": "jha`EoyciULgB@g@?OAM?I"
+                        },
+                        "start_location": {
+                            "lat": -31.6328597,
+                            "lng": 117.0064753
+                        },
+                        "travel_mode": "DRIVING"
+                    },
+                    {
+                        "distance": {
+                            "text": "0.3 km",
+                            "value": 299
+                        },
+                        "duration": {
+                            "text": "1 min",
+                            "value": 36
+                        },
+                        "end_location": {
+                            "lat": -31.6317758,
+                            "lng": 117.010246
+                        },
+                        "html_instructions": "Continue straight onto <b>Kelly St</b>",
+                        "maneuver": "straight",
+                        "polyline": {
+                            "points": "xha`Eg_diUCUEWCOKU_AuCg@cBcBkF"
+                        },
+                        "start_location": {
+                            "lat": -31.6329255,
+                            "lng": 117.007404
+                        },
+                        "travel_mode": "DRIVING"
+                    },
+                    {
+                        "distance": {
+                            "text": "0.2 km",
+                            "value": 239
+                        },
+                        "duration": {
+                            "text": "1 min",
+                            "value": 36
+                        },
+                        "end_location": {
+                            "lat": -31.6298557,
+                            "lng": 117.0091027
+                        },
+                        "html_instructions": "Turn <b>left</b> onto <b>Byfield St</b>",
+                        "maneuver": "turn-left",
+                        "polyline": {
+                            "points": "raa`EaqdiU}BlAaGvC"
+                        },
+                        "start_location": {
+                            "lat": -31.6317758,
+                            "lng": 117.010246
+                        },
+                        "travel_mode": "DRIVING"
+                    }
+                ],
+                "traffic_speed_entry": [],
+                "via_waypoint": []
+            },
+            {
+                "distance": {
+                    "text": "24.9 km",
+                    "value": 24908
+                },
+                "duration": {
+                    "text": "18 mins",
+                    "value": 1086
+                },
+                "end_address": "87 Main St, Cunderdin WA 6407, Australia",
+                "end_location": {
+                    "lat": -31.6509256,
+                    "lng": 117.2432213
+                },
+                "start_address": "22 Byfield St, Meckering WA 6405, Australia",
+                "start_location": {
+                    "lat": -31.6298557,
+                    "lng": 117.0091027
+                },
+                "steps": [
+                    {
+                        "distance": {
+                            "text": "0.2 km",
+                            "value": 239
+                        },
+                        "duration": {
+                            "text": "1 min",
+                            "value": 24
+                        },
+                        "end_location": {
+                            "lat": -31.6317758,
+                            "lng": 117.010246
+                        },
+                        "html_instructions": "Head <b>southeast</b> on <b>Byfield St</b> toward <b>Kelly St</b>",
+                        "polyline": {
+                            "points": "ru``E{idiU`GwC|BmA"
+                        },
+                        "start_location": {
+                            "lat": -31.6298557,
+                            "lng": 117.0091027
+                        },
+                        "travel_mode": "DRIVING"
+                    },
+                    {
+                        "distance": {
+                            "text": "0.3 km",
+                            "value": 299
+                        },
+                        "duration": {
+                            "text": "1 min",
+                            "value": 47
+                        },
+                        "end_location": {
+                            "lat": -31.6329255,
+                            "lng": 117.007404
+                        },
+                        "html_instructions": "Turn <b>right</b> onto <b>Kelly St</b>",
+                        "maneuver": "turn-right",
+                        "polyline": {
+                            "points": "raa`EaqdiUbBjFf@bB~@tCJTBNDVBT"
+                        },
+                        "start_location": {
+                            "lat": -31.6317758,
+                            "lng": 117.010246
+                        },
+                        "travel_mode": "DRIVING"
+                    },
+                    {
+                        "distance": {
+                            "text": "89 m",
+                            "value": 89
+                        },
+                        "duration": {
+                            "text": "1 min",
+                            "value": 27
+                        },
+                        "end_location": {
+                            "lat": -31.6328597,
+                            "lng": 117.0064753
+                        },
+                        "html_instructions": "Continue onto <b>Gabbedy Pl</b>",
+                        "polyline": {
+                            "points": "xha`Eg_diU?H@L?NAf@MfB"
+                        },
+                        "start_location": {
+                            "lat": -31.6329255,
+                            "lng": 117.007404
+                        },
+                        "travel_mode": "DRIVING"
+                    },
+                    {
+                        "distance": {
+                            "text": "24.2 km",
+                            "value": 24185
+                        },
+                        "duration": {
+                            "text": "16 mins",
+                            "value": 971
+                        },
+                        "end_location": {
+                            "lat": -31.6514413,
+                            "lng": 117.2438151
+                        },
+                        "html_instructions": "Turn <b>right</b> onto <b>National Highway 94</b>",
+                        "maneuver": "turn-right",
+                        "polyline": {
+                            "points": "jha`EoyciUmDg@qC]oCa@s@K}@OUGUGeAY}Bw@gB{@_Ai@QKk@c@o@g@cCeCk@m@QS{@eAaA{AkA_CgAkCkAyCqA{Cm@yAqA_Dc@_Ae@{@s@oAmAoBk@}@q@aAkAwAe@k@wEiFyB_CmAsA_CkCsAgBwA{BeAwBu@kBoEiNOa@?COe@qA{DOe@Oe@o@qBIWEMa@iA}AwEgCyHMc@Me@Ss@]uA[aBEUEQIg@CWOkAWqDKmC?g@CsAAi@?[?MA_F?oF?aA?S?gD?i@?i@?i@?k@?uJA{U?a@@i@@gDD_FHyKFiEJmDJuADi@Di@Di@Dk@bBoS|AoRp@aIx@_KbCgZpA{ON{A~Cy`@Di@fAwMd@iG`@wDp@}EfAyHFi@Hg@XuB\\}Br@{Ef@}DHg@^wClB{MbDmULu@p@gFrA}JHo@hCuQ@M\\yBVkBlAsIdCwQpGkd@rDeW?AF]@G?AdDyUpBwNt@oFrAuJHg@DYtDwXpA_JzG_f@@CdAyHzAwKvCuSlAgJ|BwPzA{KjAgIxAsK`AaHFg@Z{BHo@XqBHi@Hg@~@}GtAsJt@oFnFk_@pAoJHg@Hg@nBuNlBcN`AcHHg@z@qG`A_Ht@oFT_BHi@Hg@r@gF\\gCR{A|@kGd@mDBMXsBRsAL}@He@PaAPu@^eBRu@Ro@Vw@Ne@Zy@LYHUP]Pa@P]d@_AVa@`@q@f@w@JSV_@HMn@cAx@oAHMr@gAn@aAp@gAfAcBv@oA\\k@XQ@Af@cAHO~@wAtCsEPWl@aAHMhAgBjAiBfAaBfAmB~@kBHURc@N[Rk@Na@@AZ{@\\eAb@yA^yAR{@XwAVsAL_AVqBHy@JyAHqAHyA@i@@q@B{C@gBAoH?yL?aA?}B?eK?cJ?QCsJ?oD?k@?sCAsF?{@GaLA_FA{K?yD?m@?oH?g@?{B?q@AqB?_@?{B?m@@}@?[?y@?a@AkD?EAkAI}CIyBAk@GkDGwBGyCCkB?{A@oBAqA?[@qA?iB?g@@w@?uB?_A"
+                        },
+                        "start_location": {
+                            "lat": -31.6328597,
+                            "lng": 117.0064753
+                        },
+                        "travel_mode": "DRIVING"
+                    },
+                    {
+                        "distance": {
+                            "text": "63 m",
+                            "value": 63
+                        },
+                        "duration": {
+                            "text": "1 min",
+                            "value": 8
+                        },
+                        "end_location": {
+                            "lat": -31.65091499999999,
+                            "lng": 117.243565
+                        },
+                        "html_instructions": "Turn <b>left</b> onto <b>Carter Dr</b>",
+                        "maneuver": "turn-left",
+                        "polyline": {
+                            "points": "n|d`E{drjUiBr@"
+                        },
+                        "start_location": {
+                            "lat": -31.6514413,
+                            "lng": 117.2438151
+                        },
+                        "travel_mode": "DRIVING"
+                    },
+                    {
+                        "distance": {
+                            "text": "33 m",
+                            "value": 33
+                        },
+                        "duration": {
+                            "text": "1 min",
+                            "value": 9
+                        },
+                        "end_location": {
+                            "lat": -31.6509256,
+                            "lng": 117.2432213
+                        },
+                        "html_instructions": "Turn <b>left</b> onto <b>Main St</b><div style=\"font-size:0.9em\">Destination will be on the left</div>",
+                        "maneuver": "turn-left",
+                        "polyline": {
+                            "points": "dyd`EgcrjUBbA"
+                        },
+                        "start_location": {
+                            "lat": -31.65091499999999,
+                            "lng": 117.243565
+                        },
+                        "travel_mode": "DRIVING"
+                    }
+                ],
+                "traffic_speed_entry": [],
+                "via_waypoint": []
+            },
+            {
+                "distance": {
+                    "text": "46.5 km",
+                    "value": 46454
+                },
+                "duration": {
+                    "text": "30 mins",
+                    "value": 1785
+                },
+                "end_address": "124 Massingham St, Kellerberrin WA 6410, Australia",
+                "end_location": {
+                    "lat": -31.6332838,
+                    "lng": 117.7234114
+                },
+                "start_address": "87 Main St, Cunderdin WA 6407, Australia",
+                "start_location": {
+                    "lat": -31.6509256,
+                    "lng": 117.2432213
+                },
+                "steps": [
+                    {
+                        "distance": {
+                            "text": "33 m",
+                            "value": 33
+                        },
+                        "duration": {
+                            "text": "1 min",
+                            "value": 5
+                        },
+                        "end_location": {
+                            "lat": -31.65091499999999,
+                            "lng": 117.243565
+                        },
+                        "html_instructions": "Head <b>east</b> on <b>Main St</b> toward <b>Carter Dr</b>",
+                        "polyline": {
+                            "points": "hyd`EcarjUCcA"
+                        },
+                        "start_location": {
+                            "lat": -31.6509256,
+                            "lng": 117.2432213
+                        },
+                        "travel_mode": "DRIVING"
+                    },
+                    {
+                        "distance": {
+                            "text": "63 m",
+                            "value": 63
+                        },
+                        "duration": {
+                            "text": "1 min",
+                            "value": 19
+                        },
+                        "end_location": {
+                            "lat": -31.6514413,
+                            "lng": 117.2438151
+                        },
+                        "html_instructions": "Turn <b>right</b> onto <b>Carter Dr</b>",
+                        "maneuver": "turn-right",
+                        "polyline": {
+                            "points": "dyd`EgcrjUhBs@"
+                        },
+                        "start_location": {
+                            "lat": -31.65091499999999,
+                            "lng": 117.243565
+                        },
+                        "travel_mode": "DRIVING"
+                    },
+                    {
+                        "distance": {
+                            "text": "46.4 km",
+                            "value": 46358
+                        },
+                        "duration": {
+                            "text": "29 mins",
+                            "value": 1761
+                        },
+                        "end_location": {
+                            "lat": -31.6332838,
+                            "lng": 117.7234114
+                        },
+                        "html_instructions": "Turn <b>left</b> at the 1st cross street onto <b>National Highway 94</b><div style=\"font-size:0.9em\">Destination will be on the left</div>",
+                        "maneuver": "turn-left",
+                        "polyline": {
+                            "points": "n|d`E{drjU@eC?]?s@AiACk@EaAKcCIaBAYGmAOkDSyE]gIOcDC]Q{DUgG[{GCg@Ci@Ci@WcGSiECi@OoDMaC]_IKyCE{@Ci@Ci@?KC]W_Gi@aMGcAEiAQcEWgGO{CQ_EO_DKoDGuAUcFQ_ESuEO}C]}HUeFEqAUoEO_DO}DGcA[mH_@sIIwBMuCQwD[sHWmFQ{DMkDWqFKuBSoFSaEKgCQqDQiEOeDC[IqBOeDOwD_@aJO{CQcESsFSoEQuDMgDQ}DMsC?GCa@Ci@AGAa@O}CCs@Ci@G}AC_@GqAQqEY_GO_EUiFKoCSwDAa@AGCi@Ci@Cm@W}FOeDEu@?IIsBUgFIsBCg@Ci@A?OaDMeDCq@Ci@Ci@Ci@AWM{BGkAGiBOmDCkACkAC_AAuAEsBEaCAk@?YAOCsA?e@CaBEuBAk@GeDAyAI_EAaAGaEAkAEmCAg@?AEoBCwAG_ECaCCoACiAAi@Ag@?AAuAC_CEeBGuDCmBEqBCoA?OCoBEoCCwBIuFGmDCiAAmAGuDCkAAWCyBEyBEeCIoFA{AEmCCe@{@}k@[kS[oTQuMAwF?_]FyP?i@JkkA?E@aHBkL?A?i@@yL@{N?i@@_D@iBByABsADeARsCP_B`@qCVqA`@mBl@cCf@mBLg@DO|DuO~@sD`BqGLe@|B_JPq@d@gBLg@Le@z@iD~@sDXoANq@^sBXeB@MFi@L_APoBPeCBgAFmC@yBAaAAY?OE{AIwAIsAOiBg@uFo@aGGg@YkCy@eIMgAGm@g@gFIs@U{BSqBm@{FOaBWeCQaBSeBQiBUyBk@{FUwB?AGg@OqAEi@E[QaBOaBOkB?ECc@Cc@KoDGyBAk@Ai@G_DM{FC}AAi@MqFMkHUwK_@oQG}CGwBEsCIiCEuAQ_CM}AYoD]uECc@W{CMyBAc@E{BGgCY_NAq@IuD?ICaAMoGAi@IkEAQ?KAg@@mAHuA?ALmB?KHkA@oA@u@G{AMoCE}@GeAEe@E}@Gy@Cm@Ew@Ai@AAIwCGgCCy@CeBOgHG{AS{AQ}@G[Mq@Ma@Ic@SgAEWAEOmAIeAC{AAi@CaA?QGiCIeEIuEYiLKqDAe@C}A?{C@O?GFg@F{@ZwBL{@Ha@Hq@Hu@Hu@HmA@WB_BIcEg@kXa@wSWiKUuLEaEc@sQI_EKmFE_BO_EQgCSqBWoB[{BSgAgAeF}B}Ju@_DKg@I]i@_CKe@[wAoAoFm@qCqCgMc@oBoCoLyAoGyBcJkByIaBmHaBaH_BiHeBeI{C}Mq@uCs@{CeByHwAmGCIKe@Kg@u@aDgAaFs@eDCGc@mBYqAqAsFy@yDu@}COo@e@iBOq@c@sBSkAUoAU_BUmB?AEi@ImA[iF[qGAMc@eJQmDCi@Ca@_@qH[qGCw@_C}d@MeC[{GO{CEs@_@yGMwCMyBSsECYQsDI{AC[UsEY{FWcFS{DOyCCk@UkFAI}@eQQ_DCi@K}BQgDa@_IwAsYqAaWq@aOiAkTY_G]oGEy@e@yIGoAEsACiA?eA?s@?{@Bk@H_CR_DHs@BW@OFi@D_@\\cCHg@BS|@aGl@}DZ_C`@gCL}@L_AnAoIt@oFXmBHi@Hg@Hg@DYx@oFL{@Hi@ViB`AyGVcBb@sCx@oF@EnBsNz@{FHi@PqABKXmBRoAVsAFW@KXqAVeA^uAHYPo@HWPm@Rk@X{@FMjB{EFQHQz@{BnB_FHQ`GiOxEqLt@mBPc@\\{@nGcPhBuE^_Av@_CTq@Ne@DOFUn@_C`@}Ah@iCh@_Dd@kDdCcTXcCh@sEFg@@GjBoOv@}GZoCJ{@DWXuBVmCV_CT{CJ_DJuE?eDCuAKaD?IGaA?QEi@MoCAW_By[kAyTAOGqA[}FS}D}AqZm@eLUqEW}EIsAASKoBOuCKoB?Gy@uO]mHCi@EoAGkAA_AEs@?EI}@S{Cq@yJk@kMGaCCaAA{@McC"
+                        },
+                        "start_location": {
+                            "lat": -31.6514413,
+                            "lng": 117.2438151
+                        },
+                        "travel_mode": "DRIVING"
+                    }
+                ],
+                "traffic_speed_entry": [],
+                "via_waypoint": []
+            },
+            {
+                "distance": {
+                    "text": "35.4 km",
+                    "value": 35385
+                },
+                "duration": {
+                    "text": "21 mins",
+                    "value": 1269
+                },
+                "end_address": "National Highway 94, Hines Hill WA 6413, Australia",
+                "end_location": {
+                    "lat": -31.5400461,
+                    "lng": 118.0676127
+                },
+                "start_address": "124 Massingham St, Kellerberrin WA 6410, Australia",
+                "start_location": {
+                    "lat": -31.6332838,
+                    "lng": 117.7234114
+                },
+                "steps": [
+                    {
+                        "distance": {
+                            "text": "35.4 km",
+                            "value": 35385
+                        },
+                        "duration": {
+                            "text": "21 mins",
+                            "value": 1269
+                        },
+                        "end_location": {
+                            "lat": -31.5400461,
+                            "lng": 118.0676127
+                        },
+                        "html_instructions": "Head <b>east</b> on <b>National Highway 94</b> toward <b>Mitchell St</b><div style=\"font-size:0.9em\">Destination will be on the left</div>",
+                        "polyline": {
+                            "points": "~ja`EizomUKsCQ{BO}B_@gGM{BAWOgCO{C?MOaCKwBCYAWeB}[M{B?M{@sPsAiVo@mMSiEAKWaFIyA_@{Ga@cIW}E]wGgB{\\kAoUCi@C]Eu@IsACi@Ci@aCkd@yBua@iBq]wEw|@eEa{@c@}PScHYcHc@}GW_DQgBMkAc@aFe@gHq@sJs@eNYeFCi@Ci@Ei@Ci@OyCa@qHCi@u@sNcAwREi@M}BOwCGmAi@_K_AiQGmBCmC?cBBaB@m@?GJsCLwCXcIb@kK@c@PaF@cDA_@CeBGgAOsBI{@SeBAGIo@Ow@Os@Mo@Os@c@cB[wAU{@e@sBm@cCS{@_@_BMe@kAaFw@eDuA{FwB_JwAaGMg@qBsIcCcKmAcFa@gBMe@Mg@Mi@YoAKa@Mg@Mg@WgAo@kCmAiFgBmHcAkEOg@uBaJOk@_CyJm@gCCM]yAMo@i@sCe@eCKs@aA}FACIc@Ks@SiAKg@?AOs@Mq@[sA[uAc@_BUy@I[KYWy@aA}CsA_E]iAY_AY{@Me@c@}AEIUeAs@qCm@eC_@}Aw@cD}@wD_ByGg@uBOm@Ke@Sw@o@kC]yAq@qCKg@Oo@WeA_@yAUaAi@wBe@oB}@yDg@uBg@sBo@iCe@qBcAeE[oAYcAWw@Y{@AEUo@Sg@KYKW]{@g@gA]y@]{@KWQe@Oc@a@mASo@Om@a@wAQo@S{@Mg@GSSy@[iAwCiLk@yBa@}AaD}LWcAuBgIKa@cCoJ}AeG]uAGWMg@Me@[oAiAyEcAgEsAwFYmAMe@o@mCmAeFw@aDeAmEs@{CK]Su@oDkO{AkGcAgEMk@aAyD{@wDg@qBOi@Ka@_@oAY_A{AgEaEyKSi@sGmQoCwHcD_JqD{Jy@yBmAgDm@cBqCyHoCsHeB_FYaA]mAq@qCu@{DSgAMiAUoBS{AKgACUOmBG}AGmBGyB?CCwA?e@@sA?A@g@?i@@uAHoI\\wUFgHD}BJyJh@gb@J}KToQ@cABcBJwKBcBJeHNcMLsDFgFAkFFkC@y@\\uV?E@e@Bi@@i@PeHLuF?G?i@?aBCqCGsCEgACi@AWEa@Eo@KkAE_@E]E]Eo@G_@AME_@G_@AOCMIk@CSO}@W{AE]SkAW{Au@yEeAqGq@{DIg@e@iCo@yCAEaB}F]cAu@oBc@cACGSc@Q_@i@eA_A_Bw@oA_AsAw@aAwAaBKM[Ya@c@yAqAcAw@cBoAaDaCoAiAeAgAe@e@e@m@g@o@{@iAa@q@k@aAg@aA]u@]s@gAiCcAcCEMsCsGsC{G}CqHsC{G}AsDSc@e@gA{AsDw@kBwE_LqEsKiDaISc@c@gAoBuEo@wAy@qBq@_B]y@a@u@k@iAs@oAk@}@c@m@c@o@e@o@oA}Aa@g@WYc@g@_@]sDmDyAuACCaByAuCkCiDaDm@g@cGoFoDcDw@s@WWkAeAiAeAaByAsAoAUS}@y@a@_@kE}Dy@w@qDcDaDuCmJsI[Yc@a@i@g@u@q@i@g@_@]UUSSSUIIIKOQCCSWQUSWQWQWc@q@IOEGOWYi@OYYq@Qc@a@_A_@iAe@aBq@mCu@wCc@gBwH}Z"
+                        },
+                        "start_location": {
+                            "lat": -31.6332838,
+                            "lng": 117.7234114
+                        },
+                        "travel_mode": "DRIVING"
+                    }
+                ],
+                "traffic_speed_entry": [],
+                "via_waypoint": []
+            },
+            {
+                "distance": {
+                    "text": "0.2 km",
+                    "value": 198
+                },
+                "duration": {
+                    "text": "1 min",
+                    "value": 7
+                },
+                "end_address": "National Highway 94, Hines Hill WA 6413, Australia",
+                "end_location": {
+                    "lat": -31.5393708,
+                    "lng": 118.069543
+                },
+                "start_address": "National Highway 94, Hines Hill WA 6413, Australia",
+                "start_location": {
+                    "lat": -31.5400461,
+                    "lng": 118.0676127
+                },
+                "steps": [
+                    {
+                        "distance": {
+                            "text": "0.2 km",
+                            "value": 198
+                        },
+                        "duration": {
+                            "text": "1 min",
+                            "value": 7
+                        },
+                        "end_location": {
+                            "lat": -31.5393708,
+                            "lng": 118.069543
+                        },
+                        "html_instructions": "Head <b>east</b> on <b>National Highway 94</b>",
+                        "polyline": {
+                            "points": "hdo_EqasoUgCaK"
+                        },
+                        "start_location": {
+                            "lat": -31.5400461,
+                            "lng": 118.0676127
+                        },
+                        "travel_mode": "DRIVING"
+                    }
+                ],
+                "traffic_speed_entry": [],
+                "via_waypoint": []
+            },
+            {
+                "distance": {
+                    "text": "7.8 km",
+                    "value": 7762
+                },
+                "duration": {
+                    "text": "5 mins",
+                    "value": 282
+                },
+                "end_address": "National Highway 94, Nangeenan WA 6414, Australia",
+                "end_location": {
+                    "lat": -31.523638,
+                    "lng": 118.1472158
+                },
+                "start_address": "National Highway 94, Hines Hill WA 6413, Australia",
+                "start_location": {
+                    "lat": -31.5393708,
+                    "lng": 118.069543
+                },
+                "steps": [
+                    {
+                        "distance": {
+                            "text": "7.8 km",
+                            "value": 7762
+                        },
+                        "duration": {
+                            "text": "5 mins",
+                            "value": 282
+                        },
+                        "end_location": {
+                            "lat": -31.523638,
+                            "lng": 118.1472158
+                        },
+                        "html_instructions": "Head <b>east</b> on <b>National Highway 94</b> toward <b>Hines Hill Rd</b>",
+                        "polyline": {
+                            "points": "``o_EsmsoUaDoMI]CKUu@o@kBi@yAiBaE_@_Ag@wAm@mBgAsEsByIa@_Ba@}BScBSqBGg@OmA[mBUyA]cBeAiEkAaFoHe[e@qBi@yBMe@eOao@IWcCiKcEkQi@yBYkAgIu]U_ACMsDwOuBaJK_@e@eC[qBEWCQGg@Ga@Im@YmCQiCOaCIeCEaCAcC@a@@cB?Y@WBqAJ_ClBeXz@cLn@oInBqVr@_Jl@{HL{CDyB?cA?SAyBGcBEqAK{AM}ASiBWcBUuA[{A[sAa@eBi@yBGUEOMg@_@{AwA_GCM"
+                        },
+                        "start_location": {
+                            "lat": -31.5393708,
+                            "lng": 118.069543
+                        },
+                        "travel_mode": "DRIVING"
+                    }
+                ],
+                "traffic_speed_entry": [],
+                "via_waypoint": []
+            },
+            {
+                "distance": {
+                    "text": "9.5 km",
+                    "value": 9525
+                },
+                "duration": {
+                    "text": "6 mins",
+                    "value": 337
+                },
+                "end_address": "Cnr Great Eastern Highway and, Combes Dr, Merredin WA 6415, Australia",
+                "end_location": {
+                    "lat": -31.4917196,
+                    "lng": 118.2403924
+                },
+                "start_address": "National Highway 94, Nangeenan WA 6414, Australia",
+                "start_location": {
+                    "lat": -31.523638,
+                    "lng": 118.1472158
+                },
+                "steps": [
+                    {
+                        "distance": {
+                            "text": "9.5 km",
+                            "value": 9525
+                        },
+                        "duration": {
+                            "text": "6 mins",
+                            "value": 337
+                        },
+                        "end_location": {
+                            "lat": -31.4917196,
+                            "lng": 118.2403924
+                        },
+                        "html_instructions": "Head <b>east</b> on <b>National Highway 94</b> toward <b>Snell Rd</b>",
+                        "polyline": {
+                            "points": "v}k_EcsbpU]yA_FeSU}@uFmUmCgLeCgKgE}Q_AqEGUQ{@iBoKKu@c@iCc@aC{@sEYqASaAsDqNqEgPgBsG}BkIcCqI{CgLaBgIyAoGo@iCoBmIuLgh@Ok@?E_GmVaAaEg@wByCcMGWyCkMw@aDq@sCOm@YmAc@iBGUAEEOm@aC_@_BMk@Qs@qAwFSaAsEwRwAwFq@oCWiAI][qA]{A]uA]wA_@cBkAcF{@uDeAsEy@uDw@gD]qAyC}MOq@iB{HI[kCeLeGoVgAsEmA_FK_@aAaE{AsFOa@Yu@e@sAmCiHuA{D"
+                        },
+                        "start_location": {
+                            "lat": -31.523638,
+                            "lng": 118.1472158
+                        },
+                        "travel_mode": "DRIVING"
+                    }
+                ],
+                "traffic_speed_entry": [],
+                "via_waypoint": []
+            },
+            {
+                "distance": {
+                    "text": "4.8 km",
+                    "value": 4786
+                },
+                "duration": {
+                    "text": "4 mins",
+                    "value": 261
+                },
+                "end_address": "145 Great Eastern Hwy, Merredin WA 6415, Australia",
+                "end_location": {
+                    "lat": -31.4832152,
+                    "lng": 118.2833403
+                },
+                "start_address": "Cnr Great Eastern Highway and, Combes Dr, Merredin WA 6415, Australia",
+                "start_location": {
+                    "lat": -31.4917196,
+                    "lng": 118.2403924
+                },
+                "steps": [
+                    {
+                        "distance": {
+                            "text": "4.3 km",
+                            "value": 4349
+                        },
+                        "duration": {
+                            "text": "4 mins",
+                            "value": 214
+                        },
+                        "end_location": {
+                            "lat": -31.4837432,
+                            "lng": 118.2831578
+                        },
+                        "html_instructions": "Head <b>northeast</b> on <b>National Highway 94</b> toward <b>Combes Dr</b>",
+                        "polyline": {
+                            "points": "fve_EmytpUEM{@_CYo@CIgB{E_@eAEKwCiIcDyIWu@qDwJ{CqI_@eAQc@cAiCeA}CkAaDGOaByEO_@qCyH}BeGEMOa@cCwGGS}BmGK[EM[cAYgAYmASeBASGo@GsACu@AyAB}@@g@FeAPoBJ{@?EPsBBSHkALkAR}BHcALqAN{A@MLyA?MHkADo@ZoFBo@LsCHsABy@DcA@WFcBF_B?GNiEBm@@[VgHF{BD}@FmB@UHoCHaC@W\\kKB_@?Q@S@m@D_A@g@"
+                        },
+                        "start_location": {
+                            "lat": -31.4917196,
+                            "lng": 118.2403924
+                        },
+                        "travel_mode": "DRIVING"
+                    },
+                    {
+                        "distance": {
+                            "text": "0.2 km",
+                            "value": 211
+                        },
+                        "duration": {
+                            "text": "1 min",
+                            "value": 22
+                        },
+                        "end_location": {
+                            "lat": -31.48186299999999,
+                            "lng": 118.2832269
+                        },
+                        "html_instructions": "Turn <b>left</b> onto <b>Mary St</b>",
+                        "maneuver": "turn-left",
+                        "polyline": {
+                            "points": "jdd_Ewd}pUeAIa@EIAyBKk@AY@SBq@J"
+                        },
+                        "start_location": {
+                            "lat": -31.4837432,
+                            "lng": 118.2831578
+                        },
+                        "travel_mode": "DRIVING"
+                    },
+                    {
+                        "distance": {
+                            "text": "0.2 km",
+                            "value": 226
+                        },
+                        "duration": {
+                            "text": "1 min",
+                            "value": 25
+                        },
+                        "end_location": {
+                            "lat": -31.4832152,
+                            "lng": 118.2833403
+                        },
+                        "html_instructions": "At the roundabout, take the <b>4th</b> exit and stay on <b>Mary St</b>",
+                        "maneuver": "roundabout-left",
+                        "polyline": {
+                            "points": "rxc_Eee}pU?B?@?@?@?@A@?@A@?@A??@A@A@A??@A?A?A??@A?A?A?A?AAA?A?AAAAAAAA?AAA?AAA?A?A?A?A?A?A?A?A?A?A@A?A@A?A@??A@??A@A@??A@?@?@A@?@?@?@??@@?@?@??@@??@@?p@EPA`@Ex@?lBJH?"
+                        },
+                        "start_location": {
+                            "lat": -31.48186299999999,
+                            "lng": 118.2832269
+                        },
+                        "travel_mode": "DRIVING"
+                    }
+                ],
+                "traffic_speed_entry": [],
+                "via_waypoint": []
+            }
+        ],
+        "overview_polyline": {
+            "points": "xlpaEklsgUjBtBr@~AcEfDeDfBiCwHoGwR}Rcl@{CsLkPyJaPoReEmJmJsYaAqGaCw`@}@uPiAiMaEmK{GcH{`@gReRaBcAhBySCmQjAs]W}PIyEl@gPpIuLvH_~@xk@gPlKgHhFyDrBWu@a@eROkLo@oH_EsFsVeRsGsHn@y@xFeHtOaRpNaHdFwBbCiAIcLAm@?i@Q{VE}F[k]c@ua@uFs\\cAwB_F_EoMiEsOkLy]_[uSaRcFoEgGiDmFg@{Kx@eFq@wEaCgPoK}KsHkGcFuHiQyDiJgDaDeGsEkDqGiF_N_F{FiFsCwL_H}EaIiOud@}HkSoE}C{D}@qPK_A?_BAgFgAqF}DwJ}UmJmVcWum@uLyXqe@czAcm@_lByz@}lCet@i|BsRsm@gNec@iGsLqFuBoCGuKxDcn@lZuCu@w@m@{GiRqSkn@{L__@cE}L_EoCoD`@uKtF}WvMyBPmCcAqFeN{C_JaEiEeNwJ_OgK}j@ya@qRaM}FQyTjLge@fU_WnM_DvC{BxCmH_FyFeBcOkCyd@mGgEs@LmDeFcQ_KdF~JeFvEzN?tFsTmDwHiDkG_G{EuHsG{OgMsTeMiNqJgNwKi\\cJ}XwB_Lk@oV?wSXicApFmt@~P}uBjG_h@dYmrBng@eqDbeAstH`Koq@dJkS~PaXxSo^pE}QhAiTOclBCgx@q@}m@@mD?_AiBr@BbACcAhBs@@eC?qAEuB]aIeCal@gB_a@eFmkAcHg`BkNqcDwHggBwCsuAsCilBeCodBD{w@TaaCv@{WdE{R`XqgAdAqVcCs[qJi_AuDig@uD{|AqBg^cAyg@TeJ[gRm@iP{AkWqA{KgA_g@f@sOdAaMuD}kBs@uS{AeLcJga@cWwhA{_@adBeIw]iCwQwKoxByG}sAqNeuCn@mQfDyUhMa|@dMsx@|[e{@lQyd@hF_WrKi~@hCi^qJqtBgOuwCoa@w}HuM{sCgBiY_Fiv@{ImjB~Awd@LkOu@}IiCcMoH}Z}WkhA{XkoA{\\qrAwOep@cLa^qk@e{B_ZqmA{t@qsBcEiWi@iSfDkvC~Bq}AoAe[uH{e@uHgXwKqP}PqNkJkM}n@wzAkOg^kJyNol@ej@go@_l@wGiImE}K{VgcAwKw[sGq^my@mmDeKie@eByW`Csh@pI{mAuAkUuDsPsW}fAaQyy@yVcbAaa@}bB{[_tAgWegAag@auBg`@yeAma@yhA_CmL\\{PhDgd@xBcm@z@iXFgBgBOiEMeAXCHQHQIBg@rHA"
+        },
+        "summary": "Spencers Brook-York Rd",
+        "warnings": [],
+        "waypoint_order": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9
+        ]
+    },
+    {
+        "bounds": {
+            "northeast": {
+                "lat": -31.4816558,
+                "lng": 118.2833403
+            },
+            "southwest": {
+                "lat": -32.0452155,
+                "lng": 116.7525911
+            }
+        },
+        "copyrights": "Map data \u00a92025",
+        "legs": [
+            {
+                "distance": {
+                    "text": "4.0 km",
+                    "value": 3962
+                },
+                "duration": {
+                    "text": "5 mins",
+                    "value": 319
+                },
+                "end_address": "13 Clifford St, York WA 6302, Australia",
+                "end_location": {
+                    "lat": -31.8919931,
+                    "lng": 116.7717051
+                },
+                "start_address": "28 Osnaburg Rd, York WA 6302, Australia",
+                "start_location": {
+                    "lat": -31.8742056,
+                    "lng": 116.7586236
+                },
+                "steps": [
+                    {
+                        "distance": {
+                            "text": "0.2 km",
+                            "value": 157
+                        },
+                        "duration": {
+                            "text": "1 min",
+                            "value": 15
+                        },
+                        "end_location": {
+                            "lat": -31.87509619999999,
+                            "lng": 116.7573623
+                        },
+                        "html_instructions": "Head <b>southwest</b> toward <b>Eleventh Rd</b><div style=\"font-size:0.9em\">Restricted usage road</div>",
+                        "polyline": {
+                            "points": "xlpaEklsgUZRn@r@Xb@DHLVd@fAPd@"
+                        },
+                        "start_location": {
+                            "lat": -31.8742056,
+                            "lng": 116.7586236
+                        },
+                        "travel_mode": "DRIVING"
+                    },
+                    {
+                        "distance": {
+                            "text": "0.1 km",
+                            "value": 124
+                        },
+                        "duration": {
+                            "text": "1 min",
+                            "value": 22
+                        },
+                        "end_location": {
+                            "lat": -31.8760833,
+                            "lng": 116.7579619
+                        },
+                        "html_instructions": "Turn <b>left</b> onto <b>Eleventh Rd</b>",
+                        "maneuver": "turn-left",
+                        "polyline": {
+                            "points": "jrpaEodsgUjDiBVM"
+                        },
+                        "start_location": {
+                            "lat": -31.87509619999999,
+                            "lng": 116.7573623
+                        },
+                        "travel_mode": "DRIVING"
+                    },
+                    {
+                        "distance": {
+                            "text": "0.6 km",
+                            "value": 572
+                        },
+                        "duration": {
+                            "text": "1 min",
+                            "value": 56
+                        },
+                        "end_location": {
+                            "lat": -31.8784708,
+                            "lng": 116.7525911
+                        },
+                        "html_instructions": "Turn <b>right</b> at the 1st cross street onto <b>Osnaburg Rd</b>",
+                        "maneuver": "turn-right",
+                        "polyline": {
+                            "points": "nxpaEghsgUdBfFzBvGlAnDhBlFNb@Vt@Zx@"
+                        },
+                        "start_location": {
+                            "lat": -31.8760833,
+                            "lng": 116.7579619
+                        },
+                        "travel_mode": "DRIVING"
+                    },
+                    {
+                        "distance": {
+                            "text": "1.8 km",
+                            "value": 1824
+                        },
+                        "duration": {
+                            "text": "2 mins",
+                            "value": 126
+                        },
+                        "end_location": {
+                            "lat": -31.8931501,
+                            "lng": 116.7611896
+                        },
+                        "html_instructions": "Turn <b>left</b> onto <b>Ulster Rd</b>",
+                        "maneuver": "turn-left",
+                        "polyline": {
+                            "points": "lgqaEufrgUrDgB^Q~@g@^S~@e@~DoB~DsBnAm@~@e@XOdB{@lBcA~Aw@b@UhAk@vAq@`G}C^Q~@g@~@e@~Ay@jBaAh@YpBeAn@YjCqApDkBjEmBzCgA"
+                        },
+                        "start_location": {
+                            "lat": -31.8784708,
+                            "lng": 116.7525911
+                        },
+                        "travel_mode": "DRIVING"
+                    },
+                    {
+                        "distance": {
+                            "text": "0.3 km",
+                            "value": 341
+                        },
+                        "duration": {
+                            "text": "1 min",
+                            "value": 30
+                        },
+                        "end_location": {
+                            "lat": -31.89588849999999,
+                            "lng": 116.762821
+                        },
+                        "html_instructions": "Continue onto <b>Forrest St</b>",
+                        "polyline": {
+                            "points": "dctaEm|sgUfBu@tAu@pBcA|A{@tCyA"
+                        },
+                        "start_location": {
+                            "lat": -31.8931501,
+                            "lng": 116.7611896
+                        },
+                        "travel_mode": "DRIVING"
+                    },
+                    {
+                        "distance": {
+                            "text": "0.6 km",
+                            "value": 577
+                        },
+                        "duration": {
+                            "text": "1 min",
+                            "value": 43
+                        },
+                        "end_location": {
+                            "lat": -31.8935365,
+                            "lng": 116.7682715
+                        },
+                        "html_instructions": "Turn <b>left</b> onto <b>Chidlow York</b>/<wbr/><b>Great Southern Hwy</b>/<wbr/><b>Henrietta St</b>",
+                        "maneuver": "turn-left",
+                        "polyline": {
+                            "points": "httaEsftgU{@qCsBgGuBkGkB{FcA_D"
+                        },
+                        "start_location": {
+                            "lat": -31.89588849999999,
+                            "lng": 116.762821
+                        },
+                        "travel_mode": "DRIVING"
+                    },
+                    {
+                        "distance": {
+                            "text": "0.4 km",
+                            "value": 367
+                        },
+                        "duration": {
+                            "text": "1 min",
+                            "value": 27
+                        },
+                        "end_location": {
+                            "lat": -31.8919931,
+                            "lng": 116.7717051
+                        },
+                        "html_instructions": "Continue onto <b>Balladong St</b>/<wbr/><b>Northam Cranbrook</b>/<wbr/><b>State Route 120</b><div style=\"font-size:0.9em\">Destination will be on the left</div>",
+                        "polyline": {
+                            "points": "retaEuhugU}BkGOc@kBsF{@kC"
+                        },
+                        "start_location": {
+                            "lat": -31.8935365,
+                            "lng": 116.7682715
+                        },
+                        "travel_mode": "DRIVING"
+                    }
+                ],
+                "traffic_speed_entry": [],
+                "via_waypoint": []
+            },
+            {
+                "distance": {
+                    "text": "1.3 km",
+                    "value": 1269
+                },
+                "duration": {
+                    "text": "1 min",
+                    "value": 88
+                },
+                "end_address": "59 York Rd, Cold Harbour WA 6302, Australia",
+                "end_location": {
+                    "lat": -31.8961081,
+                    "lng": 116.7805315
+                },
+                "start_address": "13 Clifford St, York WA 6302, Australia",
+                "start_location": {
+                    "lat": -31.8919931,
+                    "lng": 116.7717051
+                },
+                "steps": [
+                    {
+                        "distance": {
+                            "text": "0.5 km",
+                            "value": 460
+                        },
+                        "duration": {
+                            "text": "1 min",
+                            "value": 34
+                        },
+                        "end_location": {
+                            "lat": -31.8906532,
+                            "lng": 116.7762897
+                        },
+                        "html_instructions": "Head <b>northeast</b> on <b>Balladong St</b>/<wbr/><b>Northam Cranbrook</b>/<wbr/><b>State Route 120</b> toward <b>Clifford St</b>",
+                        "polyline": {
+                            "points": "|{saEe~ugUkAmDCG?AKY]gAQs@EOGY]iCS_B_@iC_@gD"
+                        },
+                        "start_location": {
+                            "lat": -31.8919931,
+                            "lng": 116.7717051
+                        },
+                        "travel_mode": "DRIVING"
+                    },
+                    {
+                        "distance": {
+                            "text": "0.8 km",
+                            "value": 809
+                        },
+                        "duration": {
+                            "text": "1 min",
+                            "value": 54
+                        },
+                        "end_location": {
+                            "lat": -31.8961081,
+                            "lng": 116.7805315
+                        },
+                        "html_instructions": "Turn <b>right</b> onto <b>Panmure Rd</b>/<wbr/><b>York Merredin</b>/<wbr/><b>State Route 120</b><div style=\"font-size:0.9em\">Continue to follow York Merredin</div><div style=\"font-size:0.9em\">Destination will be on the left</div>",
+                        "maneuver": "turn-right",
+                        "polyline": {
+                            "points": "pssaEyzvgU`DJF@jBH@?f@?F?B?@?H?LAL?HAB?JCH?DAJCF?DAJCFADALCDCDALCDCDAJEFADCJEHCFC@ADAFENIFEBAHIHE@AJIHGJIHIJIHI@AFIHIBCHIDGBELQHMFKHKFKFMDI@CDG@CFMBI@CJWHSFUBEf@yAVy@J[Ne@FQDI@C@CHWDK?ADK?AFMDM@CDIBI@CFMDI@??ADIBCFK@AFIBC?ABCFG"
+                        },
+                        "start_location": {
+                            "lat": -31.8906532,
+                            "lng": 116.7762897
+                        },
+                        "travel_mode": "DRIVING"
+                    }
+                ],
+                "traffic_speed_entry": [],
+                "via_waypoint": []
+            },
+            {
+                "distance": {
+                    "text": "1.0 km",
+                    "value": 1011
+                },
+                "duration": {
+                    "text": "1 min",
+                    "value": 50
+                },
+                "end_address": "2 Lightly Pl, Cold Harbour WA 6302, Australia",
+                "end_location": {
+                    "lat": -31.9027346,
+                    "lng": 116.7878683
+                },
+                "start_address": "59 York Rd, Cold Harbour WA 6302, Australia",
+                "start_location": {
+                    "lat": -31.8961081,
+                    "lng": 116.7805315
+                },
+                "steps": [
+                    {
+                        "distance": {
+                            "text": "1.0 km",
+                            "value": 1011
+                        },
+                        "duration": {
+                            "text": "1 min",
+                            "value": 50
+                        },
+                        "end_location": {
+                            "lat": -31.9027346,
+                            "lng": 116.7878683
+                        },
+                        "html_instructions": "Head <b>southeast</b> on <b>York Rd</b>/<wbr/><b>York Merredin</b> toward <b>Railway Rd</b><div style=\"font-size:0.9em\">Continue to follow York Merredin</div><div style=\"font-size:0.9em\">Destination will be on the right</div>",
+                        "polyline": {
+                            "points": "tutaEiuwgUBC?CBA@CBA?AX[?ANOfBsBj@s@tA_BDEvA}An@u@LQJK@ARUBC@AlEaF@ANQFG@C@A@?nBwBbCsCZ_@DENODIx@_A^c@NQVYV[BCTWBCrBaC"
+                        },
+                        "start_location": {
+                            "lat": -31.8961081,
+                            "lng": 116.7805315
+                        },
+                        "travel_mode": "DRIVING"
+                    }
+                ],
+                "traffic_speed_entry": [],
+                "via_waypoint": []
+            },
+            {
+                "distance": {
+                    "text": "15.5 km",
+                    "value": 15527
+                },
+                "duration": {
+                    "text": "10 mins",
+                    "value": 586
+                },
+                "end_address": "Quairading-York Rd, Mount Hardey WA 6302, Australia",
+                "end_location": {
+                    "lat": -31.9304702,
+                    "lng": 116.9216438
+                },
+                "start_address": "2 Lightly Pl, Cold Harbour WA 6302, Australia",
+                "start_location": {
+                    "lat": -31.9027346,
+                    "lng": 116.7878683
+                },
+                "steps": [
+                    {
+                        "distance": {
+                            "text": "15.5 km",
+                            "value": 15527
+                        },
+                        "duration": {
+                            "text": "10 mins",
+                            "value": 586
+                        },
+                        "end_location": {
+                            "lat": -31.9304702,
+                            "lng": 116.9216438
+                        },
+                        "html_instructions": "Head <b>southeast</b> on <b>Quairading-York Rd</b>/<wbr/><b>York Merredin</b> toward <b>Lightly Pl</b><div style=\"font-size:0.9em\">Destination will be on the left</div>",
+                        "polyline": {
+                            "points": "`_vaEecygUJK@Ax@_AZ[X]TUlAuA?AV[@AV[DE\\a@fBqB`DoDNORUDGRUDELMJMt@}@r@}@FI`@g@hAcCPu@f@gBN}@L{@BMNqABSDa@Ju@f@cEFc@x@yGLmADsA?aAEuAI_ASwAUiAW_AIUK]Us@}@kCs@uBCK_AoCeA}CgAaDaA{CoAeDeAiDUq@}@sCOo@Os@Ko@Gi@AAGm@QyAEYCUESEWYkAQm@EKK]CGe@gASa@?AACS]aAiBy@yAYi@U_@?AU_@?AW_@W[_@e@i@i@}@y@CAAAuAgAOMIGAAi@g@k@o@e@o@a@q@a@w@Ym@Y{@g@}Ac@uAe@iBMy@AGGi@?CCWG{@AoAA}BEiAIcAKy@WkAa@mAACo@kB{@aC]}@q@oBq@oBq@qBOc@q@qByBsGkBsFkCqGCi@Qk@]cA?CoAqDkC}Ho@gBOa@ACaB}EyCyI]aAoAuDkAiDw@yBSi@Sm@s@sBcBaFo@kBEMIWAEMm@GUCKCQCOCOCQE[C]C]ASC_@?O?OAc@?Y?Q@_@?OLyALw@L}@Lm@J_@DOHU`@eA`AiBRa@NYDIpCaF~DeHDIRa@Ta@P[xAkCbAmBvEsI~@eBTa@lA}BfCuETa@PYBG|FoK\\k@dCyEr@qAt@eBJc@Ro@Li@Jk@LaAL}AB_BEmBU_Cg@eCgAeFg@gCAGMw@SoAcBmNSgBcAgI?G_@}ESqCMeBg@kHEqBAeABsALsA@MPaBn@cDrAsFtCoLbAcEJe@ZoAdBeH\\cAp@aB?AR_@Ta@P_@pAmB~@eAPQtCoCz@{@ZYrEoEfAkAjCcCZ[bA_At@s@fAgAl@k@fAeA`A{@h@a@XUBA\\W~CsBxCmBlDuBDC^UHGRKJGp@c@ZQrA{@fC}AJGtBoAnAw@lA{@p@i@r@o@lAkAr@w@p@_ArAoB~@}AVe@|@qBTo@FONa@Ni@DOZcA^aBpCyL@CRc@?AJg@jBaKx@uDvDiQ?An@uC\\yAd@{AXw@Pe@FQpAqCfAkB~AyBv@{@j@k@x@u@j@g@n@i@~B{AtLqG^S^SpMaHzBiArBiAbG}CvEeC"
+                        },
+                        "start_location": {
+                            "lat": -31.9027346,
+                            "lng": 116.7878683
+                        },
+                        "travel_mode": "DRIVING"
+                    }
+                ],
+                "traffic_speed_entry": [],
+                "via_waypoint": []
+            },
+            {
+                "distance": {
+                    "text": "3.3 km",
+                    "value": 3326
+                },
+                "duration": {
+                    "text": "2 mins",
+                    "value": 115
+                },
+                "end_address": "Quairading-York Rd, Kauring WA 6302, Australia",
+                "end_location": {
+                    "lat": -31.943407,
+                    "lng": 116.949248
+                },
+                "start_address": "Quairading-York Rd, Mount Hardey WA 6302, Australia",
+                "start_location": {
+                    "lat": -31.9304702,
+                    "lng": 116.9216438
+                },
+                "steps": [
+                    {
+                        "distance": {
+                            "text": "3.3 km",
+                            "value": 3326
+                        },
+                        "duration": {
+                            "text": "2 mins",
+                            "value": 115
+                        },
+                        "end_location": {
+                            "lat": -31.943407,
+                            "lng": 116.949248
+                        },
+                        "html_instructions": "Head <b>southeast</b> on <b>Quairading-York Rd</b>/<wbr/><b>York Merredin</b> toward <b>Seabrook Rd</b>",
+                        "polyline": {
+                            "points": "ll{aEggshUh@YjBaArBgApKwFxBcAzE_CxAw@`B{@tIqEdAm@lAu@n@e@VUZW^[nAoALKdAkAx@gAr@gAh@_A~@mBv@sBl@iBV}@ZoATgAXgBNmAJcALaBF_BF}B@S?i@@k@FwDBoB@i@@MTqNBoA@i@@y@HeFHqFF}DLeHZ}Q?]DyB@a@"
+                        },
+                        "start_location": {
+                            "lat": -31.9304702,
+                            "lng": 116.9216438
+                        },
+                        "travel_mode": "DRIVING"
+                    }
+                ],
+                "traffic_speed_entry": [],
+                "via_waypoint": []
+            },
+            {
+                "distance": {
+                    "text": "5.7 km",
+                    "value": 5748
+                },
+                "duration": {
+                    "text": "3 mins",
+                    "value": 203
+                },
+                "end_address": "Quairading-York Rd, Kauring WA 6302, Australia",
+                "end_location": {
+                    "lat": -31.9456832,
+                    "lng": 117.0100356
+                },
+                "start_address": "Quairading-York Rd, Kauring WA 6302, Australia",
+                "start_location": {
+                    "lat": -31.943407,
+                    "lng": 116.949248
+                },
+                "steps": [
+                    {
+                        "distance": {
+                            "text": "5.7 km",
+                            "value": 5748
+                        },
+                        "duration": {
+                            "text": "3 mins",
+                            "value": 203
+                        },
+                        "end_location": {
+                            "lat": -31.9456832,
+                            "lng": 117.0100356
+                        },
+                        "html_instructions": "Head <b>east</b> on <b>Quairading-York Rd</b>/<wbr/><b>York Merredin</b> toward <b>Club Hotel Rd</b><div style=\"font-size:0.9em\">Destination will be on the left</div>",
+                        "polyline": {
+                            "points": "h}}aEysxhU@e@TsO?a@NeJBuCBsA@i@@i@DaETqIBsNH}E?Q@u@F{DFsDDeCJoIB}@HeGFkE@{@J_I@k@@gAHiIBiB@i@@kBBgB@i@@i@@q@DwBBsA@i@B}BL_HDaBJqG?G?i@FoDF_GDuF@i@?E?e@@qEDqI?i@@uA?}B?M@[@oC@kF@wA?i@@i@?O@sDB_G@mD?I@iD?M?[?gB?UFgK?_B@gCA]B_EFyM@kA?O?[@k@BmF?OBiDDoBBmAFaAHmAFk@Di@Fe@^}Bf@}C"
+                        },
+                        "start_location": {
+                            "lat": -31.943407,
+                            "lng": 116.949248
+                        },
+                        "travel_mode": "DRIVING"
+                    }
+                ],
+                "traffic_speed_entry": [],
+                "via_waypoint": []
+            },
+            {
+                "distance": {
+                    "text": "8.2 km",
+                    "value": 8246
+                },
+                "duration": {
+                    "text": "5 mins",
+                    "value": 297
+                },
+                "end_address": "Quairading-York Rd, Kauring WA 6304, Australia",
+                "end_location": {
+                    "lat": -31.9788273,
+                    "lng": 117.0850668
+                },
+                "start_address": "Quairading-York Rd, Kauring WA 6302, Australia",
+                "start_location": {
+                    "lat": -31.9456832,
+                    "lng": 117.0100356
+                },
+                "steps": [
+                    {
+                        "distance": {
+                            "text": "8.2 km",
+                            "value": 8246
+                        },
+                        "duration": {
+                            "text": "5 mins",
+                            "value": 297
+                        },
+                        "end_location": {
+                            "lat": -31.9788273,
+                            "lng": 117.0850668
+                        },
+                        "html_instructions": "Head <b>east</b> on <b>Quairading-York Rd</b>/<wbr/><b>York Merredin</b> toward <b>Penny St</b><div style=\"font-size:0.9em\">Destination will be on the right</div>",
+                        "polyline": {
+                            "points": "nk~aEwodiUBIXaB\\mBHk@zAyIt@gE?ADYb@eCd@iC\\oBRkANgAJw@B{@BWFcAHgB?EFiADi@Be@PcDR_ENyCNoCV}ETyEd@oINkCFsA?EJkBPgDDu@Bi@LsBL}BH}ADu@@_@L}BDi@?Eh@uJBg@J{BJiBFoA@SBi@Be@XgFLgCJeBFoA@[NkCLwBHyA?GBa@J_BPqBLgAJu@RmANy@@C?ANq@T_ATw@FW@?Le@X{@Xs@DILYTg@Xm@^s@\\m@d@w@hAoB`A}AbAaBt@oAjEcGdAgB@CvBkDbBiCJS|AgCvA}Bl@_AHMLST_@`DcFvDeGhB{CpCoEbBmCJSrD_Gb@q@hCcEdAaBTa@V_@T_@Vc@bA_BT_@zAcClB{ClAmBjBwClAmBxAaCdE{GBEBCvDkGtAyBpAwB^k@HOJOBCb@u@x@sAd@w@Va@BERW|@qA~AsCZg@tGqKZe@T_@tDgGfDyFxAcCPYTa@T_@Ta@T_@R]x@uAJQTa@NUFKpCwE^o@zAcC|CyE"
+                        },
+                        "start_location": {
+                            "lat": -31.9456832,
+                            "lng": 117.0100356
+                        },
+                        "travel_mode": "DRIVING"
+                    }
+                ],
+                "traffic_speed_entry": [],
+                "via_waypoint": []
+            },
+            {
+                "distance": {
+                    "text": "42.0 km",
+                    "value": 41958
+                },
+                "duration": {
+                    "text": "27 mins",
+                    "value": 1596
+                },
+                "end_address": "Bruce Rock-Quairading Rd, Badjaling WA 6383, Australia",
+                "end_location": {
+                    "lat": -31.9766416,
+                    "lng": 117.4878447
+                },
+                "start_address": "Quairading-York Rd, Kauring WA 6304, Australia",
+                "start_location": {
+                    "lat": -31.9788273,
+                    "lng": 117.0850668
+                },
+                "steps": [
+                    {
+                        "distance": {
+                            "text": "42.0 km",
+                            "value": 41958
+                        },
+                        "duration": {
+                            "text": "27 mins",
+                            "value": 1596
+                        },
+                        "end_location": {
+                            "lat": -31.9766416,
+                            "lng": 117.4878447
+                        },
+                        "html_instructions": "Head <b>southeast</b> on <b>Quairading-York Rd</b>/<wbr/><b>York Merredin</b> toward <b>Draper Rd</b><div style=\"font-size:0.9em\">Continue to follow York Merredin</div><div style=\"font-size:0.9em\">Destination will be on the left</div>",
+                        "polyline": {
+                            "points": "tzdbEudsiU^k@h@eATa@dA{AzAgCXo@|@iA`@kAJGf@{@`BqCbDoFZe@@C~B{DDIbDgFn@mA`A_BLST_@@CV_@bEaH`EyGhB{CR]@Ch@{@fAgBTa@j@aAV_@Ta@LSFKr@iANY^m@JSP_@BCN_@@ADMHUL_@Pq@Je@PeAJw@Dq@BY@i@@Y?eB?sA?iH?g@?A?s@?iA?qD?mA?e@?C?i@?i@?iH?{@AiN?k@?i@AgL?M?[?i@?k@?i@?sE?sA?i@AuA?W?Q?i@?iD?i@?i@?sEAqDAU?kP@eB?{A?kAAaC?SA}BAkF?Q?WAS?k@DaX?_G?i@?W?i@?{L?U?S@U?y@JaCFo@TiBBKHa@@ET{@Le@BKJYDQlBcG`@qAFO@CDQFUb@sA~AmFp@yBDMrAoEFUFQ@EzCuJ@AtB}G|AeFDOHS\\kANe@xBgHhB_G^kAV{@Ne@FS\\qA`@mCLyABq@LqDJ_FTgJLsDJmDJeD@c@B_@@_@Dc@Fe@D_@PuARqALg@p@{BhAoCxAaDr@}ABILYZq@JU`CsFBERc@Rc@Pc@zAgDDIPc@j@qA`@}@Pa@?Af@eAPc@nCkGFSHSNi@H_@PeAJs@Fu@Dm@BsA@a@@w@FmCFwBDiC@I@i@Bs@BiA@y@@w@B{@DaBB}@Be@@[BYBYFYB[DUJ}@@EFa@F[BKJo@V{AXcBHk@\\uB^uBV_BZuBHe@Jg@Hg@XcBbAiGb@mCXaB^{B?AHg@TwA\\wBRkARkA@EHg@PeA`@cCNcA^sBNeAReAjAkHD[Jg@Hg@Fc@d@sCv@{ENy@VcBReAJc@DSLe@@APo@Ne@`@iAj@_Bp@cB`@mA\\_Al@aBj@{Af@wAd@uAPi@J]DOPcAJm@LgAFuAFkALwCJ}ALgAXiBPkAl@gDHg@F[@KJi@F]Jm@T_AFQLe@BEL_@Pg@h@uAl@_BPe@BGn@eBHQFQVw@Pm@Rs@T_Az@wDpA}F\\{AJg@FYn@uCPmARqBH_BJmBDu@Z{FBq@l@gLl@mMBi@FeA^sHBi@@U@K@G@a@NgCJoBRuD@YJyBNcCDo@@E?ADa@@G@IF]Jq@PgAbAgGDSHi@Hg@F_@Jq@jAkHn@yDFa@@G`CyNDUF_@@GF_@@IRoAd@{C^wB@IHg@Hg@Nw@fAaHl@qD\\uB@GFa@r@mExA}It@{EX{ARuA@C@IBOBO?C@KBOBM@I?EBO@O@K?CBO@M?G@I@O@M@Q@O?K?C@O@O?K@C?O?O@I@UJeDD{@@[NuE@O?K@C?O?O@K?C@O?O?I?E@O?O?IAC?SCu@Eg@Ak@IkBEiAEk@Ac@C}@?_@?g@?[Ae@Bw@@s@@i@F}@Hq@@UHa@@MBMBOBO@ODMBOBOBMDOBOBK@ADOBMBK@CDM?CBIBI@EDMDMBI@EFMDMBG?A@CFMRi@Ti@FK@EDGFMFK?CFIFMFK@ADKFKHK?AFIHMFKDE@EHKFKHKHIHKHKHKFG@AHKHIFG@CHIHIFG@CJIHIDEBCHKHIDEDCHI`@_@zB{B^_@r@w@\\]~BeCtByB|A_B|A_B`AkA^k@l@aAn@aBn@cBPc@Pe@Pc@Pc@Nc@@APc@pDoJPe@Pc@Pe@t@mBpCkHdAkCPe@BIJYPe@Pc@d@qApBiF|A{DvByF`BkEL[BI`AiCrBiF`@cAPc@t@oBjA_DpAkDHQfBwEr@kBn@cBDKLW^y@Xk@Te@PSb@o@n@w@JOJKX[@ARQn@w@\\_@f@s@b@u@DGNYVe@\\y@f@wAJc@d@oBR}@TeAd@oB@IVeAP{@FSJg@Nq@TeAj@mCn@oCf@eCj@cCXqALg@Lg@l@wCn@uCr@{Cn@uCv@sDf@wBx@{Dj@eCLe@BMPy@RaATmAHw@Fw@DmA@u@AaACm@KiAK{@OiAS{AKw@K_AKq@McAQqAAEIg@?CKw@M{@OsAQ_AQ{@Qu@Uw@Ka@EIKYCKKUYs@_@u@_@w@eAyBmAgCs@yAYs@Sg@So@Qu@QaAACKi@?AGe@AKI}@C[AQA[E}@?uA@aC?e@@_CBkE?WBuC?y@?i@@kB@oA?YBsBB_FBaC?y@Am@Ao@C_@AK?EACGg@Ks@Mo@Su@Si@CGSi@_@u@m@gA[g@_A{A_AyA{DqGe@q@]c@GIW[AAOOGKA?QOOOa@_@i@a@k@]w@e@ECWO_@Sy@c@EASK_By@mDgBQIMGqCwAmBcA}BmA_@SSKEC{FyCw@e@KI[WCCOOKMMQW]QWO[O[]y@Og@Ma@EUGYMw@OcAY{B_@sCa@sC[qBSyAYuBGa@m@gEQyAGe@Gi@E_@AGM_BG_A?GAo@C}B@oA@aBBoA?I?c@?i@Cs@IgAOiAWyAI][eAcAoCEISc@O]CECIYo@e@oA[}@Sq@]yAGWGYUcAYoAc@wBKg@Kg@S_AiIy_@CIG]CIeCkLaDcOMg@AII]CIkDaPeBgIyBcKMg@Kg@WoACII]AIOq@o@mC{@_EqA_Gc@mBI_@Mg@CII]IY_@iAm@wAkAcCk@kA}@iBWi@iA{B_AoBSa@sC_GaDwGg@cA}@kBw@_BWm@CG]aAOc@IUGOEMIWo@qBk@gBQo@[eAk@_BACc@w@Wc@Ss@q@aAQs@WmAOu@Ow@CQGYIk@Mq@AAS{@I[EKQg@AG[aAQm@a@oAa@uA]cA?ASk@Sg@[k@Ye@[a@SWIMu@s@e@m@a@q@o@gAu@uAuD}GsByDwBuDq@oASc@Oa@GQIUc@}Ae@gBI_@}@uDMg@cAcEESsBsIKe@Ka@AEsB_JACs@}CqAoFKe@Mg@Ke@AAKc@kB}HKg@Mc@?AaF{S?AmD_OoDiOKe@cAeEYmAWgAiB{Hw@cDKg@eDkNmEcRMg@i@yBk@cC[eBCGEa@My@O{AGy@Eu@K_CKyCKwASwBAIG_@YyA_@uAwAqEOe@AGsCcJu@cCoBiGMg@aAyCuDyLqAeEq@wBoF{PoBsGg@}AOe@_BcFOe@Oe@K]CGOe@kBiGUq@So@c@eAe@mAYq@Wk@gCkFw@qBYu@Y_A}@wCwAuEwCkJqFeQwFuQW{@IU}BoHo@qBoA_EqCcJeBoFgCeIi@iBGSOg@u@qCa@wBQiAMwAGy@KiA"
+                        },
+                        "start_location": {
+                            "lat": -31.9788273,
+                            "lng": 117.0850668
+                        },
+                        "travel_mode": "DRIVING"
+                    }
+                ],
+                "traffic_speed_entry": [],
+                "via_waypoint": []
+            },
+            {
+                "distance": {
+                    "text": "52.2 km",
+                    "value": 52241
+                },
+                "duration": {
+                    "text": "32 mins",
+                    "value": 1938
+                },
+                "end_address": "124 Massingham St, Kellerberrin WA 6410, Australia",
+                "end_location": {
+                    "lat": -31.6332891,
+                    "lng": 117.7233563
+                },
+                "start_address": "Bruce Rock-Quairading Rd, Badjaling WA 6383, Australia",
+                "start_location": {
+                    "lat": -31.9766416,
+                    "lng": 117.4878447
+                },
+                "steps": [
+                    {
+                        "distance": {
+                            "text": "10.1 km",
+                            "value": 10110
+                        },
+                        "duration": {
+                            "text": "6 mins",
+                            "value": 352
+                        },
+                        "end_location": {
+                            "lat": -31.9622585,
+                            "lng": 117.5917134
+                        },
+                        "html_instructions": "Head <b>east</b> on <b>Bruce Rock-Quairading Rd</b>/<wbr/><b>York Merredin</b> toward <b>Badjaling Rd</b>",
+                        "polyline": {
+                            "points": "~ldbE_zalUEm@M{As@aJs@cJg@kGo@{HKsAGi@?EQuBQuBq@uI[}DEi@KqAEi@IaAUaDOeBo@sIEi@YqDi@wGGi@Eq@o@sIy@uKa@_Fm@yHEm@U{CGu@_AiMGi@Gi@?Ic@yFc@oFQ_CuAkQu@oJKqAEi@WwCUsDO_CCy@CgFA{G?gB?uA?iD?_A@sC?cGAyG@_Z?}a@AoS?wE@y`@A}Y?wS@W?i@?A?i@?sHAqF?iJ@qG?k@?m@A_H?m@?k@AgACyBAOOiDWcCe@}CWkA]{Ac@{AEIQe@Oc@k@qAiDcIiAeCwDsIuA_D_BsDSc@Qc@CCmAgCKWaBsDo@wAeDoHSa@mAoCO[Ui@Sc@Sc@Qc@Sc@Sc@Yo@i@qAe@_BOs@UcAGa@"
+                        },
+                        "start_location": {
+                            "lat": -31.9766416,
+                            "lng": 117.4878447
+                        },
+                        "travel_mode": "DRIVING"
+                    },
+                    {
+                        "distance": {
+                            "text": "0.3 km",
+                            "value": 284
+                        },
+                        "duration": {
+                            "text": "1 min",
+                            "value": 23
+                        },
+                        "end_location": {
+                            "lat": -31.9599192,
+                            "lng": 117.5906507
+                        },
+                        "html_instructions": "Turn <b>left</b> onto <b>Caporn St</b>",
+                        "maneuver": "turn-left",
+                        "polyline": {
+                            "points": "bsabEecvlUgE|BUN[RWHKBa@NUFa@JQ?iA?"
+                        },
+                        "start_location": {
+                            "lat": -31.9622585,
+                            "lng": 117.5917134
+                        },
+                        "travel_mode": "DRIVING"
+                    },
+                    {
+                        "distance": {
+                            "text": "40.8 km",
+                            "value": 40783
+                        },
+                        "duration": {
+                            "text": "25 mins",
+                            "value": 1474
+                        },
+                        "end_location": {
+                            "lat": -31.63767769999999,
+                            "lng": 117.7165058
+                        },
+                        "html_instructions": "Continue onto <b>Kellerberrin-Yoting Rd</b>",
+                        "polyline": {
+                            "points": "ndabEq|ulUe@?iB?c@@w@?sDAgFAo@?W?c@?c@?{G@C?c@?oC@M?U?gA?c@?c@?c@?[?mA?c@?c@?G?}@AaBEiBU{@Q{@WcBs@s@a@e@[i@c@w@o@_A_AAAYY[[mAkAuDsDuDsDQOIIY[wAwAcG_GaA_A[[[Y[YcC_CmA{@aBy@}Ak@iASaAOc@GE?{@EgA?C?c@BG?oDZmIx@{BTc@DG?M@MBqKdAmFf@QBQ@eKdAc@DkAL]Dc@Dc@Dc@D{Fh@cAJmCVc@D{Gp@I@YBc@FuE`@c@Dq@F{ADS?O?gAEEA]EaAMm@Mw@Se@WCA[OOKMIm@c@MKaD_CcEeDqC}BuEoDOMuBcBsBaBy@q@YUwC{B]WSQGEWQg@U_@QUIKEYMUKuCm@eAII?sAGo@?_ADuCNgAH_@@C@c@BoCNqDTM@Q@oId@y@De@Ha@FA?G@[Fa@HwBj@o@VA@_@Na@PC@aCfAgF`CGDoAl@_@P_@Pm@ZC@o@X_@PkBz@_CfA_GlC_@Po@VQHMFSFaBh@u@PqAVkAHA?c@?gC@iBAI?wA?eA?y@Fc@Bc@Ds@HmATk@N]JC@wAh@k@TUJKDcBp@KDSHa@Nw@\\cBn@kBv@A?_@La@Ja@La@LE@[Ha@HmAPaADc@@O@S@c@@c@@C?_A@C?oCFa@@A?c@?mCFc@@w@@{BDY?cETiCH[@qCFwDDc@?eCB}DBaCBMAYAI?c@@_HL}PVG?sFL_ABG?c@Bc@BA?a@Da@DWD{@Pw@PMBSFa@NC@[LQHo@ZOHOHm@^m@`@]T]V]To@`@kAt@{BtA]T_@TC@y@d@_@Rc@TeBr@q@Rm@NQD_@Fi@DmAB}@@{@E[CG?a@E}@Gm@Es@GSAcBGmA@A?c@@]Bu@Hw@JiB^eBl@cCx@{@Tw@Nq@J{AJS?a@@c@@c@@gA@I?aB@c@?c@?_D@oGAc@?oA?_A@c@?c@@iA?_EAU?]@E?c@@A?a@DK@UDc@HcANA@SFMDIBcBl@oAh@u@\\gAXQDeATQDOB]@i@?K?W?s@CUCqBSeCSEA]Ea@Ec@GaCYaMwAy@Ic@Gc@Ec@GyH{@kAOa@Ec@Gc@GgFo@}@K{@Qm@SUGgCgAqAe@sA_@ICc@KGCYE[E_BKw@C[AmA?gA@sD?y@?qHAcE?c@?c@?c@?qE@uCI_@AsAM}@OWGIAmBc@qBg@[I}HkBwA]a@Ka@K{A_@wHmBeAWaAQqEgAa@Kg@OmBa@cB]iAQc@Cc@EA?c@Ay@CsAAc@?_BAqI@iQAgAEo@?o@Eo@GsA]yHqBeKuCcFoAcDo@{@Iw@CoDC_BAgE?iA@wH?gB?oB?wICqDIeAOuA[q@UyDsAa@OgA_@aCy@kFiB_@Ma@Oy@YiEwAwDsAkHyBa@MuDkAgJuCa@MCA]Ka@OiEsAIEWI}@YgF{A_EqAcAY{AWiAKc@Cc@?[?}@B_AJ_@HaARe@Pm@Ve@RkAn@_@R}D`C{@d@w@^WNGBWHQDQDcARm@Dg@ByAEcAWg@MYIGCaAa@_@OKEoDkBiDiBoCiBq@a@SM_CmAuB}@cEaB}Ao@WM}@_@CA_@S]SSMIGm@c@k@e@IISQ{@_A?AY[sCcDIKY[W]Y]uBiCIKY[Y]Y]gBuBUWAC}CmDq@u@]_@Y]mAwAY[c@i@OQY[W]wBgCcEqEY]WWy@{@aDiDwA{A_CeCYYuB{Bk@m@Y[Y[[]}CkDMMgEsEY]qByBgAmAyDeEY[cBiByEmFu@y@Y[}@cAQQu@u@[Yc@a@gDuCgC}By@w@YY[[}@{@cCeCyGuGcFaF_AcAY]s@{@cCaDuEiGCEoCqDW]Y_@W]eAsA[e@AAW]sCwDA?EGaAsA?AkBeCuCyDW]c@m@gBqC]YeEmFACkDyEAAU]U_@oAqBiBqCW_@W]W_@U_@U_@AAcLaQ}A_CUa@kC}Di@y@k@aAEISa@S_@mAqCQc@Qa@AAM[CG[m@o@kAa@i@Y]MOe@i@yA_BoD}DgBqB[]SSkF{F{BwBs@c@gAq@{BeAkGmCaAa@_@QWKiBw@AAkMwFgFwBwB_AwBuAgDsBAA_EgCoDaCwJmG]UmBmAaG{D]UeAq@mLwHmCiB_@U]U}@m@gLoH_LmHcEqCe@YaFaDMImAw@MIgHsE}EaDkN_JmKaH{LeIqLsHaBiAyLaIKGmTqNeAq@wH}EkIqFcKyGeJaGkAw@yQuLsBsAaKwGwNeJkGaEoIwFoEsCiDyB_IgFyBwA}@k@IGmD}BsA{@cBgAyCmB}@u@oO}J}BsA[U]YSYMOEKO[IQESMw@CQAc@?k@@sB?uAAuJ?gBEs@Ga@Kc@Oa@Ue@SWWU[U[Sk@QGAc@I]CM?oE@_L@wG?wEA"
+                        },
+                        "start_location": {
+                            "lat": -31.9599192,
+                            "lng": 117.5906507
+                        },
+                        "travel_mode": "DRIVING"
+                    },
+                    {
+                        "distance": {
+                            "text": "0.4 km",
+                            "value": 410
+                        },
+                        "duration": {
+                            "text": "1 min",
+                            "value": 37
+                        },
+                        "end_location": {
+                            "lat": -31.6339929,
+                            "lng": 117.7164983
+                        },
+                        "html_instructions": "Continue onto <b>Scott St</b>",
+                        "polyline": {
+                            "points": "nfb`EeonmUsBA}G@gDAgDB"
+                        },
+                        "start_location": {
+                            "lat": -31.63767769999999,
+                            "lng": 117.7165058
+                        },
+                        "travel_mode": "DRIVING"
+                    },
+                    {
+                        "distance": {
+                            "text": "0.7 km",
+                            "value": 654
+                        },
+                        "duration": {
+                            "text": "1 min",
+                            "value": 52
+                        },
+                        "end_location": {
+                            "lat": -31.6332891,
+                            "lng": 117.7233563
+                        },
+                        "html_instructions": "Turn <b>right</b> onto <b>National Highway 94</b><div style=\"font-size:0.9em\">Destination will be on the left</div>",
+                        "maneuver": "turn-right",
+                        "polyline": {
+                            "points": "loa`EconmUS{Cq@yJk@kMGaCCaAA{@KyB"
+                        },
+                        "start_location": {
+                            "lat": -31.6339929,
+                            "lng": 117.7164983
+                        },
+                        "travel_mode": "DRIVING"
+                    }
+                ],
+                "traffic_speed_entry": [],
+                "via_waypoint": []
+            },
+            {
+                "distance": {
+                    "text": "35.4 km",
+                    "value": 35390
+                },
+                "duration": {
+                    "text": "21 mins",
+                    "value": 1269
+                },
+                "end_address": "National Highway 94, Hines Hill WA 6413, Australia",
+                "end_location": {
+                    "lat": -31.5400461,
+                    "lng": 118.0676127
+                },
+                "start_address": "124 Massingham St, Kellerberrin WA 6410, Australia",
+                "start_location": {
+                    "lat": -31.6332891,
+                    "lng": 117.7233563
+                },
+                "steps": [
+                    {
+                        "distance": {
+                            "text": "35.4 km",
+                            "value": 35390
+                        },
+                        "duration": {
+                            "text": "21 mins",
+                            "value": 1269
+                        },
+                        "end_location": {
+                            "lat": -31.5400461,
+                            "lng": 118.0676127
+                        },
+                        "html_instructions": "Head <b>east</b> on <b>National Highway 94</b> toward <b>Mitchell St</b><div style=\"font-size:0.9em\">Destination will be on the left</div>",
+                        "polyline": {
+                            "points": "`ka`E_zomUAIKsCQ{BO}B_@gGM{BAWOgCO{C?MOaCKwBCYAWeB}[M{B?M{@sPsAiVo@mMSiEAKWaFIyA_@{Ga@cIW}E]wGgB{\\kAoUCi@C]Eu@IsACi@Ci@aCkd@yBua@iBq]wEw|@eEa{@c@}PScHYcHc@}GW_DQgBMkAc@aFe@gHq@sJs@eNYeFCi@Ci@Ei@Ci@OyCa@qHCi@u@sNcAwREi@M}BOwCGmAi@_K_AiQGmBCmC?cBBaB@m@?GJsCLwCXcIb@kK@c@PaF@cDA_@CeBGgAOsBI{@SeBAGIo@Ow@Os@Mo@Os@c@cB[wAU{@e@sBm@cCS{@_@_BMe@kAaFw@eDuA{FwB_JwAaGMg@qBsIcCcKmAcFa@gBMe@Mg@Mi@YoAKa@Mg@Mg@WgAo@kCmAiFgBmHcAkEOg@uBaJOk@_CyJm@gCCM]yAMo@i@sCe@eCKs@aA}FACIc@Ks@SiAKg@?AOs@Mq@[sA[uAc@_BUy@I[KYWy@aA}CsA_E]iAY_AY{@Me@c@}AEIUeAs@qCm@eC_@}Aw@cD}@wD_ByGg@uBOm@Ke@Sw@o@kC]yAq@qCKg@Oo@WeA_@yAUaAi@wBe@oB}@yDg@uBg@sBo@iCe@qBcAeE[oAYcAWw@Y{@AEUo@Sg@KYKW]{@g@gA]y@]{@KWQe@Oc@a@mASo@Om@a@wAQo@S{@Mg@GSSy@[iAwCiLk@yBa@}AaD}LWcAuBgIKa@cCoJ}AeG]uAGWMg@Me@[oAiAyEcAgEsAwFYmAMe@o@mCmAeFw@aDeAmEs@{CK]Su@oDkO{AkGcAgEMk@aAyD{@wDg@qBOi@Ka@_@oAY_A{AgEaEyKSi@sGmQoCwHcD_JqD{Jy@yBmAgDm@cBqCyHoCsHeB_FYaA]mAq@qCu@{DSgAMiAUoBS{AKgACUOmBG}AGmBGyB?CCwA?e@@sA?A@g@?i@@uAHoI\\wUFgHD}BJyJh@gb@J}KToQ@cABcBJwKBcBJeHNcMLsDFgFAkFFkC@y@\\uV?E@e@Bi@@i@PeHLuF?G?i@?aBCqCGsCEgACi@AWEa@Eo@KkAE_@E]E]Eo@G_@AME_@G_@AOCMIk@CSO}@W{AE]SkAW{Au@yEeAqGq@{DIg@e@iCo@yCAEaB}F]cAu@oBc@cACGSc@Q_@i@eA_A_Bw@oA_AsAw@aAwAaBKM[Ya@c@yAqAcAw@cBoAaDaCoAiAeAgAe@e@e@m@g@o@{@iAa@q@k@aAg@aA]u@]s@gAiCcAcCEMsCsGsC{G}CqHsC{G}AsDSc@e@gA{AsDw@kBwE_LqEsKiDaISc@c@gAoBuEo@wAy@qBq@_B]y@a@u@k@iAs@oAk@}@c@m@c@o@e@o@oA}Aa@g@WYc@g@_@]sDmDyAuACCaByAuCkCiDaDm@g@cGoFoDcDw@s@WWkAeAiAeAaByAsAoAUS}@y@a@_@kE}Dy@w@qDcDaDuCmJsI[Yc@a@i@g@u@q@i@g@_@]UUSSSUIIIKOQCCSWQUSWQWQWc@q@IOEGOWYi@OYYq@Qc@a@_A_@iAe@aBq@mCu@wCc@gBwH}Z"
+                        },
+                        "start_location": {
+                            "lat": -31.6332891,
+                            "lng": 117.7233563
+                        },
+                        "travel_mode": "DRIVING"
+                    }
+                ],
+                "traffic_speed_entry": [],
+                "via_waypoint": []
+            },
+            {
+                "distance": {
+                    "text": "0.2 km",
+                    "value": 198
+                },
+                "duration": {
+                    "text": "1 min",
+                    "value": 7
+                },
+                "end_address": "National Highway 94, Hines Hill WA 6413, Australia",
+                "end_location": {
+                    "lat": -31.5393708,
+                    "lng": 118.069543
+                },
+                "start_address": "National Highway 94, Hines Hill WA 6413, Australia",
+                "start_location": {
+                    "lat": -31.5400461,
+                    "lng": 118.0676127
+                },
+                "steps": [
+                    {
+                        "distance": {
+                            "text": "0.2 km",
+                            "value": 198
+                        },
+                        "duration": {
+                            "text": "1 min",
+                            "value": 7
+                        },
+                        "end_location": {
+                            "lat": -31.5393708,
+                            "lng": 118.069543
+                        },
+                        "html_instructions": "Head <b>east</b> on <b>National Highway 94</b>",
+                        "polyline": {
+                            "points": "hdo_EqasoUgCaK"
+                        },
+                        "start_location": {
+                            "lat": -31.5400461,
+                            "lng": 118.0676127
+                        },
+                        "travel_mode": "DRIVING"
+                    }
+                ],
+                "traffic_speed_entry": [],
+                "via_waypoint": []
+            },
+            {
+                "distance": {
+                    "text": "7.8 km",
+                    "value": 7762
+                },
+                "duration": {
+                    "text": "5 mins",
+                    "value": 282
+                },
+                "end_address": "National Highway 94, Nangeenan WA 6414, Australia",
+                "end_location": {
+                    "lat": -31.523638,
+                    "lng": 118.1472158
+                },
+                "start_address": "National Highway 94, Hines Hill WA 6413, Australia",
+                "start_location": {
+                    "lat": -31.5393708,
+                    "lng": 118.069543
+                },
+                "steps": [
+                    {
+                        "distance": {
+                            "text": "7.8 km",
+                            "value": 7762
+                        },
+                        "duration": {
+                            "text": "5 mins",
+                            "value": 282
+                        },
+                        "end_location": {
+                            "lat": -31.523638,
+                            "lng": 118.1472158
+                        },
+                        "html_instructions": "Head <b>east</b> on <b>National Highway 94</b> toward <b>Hines Hill Rd</b>",
+                        "polyline": {
+                            "points": "``o_EsmsoUaDoMI]CKUu@o@kBi@yAiBaE_@_Ag@wAm@mBgAsEsByIa@_Ba@}BScBSqBGg@OmA[mBUyA]cBeAiEkAaFoHe[e@qBi@yBMe@eOao@IWcCiKcEkQi@yBYkAgIu]U_ACMsDwOuBaJK_@e@eC[qBEWCQGg@Ga@Im@YmCQiCOaCIeCEaCAcC@a@@cB?Y@WBqAJ_ClBeXz@cLn@oInBqVr@_Jl@{HL{CDyB?cA?SAyBGcBEqAK{AM}ASiBWcBUuA[{A[sAa@eBi@yBGUEOMg@_@{AwA_GCM"
+                        },
+                        "start_location": {
+                            "lat": -31.5393708,
+                            "lng": 118.069543
+                        },
+                        "travel_mode": "DRIVING"
+                    }
+                ],
+                "traffic_speed_entry": [],
+                "via_waypoint": []
+            },
+            {
+                "distance": {
+                    "text": "9.5 km",
+                    "value": 9525
+                },
+                "duration": {
+                    "text": "6 mins",
+                    "value": 337
+                },
+                "end_address": "Cnr Great Eastern Highway and, Combes Dr, Merredin WA 6415, Australia",
+                "end_location": {
+                    "lat": -31.4917196,
+                    "lng": 118.2403924
+                },
+                "start_address": "National Highway 94, Nangeenan WA 6414, Australia",
+                "start_location": {
+                    "lat": -31.523638,
+                    "lng": 118.1472158
+                },
+                "steps": [
+                    {
+                        "distance": {
+                            "text": "9.5 km",
+                            "value": 9525
+                        },
+                        "duration": {
+                            "text": "6 mins",
+                            "value": 337
+                        },
+                        "end_location": {
+                            "lat": -31.4917196,
+                            "lng": 118.2403924
+                        },
+                        "html_instructions": "Head <b>east</b> on <b>National Highway 94</b> toward <b>Snell Rd</b>",
+                        "polyline": {
+                            "points": "v}k_EcsbpU]yA_FeSU}@uFmUmCgLeCgKgE}Q_AqEGUQ{@iBoKKu@c@iCc@aC{@sEYqASaAsDqNqEgPgBsG}BkIcCqI{CgLaBgIyAoGo@iCoBmIuLgh@Ok@?E_GmVaAaEg@wByCcMGWyCkMw@aDq@sCOm@YmAc@iBGUAEEOm@aC_@_BMk@Qs@qAwFSaAsEwRwAwFq@oCWiAI][qA]{A]uA]wA_@cBkAcF{@uDeAsEy@uDw@gD]qAyC}MOq@iB{HI[kCeLeGoVgAsEmA_FK_@aAaE{AsFOa@Yu@e@sAmCiHuA{D"
+                        },
+                        "start_location": {
+                            "lat": -31.523638,
+                            "lng": 118.1472158
+                        },
+                        "travel_mode": "DRIVING"
+                    }
+                ],
+                "traffic_speed_entry": [],
+                "via_waypoint": []
+            },
+            {
+                "distance": {
+                    "text": "4.8 km",
+                    "value": 4786
+                },
+                "duration": {
+                    "text": "4 mins",
+                    "value": 261
+                },
+                "end_address": "145 Great Eastern Hwy, Merredin WA 6415, Australia",
+                "end_location": {
+                    "lat": -31.4832152,
+                    "lng": 118.2833403
+                },
+                "start_address": "Cnr Great Eastern Highway and, Combes Dr, Merredin WA 6415, Australia",
+                "start_location": {
+                    "lat": -31.4917196,
+                    "lng": 118.2403924
+                },
+                "steps": [
+                    {
+                        "distance": {
+                            "text": "4.3 km",
+                            "value": 4349
+                        },
+                        "duration": {
+                            "text": "4 mins",
+                            "value": 214
+                        },
+                        "end_location": {
+                            "lat": -31.4837432,
+                            "lng": 118.2831578
+                        },
+                        "html_instructions": "Head <b>northeast</b> on <b>National Highway 94</b> toward <b>Combes Dr</b>",
+                        "polyline": {
+                            "points": "fve_EmytpUEM{@_CYo@CIgB{E_@eAEKwCiIcDyIWu@qDwJ{CqI_@eAQc@cAiCeA}CkAaDGOaByEO_@qCyH}BeGEMOa@cCwGGS}BmGK[EM[cAYgAYmASeBASGo@GsACu@AyAB}@@g@FeAPoBJ{@?EPsBBSHkALkAR}BHcALqAN{A@MLyA?MHkADo@ZoFBo@LsCHsABy@DcA@WFcBF_B?GNiEBm@@[VgHF{BD}@FmB@UHoCHaC@W\\kKB_@?Q@S@m@D_A@g@"
+                        },
+                        "start_location": {
+                            "lat": -31.4917196,
+                            "lng": 118.2403924
+                        },
+                        "travel_mode": "DRIVING"
+                    },
+                    {
+                        "distance": {
+                            "text": "0.2 km",
+                            "value": 211
+                        },
+                        "duration": {
+                            "text": "1 min",
+                            "value": 22
+                        },
+                        "end_location": {
+                            "lat": -31.48186299999999,
+                            "lng": 118.2832269
+                        },
+                        "html_instructions": "Turn <b>left</b> onto <b>Mary St</b>",
+                        "maneuver": "turn-left",
+                        "polyline": {
+                            "points": "jdd_Ewd}pUeAIa@EIAyBKk@AY@SBq@J"
+                        },
+                        "start_location": {
+                            "lat": -31.4837432,
+                            "lng": 118.2831578
+                        },
+                        "travel_mode": "DRIVING"
+                    },
+                    {
+                        "distance": {
+                            "text": "0.2 km",
+                            "value": 226
+                        },
+                        "duration": {
+                            "text": "1 min",
+                            "value": 25
+                        },
+                        "end_location": {
+                            "lat": -31.4832152,
+                            "lng": 118.2833403
+                        },
+                        "html_instructions": "At the roundabout, take the <b>4th</b> exit and stay on <b>Mary St</b>",
+                        "maneuver": "roundabout-left",
+                        "polyline": {
+                            "points": "rxc_Eee}pU?B?@?@?@?@A@?@A@?@A??@A@A@A??@A?A?A??@A?A?A?A?AAA?A?AAAAAAAA?AAA?AAA?A?A?A?A?A?A?A?A?A?A@A?A@A?A@??A@??A@A@??A@?@?@A@?@?@?@??@@?@?@??@@??@@?p@EPA`@Ex@?lBJH?"
+                        },
+                        "start_location": {
+                            "lat": -31.48186299999999,
+                            "lng": 118.2832269
+                        },
+                        "travel_mode": "DRIVING"
+                    }
+                ],
+                "traffic_speed_entry": [],
+                "via_waypoint": []
+            }
+        ],
+        "overview_polyline": {
+            "points": "xlpaEklsgUjBtBr@~A|DcAfI`TlD`KbYmNrQaJ|s@s]nE_CtCyA{@qCiFsOoD{KuHoT{AqEoDaUlIVvC_@fG_EdGkOnMgPr^}a@vPoR|FsItBmLbCqZuDuOoRqn@yDoNeNqQeFiHcDiMcAuPqG}Qy[{_AgTko@c@oJtBiKvMcVje@s{@nCoOwEqZeHgt@H_JvCgOvLwd@pLsN~a@e_@r_@_VpMyQpG{V~Jue@`IyT|FwGpS_Mfg@{Wxm@k[tJoHzKeTdCqUvBisAbEwbDdBglB^qhAR}TrBqP`K}o@xEo~@jIwzAlE_Qt[ih@fnAepB`pB{cDxNmV|BiSEaaBCarAz@qf@~e@{}AhCyb@z@uTbI{VfFmLlN{]jAu`@jNgaAvI{h@fKic@hFcObBySfG_YhM{e@rF_bAfCk^rKqp@rPoeA`AsXg@sR`A}MjDeKrFmHtVeWbQ{`@~p@sdBhLoQvKof@jOmr@CiNiBkNgFoT{HuQw@}FHqg@AkPcBaHgQgXoZoPkSuNuIyi@o@{Y{Ie[on@quC_Xul@_Mg\\qGiTaIeSeS_]{DcLgQ_u@a_@a~A}Neo@cBoVab@auAyQqj@cp@qqBaIw[gF{o@}Gc|@iKysAaGsv@Yeb@@ilEAug@uAiUg[ov@wSaf@e@wBoEzAuAp@iJd@kf@?}JGaOeGya@ia@qKaHuDk@mXhBgr@zGqb@pCkGoBo[uVqLgJuJiCeg@~B{XtKi\\lNaZrAcUtIqO`ByaBzCmNlFkV~LaV[uPbE}I^}d@FeRfF}b@kDqRyBcT_FwIoAy\\AyRo@_VyF{f@}J{g@O_i@{Lik@G_KkAeL}Dw`@uMwYgJkWsGeI~@iOfIwHp@ci@yVaPaNmy@__A_pA}qAkt@w`Am\\_g@uQ_\\aNqOwKeLcOiHq_@iPuc@gY{kAwv@c}CmqB_pBspAmXmRq@oIaAuVyEyBgt@?gDBS{C}AeYYyJoB{\\eDon@gPw_DaKomB}PenD_LimB{Cms@~Awd@g@iZiCcMi]gxAcUa`AqIad@uMkd@qc@khBiJeX}ZylAo[orAsHsZea@mhAuRcj@cEiWNagAtEasEkBsPaGq^uHgXwKqP}PqNkJkMsSgf@uj@wrAkJyNqNiNyp@om@q_@u]_J}Q{VgcAwKw[sGq^sQaw@_s@u{CeByW`Csh@pI{mAuAkUi]qxAaQyy@yVcbA_x@ufDaUa`AiXqkA{U{`AoKoYed@ynA_Qie@_CmLvBub@bCwd@`Cct@FgBgBOiEMeAXKPS?Gi@vHG"
+        },
+        "summary": "Ulster Rd",
+        "warnings": [],
+        "waypoint_order": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12
+        ]
+    }
+]
