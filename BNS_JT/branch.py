@@ -384,75 +384,59 @@ class Branch_old(object):
         return NotImplemented
 
 
-def get_cmat(branches, comp_var, flag=True):
+def get_cmat(branches, comp_varis):
     """
     Parameters
     ----------
-    branches:
-    comp_var:
-    varis:
-    flag: 1 (default) if bnb and mbn have the same component states, 0 if bnb has a reverse ordering of components being better and worse
+    branches: list of Branch
+    comp_varis: dictionary of varis of component events
 
+    Returns
+    C: C matrix of the system event
+        The first column is the system state (0: failure, 1: survival, 2: unknown)
     """
     assert isinstance(branches, list), 'branches must be a list'
-    assert isinstance(comp_var, (list, np.ndarray)), 'comp_var must be a list-like'
-    #assert isinstance(varis, dict), 'varis must be a dict'
-    assert isinstance(flag, bool), 'flag should be either 0 or 1'
-    #assert set(comp_var).difference(varis.keys()) == set(), 'varis should contain index of comp_var: {comp_var}'
+    assert isinstance(comp_varis, dict), 'comp_var must be a dictionary'
+    
+    no_comp = len(comp_varis)
 
-    complete_brs = [x for x in branches if x.is_complete]
+    C = np.zeros((0, no_comp + 1))
 
-    #FIXME: no_comp = len(comp_var) instead?
-    no_comp = len(complete_brs[0].down)
-
-    C = np.zeros((len(complete_brs), no_comp + 1))
-
-    for irow, br in enumerate(complete_brs):
+    for br in branches:
 
         c = np.zeros(no_comp + 1)
+        c_comp = get_crow(br, comp_varis)
+        c[1:] = c_comp
 
-        # System state
-        c[0] = br.up_state
+        if br.down_state == 's': # survival branch
+            c[0] = 1
+        elif br.up_state == 'f': # failure branch            
+            c[0] = 0
+        else: # unknown branch
+            c[0] = 2 
 
-        # Component states
-        for j in range(no_comp):
-            down = br.down[j]
-            up = br.up[j]
-
-            b = comp_var[j].B
-            no_state = len(comp_var[j].values)
-
-            if flag:
-                down_state = down - 1
-                up_state = up - 1
-            else:
-                down_state = no_state - up
-                up_state = no_state - down
-
-            if up_state != down_state:
-                #b1 = np.zeros((1, b.shape[1]))
-                #b1[int(down_state):int(up_state)] = 1
-                b1 = [{x} for x in range(int(down_state), int(up_state))]
-                _, loc = cpm.ismember(b1, b)
-
-                if any(loc):
-                    # conversion to python index
-                    c[j + 1] = loc[0]
-                else:
-                    #print(f'B of {comp_var[j].name} is updated')
-                    #[b.append(x) for x in b1 if x not in b]
-                    #comp_var[j] = variable.Variable(name= comp_var[j].name,
-                                           #B=b,
-                    #                       values=comp_var[j].values)
-                    #c[j + 1] = b.shape[1]
-                    c[j + 1] = len(comp_var[j].values)
-
-            else:
-                c[j + 1] = up_state
-
-        C[irow, :] = c
+        C = np.vstack((C, c))
+        C = C.astype(int)
 
     return C
+
+def get_crow(br1, comp_varis):
+
+    c_comp = np.zeros((1, len(comp_varis)))
+    
+    for j, (k, v) in enumerate(comp_varis.items()):
+        down = br1.down[k]
+        up = br1.up[k]
+
+        if up != down:
+            bj = {x for x in range(int(down), int(up+1))}
+            sj = v.get_state(bj)
+            c_comp[0][j] = sj
+
+        else:
+            c_comp[0][j] = up
+    
+    return c_comp
 
 
 def get_idx(x, flag=False):
