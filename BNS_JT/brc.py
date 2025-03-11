@@ -546,7 +546,7 @@ def eval_rules_prob( rules_list, s_or_f, probs ):
         for r in rules_list:
             p = 1.0
             for k, v in r.items():
-                p *= sum([probs[k][x] for x in range(v)])
+                p *= sum([probs[k][x] for x in range(v+1)])
 
             probs_list.append(p)
 
